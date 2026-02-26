@@ -1,75 +1,89 @@
-# React + TypeScript + Vite
+# Me2You: SPARK Space Interactive Installation
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
 
-Currently, two official plugins are available:
+Me2You is a public installation for the SPARK space where students use body gestures to explore and connect with one another. The system combines real‑time computer vision, a browsable profile hub, and playful interactive elements to foster community.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Gesture Interaction & Discovery
 
-Note: This will impact Vite dev & build performances.
+- **Presence detection:** Camera feed monitors for users and begins tracking when someone enters the frame.
+- **Discovery gesture:** Specific gestures trigger a random profile reveal from previous users.
+- **Feedback loop:** Unrecognized gestures prompt users to try again.
 
-## Expanding the ESLint configuration
+### Profiles and Community Hub
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Profile fields:** Each user may supply name, role/year, interests, projects and experience.
+- **Visibility controls:** Profiles can be toggled Public/Private. Private entries are omitted from browsing and gesture matches.
+- **Private notes:** Authenticated users can leave notes on public profiles; notes are visible only to their author.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Additional Interactive Modules
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Mini‑games:** A set of computer-vision games with individual or competitive play; high scores are logged and viewable.
+- **Gesture photo:** During setup, users capture their profile picture via gesture, generating a linked signature for future recognition.
+- **Idle screensaver:** When no interaction is detected, the display cycles information, user artwork previews or community‑generated animations.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Technical Stack
+
+### Frontend
+
+- **React** with **Vite** for fast development and building.
+- **Computer vision** powered by OpenCV.js and MediaPipe for pose/face detection and gesture encoding.
+- UI components designed for readability from 4–6 feet.
+
+### Backend & Services
+
+- Hosted on **Supabase** with PostgreSQL for data storage.
+- Profile photos and gesture snapshots are saved in Supabase **object storage** (buckets) alongside metadata in the database.
+
+---
+
+## Development
+
+### Prerequisites
+
+- Node.js (latest LTS recommended)
+- npm
+- USB or integrated camera for local development
+- Supabase project (for backend integration)
+
+### Setup
+
+```bash
+git clone https://github.com/Spark-Me2You/me2you.git
+cd me2you
+npm ci
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Copy `.env.example` or create `.env` with:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+SUPABASE_URL=<your url>
+SUPABASE_ANON_KEY=<anon key>
 ```
+
+### Scripts
+
+- `npm run dev` – start development server
+- `npm run build` – compile TypeScript and build with Vite
+- `npm run lint` – run ESLint
+
+### CI/CD
+
+GitHub Actions workflows under `.github/workflows` ensure builds run on `main`/`dev` and provide a deployment template triggered on `main`.
+
+---
+
+## Team
+
+| Member | Role                |
+| ------ | ------------------- |
+| Nora   | Technical Developer |
+| Jen    | Technical Developer |
+| Shawn  | Technical Developer |
+| Sebah  | UI/UX Designer      |
