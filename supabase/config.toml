@@ -1,0 +1,21 @@
+# Supabase local development configuration
+# TODO: Configure for production deployment
+
+[api]
+port = 54321
+schemas = ["public", "storage"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:5173"
+additional_redirect_urls = []
+jwt_expiry = 3600
+
+# TODO: Add production configuration
