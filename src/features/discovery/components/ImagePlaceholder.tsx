@@ -1,11 +1,23 @@
 import React from 'react';
+import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
+
+/**
+ * ImagePlaceholder Component Props
+ */
+interface ImagePlaceholderProps {
+  detectedGesture?: GestureRecognitionResult | null;
+}
 
 /**
  * ImagePlaceholder Component
- * Placeholder for the right side of the discovery view
- * Future: Will display matched profile images or gesture comparison results
+ * Displays detected gesture emoji or instructional text
+ * Right side of the discovery split-screen layout
  */
-export const ImagePlaceholder: React.FC = () => {
+export const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({
+  detectedGesture,
+}) => {
+  // Check if peace sign (Victory gesture) is detected
+  const isPeaceSignDetected = detectedGesture?.gestureName === 'Victory';
   return (
     <div
       style={{
@@ -19,16 +31,32 @@ export const ImagePlaceholder: React.FC = () => {
         padding: '2rem',
       }}
     >
-      <div style={{ textAlign: 'center', color: '#666' }}>
-        <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-          Image Placeholder
-        </p>
-        <p style={{ fontSize: '0.875rem', color: '#999' }}>
-          Gesture matching results will appear here
-        </p>
-        {/* TODO: Add image element for displaying matched profile or gesture comparison */}
-        {/* <img src={imageSrc} alt="Matched profile" /> */}
-      </div>
+      {isPeaceSignDetected ? (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '8rem', lineHeight: 1 }}>✌️</div>
+          {detectedGesture.handedness && (
+            <p
+              style={{
+                fontSize: '1rem',
+                marginTop: '1rem',
+                color: '#666',
+              }}
+            >
+              {detectedGesture.handedness} hand •{' '}
+              {Math.round((detectedGesture.confidence || 0) * 100)}% confidence
+            </p>
+          )}
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', color: '#666' }}>
+          <p style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>
+            Show a peace sign! ✌️
+          </p>
+          <p style={{ fontSize: '0.875rem', color: '#999' }}>
+            The emoji will appear when you make the gesture
+          </p>
+        </div>
+      )}
     </div>
   );
 };

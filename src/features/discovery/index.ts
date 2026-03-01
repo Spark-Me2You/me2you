@@ -9,6 +9,7 @@ export * from './components/MatchOverlay';
 export * from './components/CooldownIndicator';
 export * from './components/NextButton';
 export * from './hooks/useCamera';
+export * from './hooks/useGestureRecognition';
 export * from './hooks/useGestureMatch';
 export * from './hooks/useCooldown';
 export * from './hooks/useRandomProfile';

@@ -1,15 +1,30 @@
 import React, { useRef, useEffect } from 'react';
 import { useCamera } from '../hooks/useCamera';
+import { useGestureRecognition } from '../hooks/useGestureRecognition';
+import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
+
+/**
+ * CameraView Component Props
+ */
+interface CameraViewProps {
+  onGestureDetected?: (gesture: GestureRecognitionResult | null) => void;
+}
 
 /**
  * CameraView Component
- * Displays live camera feed with canvas overlay for MediaPipe pose detection
+ * Displays live camera feed with gesture recognition
  * Left side of the discovery split-screen layout
  */
-export const CameraView: React.FC = () => {
+export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { stream, isLoading, error } = useCamera();
+  const {
+    detectedGesture,
+    isInitialized,
+    processVideoFrame,
+    error: gestureError,
+  } = useGestureRecognition();
 
   // TODO: MediaPipe initialization
   // import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
@@ -21,6 +36,11 @@ export const CameraView: React.FC = () => {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  // Pass detected gesture to parent component
+  useEffect(() => {
+    onGestureDetected?.(detectedGesture);
+  }, [detectedGesture, onGestureDetected]);
 
   // TODO: Initialize MediaPipe pose detection
   useEffect(() => {
@@ -46,35 +66,37 @@ export const CameraView: React.FC = () => {
     };
   }, []);
 
-  // TODO: Video frame processing loop
+  // Video frame processing loop for gesture detection
   useEffect(() => {
-    if (!videoRef.current || !canvasRef.current || !stream) return;
+    if (!videoRef.current || !stream || !isInitialized) return;
 
     let animationFrameId: number;
+    const videoElement = videoRef.current;
 
-    // const processFrame = () => {
-    //   if (!videoRef.current || !poseLandmarkerRef.current) return;
-    //
-    //   // Detect pose in current video frame
-    //   const results = poseLandmarkerRef.current.detectForVideo(
-    //     videoRef.current,
-    //     Date.now()
-    //   );
-    //
-    //   // Draw landmarks on canvas
-    //   drawLandmarks(canvasRef.current, results);
-    //
-    //   animationFrameId = requestAnimationFrame(processFrame);
-    // };
-    //
-    // processFrame();
+    const processFrame = () => {
+      if (!videoRef.current) return;
+
+      // Process gesture detection
+      processVideoFrame(videoRef.current, Date.now());
+
+      animationFrameId = requestAnimationFrame(processFrame);
+    };
+
+    // Start processing when video is ready
+    if (videoElement.readyState >= 2) {
+      processFrame();
+    } else {
+      videoElement.addEventListener('loadeddata', processFrame);
+    }
 
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      // Clean up event listener
+      videoElement.removeEventListener('loadeddata', processFrame);
     };
-  }, [stream]);
+  }, [stream, isInitialized, processVideoFrame]);
 
   // TODO: Helper function to draw pose landmarks on canvas
   // const drawLandmarks = (canvas: HTMLCanvasElement | null, results: any) => {
@@ -103,7 +125,10 @@ export const CameraView: React.FC = () => {
   //   });
   // };
 
-  if (error) {
+  // Combine camera and gesture errors
+  const combinedError = error || gestureError;
+
+  if (combinedError) {
     return (
       <div
         style={{
@@ -115,17 +140,19 @@ export const CameraView: React.FC = () => {
         }}
       >
         <div style={{ textAlign: 'center', color: '#d32f2f' }}>
-          <h3>Camera Error</h3>
-          <p>{error}</p>
+          <h3>{error ? 'Camera Error' : 'Gesture Recognition Error'}</h3>
+          <p>{combinedError}</p>
           <p style={{ fontSize: '0.875rem', marginTop: '1rem', color: '#666' }}>
-            Please ensure camera permissions are granted and try again.
+            {error
+              ? 'Please ensure camera permissions are granted and try again.'
+              : 'Please ensure the gesture recognizer model is downloaded.'}
           </p>
         </div>
       </div>
     );
   }
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div
         style={{
@@ -135,7 +162,11 @@ export const CameraView: React.FC = () => {
           justifyContent: 'center',
         }}
       >
-        <p>Loading camera...</p>
+        <p>
+          {isLoading
+            ? 'Loading camera...'
+            : 'Initializing gesture recognition...'}
+        </p>
       </div>
     );
   }
@@ -169,6 +200,7 @@ export const CameraView: React.FC = () => {
             objectFit: 'cover',
             borderRadius: '8px',
             backgroundColor: '#000',
+            transform: 'scaleX(-1)', // Mirror effect
           }}
         />
         <canvas
@@ -180,6 +212,7 @@ export const CameraView: React.FC = () => {
             width: '100%',
             height: '100%',
             pointerEvents: 'none',
+            transform: 'scaleX(-1)', // Mirror canvas overlay
           }}
         />
       </div>

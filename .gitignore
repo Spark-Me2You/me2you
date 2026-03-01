@@ -1,3 +1,5 @@
+/public/models/*.task
+
 # Logs
 logs
 *.log

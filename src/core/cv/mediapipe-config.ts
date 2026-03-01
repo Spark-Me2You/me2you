@@ -19,3 +19,12 @@ export const faceMeshConfig = {
   runningMode: 'VIDEO' as const,
   numFaces: 1,
 };
+
+export const gestureRecognizerConfig = {
+  modelAssetPath: '/models/gesture_recognizer.task',
+  runningMode: 'VIDEO' as const,
+  numHands: 1,
+  minHandDetectionConfidence: 0.5,
+  minHandPresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
+};

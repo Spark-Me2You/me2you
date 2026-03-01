@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
 import { CameraView } from './CameraView';
 import { ImagePlaceholder } from './ImagePlaceholder';
+import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
 
 /**
  * DiscoveryView Component
@@ -11,6 +12,8 @@ import { ImagePlaceholder } from './ImagePlaceholder';
  */
 export const DiscoveryView: React.FC = () => {
   const { transitionTo } = useAppState();
+  const [detectedGesture, setDetectedGesture] =
+    useState<GestureRecognitionResult | null>(null);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
@@ -70,7 +73,7 @@ export const DiscoveryView: React.FC = () => {
             flexDirection: 'column',
           }}
         >
-          <CameraView />
+          <CameraView onGestureDetected={setDetectedGesture} />
         </div>
 
         {/* Right side: Matched profile / results */}
@@ -81,7 +84,7 @@ export const DiscoveryView: React.FC = () => {
             flexDirection: 'column',
           }}
         >
-          <ImagePlaceholder />
+          <ImagePlaceholder detectedGesture={detectedGesture} />
         </div>
       </div>
     </div>
