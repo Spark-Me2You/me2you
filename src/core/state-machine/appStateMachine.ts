@@ -28,6 +28,8 @@ export const transitions: StateTransition[] = [
   { from: AppState.IDLE, to: AppState.AUTH, event: 'USER_DETECTED' },
   { from: AppState.AUTH, to: AppState.ONBOARDING, event: 'NEW_USER' },
   { from: AppState.AUTH, to: AppState.HUB, event: 'EXISTING_USER' },
+  { from: AppState.IDLE, to: AppState.DISCOVERY, event: 'TRY_DISCOVERY' },
+  { from: AppState.DISCOVERY, to: AppState.IDLE, event: 'EXIT_DISCOVERY' },
   // TODO: Add more transitions
 ];
 

@@ -1,6 +1,7 @@
 import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
 import { ErrorBoundary } from '@/core/monitoring';
+import { DiscoveryView } from '@/features/discovery';
 import './App.css';
 
 /**
@@ -8,7 +9,7 @@ import './App.css';
  * TODO: Implement state machine orchestrator (replaces routing)
  */
 function App() {
-  const { currentState } = useAppState();
+  const { currentState, transitionTo } = useAppState();
 
   // Render different views based on current state
   const renderCurrentState = () => {
@@ -20,6 +21,21 @@ function App() {
             <h1>me2you</h1>
             <p>State: {currentState}</p>
             <p>Waiting for user presence...</p>
+            <button
+              onClick={() => transitionTo(AppState.DISCOVERY)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                backgroundColor: '#1976d2',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                marginTop: '1rem',
+              }}
+            >
+              Try Discovery
+            </button>
           </div>
         );
 
@@ -62,14 +78,7 @@ function App() {
         );
 
       case AppState.DISCOVERY:
-        return (
-          <div>
-            {/* TODO: Render gesture discovery state */}
-            <h1>Discovery</h1>
-            <p>State: {currentState}</p>
-            <p>Match a gesture to discover profiles</p>
-          </div>
-        );
+        return <DiscoveryView />;
 
       default:
         return (
