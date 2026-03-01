@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
-import type { GestureRecognizerResult } from '@mediapipe/tasks-vision';
-import { gestureRecognizerConfig } from '@/core/cv/mediapipe-config';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
+import type { GestureRecognizerResult } from "@mediapipe/tasks-vision";
+import { gestureRecognizerConfig } from "@/core/cv/mediapipe-config";
 
 /**
  * Gesture Recognition Result Interface
@@ -10,7 +10,7 @@ import { gestureRecognizerConfig } from '@/core/cv/mediapipe-config';
 export interface GestureRecognitionResult {
   gestureName: string | null;
   confidence: number;
-  handedness: 'Left' | 'Right' | null;
+  handedness: "Left" | "Right" | null;
 }
 
 /**
@@ -42,7 +42,7 @@ export const useGestureRecognition = () => {
 
         // Load MediaPipe vision WASM files from CDN
         const vision = await FilesetResolver.forVisionTasks(
-          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
         );
 
         if (!mounted) return;
@@ -53,7 +53,7 @@ export const useGestureRecognition = () => {
           {
             baseOptions: {
               modelAssetPath: gestureRecognizerConfig.modelAssetPath,
-              delegate: 'GPU', // Use GPU acceleration if available
+              delegate: "GPU", // Use GPU acceleration if available
             },
             runningMode: gestureRecognizerConfig.runningMode,
             numHands: gestureRecognizerConfig.numHands,
@@ -61,8 +61,9 @@ export const useGestureRecognition = () => {
               gestureRecognizerConfig.minHandDetectionConfidence,
             minHandPresenceConfidence:
               gestureRecognizerConfig.minHandPresenceConfidence,
-            minTrackingConfidence: gestureRecognizerConfig.minTrackingConfidence,
-          }
+            minTrackingConfidence:
+              gestureRecognizerConfig.minTrackingConfidence,
+          },
         );
 
         if (!mounted) {
@@ -72,14 +73,15 @@ export const useGestureRecognition = () => {
 
         gestureRecognizerRef.current = gestureRecognizer;
         setIsInitialized(true);
+        console.log("Gesture recognizer model loaded successfully from CDN");
       } catch (err) {
         if (mounted) {
           const errorMessage =
             err instanceof Error
               ? err.message
-              : 'Failed to initialize gesture recognition';
+              : "Failed to initialize gesture recognition";
           setError(errorMessage);
-          console.error('GestureRecognizer initialization error:', err);
+          console.error("GestureRecognizer initialization error:", err);
         }
       }
     };
@@ -121,7 +123,7 @@ export const useGestureRecognition = () => {
             gestureName: gesture.categoryName,
             confidence: gesture.score,
             handedness: handedness
-              ? (handedness.categoryName as 'Left' | 'Right')
+              ? (handedness.categoryName as "Left" | "Right")
               : null,
           });
         } else {
@@ -130,10 +132,10 @@ export const useGestureRecognition = () => {
         }
       } catch (err) {
         // Log processing errors but don't crash
-        console.error('Error processing video frame:', err);
+        console.error("Error processing video frame:", err);
       }
     },
-    [isInitialized]
+    [isInitialized],
   );
 
   return {
