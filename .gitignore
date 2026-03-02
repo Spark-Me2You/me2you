@@ -1,4 +1,6 @@
 /public/models/*.task
+.claude
+.env
 
 # Logs
 logs

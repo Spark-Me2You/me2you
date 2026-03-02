@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
-import type { GestureRecognizerResult } from "@mediapipe/tasks-vision";
+import { createGestureRecognizer } from "@/core/cv/mediapipe-loader";
+import type {
+  GestureRecognizer,
+  GestureRecognizerResult,
+} from "@/core/cv/mediapipe-loader";
 import { gestureRecognizerConfig } from "@/core/cv/mediapipe-config";
 
 /**
@@ -40,30 +43,9 @@ export const useGestureRecognition = () => {
         setError(null);
         setIsInitialized(false);
 
-        // Load MediaPipe vision WASM files from CDN
-        const vision = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
-        );
-
-        if (!mounted) return;
-
-        // Create GestureRecognizer instance with configuration
-        const gestureRecognizer = await GestureRecognizer.createFromOptions(
-          vision,
-          {
-            baseOptions: {
-              modelAssetPath: gestureRecognizerConfig.modelAssetPath,
-              delegate: "GPU", // Use GPU acceleration if available
-            },
-            runningMode: gestureRecognizerConfig.runningMode,
-            numHands: gestureRecognizerConfig.numHands,
-            minHandDetectionConfidence:
-              gestureRecognizerConfig.minHandDetectionConfidence,
-            minHandPresenceConfidence:
-              gestureRecognizerConfig.minHandPresenceConfidence,
-            minTrackingConfidence:
-              gestureRecognizerConfig.minTrackingConfidence,
-          },
+        // Lazy load MediaPipe and create GestureRecognizer
+        const gestureRecognizer = await createGestureRecognizer(
+          gestureRecognizerConfig,
         );
 
         if (!mounted) {
@@ -73,7 +55,9 @@ export const useGestureRecognition = () => {
 
         gestureRecognizerRef.current = gestureRecognizer;
         setIsInitialized(true);
-        console.log("Gesture recognizer model loaded successfully from CDN");
+        console.log(
+          "Gesture recognizer model loaded successfully (lazy loaded)",
+        );
       } catch (err) {
         if (mounted) {
           const errorMessage =
