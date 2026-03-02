@@ -1,0 +1,67 @@
+/**
+ * MediaPipe Lazy Loader
+ * Dynamically imports MediaPipe modules only when needed to reduce initial bundle size
+ */
+
+import type {
+  FilesetResolver,
+  GestureRecognizer,
+  GestureRecognizerResult,
+} from "@mediapipe/tasks-vision";
+
+// Cache the loaded modules to avoid re-importing
+let mediapipeVisionModule: typeof import("@mediapipe/tasks-vision") | null =
+  null;
+
+/**
+ * Lazily load MediaPipe vision tasks module
+ * @returns Promise resolving to the MediaPipe vision module
+ */
+export const loadMediaPipeVision = async () => {
+  if (mediapipeVisionModule) {
+    return mediapipeVisionModule;
+  }
+
+  // Dynamic import - this creates a separate chunk
+  mediapipeVisionModule = await import("@mediapipe/tasks-vision");
+  return mediapipeVisionModule;
+};
+
+/**
+ * Create a GestureRecognizer instance with lazy loading
+ * @param config Configuration options for the gesture recognizer
+ * @returns Promise resolving to a GestureRecognizer instance
+ */
+export const createGestureRecognizer = async (config: {
+  modelAssetPath: string;
+  runningMode: "IMAGE" | "VIDEO";
+  numHands: number;
+  minHandDetectionConfidence: number;
+  minHandPresenceConfidence: number;
+  minTrackingConfidence: number;
+}): Promise<GestureRecognizer> => {
+  const { FilesetResolver, GestureRecognizer } = await loadMediaPipeVision();
+
+  // Load MediaPipe vision WASM files from CDN
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
+  );
+
+  // Create GestureRecognizer instance with configuration
+  const gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: config.modelAssetPath,
+      delegate: "GPU", // Use GPU acceleration if available
+    },
+    runningMode: config.runningMode,
+    numHands: config.numHands,
+    minHandDetectionConfidence: config.minHandDetectionConfidence,
+    minHandPresenceConfidence: config.minHandPresenceConfidence,
+    minTrackingConfidence: config.minTrackingConfidence,
+  });
+
+  return gestureRecognizer;
+};
+
+// Re-export types for convenience
+export type { GestureRecognizer, GestureRecognizerResult, FilesetResolver };
