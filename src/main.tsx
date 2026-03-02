@@ -1,17 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { StateProvider } from '@/core/state-machine'
 import './index.css'
 import App from './App.tsx'
 
 /**
  * Main entry point
- * TODO: Add all necessary providers (state, theme, etc.)
+ * Note: StateProvider is now in AppContainer (scoped to authenticated app)
  */
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <StateProvider>
-      <App />
-    </StateProvider>
+    <App />
   </StrictMode>,
 )
