@@ -7,6 +7,7 @@ import { StateProvider, useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
 import { ErrorBoundary } from '@/core/monitoring';
 import { DiscoveryView } from '@/features/discovery';
+import { MyProfileView } from '@/features/profile-editor';
 import { useAuth } from '@/core/auth/AuthContext';
 import './App.css';
 
@@ -47,6 +48,22 @@ function AppContainerContent() {
               }}
             >
               Try Discovery
+            </button>
+            <button
+              onClick={() => transitionTo(AppState.MY_PROFILE)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                backgroundColor: '#333',
+                color: '#fff',
+                border: '1px solid #555',
+                borderRadius: '4px',
+                marginTop: '1rem',
+                marginRight: '1rem',
+              }}
+            >
+              My Profile
             </button>
             <button
               onClick={handleLogout}
@@ -102,6 +119,9 @@ function AppContainerContent() {
 
       case AppState.DISCOVERY:
         return <DiscoveryView />;
+
+      case AppState.MY_PROFILE:
+        return <MyProfileView onBack={() => transitionTo(AppState.IDLE)} />;
 
       default:
         return (

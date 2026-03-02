@@ -8,6 +8,7 @@ export const AppState = {
   AUTH: 'AUTH',
   ONBOARDING: 'ONBOARDING',
   PROFILE_EDITOR: 'PROFILE_EDITOR',
+  MY_PROFILE: 'MY_PROFILE',
   HUB: 'HUB',
   DISCOVERY: 'DISCOVERY',
 } as const;
@@ -30,6 +31,8 @@ export const transitions: StateTransition[] = [
   { from: AppState.AUTH, to: AppState.HUB, event: 'EXISTING_USER' },
   { from: AppState.IDLE, to: AppState.DISCOVERY, event: 'TRY_DISCOVERY' },
   { from: AppState.DISCOVERY, to: AppState.IDLE, event: 'EXIT_DISCOVERY' },
+  { from: AppState.IDLE, to: AppState.MY_PROFILE, event: 'VIEW_MY_PROFILE' },
+  { from: AppState.MY_PROFILE, to: AppState.IDLE, event: 'EXIT_MY_PROFILE' },
   // TODO: Add more transitions
 ];
 
