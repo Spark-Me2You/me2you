@@ -70,7 +70,7 @@ export const authService = {
         .from('org_admin')
         .select('org_id, role')
         .eq('auth_user_id', authData.user.id)
-        .single();
+        .single() as { data: { org_id: string; role: string } | null; error: unknown };
 
       console.log('[authService] signInWithEmail: org_admin result:', {
         hasData: !!orgAdminData,
@@ -86,7 +86,7 @@ export const authService = {
       const { data: orgData, error: orgError } = await supabase
         .from('organization')
         .select('*')
-        .eq('id', orgAdminData.org_id)
+        .eq('id', orgAdminData.org_id as string)
         .single();
 
       console.log('[authService] signInWithEmail: organization result:', {
@@ -156,13 +156,15 @@ export const authService = {
       }
 
       // 2. Create organization record
-      const { data: orgData, error: orgError } = await supabase
+      const orgInsert = {
+        name: organizationName,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: orgData, error: orgError } = await (supabase
         .from('organization')
-        .insert({
-          name: organizationName,
-        })
+        .insert(orgInsert as any)
         .select()
-        .single();
+        .single() as unknown as Promise<{ data: Organization | null; error: unknown }>);
 
       if (orgError || !orgData) {
         // Rollback: delete auth user if org creation fails
@@ -172,16 +174,18 @@ export const authService = {
       }
 
       // 3. Create org_admin record (skip user profile for admin-only accounts)
-      const { data: orgAdminData, error: orgAdminError } = await supabase
+      const orgAdminInsert = {
+        org_id: orgData.id,
+        auth_user_id: authData.user.id,
+        email: email,
+        role: 'admin',
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: orgAdminData, error: orgAdminError } = await (supabase
         .from('org_admin')
-        .insert({
-          org_id: orgData.id,
-          auth_user_id: authData.user.id,
-          email: email,
-          role: 'admin',
-        })
+        .insert(orgAdminInsert as any)
         .select()
-        .single();
+        .single() as unknown as Promise<{ data: unknown; error: unknown }>);
 
       if (orgAdminError || !orgAdminData) {
         return { success: false, error: 'Failed to create admin record' };
@@ -232,7 +236,7 @@ export const authService = {
         .from('org_admin')
         .select('org_id')
         .eq('auth_user_id', session.user.id)
-        .single();
+        .single() as { data: { org_id: string } | null; error: unknown };
 
       console.log('[authService] getCurrentSession: org_admin result:', {
         hasData: !!orgAdminData,
@@ -240,7 +244,7 @@ export const authService = {
         error: orgAdminError
       });
 
-      if (!orgAdminData) {
+      if (!orgAdminData || orgAdminError) {
         console.log('[authService] getCurrentSession: No org_admin record found');
         return null;
       }
@@ -299,7 +303,9 @@ export const authService = {
   /**
    * Listen to auth state changes
    */
-  onAuthStateChange: (callback: (event: string, session: any) => void) => {
-    return supabase.auth.onAuthStateChange(callback);
+  onAuthStateChange: (callback: (event: string) => void) => {
+    return supabase.auth.onAuthStateChange((event) => {
+      callback(event);
+    });
   },
 };
