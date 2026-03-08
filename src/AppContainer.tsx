@@ -8,7 +8,6 @@ import { AppState } from '@/core/state-machine/appStateMachine';
 import { ErrorBoundary } from '@/core/monitoring';
 import { DiscoveryView } from '@/features/discovery';
 import { MyProfileView } from '@/features/profile-editor';
-import { useAuth } from '@/core/auth/AuthContext';
 import './App.css';
 
 /**
@@ -17,11 +16,6 @@ import './App.css';
  */
 function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
-  const { signOut, organization } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut();
-  };
 
   // Render different views based on current state
   const renderCurrentState = () => {
@@ -30,7 +24,6 @@ function AppContainerContent() {
         return (
           <div>
             <h1>me2you</h1>
-            <p>Welcome, {organization?.name || 'Organization'}!</p>
             <p>State: {currentState}</p>
             <p>Waiting for user presence...</p>
             <button
@@ -64,21 +57,6 @@ function AppContainerContent() {
               }}
             >
               My Profile
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{
-                padding: '0.75rem 1.5rem',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                backgroundColor: '#dc3545',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                marginTop: '1rem',
-              }}
-            >
-              Logout
             </button>
           </div>
         );
