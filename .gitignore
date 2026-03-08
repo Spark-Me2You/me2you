@@ -2,6 +2,11 @@
 .claude
 .env
 
+# Supabase local development
+supabase/.temp/
+supabase/.internal/
+supabase/migrations/.current_version
+
 # Logs
 logs
 *.log

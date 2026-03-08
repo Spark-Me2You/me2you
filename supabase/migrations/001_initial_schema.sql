@@ -1,28 +1,79 @@
--- SETUP
--- Enable RLS on all tables
-ALTER TABLE organization ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "user" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin ENABLE ROW LEVEL SECURITY;
-ALTER TABLE image ENABLE ROW LEVEL SECURITY;
 
--- Indexes for performance
-CREATE INDEX idx_user_org_id ON "user" (org_id);
-CREATE INDEX idx_image_owner_id ON image (owner_id);
-CREATE INDEX idx_image_org_id ON image (org_id);
-CREATE INDEX idx_admin_org_id ON admin (org_id);
+-- ============================================
+-- STEP 1: CREATE ALL TABLES
+-- ============================================
 
 -- ORGANIZATION 
 -- each organization has its own me2you (admins, users, images)
 -- e.x. SPARK, BUILDS, …
-
--- SCHEMA
 CREATE TABLE organization (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text NOT NULL,
     date_created timestamptz DEFAULT now()
 );
 
--- POLICIES
+-- USER
+-- each user / student
+-- links to auth.users for authentication
+-- per organization
+-- store the string that id card reader returns
+CREATE TABLE "user" (
+    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    org_id uuid REFERENCES organization(id) ON DELETE SET NULL,
+    username text NOT NULL,
+    display_name text NOT NULL,
+    bio text,
+    visibility text DEFAULT 'public',
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now(),
+    UNIQUE(id, org_id)
+);
+
+-- ADMIN
+-- administrative account to manage organizations
+-- used to initialize me2you installation
+CREATE TABLE admin (
+    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    org_id uuid REFERENCES organization(id) ON DELETE CASCADE,
+    email text,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+);
+
+-- IMAGE
+-- store users and their image paths
+-- store paths/metadata to bucket store
+CREATE TABLE image (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    storage_path text NOT NULL UNIQUE,
+    category text NOT NULL DEFAULT 'uncategorized',
+    is_public boolean DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================
+-- STEP 2: ENABLE ROW LEVEL SECURITY
+-- ============================================
+ALTER TABLE organization ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "user" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin ENABLE ROW LEVEL SECURITY;
+ALTER TABLE image ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- STEP 3: CREATE INDEXES FOR PERFORMANCE
+-- ============================================
+CREATE INDEX idx_user_org_id ON "user" (org_id);
+CREATE INDEX idx_image_owner_id ON image (owner_id);
+CREATE INDEX idx_image_org_id ON image (org_id);
+CREATE INDEX idx_admin_org_id ON admin (org_id);
+
+-- ============================================
+-- STEP 4: CREATE POLICIES
+-- ============================================
+
+-- ORGANIZATION POLICIES
 -- Users can view their own organization
 CREATE POLICY "Users can view their organization"
 ON organization FOR SELECT
@@ -58,25 +109,7 @@ WITH CHECK (
     )
 );
 
--- USER
--- each user / student
--- links to auth.users for authentication
--- per organization
--- store the string that id card reader returns
-
--- SCHEMA
-CREATE TABLE "user" (
-    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    org_id uuid REFERENCES organization(id) ON DELETE SET NULL,
-    username text NOT NULL,
-    display_name text NOT NULL,
-    bio text,
-    visibility text DEFAULT 'public',
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now(),
-    UNIQUE(id, org_id)
-);
-
+-- USER POLICIES
 -- Users can view their own profile
 CREATE POLICY "Users can view own profile"
 ON "user" FOR SELECT
@@ -148,20 +181,7 @@ USING (
     )
 );
 
--- ADMIN
--- administrative account to manage organizations
--- used to initialize me2you installation
-
--- SCHEMA
-CREATE TABLE admin (
-    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    org_id uuid REFERENCES organization(id) ON DELETE CASCADE,
-    email text,
-    created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
-);
-
--- POLICIES
+-- ADMIN POLICIES
 -- Admins can view themselves
 CREATE POLICY "Admins can view own record"
 ON admin FOR SELECT
@@ -185,22 +205,7 @@ TO authenticated
 USING (id = auth.uid())
 WITH CHECK (id = auth.uid());
 
--- IMAGE
--- store users and their image paths
--- store paths/metadata to bucket store
-
--- SCHEMA
-CREATE TABLE image (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    org_id uuid NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    storage_path text NOT NULL UNIQUE,
-    category text NOT NULL DEFAULT 'uncategorized',
-    is_public boolean DEFAULT false,
-    created_at timestamptz NOT NULL DEFAULT now()
-);
-
--- POLICIES
+-- IMAGE POLICIES
 -- Users can view their own images
 CREATE POLICY "Users can view own images"
 ON image FOR SELECT
