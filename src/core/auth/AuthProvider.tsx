@@ -1,11 +1,13 @@
 /**
  * Auth Provider
  * Manages authentication state and provides auth context to the app
+ * Supports both admin and kiosk authentication modes
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { AuthContext } from './AuthContext';
+import { AuthContext, type AuthMode } from './AuthContext';
 import { adminAuthService, type AdminUser } from '@/core/supabase/adminAuth';
+import { kioskAuthService } from '@/core/supabase/kioskAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthProviderProps {
@@ -15,16 +17,20 @@ interface AuthProviderProps {
 /**
  * Auth Provider Component
  * Wraps the app and provides authentication state and methods
+ * Manages both admin and kiosk authentication modes
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<AuthMode>('unauthenticated');
+  const [kioskOrgId, setKioskOrgId] = useState<string | null>(null);
 
   /**
    * Initialize authentication on mount
    * Checks for an existing session when the app loads
+   * Detects whether it's an admin or kiosk session based on JWT metadata
    */
   useEffect(() => {
     let isMounted = true;
@@ -33,16 +39,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         console.log('[AuthProvider] Initializing auth...');
-        const adminSession = await adminAuthService.getCurrentAdmin();
 
-        if (isMounted) {
+        // First, check if there's a kiosk session
+        const kioskSession = await kioskAuthService.getCurrentKioskSession();
+
+        if (kioskSession) {
+          // Kiosk session found
+          if (isMounted) {
+            console.log('[AuthProvider] Found existing kiosk session for org:', kioskSession.org_id);
+            setUser(kioskSession.user);
+            setSession(kioskSession.session);
+            setKioskOrgId(kioskSession.org_id);
+            setAuthMode('kiosk');
+            setAdmin(null); // No admin in kiosk mode
+          }
+        } else {
+          // Check for admin session
+          const adminSession = await adminAuthService.getCurrentAdmin();
+
           if (adminSession) {
-            console.log('[AuthProvider] Found existing admin session:', adminSession.admin.email);
-            setUser(adminSession.user);
-            setAdmin(adminSession.admin);
-            setSession(adminSession.session);
+            if (isMounted) {
+              console.log('[AuthProvider] Found existing admin session:', adminSession.admin.email);
+              setUser(adminSession.user);
+              setAdmin(adminSession.admin);
+              setSession(adminSession.session);
+              setAuthMode('admin');
+              setKioskOrgId(null); // No org in admin mode
+            }
           } else {
-            console.log('[AuthProvider] No existing session found');
+            if (isMounted) {
+              console.log('[AuthProvider] No existing session found');
+              setAuthMode('unauthenticated');
+            }
           }
         }
       } catch (error) {
@@ -52,10 +80,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setAdmin(null);
           setSession(null);
+          setAuthMode('unauthenticated');
+          setKioskOrgId(null);
         }
       } finally {
         if (isMounted) {
-          console.log('[AuthProvider] Auth initialization complete');
+          console.log('[AuthProvider] Auth initialization complete. Mode:', authMode);
           setIsLoading(false);
           isInitializing = false;
         }
@@ -91,15 +121,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
             setAdmin(null);
             setSession(null);
+            setAuthMode('unauthenticated');
+            setKioskOrgId(null);
           } else if (event === 'SIGNED_IN' && newSession) {
-            // Re-fetch admin data when user signs in (after login)
-            console.log('[AuthProvider] User signed in, fetching admin data...');
-            const adminSession = await adminAuthService.getCurrentAdmin();
-            if (adminSession && isMounted) {
-              console.log('[AuthProvider] Admin data fetched:', adminSession.admin.email);
-              setUser(adminSession.user);
-              setAdmin(adminSession.admin);
-              setSession(adminSession.session);
+            // Determine if this is an admin or kiosk sign-in based on JWT metadata
+            console.log('[AuthProvider] User signed in, determining auth mode...');
+
+            const { is_kiosk, org_id } = newSession.user.app_metadata;
+
+            if (is_kiosk && org_id) {
+              // Kiosk session
+              console.log('[AuthProvider] Kiosk session detected for org:', org_id);
+              if (isMounted) {
+                setUser(newSession.user);
+                setSession(newSession);
+                setKioskOrgId(org_id);
+                setAuthMode('kiosk');
+                setAdmin(null);
+                console.log('[AuthProvider] Auth mode changed: kiosk');
+              }
+            } else {
+              // Admin session - verify admin table
+              console.log('[AuthProvider] Admin session detected, fetching admin data...');
+              const adminSession = await adminAuthService.getCurrentAdmin();
+              if (adminSession && isMounted) {
+                console.log('[AuthProvider] Admin data fetched:', adminSession.admin.email);
+                setUser(adminSession.user);
+                setAdmin(adminSession.admin);
+                setSession(adminSession.session);
+                setAuthMode('admin');
+                setKioskOrgId(null);
+                console.log('[AuthProvider] Auth mode changed: admin');
+              }
             }
           } else if (event === 'TOKEN_REFRESHED' && newSession) {
             // Update session when token is refreshed
@@ -121,20 +174,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Sign in admin with email and password
-   *
-   * TODO: This calls the adminAuthService.signInWithEmail method
-   * Currently throws an error because the service is not implemented
    */
   const signIn = async (email: string, password: string) => {
     try {
-      // TODO: Call adminAuthService.signInWithEmail
-      // This will authenticate with Supabase and verify admin status
       const result = await adminAuthService.signInWithEmail(email, password);
 
-      // Update local state with authenticated user
+      // Update local state with authenticated admin
+      console.log('[AuthProvider] Admin signed in:', result.admin.email);
       setUser(result.user);
       setAdmin(result.admin);
       setSession(result.session);
+      setAuthMode('admin');
+      setKioskOrgId(null);
     } catch (error) {
       // Re-throw error to be handled by the login page
       throw error;
@@ -142,23 +193,86 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Sign out current admin
-   *
-   * TODO: This calls the adminAuthService.signOut method
-   * Currently throws an error because the service is not implemented
+   * Sign out current user (admin or kiosk)
    */
   const signOut = async () => {
     try {
-      // TODO: Call adminAuthService.signOut
-      // This will sign out from Supabase
-      await adminAuthService.signOut();
+      console.log('[AuthProvider] Signing out from mode:', authMode);
+
+      if (authMode === 'admin') {
+        await adminAuthService.signOut();
+        console.log('[AuthProvider] Admin signed out');
+      } else if (authMode === 'kiosk') {
+        await kioskAuthService.exitKioskMode();
+        console.log('[AuthProvider] Kiosk session ended');
+      }
 
       // Clear local auth state
       setUser(null);
       setAdmin(null);
       setSession(null);
+      setAuthMode('unauthenticated');
+      setKioskOrgId(null);
     } catch (error) {
       console.error('Sign out failed:', error);
+      // Re-throw error to be handled by the UI
+      throw error;
+    }
+  };
+
+  /**
+   * Mint a kiosk session for the given organization
+   * This transitions from admin mode to kiosk mode
+   */
+  const mintKioskSession = async (orgId: string) => {
+    try {
+      console.log('[AuthProvider] Minting kiosk session for org:', orgId);
+
+      // Call kiosk auth service to mint session
+      // This will:
+      // 1. Call edge function
+      // 2. Sign out admin
+      // 3. Sign in as kiosk user
+      const kioskSession = await kioskAuthService.mintKioskSession(orgId);
+
+      // Update local state with kiosk session
+      console.log('[AuthProvider] Kiosk session minted for org:', kioskSession.org_id);
+      console.log('[AuthProvider] Kiosk user ID:', kioskSession.user.id);
+      console.log('[AuthProvider] Kiosk token in app_metadata:', JSON.stringify(kioskSession.user.app_metadata));
+
+      setUser(kioskSession.user);
+      setSession(kioskSession.session);
+      setKioskOrgId(kioskSession.org_id);
+      setAuthMode('kiosk');
+      setAdmin(null); // Clear admin state
+
+      console.log('[AuthProvider] Auth mode changed: kiosk');
+    } catch (error) {
+      console.error('[AuthProvider] Failed to mint kiosk session:', error);
+      // Re-throw error to be handled by the UI
+      throw error;
+    }
+  };
+
+  /**
+   * Exit kiosk mode and return to unauthenticated state
+   */
+  const exitKioskMode = async () => {
+    try {
+      console.log('[AuthProvider] Exiting kiosk mode');
+
+      await kioskAuthService.exitKioskMode();
+
+      // Clear all auth state
+      setUser(null);
+      setAdmin(null);
+      setSession(null);
+      setAuthMode('unauthenticated');
+      setKioskOrgId(null);
+
+      console.log('[AuthProvider] Kiosk mode exited');
+    } catch (error) {
+      console.error('[AuthProvider] Failed to exit kiosk mode:', error);
       // Re-throw error to be handled by the UI
       throw error;
     }
@@ -174,11 +288,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       admin,
       session,
       isLoading,
-      isAuthenticated: !!session && !!admin,
+      isAuthenticated: !!session,
+      authMode,
+      kioskOrgId,
       signIn,
       signOut,
+      mintKioskSession,
+      exitKioskMode,
     }),
-    [user, admin, session, isLoading]
+    [user, admin, session, isLoading, authMode, kioskOrgId]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
