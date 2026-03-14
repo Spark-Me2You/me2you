@@ -127,7 +127,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Determine if this is an admin or kiosk sign-in based on JWT metadata
             console.log('[AuthProvider] User signed in, determining auth mode...');
 
-            const { is_kiosk, org_id } = newSession.user.app_metadata;
+            // IMPORTANT: Custom claims from admin.createSession() are in user_metadata, not app_metadata
+            const { is_kiosk, org_id } = newSession.user.user_metadata;
 
             if (is_kiosk && org_id) {
               // Kiosk session

@@ -106,52 +106,34 @@ serve(async (req) => {
 
     console.log('[mint-kiosk-session] Kiosk user found:', kioskUser.id);
 
-    // 5. Update kiosk user's app_metadata with org_id
-    const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      kioskUser.id,
-      {
-        app_metadata: {
-          is_kiosk: true,
-          org_id: org_id,
-        },
-      }
-    );
-
-    if (updateError || !updatedUser) {
-      console.error('[mint-kiosk-session] Failed to update kiosk user metadata:', updateError);
-      throw new Error('Failed to update kiosk user metadata');
-    }
-
-    console.log('[mint-kiosk-session] Kiosk user metadata updated');
-
-    // 6. Generate session token for kiosk user
-    // Note: We use 'magiclink' type to generate a token that can be exchanged for a session
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: KIOSK_EMAIL,
+    // 5. Create session with custom claims (org_id injected per-session, not per-user)
+    // IMPORTANT: We don't update app_metadata on the kiosk user - that would create a race condition
+    // where concurrent kiosk activations overwrite each other's org_id.
+    // Instead, we inject org_id directly into THIS session's JWT using custom_claims.
+    // Each session gets its own independent org_id token, preventing race conditions.
+    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
+      user_id: kioskUser.id,
+      custom_claims: {
+        is_kiosk: true,
+        org_id: org_id,
+      },
     });
 
-    if (sessionError || !sessionData) {
-      console.error('[mint-kiosk-session] Failed to generate session:', sessionError);
-      throw new Error('Failed to generate kiosk session');
+    if (sessionError || !sessionData?.session) {
+      console.error('[mint-kiosk-session] Failed to create session:', sessionError);
+      throw new Error('Failed to create kiosk session');
     }
 
-    console.log('[mint-kiosk-session] Kiosk session token generated');
+    console.log('[mint-kiosk-session] Kiosk session created with org_id:', org_id);
+    console.log('[mint-kiosk-session] Session tokens generated for user:', kioskUser.id);
 
-    // 7. Extract the token hash from the magic link
-    // The properties.hashed_token is what we need to exchange for a session
-    const tokenHash = sessionData.properties.hashed_token;
-
-    if (!tokenHash) {
-      console.error('[mint-kiosk-session] No token hash in session data');
-      throw new Error('Failed to extract token from session');
-    }
-
-    // 8. Return kiosk session token
+    // 6. Return session tokens
+    // The client will use these tokens to establish the kiosk session
     return new Response(
       JSON.stringify({
         success: true,
-        kiosk_token: tokenHash,
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
         kiosk_user_id: kioskUser.id,
         org_id: org_id,
       }),
