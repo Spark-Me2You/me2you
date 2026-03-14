@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AuthContext } from './AuthContext';
-import { adminAuthService, type AdminUser } from '@/core/supabase/auth';
+import { adminAuthService, type AdminUser } from '@/core/supabase/adminAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthProviderProps {

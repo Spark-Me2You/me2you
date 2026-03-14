@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { AdminUser } from '@/core/supabase/auth';
+import type { AdminUser } from '@/core/supabase/adminAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
 /**
