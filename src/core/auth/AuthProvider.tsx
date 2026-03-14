@@ -24,61 +24,97 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * Initialize authentication on mount
-   * TODO: This checks for an existing session when the app loads
-   * Currently returns null because adminAuthService.getCurrentAdmin is not implemented
+   * Checks for an existing session when the app loads
    */
   useEffect(() => {
+    let isMounted = true;
+    let isInitializing = true;
+
     const initializeAuth = async () => {
       try {
-        // TODO: This will check if there's an existing session in localStorage
+        console.log('[AuthProvider] Initializing auth...');
         const adminSession = await adminAuthService.getCurrentAdmin();
 
-        if (adminSession) {
-          setUser(adminSession.user);
-          setAdmin(adminSession.admin);
-          setSession(adminSession.session);
+        if (isMounted) {
+          if (adminSession) {
+            console.log('[AuthProvider] Found existing admin session:', adminSession.admin.email);
+            setUser(adminSession.user);
+            setAdmin(adminSession.admin);
+            setSession(adminSession.session);
+          } else {
+            console.log('[AuthProvider] No existing session found');
+          }
         }
       } catch (error) {
-        console.error('Failed to initialize auth:', error);
+        console.error('[AuthProvider] Failed to initialize auth:', error);
+        // Clear auth state on error
+        if (isMounted) {
+          setUser(null);
+          setAdmin(null);
+          setSession(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          console.log('[AuthProvider] Auth initialization complete');
+          setIsLoading(false);
+          isInitializing = false;
+        }
       }
     };
 
+    // Start initialization
     initializeAuth();
 
     /**
      * Subscribe to auth state changes
-     * TODO: This listens for auth events like SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED
-     * Currently returns a mock subscription because onAuthStateChange is not implemented
+     * Listens for auth events like SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED
+     *
+     * NOTE: onAuthStateChange fires immediately with current state on subscribe.
+     * We skip handling this initial event to avoid duplicate calls during initialization.
      */
     const { data: { subscription } } = adminAuthService.onAuthStateChange(
       async (event, newSession) => {
-        console.log('Auth state changed:', event);
+        console.log('[AuthProvider] Auth state changed:', event, newSession ? 'session exists' : 'no session');
 
-        // TODO: Handle different auth events
-        if (event === 'SIGNED_OUT') {
-          // Clear auth state when user signs out
-          setUser(null);
-          setAdmin(null);
-          setSession(null);
-        } else if (event === 'SIGNED_IN' && newSession) {
-          // Re-fetch admin data when user signs in
-          const adminSession = await adminAuthService.getCurrentAdmin();
-          if (adminSession) {
-            setUser(adminSession.user);
-            setAdmin(adminSession.admin);
-            setSession(adminSession.session);
+        // Skip events during initialization to avoid duplicate fetches
+        if (isInitializing) {
+          console.log('[AuthProvider] Skipping event during initialization');
+          return;
+        }
+
+        if (!isMounted) return;
+
+        try {
+          if (event === 'SIGNED_OUT') {
+            // Clear auth state when user signs out
+            console.log('[AuthProvider] User signed out, clearing state');
+            setUser(null);
+            setAdmin(null);
+            setSession(null);
+          } else if (event === 'SIGNED_IN' && newSession) {
+            // Re-fetch admin data when user signs in (after login)
+            console.log('[AuthProvider] User signed in, fetching admin data...');
+            const adminSession = await adminAuthService.getCurrentAdmin();
+            if (adminSession && isMounted) {
+              console.log('[AuthProvider] Admin data fetched:', adminSession.admin.email);
+              setUser(adminSession.user);
+              setAdmin(adminSession.admin);
+              setSession(adminSession.session);
+            }
+          } else if (event === 'TOKEN_REFRESHED' && newSession) {
+            // Update session when token is refreshed
+            console.log('[AuthProvider] Token refreshed');
+            setSession(newSession);
           }
-        } else if (event === 'TOKEN_REFRESHED' && newSession) {
-          // Update session when token is refreshed
-          setSession(newSession);
+        } catch (error) {
+          console.error('[AuthProvider] Error handling auth state change:', error);
         }
       }
     );
 
     // Cleanup: Unsubscribe when component unmounts
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

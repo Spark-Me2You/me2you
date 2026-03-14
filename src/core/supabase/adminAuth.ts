@@ -100,32 +100,54 @@ export const adminAuthService = {
    * @returns Promise with current admin session or null
    */
   getCurrentAdmin: async (): Promise<{ user: User; admin: AdminUser; session: Session } | null> => {
-    // Step 1: Get current session from Supabase
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    try {
+      // Step 1: Get current session from Supabase
+      console.log('[adminAuth] Getting current session...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    // Step 2: Return null if no session
-    if (sessionError || !session) {
+      // Step 2: Return null if no session
+      if (sessionError) {
+        console.log('[adminAuth] Session error:', sessionError.message);
+        return null;
+      }
+
+      if (!session) {
+        console.log('[adminAuth] No session found');
+        return null;
+      }
+
+      console.log('[adminAuth] Session found for user:', session.user.id);
+
+      // Step 3: Verify user is in admin table
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      // Step 4: Return null if not an admin
+      if (adminError) {
+        console.log('[adminAuth] Admin query error:', adminError.message, adminError.code);
+        return null;
+      }
+
+      if (!adminData) {
+        console.log('[adminAuth] User not found in admin table');
+        return null;
+      }
+
+      console.log('[adminAuth] Admin verified:', adminData.email);
+
+      // Step 5: Return user, admin, and session
+      return {
+        user: session.user,
+        admin: adminData as AdminUser,
+        session,
+      };
+    } catch (error) {
+      console.error('[adminAuth] Unexpected error in getCurrentAdmin:', error);
       return null;
     }
-
-    // Step 3: Verify user is in admin table
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-
-    // Step 4: Return null if not an admin
-    if (adminError || !adminData) {
-      return null;
-    }
-
-    // Step 5: Return user, admin, and session
-    return {
-      user: session.user,
-      admin: adminData as AdminUser,
-      session,
-    };
   },
 
   /**
