@@ -1,17 +1,21 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { StateProvider } from '@/core/state-machine'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from '@/core/auth'
 import './index.css'
 import App from './App.tsx'
 
 /**
  * Main entry point
- * TODO: Add all necessary providers (state, theme, etc.)
+ * Wraps app with Router and Auth providers
+ * Note: StateProvider is now in AppContainer.tsx
  */
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <StateProvider>
-      <App />
-    </StateProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

@@ -8,6 +8,7 @@ import { AppState } from '@/core/state-machine/appStateMachine';
 import { ErrorBoundary } from '@/core/monitoring';
 import { DiscoveryView } from '@/features/discovery';
 import { MyProfileView } from '@/features/profile-editor';
+import { useAuth } from '@/core/auth';
 import './App.css';
 
 /**
@@ -16,6 +17,7 @@ import './App.css';
  */
 function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
+  const { signOut, admin } = useAuth();
 
   // Render different views based on current state
   const renderCurrentState = () => {
@@ -25,6 +27,7 @@ function AppContainerContent() {
           <div>
             <h1>me2you</h1>
             <p>State: {currentState}</p>
+            {admin && <p style={{ color: '#666', fontSize: '0.9rem' }}>Logged in as: {admin.email}</p>}
             <p>Waiting for user presence...</p>
             <button
               onClick={() => transitionTo(AppState.DISCOVERY)}
@@ -57,6 +60,28 @@ function AppContainerContent() {
               }}
             >
               My Profile
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await signOut();
+                  // Router will automatically redirect to /login
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                }
+              }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                backgroundColor: '#d32f2f',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                marginTop: '1rem',
+              }}
+            >
+              Admin Logout
             </button>
           </div>
         );
