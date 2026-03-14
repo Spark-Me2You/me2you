@@ -1,6 +1,7 @@
 // Supabase exports
-// TODO: Export all public APIs from this module
+// Centralized exports for all Supabase-related modules
 
 export * from './client';
-export * from './auth';
+export * from './adminAuth';
+export * from './userAuth';
 export * from './storage';

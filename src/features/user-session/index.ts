@@ -1,5 +1,8 @@
-// Auth Session exports
-// TODO: Export all public APIs from this module
+/**
+ * User Session Module
+ * Handles user authentication via card swipe and session management
+ * TODO: Implement card swipe authentication and session management
+ */
 
 export * from './components/CardSwipePrompt';
 export * from './components/SessionTimeoutWarning';
