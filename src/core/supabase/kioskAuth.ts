@@ -87,7 +87,7 @@ export const kioskAuthService = {
       refresh_token: data.refresh_token!,
     });
 
-    if (sessionError || !sessionData.session) {
+    if (sessionError || !sessionData.session || !sessionData.user) {
       console.error('[kioskAuth] Failed to set kiosk session:', sessionError);
       throw new Error('Failed to set kiosk session');
     }
