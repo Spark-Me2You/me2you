@@ -6,3 +6,4 @@
 export * from './AuthContext';
 export * from './AuthProvider';
 export * from './ProtectedRoute';
+export * from './AdminOnlyRoute';

@@ -14,22 +14,28 @@ import { LoginForm } from './LoginForm';
  */
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, isAuthenticated, authMode } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * Redirect to app if already authenticated
+   * Redirect based on auth mode:
+   * - Admin: redirect to org selector
+   * - Kiosk: redirect to app
    */
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && authMode === 'admin') {
+      console.log('[AdminLoginPage] Already authenticated as admin, redirecting to org selector');
+      navigate('/select-org', { replace: true });
+    } else if (isAuthenticated && authMode === 'kiosk') {
+      console.log('[AdminLoginPage] Already authenticated as kiosk, redirecting to app');
       navigate('/app', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authMode, navigate]);
 
   /**
    * Handle form submission
-   * TODO: Currently will throw error because adminAuthService.signInWithEmail is not implemented
+   * On success, navigates to org selector (not directly to app)
    */
   const handleSubmit = async (email: string, password: string) => {
     setError(null);
@@ -38,8 +44,10 @@ export const AdminLoginPage: React.FC = () => {
     try {
       // Call signIn from auth context
       await signIn(email, password);
-      // On success, navigate to app
-      navigate('/app', { replace: true });
+      console.log('[AdminLoginPage] Admin signed in, navigating to org selector');
+
+      // On success, navigate to org selector
+      navigate('/select-org', { replace: true });
     } catch (err) {
       // Display error message
       setError(err instanceof Error ? err.message : 'Failed to sign in');
