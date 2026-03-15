@@ -162,14 +162,18 @@ Serverless function that mints kiosk sessions:
 
 **Input:**
 ```json
-{ "org_id": "uuid-of-organization" }
+{
+  "org_id": "uuid-of-organization",
+  "otp": "one-time-passcode-from-admin-login"
+}
 ```
 
 **Output (Success):**
 ```json
 {
   "success": true,
-  "kiosk_token": "hashed-token-string",
+  "access_token": "jwt-access-token",
+  "refresh_token": "jwt-refresh-token",
   "kiosk_user_id": "uuid-of-kiosk-user",
   "org_id": "uuid-of-organization"
 }
@@ -186,7 +190,10 @@ Serverless function that mints kiosk sessions:
 **Steps:**
 1. Verify admin authentication via `Authorization` header
 2. Validate admin has access to requested `org_id`
-3. Lookup kiosk user account (`kiosk@me2you.app`)
+3. Verify the provided OTP server-side (e.g., using Supabase Auth OTP APIs)
+4. Lookup kiosk user account (`kiosk@me2you.app`)
+5. Mint a Supabase session for the kiosk user scoped to the requested `org_id`
+6. Return the `access_token` and `refresh_token` along with `kiosk_user_id` and `org_id`
 4. Update kiosk user's `app_metadata` with `{ is_kiosk: true, org_id }`
 5. Generate magic link token using Supabase Admin API
 6. Return token to client
