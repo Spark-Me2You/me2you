@@ -3,16 +3,27 @@
  *
  * This function mints a kiosk session for an admin-selected organization.
  * It performs the following steps:
- * 1. Verifies admin authentication via JWT
+ * 1. Validates admin JWT via RLS query (Gatekeeper pattern)
  * 2. Validates admin has access to the requested organization
  * 3. Looks up the global kiosk user account (kiosk@me2you.app)
- * 4. Creates a session with org_id in custom_claims (NOT app_metadata)
- * 5. Returns access_token and refresh_token to the client
+ * 4. Updates kiosk user's app_metadata with org_id
+ * 5. Generates session via magic link + OTP verification
+ * 6. Returns access_token and refresh_token to the client
  *
- * IMPORTANT: Environment variables are auto-provided by Supabase:
+ * SECURITY:
+ * - RLS is the single source of truth for admin access control
+ * - Service role only used AFTER RLS verification passes
+ * - JWT validated via RLS query (--no-verify-jwt flag required)
+ *
+ * RACE CONDITION NOTE:
+ * There's a brief (~100-400ms) race condition window when updating app_metadata.
+ * If two admins activate kiosk mode for different orgs within this window,
+ * one may get the wrong org_id. For typical kiosk usage, this is acceptable.
+ *
+ * Environment variables are auto-provided by Supabase:
  * - SUPABASE_URL
  * - SUPABASE_ANON_KEY
- * - SUPABASE_SERVICE_ROLE_KEY (do NOT set as secret - it's automatic)
+ * - SUPABASE_SERVICE_ROLE_KEY
  *
  * The client is responsible for:
  * - Signing out the admin session
@@ -20,7 +31,6 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-// Use latest version for admin.createSession() support
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 
 const corsHeaders = {

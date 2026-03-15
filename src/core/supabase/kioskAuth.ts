@@ -59,7 +59,7 @@ export const kioskAuthService = {
   mintKioskSession: async (orgId: string): Promise<KioskSession> => {
     console.log('[kioskAuth] Minting kiosk session for org:', orgId);
 
-    // 1. Call edge function to create kiosk session with custom claims
+    // 1. Call edge function to create kiosk session
     const { data, error } = await supabase.functions.invoke<MintKioskSessionResponse>(
       'mint-kiosk-session',
       {
