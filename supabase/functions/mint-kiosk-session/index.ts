@@ -133,8 +133,14 @@ serve(async (req) => {
     const KIOSK_EMAIL = 'kiosk@me2you.app';
     console.log('[mint-kiosk-session] Looking up kiosk user:', KIOSK_EMAIL);
 
-    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    const kioskUser = users?.find(u => u.email === KIOSK_EMAIL);
+    const { data, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) {
+      console.error('[mint-kiosk-session] Error listing users:', listError);
+      throw new Error('Failed to list users while looking up kiosk account.');
+    }
+
+    const users = data?.users ?? [];
+    const kioskUser = users.find((u) => u.email === KIOSK_EMAIL);
 
     if (!kioskUser) {
       console.error('[mint-kiosk-session] Kiosk user not found:', KIOSK_EMAIL);
