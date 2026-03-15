@@ -88,16 +88,36 @@ serve(async (req) => {
       }
     );
 
-    // 4. RLS verification: This query only succeeds if:
-    //    - JWT is valid (validated by Supabase or by getUser call below)
-    //    - Admin's RLS policies allow access to this org_id
+    // 4. RLS verification:
+    //    - First, verify the JWT and get the caller's user id
+    console.log('[mint-kiosk-session] Fetching authenticated user via RLS client...');
+    const { data: authUserResult, error: authUserError } = await supabaseRLS.auth.getUser();
+
+    if (authUserError || !authUserResult?.user) {
+      console.error('[mint-kiosk-session] Failed to retrieve authenticated user:', authUserError?.message);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid or missing authentication',
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const user = authUserResult.user;
+
+    //    - Then, verify that this user is an admin for the requested org_id
     console.log('[mint-kiosk-session] Verifying admin access via RLS...');
 
     const { data: adminCheck, error: rlsError } = await supabaseRLS
       .from('admin')
       .select('id')
       .eq('org_id', org_id)
-      .single();
+      .eq('id', user.id)
+      .maybeSingle();
 
     if (rlsError || !adminCheck) {
       console.error('[mint-kiosk-session] RLS gate failed:', rlsError?.message);
