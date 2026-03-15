@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { supabase } from '@/core/supabase';
