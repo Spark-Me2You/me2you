@@ -35,6 +35,13 @@ export const OrgSelectorPage: React.FC = () => {
 
   // Fetch organizations on mount
   useEffect(() => {
+    // If the admin does not have an org_id, stop loading and show an error instead of querying
+    if (!admin?.org_id) {
+      setIsLoading(false);
+      setError('Admin organization is not available.');
+      return;
+    }
+
     const fetchOrgs = async () => {
       try {
         console.log('[OrgSelector] Fetching organizations for admin:', admin?.id);
@@ -43,7 +50,7 @@ export const OrgSelectorPage: React.FC = () => {
         const { data, error: fetchError } = await supabase
           .from('organization')
           .select('id, name')
-          .eq('id', admin?.org_id || ''); // Admin can only see their own org
+          .eq('id', admin.org_id); // Admin can only see their own org
 
         if (fetchError) {
           console.error('[OrgSelector] Failed to fetch organizations:', fetchError);
