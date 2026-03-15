@@ -10,9 +10,10 @@
 
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import type { FC, ReactNode } from 'react';
 
 interface AdminOnlyRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 /**
@@ -23,7 +24,7 @@ interface AdminOnlyRouteProps {
  * Redirects to /login if not authenticated.
  * Redirects to /app if authenticated as kiosk.
  */
-export const AdminOnlyRoute: React.FC<AdminOnlyRouteProps> = ({ children }) => {
+export const AdminOnlyRoute: FC<AdminOnlyRouteProps> = ({ children }) => {
   const { isLoading, isAuthenticated, authMode } = useAuth();
 
   // Show loading spinner while checking auth
