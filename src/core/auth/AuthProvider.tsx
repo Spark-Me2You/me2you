@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     let isInitializing = true;
 
     const initializeAuth = async () => {
+      let detectedMode: AuthMode = 'unauthenticated';
       try {
         console.log('[AuthProvider] Initializing auth...');
 
@@ -50,7 +51,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(kioskSession.user);
             setSession(kioskSession.session);
             setKioskOrgId(kioskSession.org_id);
-            setAuthMode('kiosk');
+            detectedMode = 'kiosk';
+            setAuthMode(detectedMode);
             setAdmin(null); // No admin in kiosk mode
           }
         } else {
@@ -63,13 +65,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUser(adminSession.user);
               setAdmin(adminSession.admin);
               setSession(adminSession.session);
-              setAuthMode('admin');
+              detectedMode = 'admin';
+              setAuthMode(detectedMode);
               setKioskOrgId(null); // No org in admin mode
             }
           } else {
             if (isMounted) {
               console.log('[AuthProvider] No existing session found');
-              setAuthMode('unauthenticated');
+              detectedMode = 'unauthenticated';
+              setAuthMode(detectedMode);
             }
           }
         }
@@ -80,12 +84,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setAdmin(null);
           setSession(null);
-          setAuthMode('unauthenticated');
+          detectedMode = 'unauthenticated';
+          setAuthMode(detectedMode);
           setKioskOrgId(null);
         }
       } finally {
         if (isMounted) {
-          console.log('[AuthProvider] Auth initialization complete. Mode:', authMode);
+          console.log('[AuthProvider] Auth initialization complete. Mode:', detectedMode);
           setIsLoading(false);
           isInitializing = false;
         }
