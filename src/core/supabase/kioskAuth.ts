@@ -76,7 +76,11 @@ export const kioskAuthService = {
 
     // 2. Sign out current admin session
     console.log('[kioskAuth] Signing out admin session');
-    await supabase.auth.signOut();
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      console.error('[kioskAuth] Failed to sign out admin session:', signOutError);
+      throw new Error('Failed to sign out admin session before entering kiosk mode');
+    }
     console.log('[kioskAuth] Admin signed out');
 
     // 3. Set the kiosk session using the tokens from the edge function
