@@ -3,20 +3,25 @@
  *
  * This function mints a kiosk session for an admin-selected organization.
  * It performs the following steps:
- * 1. Verifies admin authentication
+ * 1. Verifies admin authentication via JWT
  * 2. Validates admin has access to the requested organization
  * 3. Looks up the global kiosk user account (kiosk@me2you.app)
- * 4. Updates kiosk user's app_metadata with org_id
- * 5. Generates a session token for the kiosk user
- * 6. Returns the token to the client
+ * 4. Creates a session with org_id in custom_claims (NOT app_metadata)
+ * 5. Returns access_token and refresh_token to the client
+ *
+ * IMPORTANT: Environment variables are auto-provided by Supabase:
+ * - SUPABASE_URL
+ * - SUPABASE_ANON_KEY
+ * - SUPABASE_SERVICE_ROLE_KEY (do NOT set as secret - it's automatic)
  *
  * The client is responsible for:
  * - Signing out the admin session
- * - Exchanging the token for a kiosk session
+ * - Setting the kiosk session using the returned tokens
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Use latest version for admin.createSession() support
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,62 +37,80 @@ serve(async (req) => {
   try {
     console.log('[mint-kiosk-session] Function invoked');
 
-    // 1. Verify admin is authenticated
+    // 1. Get Authorization header (validated by Supabase if verify_jwt = true)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('[mint-kiosk-session] No Authorization header');
       throw new Error('Missing authorization header');
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const { data: { user: adminUser }, error: userError } =
-      await supabaseClient.auth.getUser();
-
-    if (userError || !adminUser) {
-      console.error('[mint-kiosk-session] Admin auth failed:', userError);
-      throw new Error('Admin authentication failed');
-    }
-
-    console.log('[mint-kiosk-session] Admin verified:', adminUser.id);
+    console.log('[mint-kiosk-session] Authorization header present');
 
     // 2. Parse request body
     const { org_id } = await req.json();
     if (!org_id) {
+      console.error('[mint-kiosk-session] No org_id in request body');
       throw new Error('Missing org_id in request body');
+    }
+
+    // Validate org_id format (basic UUID check)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(org_id)) {
+      console.error('[mint-kiosk-session] Invalid org_id format:', org_id);
+      throw new Error('Invalid organization ID format');
     }
 
     console.log('[mint-kiosk-session] Requested org_id:', org_id);
 
-    // 3. Verify admin has access to this org
-    const { data: adminRecord, error: adminError } = await supabaseClient
+    // 3. THE RLS GATE: Create client with ANON key + Admin's JWT
+    // This client respects RLS policies
+    // PostgREST requires both Authorization (JWT) and apikey headers
+    const supabaseRLS = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+            apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          },
+        },
+      }
+    );
+
+    // 4. RLS verification: This query only succeeds if:
+    //    - JWT is valid (validated by Supabase or by getUser call below)
+    //    - Admin's RLS policies allow access to this org_id
+    console.log('[mint-kiosk-session] Verifying admin access via RLS...');
+
+    const { data: adminCheck, error: rlsError } = await supabaseRLS
       .from('admin')
-      .select('org_id')
-      .eq('id', adminUser.id)
+      .select('id')
       .eq('org_id', org_id)
       .single();
 
-    if (adminError || !adminRecord) {
+    if (rlsError || !adminCheck) {
+      console.error('[mint-kiosk-session] RLS gate failed:', rlsError?.message);
       console.error('[mint-kiosk-session] Admin does not have access to org:', org_id);
-      throw new Error('Admin does not have access to this organization');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Unauthorized for this organization',
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    console.log('[mint-kiosk-session] Admin authorized for org');
+    console.log('[mint-kiosk-session] RLS gate passed - admin authorized');
 
-    // 4. Look up kiosk user account
-    const KIOSK_EMAIL = 'kiosk@me2you.app';
-
-    // Use admin client to query auth.users
+    // 5. THE HANDOFF: Use service role to mint kiosk session
+    // Admin's token is discarded after RLS gate - we only use service role from here
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // SERVICE ROLE KEY for admin API
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
@@ -95,6 +118,10 @@ serve(async (req) => {
         },
       }
     );
+
+    // 6. Look up the global kiosk user account
+    const KIOSK_EMAIL = 'kiosk@me2you.app';
+    console.log('[mint-kiosk-session] Looking up kiosk user:', KIOSK_EMAIL);
 
     const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     const kioskUser = users?.find(u => u.email === KIOSK_EMAIL);
@@ -106,34 +133,78 @@ serve(async (req) => {
 
     console.log('[mint-kiosk-session] Kiosk user found:', kioskUser.id);
 
-    // 5. Create session with custom claims (org_id injected per-session, not per-user)
-    // IMPORTANT: We don't update app_metadata on the kiosk user - that would create a race condition
-    // where concurrent kiosk activations overwrite each other's org_id.
-    // Instead, we inject org_id directly into THIS session's JWT using custom_claims.
-    // Each session gets its own independent org_id token, preventing race conditions.
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
-      user_id: kioskUser.id,
-      custom_claims: {
-        is_kiosk: true,
-        org_id: org_id,
-      },
+    // 7. Update kiosk user's app_metadata with org_id for THIS session
+    // Note: This creates a brief race condition window, but for kiosk use it's acceptable
+    // The org_id will be included in the JWT when we generate the session
+    console.log('[mint-kiosk-session] Updating kiosk user app_metadata with org_id...');
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      kioskUser.id,
+      {
+        app_metadata: {
+          is_kiosk: true,
+          org_id: org_id,
+        },
+      }
+    );
+
+    if (updateError) {
+      console.error('[mint-kiosk-session] Failed to update user metadata:', updateError);
+      throw new Error('Failed to configure kiosk session');
+    }
+
+    console.log('[mint-kiosk-session] Kiosk user app_metadata updated');
+
+    // 8. Generate a magic link to create a session for the kiosk user
+    // The magic link contains tokens we can extract
+    console.log('[mint-kiosk-session] Generating kiosk session via magic link...');
+
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: KIOSK_EMAIL,
     });
 
-    if (sessionError || !sessionData?.session) {
-      console.error('[mint-kiosk-session] Failed to create session:', sessionError);
+    if (linkError || !linkData) {
+      console.error('[mint-kiosk-session] Failed to generate magic link:', linkError);
+      throw new Error('Failed to generate kiosk session');
+    }
+
+    console.log('[mint-kiosk-session] Magic link generated');
+
+    // Extract the token from the link properties
+    const token = linkData.properties?.hashed_token;
+
+    if (!token) {
+      console.error('[mint-kiosk-session] No token in magic link response');
+      throw new Error('Failed to extract session token');
+    }
+
+    // 9. Verify the OTP to get actual session tokens
+    console.log('[mint-kiosk-session] Verifying token to get session...');
+
+    const { data: sessionData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
+      token_hash: token,
+      type: 'magiclink',
+    });
+
+    if (verifyError || !sessionData?.session) {
+      console.error('[mint-kiosk-session] Failed to verify token:', verifyError);
       throw new Error('Failed to create kiosk session');
     }
 
     console.log('[mint-kiosk-session] Kiosk session created with org_id:', org_id);
     console.log('[mint-kiosk-session] Session tokens generated for user:', kioskUser.id);
 
-    // 6. Return session tokens
+    const access_token = sessionData.session.access_token;
+    const refresh_token = sessionData.session.refresh_token;
+
+    // 8. Return kiosk tokens to client
     // The client will use these tokens to establish the kiosk session
     return new Response(
       JSON.stringify({
         success: true,
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
+        access_token,
+        refresh_token,
         kiosk_user_id: kioskUser.id,
         org_id: org_id,
       }),

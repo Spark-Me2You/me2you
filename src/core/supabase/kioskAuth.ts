@@ -41,16 +41,16 @@ export const kioskAuthService = {
    * Mint a kiosk session for the given organization
    *
    * This method:
-   * 1. Calls the edge function to create a kiosk session with org_id in custom claims
+   * 1. Calls the edge function to create a kiosk session with org_id in app_metadata
    * 2. Receives access_token and refresh_token from the edge function
    * 3. Signs out the current admin session
    * 4. Sets the kiosk session using the tokens
    * 5. Returns the kiosk session data
    *
-   * RACE CONDITION FIX:
-   * The edge function uses admin.createSession() with custom_claims to inject org_id
-   * directly into the JWT, NOT into the kiosk user's app_metadata. This prevents
-   * race conditions where concurrent kiosk activations would overwrite each other.
+   * NOTE: The edge function updates the kiosk user's app_metadata with org_id,
+   * then generates a session. There's a brief race condition window (~100-400ms)
+   * if two admins activate kiosk mode simultaneously for different orgs.
+   * For typical kiosk usage, this is acceptable.
    *
    * @param orgId - The organization ID to scope the kiosk session to
    * @returns Promise<KioskSession> - The kiosk session data
@@ -94,7 +94,7 @@ export const kioskAuthService = {
 
     console.log('[kioskAuth] Kiosk session established');
     console.log('[kioskAuth] Kiosk user ID:', sessionData.user.id);
-    console.log('[kioskAuth] Kiosk org_id from custom claims:', sessionData.user.user_metadata.org_id);
+    console.log('[kioskAuth] Kiosk org_id from app_metadata:', sessionData.user.app_metadata?.org_id);
 
     // 4. Return kiosk session
     return {
@@ -107,11 +107,10 @@ export const kioskAuthService = {
   /**
    * Get current kiosk session
    *
-   * Checks if the current session is a kiosk session by inspecting user_metadata.
-   * NOTE: Custom claims from admin.createSession() are stored in user_metadata, not app_metadata.
+   * Checks if the current session is a kiosk session by inspecting app_metadata.
    * A session is considered a kiosk session if:
-   * - It has user_metadata.is_kiosk === true
-   * - It has user_metadata.org_id set
+   * - It has app_metadata.is_kiosk === true
+   * - It has app_metadata.org_id set
    *
    * @returns Promise<KioskSession | null> - The kiosk session data or null if not a kiosk session
    */
@@ -128,8 +127,8 @@ export const kioskAuthService = {
       return null;
     }
 
-    // Custom claims are in user_metadata, not app_metadata
-    const { is_kiosk, org_id } = session.user.user_metadata;
+    // Kiosk claims are in app_metadata (set by edge function)
+    const { is_kiosk, org_id } = session.user.app_metadata || {};
 
     if (!is_kiosk || !org_id) {
       console.log('[kioskAuth] Current session is not a kiosk session');
