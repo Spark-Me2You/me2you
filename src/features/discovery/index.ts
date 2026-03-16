@@ -1,6 +1,7 @@
 // Discovery exports
 // TODO: Export all public APIs from this module
 
+export * from './types/image';
 export * from './components/DiscoveryView';
 export * from './components/CameraView';
 export * from './components/ImagePlaceholder';
