@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
+import { useAuth } from '@/core/auth';
+import { discoveryService } from '../services/discoveryService';
+import type { RandomImageData } from '../types/image';
 import { CameraView } from './CameraView';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
@@ -12,12 +15,77 @@ import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
  */
 export const DiscoveryView: React.FC = () => {
   const { transitionTo } = useAppState();
+  const { kioskOrgId } = useAuth();
   const [detectedGesture, setDetectedGesture] =
     useState<GestureRecognitionResult | null>(null);
+
+  // State for random image data
+  const [imageData, setImageData] = useState<RandomImageData | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
+
+  // Effect: Fetch random image when peace sign is detected
+  useEffect(() => {
+    // Only fetch if peace sign is detected and we have an org ID
+    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+
+    if (!isPeaceSign || !kioskOrgId) {
+      return;
+    }
+
+    // Debounce: Only fetch if we don't already have image data
+    // This prevents refetching on every frame while peace sign is held
+    if (imageData || isLoadingImage) {
+      return;
+    }
+
+    const fetchImage = async () => {
+      setIsLoadingImage(true);
+      setImageError(null);
+
+      try {
+        console.log(
+          '[DiscoveryView] Fetching random image for org:',
+          kioskOrgId
+        );
+        const data = await discoveryService.fetchRandomImage(kioskOrgId);
+
+        if (data) {
+          console.log('[DiscoveryView] Image fetched:', data.image.id);
+          setImageData(data);
+        } else {
+          console.log('[DiscoveryView] No images available');
+          setImageError('No images available in your organization');
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to fetch image';
+        console.error('[DiscoveryView] Fetch failed:', error);
+        setImageError(errorMessage);
+      } finally {
+        setIsLoadingImage(false);
+      }
+    };
+
+    fetchImage();
+  }, [detectedGesture, kioskOrgId, imageData, isLoadingImage]);
+
+  // Effect: Clear image when peace sign is no longer detected
+  useEffect(() => {
+    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+
+    if (!isPeaceSign && imageData) {
+      // Clear image data when gesture is released
+      // This allows fetching a new image on the next peace sign
+      console.log('[DiscoveryView] Peace sign released, clearing image');
+      setImageData(null);
+      setImageError(null);
+    }
+  }, [detectedGesture, imageData]);
 
   return (
     <div
@@ -84,7 +152,12 @@ export const DiscoveryView: React.FC = () => {
             flexDirection: 'column',
           }}
         >
-          <ImagePlaceholder detectedGesture={detectedGesture} />
+          <ImagePlaceholder
+            detectedGesture={detectedGesture}
+            imageData={imageData}
+            isLoading={isLoadingImage}
+            error={imageError}
+          />
         </div>
       </div>
     </div>
