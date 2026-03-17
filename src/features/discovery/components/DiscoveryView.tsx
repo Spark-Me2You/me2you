@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { useAuth } from "@/core/auth";
-import { discoveryService } from "../services/discoveryService";
 import type { RandomImageData } from "../types/image";
 import { CameraView } from "./CameraView";
 import { RandomImageCard } from "./RandomImageCard";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
+import { useImageChambers } from "../hooks/useImageChambers";
 import {
   getCategoryFromGesture,
   isSupportedGesture,
+  GESTURE_MAPPINGS,
 } from "../config/gestureMapping";
 
 /**
@@ -23,16 +24,19 @@ export const DiscoveryView: React.FC = () => {
   const [detectedGesture, setDetectedGesture] =
     useState<GestureRecognitionResult | null>(null);
 
-  // State for random image data
+  // State for currently displayed image (preserves interaction model)
   const [imageData, setImageData] = useState<RandomImageData | null>(null);
-  const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+
+  // Initialize image chambers for all gesture categories
+  const categories = GESTURE_MAPPINGS.map((m) => m.category);
+  const chambers = useImageChambers(kioskOrgId, categories);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
 
-  // Effect: Fetch random image when a supported gesture is detected
+  // Effect: Pop image from chamber when a supported gesture is detected
   useEffect(() => {
     // Check if any supported gesture is detected
     const isGestureDetected = isSupportedGesture(
@@ -42,61 +46,46 @@ export const DiscoveryView: React.FC = () => {
       detectedGesture?.gestureName ?? null
     );
 
-    if (!isGestureDetected || !category || !kioskOrgId) {
+    if (!isGestureDetected || !category) {
       return;
     }
 
-    // Debounce: Only fetch if we don't already have image data
-    // This prevents refetching on every frame while gesture is held
-    if (imageData || isLoadingImage) {
+    // Debounce: Only pop if we don't already have image displayed
+    // This prevents popping on every frame while gesture is held
+    if (imageData) {
       return;
     }
 
-    const fetchImage = async () => {
-      setIsLoadingImage(true);
+    // Pop image from chamber (instant - no async!)
+    console.log("[DiscoveryView] Popping image from chamber:", category);
+    const image = chambers.popImage(category);
+
+    if (image) {
+      console.log(
+        "[DiscoveryView] Image popped:",
+        image.image.id,
+        "category:",
+        image.image.category
+      );
+      setImageData(image);
       setImageError(null);
-
-      try {
-        console.log(
-          "[DiscoveryView] Fetching random image for org:",
-          kioskOrgId,
-          "with gesture category:",
-          category
+    } else {
+      // No image available - check for error or loading state
+      const error = chambers.getError(category);
+      if (error) {
+        console.warn("[DiscoveryView] Chamber error:", error);
+        setImageError(error);
+      } else if (chambers.isLoading(category)) {
+        console.log("[DiscoveryView] Chamber still loading for:", category);
+        setImageError(null); // Will show loading state in UI
+      } else {
+        console.warn("[DiscoveryView] Chamber empty for:", category);
+        setImageError(
+          `No images available for ${category} gesture in your organization`
         );
-        const data = await discoveryService.fetchRandomImage(
-          kioskOrgId,
-          category
-        );
-
-        if (data) {
-          console.log(
-            "[DiscoveryView] Image fetched:",
-            data.image.id,
-            "category:",
-            data.image.category
-          );
-          setImageData(data);
-        } else {
-          console.log(
-            "[DiscoveryView] No images available for category:",
-            category
-          );
-          setImageError(
-            `No images available for ${category} gesture in your organization`
-          );
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to fetch image";
-        console.error("[DiscoveryView] Fetch failed:", error);
-        setImageError(errorMessage);
-      } finally {
-        setIsLoadingImage(false);
       }
-    };
-
-    fetchImage();
-  }, [detectedGesture, kioskOrgId, imageData, isLoadingImage]);
+    }
+  }, [detectedGesture, imageData, chambers]);
 
   // Effect: Clear image when gesture is no longer detected
   useEffect(() => {
@@ -181,7 +170,13 @@ export const DiscoveryView: React.FC = () => {
           <RandomImageCard
             detectedGesture={detectedGesture}
             imageData={imageData}
-            isLoading={isLoadingImage}
+            isLoading={
+              detectedGesture?.gestureName
+                ? chambers.isLoading(
+                    getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                  )
+                : false
+            }
             error={imageError}
           />
         </div>
