@@ -1,6 +1,10 @@
 import React from "react";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import type { RandomImageData } from "../types/image";
+import {
+  GESTURE_MAPPINGS,
+  getGestureMapping,
+} from "../config/gestureMapping";
 
 /**
  * RandomImageCard Component Props
@@ -14,11 +18,13 @@ interface RandomImageCardProps {
 
 /**
  * RandomImageCard Component
- * Displays a random public image with owner info when the peace sign is detected
+ * Displays a random public image with owner info when a supported gesture is detected
  * Right side of the discovery split-screen layout
  *
+ * Supported gestures: Peace Sign (Victory), Wave (Open_Palm), Thumbs Up (Thumb_Up)
+ *
  * States:
- * 1. Default - Show instructions to make peace sign
+ * 1. Default - Show instructions for all available gestures
  * 2. Loading - Show loading message while fetching image
  * 3. Error - Show error message if fetch fails
  * 4. Success - Display image with owner's display name and bio
@@ -29,11 +35,12 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   isLoading,
   error,
 }) => {
-  // Check if peace sign (Victory gesture) is detected
-  const isPeaceSignDetected = detectedGesture?.gestureName === "Victory";
+  // Check if any supported gesture is detected
+  const gestureMapping = getGestureMapping(detectedGesture?.gestureName ?? null);
+  const isGestureDetected = gestureMapping !== null;
 
   // State 1: Loading image
-  if (isPeaceSignDetected && isLoading) {
+  if (isGestureDetected && isLoading) {
     return (
       <div
         style={{
@@ -55,7 +62,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   }
 
   // State 2: Error occurred
-  if (isPeaceSignDetected && error) {
+  if (isGestureDetected && error) {
     return (
       <div
         style={{
@@ -80,7 +87,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
             {error}
           </p>
           <p style={{ fontSize: "0.875rem", color: "#856404" }}>
-            Try showing the peace sign again
+            Try showing the gesture again or try a different gesture
           </p>
         </div>
       </div>
@@ -88,7 +95,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   }
 
   // State 3: Image loaded successfully
-  if (isPeaceSignDetected && imageData) {
+  if (isGestureDetected && imageData) {
     return (
       <div
         style={{
@@ -164,12 +171,27 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
           )}
         </div>
 
+        {/* Display which gesture was used */}
+        {gestureMapping && (
+          <p
+            style={{
+              fontSize: "0.875rem",
+              marginTop: "0.5rem",
+              color: "#4caf50",
+              textAlign: "center",
+              fontWeight: 500,
+            }}
+          >
+            Matched with: {gestureMapping.displayName}
+          </p>
+        )}
+
         {/* Gesture info (optional, for debugging) */}
         {detectedGesture?.handedness && (
           <p
             style={{
               fontSize: "0.75rem",
-              marginTop: "0.5rem",
+              marginTop: "0.25rem",
               color: "#999",
               textAlign: "center",
             }}
@@ -182,7 +204,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
     );
   }
 
-  // State 4: Default state (no peace sign or waiting for gesture)
+  // State 4: Default state (no gesture or waiting for gesture)
   return (
     <div
       style={{
@@ -197,11 +219,29 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
       }}
     >
       <div style={{ textAlign: "center", color: "#666" }}>
-        <p style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>
-          Show a peace sign to reveal a random photo ✌️
+        <p
+          style={{
+            fontSize: "1.2rem",
+            marginBottom: "1rem",
+            fontWeight: 600,
+          }}
+        >
+          Try one of these gestures:
         </p>
-        <p style={{ fontSize: "0.875rem", color: "#999" }}>
-          A random image from your organization will appear when you make the
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+        >
+          {GESTURE_MAPPINGS.map((mapping) => (
+            <p
+              key={mapping.gestureName}
+              style={{ fontSize: "1rem", margin: 0, color: "#666" }}
+            >
+              {mapping.instructionText}
+            </p>
+          ))}
+        </div>
+        <p style={{ fontSize: "0.875rem", color: "#999", marginTop: "1rem" }}>
+          A random image from your organization will appear when you make a
           gesture
         </p>
       </div>
