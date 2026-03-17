@@ -10,7 +10,7 @@
  * 5. Implements safeguards to prevent infinite refills for small categories
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { discoveryService } from '../services/discoveryService';
 import {
   DEFAULT_BATCH_SIZE,
@@ -68,11 +68,18 @@ export const useImageChambers = (
     isInitialized: false,
   });
 
+  // Ref to hold latest chambers state (allows stable callbacks to access fresh state)
+  const chambersStateRef = useRef<ChambersState>(chambersState);
+  chambersStateRef.current = chambersState;
+
   // Ref to track ongoing refills (prevents race conditions)
   const refillingRef = useRef<Set<string>>(new Set());
 
   // Ref to track if we're currently initializing (prevents refills during init)
   const isInitializingRef = useRef<boolean>(false);
+
+  // Ref to prevent duplicate initialization (e.g., React Strict Mode, dependency changes)
+  const hasInitializedRef = useRef<boolean>(false);
 
   /**
    * Initialize all chambers on mount
@@ -86,6 +93,14 @@ export const useImageChambers = (
       console.log('[useImageChambers] Skipping initialization: no orgId or categories');
       return;
     }
+
+    // CRITICAL: Prevent duplicate initialization
+    // This guards against React Strict Mode, dependency changes, or component remounts
+    if (hasInitializedRef.current) {
+      console.log('[useImageChambers] Already initialized, skipping duplicate fetch');
+      return;
+    }
+    hasInitializedRef.current = true;
 
     const initializeChambers = async () => {
       // CRITICAL: Mark as initializing to prevent refills during init
@@ -361,10 +376,13 @@ export const useImageChambers = (
    *
    * CRITICAL: For categories with totalCount === 1, returns the image
    * WITHOUT removing it from the chamber (keeps same image forever)
+   *
+   * NOTE: Uses chambersStateRef for stable callback reference (prevents re-renders)
    */
   const popImage = useCallback(
     (category: string): RandomImageData | null => {
-      const chamber = chambersState.chambers[category];
+      // Use ref to get latest state (allows stable callback reference)
+      const chamber = chambersStateRef.current.chambers[category];
 
       if (!chamber) {
         console.warn(
@@ -429,19 +447,17 @@ export const useImageChambers = (
 
       return image;
     },
-    [chambersState.chambers, triggerRefill]
+    [triggerRefill] // Stable: only depends on triggerRefill, uses ref for state
   );
 
   /**
    * Check if a category has images available
+   * NOTE: Uses chambersStateRef for stable callback reference
    */
-  const hasImages = useCallback(
-    (category: string): boolean => {
-      const chamber = chambersState.chambers[category];
-      return chamber ? chamber.images.length > 0 : false;
-    },
-    [chambersState.chambers]
-  );
+  const hasImages = useCallback((category: string): boolean => {
+    const chamber = chambersStateRef.current.chambers[category];
+    return chamber ? chamber.images.length > 0 : false;
+  }, []); // Stable: uses ref for state
 
   /**
    * Check if a category is currently loading
@@ -449,40 +465,39 @@ export const useImageChambers = (
    * IMPORTANT: Only returns true for INITIAL loading, not background refills.
    * Background refills should be invisible to the user - the UI should only
    * show loading state when there are NO images available to display.
+   *
+   * NOTE: Uses chambersStateRef for stable callback reference
    */
-  const isLoading = useCallback(
-    (category: string): boolean => {
-      const chamber = chambersState.chambers[category];
-      // Not initialized yet - show loading
-      if (!chamber) return !chambersState.isInitialized;
-      // Only show loading if chamber is EMPTY and actively refilling
-      // Background refills with images available should NOT show loading
-      if (chamber.images.length === 0 && refillingRef.current.has(category)) {
-        return true;
-      }
-      // Has images available - never show loading
-      return false;
-    },
-    [chambersState.chambers, chambersState.isInitialized]
-  );
+  const isLoading = useCallback((category: string): boolean => {
+    const { chambers, isInitialized } = chambersStateRef.current;
+    const chamber = chambers[category];
+    // Not initialized yet - show loading
+    if (!chamber) return !isInitialized;
+    // Only show loading if chamber is EMPTY and actively refilling
+    // Background refills with images available should NOT show loading
+    if (chamber.images.length === 0 && refillingRef.current.has(category)) {
+      return true;
+    }
+    // Has images available - never show loading
+    return false;
+  }, []); // Stable: uses ref for state
 
   /**
    * Get error message for a category
+   * NOTE: Uses chambersStateRef for stable callback reference
    */
-  const getError = useCallback(
-    (category: string): string | null => {
-      const chamber = chambersState.chambers[category];
-      return chamber?.error ?? null;
-    },
-    [chambersState.chambers]
-  );
+  const getError = useCallback((category: string): string | null => {
+    const chamber = chambersStateRef.current.chambers[category];
+    return chamber?.error ?? null;
+  }, []); // Stable: uses ref for state
 
   /**
    * Manually trigger refill (for testing/recovery)
+   * NOTE: Uses chambersStateRef for stable callback reference
    */
   const refillChamber = useCallback(
     async (category: string): Promise<void> => {
-      const chamber = chambersState.chambers[category];
+      const chamber = chambersStateRef.current.chambers[category];
       if (!chamber) {
         console.warn(
           `[useImageChambers] refillChamber: chamber not found for ${category}`
@@ -497,15 +512,27 @@ export const useImageChambers = (
         chamber.lastRefillTime
       );
     },
-    [chambersState.chambers, triggerRefill]
+    [triggerRefill] // Stable: only depends on triggerRefill, uses ref for state
   );
 
-  return {
-    popImage,
-    hasImages,
-    isLoading,
-    getError,
-    refillChamber,
-    isInitialized: chambersState.isInitialized,
-  };
+  // Memoize return value to prevent unnecessary re-renders in consumers
+  // All callbacks are now stable (empty deps), so this only changes when isInitialized changes
+  return useMemo(
+    () => ({
+      popImage,
+      hasImages,
+      isLoading,
+      getError,
+      refillChamber,
+      isInitialized: chambersState.isInitialized,
+    }),
+    [
+      popImage,
+      hasImages,
+      isLoading,
+      getError,
+      refillChamber,
+      chambersState.isInitialized,
+    ]
+  );
 };

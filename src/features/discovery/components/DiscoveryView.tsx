@@ -31,13 +31,19 @@ export const DiscoveryView: React.FC = () => {
   // Initialize image chambers for all gesture categories
   // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
   // (which would trigger multiple useEffect re-runs in useImageChambers)
-  const chambers = useImageChambers(kioskOrgId, CATEGORY_LIST);
+  const {
+    popImage,
+    isLoading: isChamberLoading,
+    getError,
+    isInitialized,
+  } = useImageChambers(kioskOrgId, CATEGORY_LIST);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
 
   // Effect: Pop image from chamber when a supported gesture is detected
+  // NOTE: Dependencies are now stable (popImage, getError, isChamberLoading don't change)
   useEffect(() => {
     // Check if any supported gesture is detected
     const isGestureDetected = isSupportedGesture(
@@ -58,7 +64,7 @@ export const DiscoveryView: React.FC = () => {
     }
 
     // Wait for chambers to initialize
-    if (!chambers.isInitialized) {
+    if (!isInitialized) {
       console.log(
         "[DiscoveryView] Chambers not yet initialized, waiting..."
       );
@@ -67,7 +73,7 @@ export const DiscoveryView: React.FC = () => {
 
     // Pop image from chamber (instant - no async!)
     console.log("[DiscoveryView] Popping image from chamber:", category);
-    const image = chambers.popImage(category);
+    const image = popImage(category);
 
     if (image) {
       console.log(
@@ -80,11 +86,11 @@ export const DiscoveryView: React.FC = () => {
       setImageError(null);
     } else {
       // No image available - check for error or loading state
-      const error = chambers.getError(category);
+      const error = getError(category);
       if (error) {
         console.warn("[DiscoveryView] Chamber error:", error);
         setImageError(error);
-      } else if (chambers.isLoading(category)) {
+      } else if (isChamberLoading(category)) {
         console.log("[DiscoveryView] Chamber still loading for:", category);
         setImageError(null); // Will show loading state in UI
       } else {
@@ -94,7 +100,7 @@ export const DiscoveryView: React.FC = () => {
         );
       }
     }
-  }, [detectedGesture, imageData, chambers]);
+  }, [detectedGesture, imageData, isInitialized, popImage, getError, isChamberLoading]);
 
   // Effect: Clear image when gesture is no longer detected
   useEffect(() => {
@@ -181,7 +187,7 @@ export const DiscoveryView: React.FC = () => {
             imageData={imageData}
             isLoading={
               detectedGesture?.gestureName
-                ? chambers.isLoading(
+                ? isChamberLoading(
                     getCategoryFromGesture(detectedGesture.gestureName) ?? ""
                   )
                 : false
