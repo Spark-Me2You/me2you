@@ -10,7 +10,7 @@ import { useImageChambers } from "../hooks/useImageChambers";
 import {
   getCategoryFromGesture,
   isSupportedGesture,
-  GESTURE_MAPPINGS,
+  CATEGORY_LIST,
 } from "../config/gestureMapping";
 
 /**
@@ -29,8 +29,9 @@ export const DiscoveryView: React.FC = () => {
   const [imageError, setImageError] = useState<string | null>(null);
 
   // Initialize image chambers for all gesture categories
-  const categories = GESTURE_MAPPINGS.map((m) => m.category);
-  const chambers = useImageChambers(kioskOrgId, categories);
+  // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
+  // (which would trigger multiple useEffect re-runs in useImageChambers)
+  const chambers = useImageChambers(kioskOrgId, CATEGORY_LIST);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
@@ -53,6 +54,14 @@ export const DiscoveryView: React.FC = () => {
     // Debounce: Only pop if we don't already have image displayed
     // This prevents popping on every frame while gesture is held
     if (imageData) {
+      return;
+    }
+
+    // Wait for chambers to initialize
+    if (!chambers.isInitialized) {
+      console.log(
+        "[DiscoveryView] Chambers not yet initialized, waiting..."
+      );
       return;
     }
 

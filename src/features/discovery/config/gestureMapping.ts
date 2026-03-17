@@ -73,3 +73,11 @@ export const isSupportedGesture = (gestureName: string | null): boolean => {
   if (!gestureName) return false;
   return GESTURE_MAPPINGS.some((m) => m.gestureName === gestureName);
 };
+
+/**
+ * Pre-computed list of all categories for chamber initialization
+ * This avoids recreating the array on every render
+ */
+export const CATEGORY_LIST: readonly string[] = GESTURE_MAPPINGS.map(
+  (m) => m.category
+);
