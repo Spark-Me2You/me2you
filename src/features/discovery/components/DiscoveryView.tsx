@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useAppState } from '@/core/state-machine';
-import { AppState } from '@/core/state-machine/appStateMachine';
-import { useAuth } from '@/core/auth';
-import { discoveryService } from '../services/discoveryService';
-import type { RandomImageData } from '../types/image';
-import { CameraView } from './CameraView';
-import { ImagePlaceholder } from './ImagePlaceholder';
-import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
+import React, { useState, useEffect } from "react";
+import { useAppState } from "@/core/state-machine";
+import { AppState } from "@/core/state-machine/appStateMachine";
+import { useAuth } from "@/core/auth";
+import { discoveryService } from "../services/discoveryService";
+import type { RandomImageData } from "../types/image";
+import { CameraView } from "./CameraView";
+import { RandomImageCard } from "./RandomImageCard";
+import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 
 /**
  * DiscoveryView Component
@@ -31,7 +31,7 @@ export const DiscoveryView: React.FC = () => {
   // Effect: Fetch random image when peace sign is detected
   useEffect(() => {
     // Only fetch if peace sign is detected and we have an org ID
-    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+    const isPeaceSign = detectedGesture?.gestureName === "Victory";
 
     if (!isPeaceSign || !kioskOrgId) {
       return;
@@ -49,22 +49,22 @@ export const DiscoveryView: React.FC = () => {
 
       try {
         console.log(
-          '[DiscoveryView] Fetching random image for org:',
-          kioskOrgId
+          "[DiscoveryView] Fetching random image for org:",
+          kioskOrgId,
         );
         const data = await discoveryService.fetchRandomImage(kioskOrgId);
 
         if (data) {
-          console.log('[DiscoveryView] Image fetched:', data.image.id);
+          console.log("[DiscoveryView] Image fetched:", data.image.id);
           setImageData(data);
         } else {
-          console.log('[DiscoveryView] No images available');
-          setImageError('No images available in your organization');
+          console.log("[DiscoveryView] No images available");
+          setImageError("No images available in your organization");
         }
       } catch (error) {
         const errorMessage =
-          error instanceof Error ? error.message : 'Failed to fetch image';
-        console.error('[DiscoveryView] Fetch failed:', error);
+          error instanceof Error ? error.message : "Failed to fetch image";
+        console.error("[DiscoveryView] Fetch failed:", error);
         setImageError(errorMessage);
       } finally {
         setIsLoadingImage(false);
@@ -76,12 +76,12 @@ export const DiscoveryView: React.FC = () => {
 
   // Effect: Clear image when peace sign is no longer detected
   useEffect(() => {
-    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+    const isPeaceSign = detectedGesture?.gestureName === "Victory";
 
     if (!isPeaceSign && imageData) {
       // Clear image data when gesture is released
       // This allows fetching a new image on the next peace sign
-      console.log('[DiscoveryView] Peace sign released, clearing image');
+      console.log("[DiscoveryView] Peace sign released, clearing image");
       setImageData(null);
       setImageError(null);
     }
@@ -90,32 +90,32 @@ export const DiscoveryView: React.FC = () => {
   return (
     <div
       style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#fff',
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#fff",
       }}
     >
       {/* Header */}
       <header
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem 2rem',
-          borderBottom: '1px solid #e0e0e0',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "1rem 2rem",
+          borderBottom: "1px solid #e0e0e0",
         }}
       >
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Discovery</h1>
+        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Discovery</h1>
         <button
           onClick={handleBack}
           style={{
-            padding: '0.5rem 1rem',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            backgroundColor: '#f5f5f5',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
+            padding: "0.5rem 1rem",
+            fontSize: "1rem",
+            cursor: "pointer",
+            backgroundColor: "#f5f5f5",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
           }}
         >
           Back to Home
@@ -126,19 +126,19 @@ export const DiscoveryView: React.FC = () => {
       <div
         style={{
           flex: 1,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-          padding: '1rem',
-          overflow: 'hidden',
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "1rem",
+          padding: "1rem",
+          overflow: "hidden",
         }}
       >
         {/* Left side: Camera feed */}
         <div
           style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <CameraView onGestureDetected={setDetectedGesture} />
@@ -147,12 +147,12 @@ export const DiscoveryView: React.FC = () => {
         {/* Right side: Matched profile / results */}
         <div
           style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <ImagePlaceholder
+          <RandomImageCard
             detectedGesture={detectedGesture}
             imageData={imageData}
             isLoading={isLoadingImage}
