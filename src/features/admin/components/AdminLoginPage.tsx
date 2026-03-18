@@ -98,7 +98,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { LoginForm } from './LoginForm';
-import { GlassCard } from '@/components/GlassCard';
+import { GlassCard } from '@/shared/components/GlassCard';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
