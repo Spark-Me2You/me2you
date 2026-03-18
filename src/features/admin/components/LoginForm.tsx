@@ -1,8 +1,3 @@
-// /**
-//  * Login Form Component
-//  * Minimal skeleton form for admin email/password authentication
-//  */
-
 import React, { useState } from 'react';
 
 interface LoginFormProps {
@@ -11,107 +6,39 @@ interface LoginFormProps {
   isLoading: boolean;
 }
 
-// /**
-//  * Login Form
-//  * Basic email/password form with minimal styling
-//  */
-// export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading }) => {
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
+const fieldFont: React.CSSProperties = {
+  fontFamily: "'Barlow Condensed', sans-serif",
+  fontWeight: 300,
+  fontSize: '32px',
+  color: 'white',
+  letterSpacing: '5.44px',
+  textTransform: 'lowercase',
+};
 
-//   const handleSubmit = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     await onSubmit(email, password);
-//   };
+const magentaBox: React.CSSProperties = {
+  backgroundColor: '#e405ac',
+  width: '663px',
+  height: '144px',
+  padding: '18px 22px 0 15px',
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-start',
+};
 
-//   return (
-//     <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px' }}>
-//       {/* Email Input */}
-//       <div style={{ marginBottom: '1rem' }}>
-//         <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-//           Email
-//         </label>
-//         <input
-//           id="email"
-//           type="email"
-//           value={email}
-//           onChange={(e) => setEmail(e.target.value)}
-//           required
-//           disabled={isLoading}
-//           placeholder="admin@example.com"
-//           style={{
-//             width: '100%',
-//             padding: '0.75rem',
-//             fontSize: '1rem',
-//             border: '1px solid #ccc',
-//             borderRadius: '4px',
-//             boxSizing: 'border-box',
-//           }}
-//         />
-//       </div>
-
-//       {/* Password Input */}
-//       <div style={{ marginBottom: '1rem' }}>
-//         <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-//           Password
-//         </label>
-//         <input
-//           id="password"
-//           type="password"
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//           required
-//           disabled={isLoading}
-//           placeholder="Enter your password"
-//           style={{
-//             width: '100%',
-//             padding: '0.75rem',
-//             fontSize: '1rem',
-//             border: '1px solid #ccc',
-//             borderRadius: '4px',
-//             boxSizing: 'border-box',
-//           }}
-//         />
-//       </div>
-
-//       {/* Error Message */}
-//       {error && (
-//         <div
-//           style={{
-//             color: '#d32f2f',
-//             marginBottom: '1rem',
-//             padding: '0.75rem',
-//             backgroundColor: '#ffebee',
-//             borderRadius: '4px',
-//             fontSize: '0.9rem',
-//           }}
-//         >
-//           {error}
-//         </div>
-//       )}
-
-//       {/* Submit Button */}
-//       <button
-//         type="submit"
-//         disabled={isLoading}
-//         style={{
-//           width: '100%',
-//           padding: '0.75rem',
-//           fontSize: '1rem',
-//           fontWeight: 500,
-//           backgroundColor: isLoading ? '#90caf9' : '#1976d2',
-//           color: '#fff',
-//           border: 'none',
-//           borderRadius: '4px',
-//           cursor: isLoading ? 'not-allowed' : 'pointer',
-//           transition: 'background-color 0.2s',
-//         }}
-//       >
-//         {isLoading ? 'Signing in...' : 'Sign In'}
-//       </button>
-//     </form>
-//   );
-// };
+const whiteInput: React.CSSProperties = {
+  width: '100%',
+  height: '56px',
+  backgroundColor: 'white',
+  border: 'none',
+  borderRadius: '10px',
+  boxShadow: 'inset -1px -1px 4px rgba(0,0,0,0.25), inset 0px 4px 4px rgba(0,0,0,0.25)',
+  fontSize: '20px',
+  padding: '0 12px',
+  boxSizing: 'border-box',
+  outline: 'none',
+  marginTop: '6px',
+};
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading }) => {
   const [email, setEmail] = useState('');
@@ -122,33 +49,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
     await onSubmit(email, password);
   };
 
-  const boxStyle = {
-    backgroundColor: '#ffffff',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    width: '90%',
-    maxWidth: '450px',
-  };
-
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}
     >
 
-      {/* Box 1 — Subtitle */}
-      {/* <div style={boxStyle}>
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem', margin: 0 }}>
-          Sign in to access the me2you admin panel
-        </p>
-      </div> */}
-
-      {/* Box 2 — Email Input */}
-      <div style={boxStyle}>
-        <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-          Email
-        </label>
+      {/* Email field */}
+      <div style={{ ...magentaBox, marginLeft: '426px', marginTop: '94px' }}>
+        <span style={fieldFont}>email:</span>
         <input
           id="email"
           type="email"
@@ -156,23 +65,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={isLoading}
-          placeholder="admin@example.com"
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            fontSize: '1rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-          }}
+          style={whiteInput}
         />
       </div>
 
-      {/* Box 3 — Password Input */}
-      <div style={boxStyle}>
-        <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-          Password
-        </label>
+      {/* Password field */}
+      <div style={{ ...magentaBox, marginLeft: '337px', marginTop: '28px' }}>
+        <span style={fieldFont}>password:</span>
         <input
           id="password"
           type="password"
@@ -180,50 +79,37 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={isLoading}
-          placeholder="Enter your password"
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            fontSize: '1rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-          }}
+          style={whiteInput}
         />
       </div>
 
-      {/* Box 4 — Error message (only appears if there's an error) */}
+      {/* Error message */}
       {error && (
-        <div style={{
-          ...boxStyle,
-          backgroundColor: '#ffebee',
-          padding: '0.75rem 2rem',
-        }}>
-          <p style={{ color: '#d32f2f', fontSize: '0.9rem', margin: 0 }}>
-            {error}
-          </p>
+        <div style={{ marginLeft: '337px', marginTop: '16px', color: 'white', backgroundColor: '#b0003a', padding: '10px 16px', borderRadius: '8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '20px', letterSpacing: '2px' }}>
+          {error}
         </div>
       )}
 
-      {/* Box 5 — Submit Button */}
-      <div style={boxStyle}>
+      {/* Submit button */}
+      <div style={{ marginLeft: '426px', marginTop: '32px' }}>
         <button
           type="submit"
           disabled={isLoading}
           style={{
-            width: '100%',
-            padding: '0.75rem',
-            fontSize: '1rem',
-            fontWeight: 500,
-            backgroundColor: isLoading ? '#90caf9' : '#1976d2',
-            color: '#fff',
+            backgroundColor: isLoading ? '#b0006a' : '#e405ac',
+            color: 'white',
             border: 'none',
-            borderRadius: '4px',
+            padding: '14px 48px',
+            fontSize: '28px',
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 300,
+            letterSpacing: '5px',
+            textTransform: 'lowercase',
             cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
+            borderRadius: '6px',
           }}
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? 'signing in...' : 'sign in'}
         </button>
       </div>
 

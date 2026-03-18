@@ -9,15 +9,10 @@ interface GlassCardProps {
 export const GlassCard: React.FC<GlassCardProps> = ({ children }) => {
   return (
     <div className={styles.wrapper}>
-
-      {/* me2you watermark PNG */}
-      <img src={logo} className={styles.watermark} />
-
-      {/* glass card */}
       <div className={styles.glassCard}>
+        <img src={logo} className={styles.watermark} alt="" />
         {children}
       </div>
-
     </div>
   );
 };
