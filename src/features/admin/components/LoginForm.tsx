@@ -9,35 +9,37 @@ interface LoginFormProps {
 const fieldFont: React.CSSProperties = {
   fontFamily: "'Barlow Condensed', sans-serif",
   fontWeight: 300,
-  fontSize: '32px',
+  fontSize: '24px',
   color: 'white',
-  letterSpacing: '5.44px',
+  letterSpacing: '4px',
   textTransform: 'lowercase',
+  textAlign: 'left',
 };
 
 const magentaBox: React.CSSProperties = {
   backgroundColor: '#e405ac',
-  width: '663px',
-  height: '144px',
-  padding: '18px 22px 0 15px',
+  width: '490px',
+  height: '106px',
+  padding: '13px 16px 0 11px',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'flex-start',
+  alignItems: 'flex-start',
 };
 
 const whiteInput: React.CSSProperties = {
   width: '100%',
-  height: '56px',
+  height: '42px',
   backgroundColor: 'white',
   border: 'none',
-  borderRadius: '10px',
+  borderRadius: '8px',
   boxShadow: 'inset -1px -1px 4px rgba(0,0,0,0.25), inset 0px 4px 4px rgba(0,0,0,0.25)',
-  fontSize: '20px',
-  padding: '0 12px',
+  fontSize: '15px',
+  padding: '0 10px',
   boxSizing: 'border-box',
   outline: 'none',
-  marginTop: '6px',
+  marginTop: '4px',
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading }) => {
@@ -56,7 +58,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
     >
 
       {/* Email field */}
-      <div style={{ ...magentaBox, marginLeft: '426px', marginTop: '94px' }}>
+      <div style={{ ...magentaBox, marginLeft: '350px', marginTop: '100px' }}>
         <span style={fieldFont}>email:</span>
         <input
           id="email"
@@ -70,7 +72,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
       </div>
 
       {/* Password field */}
-      <div style={{ ...magentaBox, marginLeft: '337px', marginTop: '28px' }}>
+      <div style={{ ...magentaBox, marginLeft: '350px', marginTop: '20px' }}>
         <span style={fieldFont}>password:</span>
         <input
           id="password"
@@ -85,13 +87,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
 
       {/* Error message */}
       {error && (
-        <div style={{ marginLeft: '337px', marginTop: '16px', color: 'white', backgroundColor: '#b0003a', padding: '10px 16px', borderRadius: '8px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '20px', letterSpacing: '2px' }}>
+        <div style={{ marginLeft: '350px', marginTop: '12px', color: 'white', backgroundColor: '#b0003a', padding: '8px 14px', borderRadius: '0px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '16px', letterSpacing: '2px' }}>
           {error}
         </div>
       )}
 
       {/* Submit button */}
-      <div style={{ marginLeft: '426px', marginTop: '32px' }}>
+      <div style={{ marginLeft: '525px', marginTop: '24px' }}>
         <button
           type="submit"
           disabled={isLoading}
@@ -99,14 +101,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
             backgroundColor: isLoading ? '#b0006a' : '#e405ac',
             color: 'white',
             border: 'none',
-            padding: '14px 48px',
-            fontSize: '28px',
+            padding: '10px 36px',
+            fontSize: '21px',
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 300,
-            letterSpacing: '5px',
+            letterSpacing: '4px',
             textTransform: 'lowercase',
             cursor: isLoading ? 'not-allowed' : 'pointer',
-            borderRadius: '6px',
+            borderRadius: '0px',
           }}
         >
           {isLoading ? 'signing in...' : 'sign in'}

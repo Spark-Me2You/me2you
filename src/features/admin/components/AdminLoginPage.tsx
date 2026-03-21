@@ -33,34 +33,37 @@ export const AdminLoginPage: React.FC = () => {
 
   return (
     <GlassCard>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', paddingTop: '100px', paddingBottom: '60px' }}>
 
-        {/* "admin sign in" title box */}
-        <div style={{
-          marginLeft: '59px',
-          width: '542px',
-          height: '113px',
-          backgroundColor: '#e405ac',
-          display: 'flex',
-          alignItems: 'center',
-          paddingLeft: '95px',
-          boxSizing: 'border-box',
+      {/* "admin sign in" title box — independently positioned */}
+      <div style={{
+        position: 'absolute',
+        top: '30px',
+        left: '44px',
+        width: '400px',
+        height: '80px',
+        backgroundColor: '#e405ac',
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: '70px',
+        boxSizing: 'border-box',
+      }}>
+        <span style={{
+          fontFamily: "'Barlow Condensed', sans-serif",
+          fontWeight: 300,
+          fontSize: '37px',
+          color: 'white',
+          letterSpacing: '6px',
+          textTransform: 'lowercase',
         }}>
-          <span style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: 300,
-            fontSize: '50px',
-            color: 'white',
-            letterSpacing: '8.5px',
-            textTransform: 'lowercase',
-          }}>
-            admin sign in
-          </span>
-        </div>
-
-        <LoginForm onSubmit={handleSubmit} error={error} isLoading={isLoading} />
-
+          admin sign in
+        </span>
       </div>
+
+      {/* Form fields */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', paddingTop: '74px', paddingBottom: '40px' }}>
+        <LoginForm onSubmit={handleSubmit} error={error} isLoading={isLoading} />
+      </div>
+
     </GlassCard>
   );
 };
