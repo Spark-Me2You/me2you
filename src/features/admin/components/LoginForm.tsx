@@ -1,8 +1,3 @@
-/**
- * Login Form Component
- * Minimal skeleton form for admin email/password authentication
- */
-
 import React, { useState } from 'react';
 
 interface LoginFormProps {
@@ -11,10 +6,42 @@ interface LoginFormProps {
   isLoading: boolean;
 }
 
-/**
- * Login Form
- * Basic email/password form with minimal styling
- */
+const fieldFont: React.CSSProperties = {
+  fontFamily: "'Barlow Condensed', sans-serif",
+  fontWeight: 300,
+  fontSize: '24px',
+  color: 'white',
+  letterSpacing: '4px',
+  textTransform: 'lowercase',
+  textAlign: 'left',
+};
+
+const magentaBox: React.CSSProperties = {
+  backgroundColor: '#e405ac',
+  width: '490px',
+  height: '106px',
+  padding: '13px 16px 0 11px',
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-start',
+  alignItems: 'flex-start',
+};
+
+const whiteInput: React.CSSProperties = {
+  width: '100%',
+  height: '42px',
+  backgroundColor: 'white',
+  border: 'none',
+  borderRadius: '8px',
+  boxShadow: 'inset -1px -1px 4px rgba(0,0,0,0.25), inset 0px 4px 4px rgba(0,0,0,0.25)',
+  fontSize: '15px',
+  padding: '0 10px',
+  boxSizing: 'border-box',
+  outline: 'none',
+  marginTop: '4px',
+};
+
 export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,12 +52,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px' }}>
-      {/* Email Input */}
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-          Email
-        </label>
+    <form
+      onSubmit={handleSubmit}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}
+    >
+
+      {/* Email field */}
+      <div style={{ ...magentaBox, marginLeft: '350px', marginTop: '100px' }}>
+        <span style={fieldFont}>email:</span>
         <input
           id="email"
           type="email"
@@ -38,23 +67,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={isLoading}
-          placeholder="admin@example.com"
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            fontSize: '1rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-          }}
+          style={whiteInput}
         />
       </div>
 
-      {/* Password Input */}
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-          Password
-        </label>
+      {/* Password field */}
+      <div style={{ ...magentaBox, marginLeft: '350px', marginTop: '20px' }}>
+        <span style={fieldFont}>password:</span>
         <input
           id="password"
           type="password"
@@ -62,53 +81,40 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, error, isLoading
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={isLoading}
-          placeholder="Enter your password"
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            fontSize: '1rem',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            boxSizing: 'border-box',
-          }}
+          style={whiteInput}
         />
       </div>
 
-      {/* Error Message */}
+      {/* Error message */}
       {error && (
-        <div
-          style={{
-            color: '#d32f2f',
-            marginBottom: '1rem',
-            padding: '0.75rem',
-            backgroundColor: '#ffebee',
-            borderRadius: '4px',
-            fontSize: '0.9rem',
-          }}
-        >
+        <div style={{ marginLeft: '350px', marginTop: '12px', color: 'white', backgroundColor: '#b0003a', padding: '8px 14px', borderRadius: '0px', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '16px', letterSpacing: '2px' }}>
           {error}
         </div>
       )}
 
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        style={{
-          width: '100%',
-          padding: '0.75rem',
-          fontSize: '1rem',
-          fontWeight: 500,
-          backgroundColor: isLoading ? '#90caf9' : '#1976d2',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-          transition: 'background-color 0.2s',
-        }}
-      >
-        {isLoading ? 'Signing in...' : 'Sign In'}
-      </button>
+      {/* Submit button */}
+      <div style={{ marginLeft: '525px', marginTop: '24px' }}>
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            backgroundColor: isLoading ? '#b0006a' : '#e405ac',
+            color: 'white',
+            border: 'none',
+            padding: '10px 36px',
+            fontSize: '21px',
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 300,
+            letterSpacing: '4px',
+            textTransform: 'lowercase',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            borderRadius: '0px',
+          }}
+        >
+          {isLoading ? 'signing in...' : 'sign in'}
+        </button>
+      </div>
+
     </form>
   );
 };
