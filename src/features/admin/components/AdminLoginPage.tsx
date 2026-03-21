@@ -38,7 +38,7 @@ export const AdminLoginPage: React.FC = () => {
       <div style={{
         position: 'absolute',
         top: '30px',
-        left: '44px',
+        left: '0px',
         width: '400px',
         height: '80px',
         backgroundColor: '#e405ac',
@@ -60,7 +60,7 @@ export const AdminLoginPage: React.FC = () => {
       </div>
 
       {/* Form fields */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', paddingTop: '74px', paddingBottom: '40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', paddingTop: '90px', paddingBottom: '40px' }}>
         <LoginForm onSubmit={handleSubmit} error={error} isLoading={isLoading} />
       </div>
 
