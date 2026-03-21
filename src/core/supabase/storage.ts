@@ -8,11 +8,35 @@ import { supabase } from './client';
 export const storageService = {
   /**
    * Upload photo to storage
-   * TODO: Implement photo upload with compression
+   * Stores in path: {org_id}/{user_id}/{uuid}.jpg
+   *
+   * @param file - File or Blob to upload
+   * @param userId - User ID for path organization
+   * @param orgId - Organization ID for path organization
+   * @returns Promise with storage path
+   * @throws Error if upload fails
    */
-  uploadPhoto: async (_file: File, _userId: string) => {
-    // TODO: Implement photo upload to Supabase storage
-    return null;
+  uploadPhoto: async (file: File | Blob, userId: string, orgId: string): Promise<string> => {
+    const fileExt = 'jpg';
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const path = `${orgId}/${userId}/${fileName}`;
+
+    console.log('[storage] Uploading photo to path:', path);
+
+    const { error } = await supabase.storage
+      .from('images')
+      .upload(path, file, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('[storage] Upload failed:', error);
+      throw new Error(`Failed to upload photo: ${error.message}`);
+    }
+
+    console.log('[storage] Photo uploaded successfully');
+    return path;
   },
 
   /**
