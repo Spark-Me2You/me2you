@@ -335,6 +335,60 @@
   color: var(--color-error, #dc2626);
 }
 
+/* Gesture Selector */
+.gestureHint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #999);
+  margin: 0 0 0.5rem 0;
+}
+
+.gestureSelector {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.gestureOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-border, #ddd);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  flex: 1;
+  max-width: 100px;
+}
+
+.gestureOption:hover:not(:has(input:disabled)) {
+  border-color: var(--color-primary-light, #93c5fd);
+  background: var(--color-bg-hover, #f8fafc);
+}
+
+.gestureOptionSelected {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, #eff6ff);
+}
+
+.gestureRadio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gestureEmoji {
+  font-size: 1.5rem;
+}
+
+.gestureLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-primary, #1a1a1a);
+  text-align: center;
+}
+
 /* Mobile Responsive */
 @media (max-width: 480px) {
   .stepContainer {

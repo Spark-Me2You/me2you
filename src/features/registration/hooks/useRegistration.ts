@@ -49,7 +49,7 @@ export interface UseRegistrationReturn {
   // Step handlers
   handleSignUp: (email: string, password: string) => Promise<boolean>;
   handleProfileSubmit: () => Promise<boolean>;
-  handlePhotoSubmit: (photo: Blob | null) => Promise<boolean>;
+  handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
 }
 
 const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
@@ -168,7 +168,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     }
   }, [state.formData, setUserProfile, nextStep]);
 
-  const handlePhotoSubmit = useCallback(async (photo: Blob | null): Promise<boolean> => {
+  const handlePhotoSubmit = useCallback(async (photo: Blob | null, category: string): Promise<boolean> => {
     if (!photo) {
       setState(prev => ({ ...prev, error: 'Please take or upload a photo' }));
       return false;
@@ -184,8 +184,8 @@ export const useRegistration = (): UseRegistrationReturn => {
         throw new Error('User not authenticated');
       }
 
-      // Upload photo and create record
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id);
+      // Upload photo and create record with gesture category
+      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
 
       setState(prev => ({
         ...prev,

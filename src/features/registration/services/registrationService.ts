@@ -83,27 +83,29 @@ export const registrationService = {
 
   /**
    * Step 3: Upload photo and create image record
-   * Uploads photo to storage and creates database record
+   * Uploads photo to storage and creates database record with gesture category
    *
    * @param photo - Photo blob
    * @param userId - User ID (owner)
+   * @param category - Gesture category (wave, peace_sign, thumbs_up)
    * @returns The created image record
    */
   uploadPhotoAndCreateRecord: async (
     photo: Blob,
-    userId: string
+    userId: string,
+    category: string = 'wave'
   ): Promise<{ id: string; storage_path: string }> => {
     const orgId = getDefaultOrgId();
 
     // Upload to storage
     const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
 
-    // Create image record
+    // Create image record with gesture category
     const imageRecord = await userRegistrationAuthService.createImageRecord({
       owner_id: userId,
       org_id: orgId,
       storage_path: storagePath,
-      category: 'profile',
+      category: category,
       is_public: true,
     });
 

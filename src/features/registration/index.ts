@@ -10,6 +10,7 @@ export { RegistrationPage } from './components/RegistrationPage';
 export { SignUpStep } from './components/SignUpStep';
 export { ProfileStep } from './components/ProfileStep';
 export { PhotoStep } from './components/PhotoStep';
+export type { GestureCategory } from './components/PhotoStep';
 export { SuccessStep } from './components/SuccessStep';
 
 // Hook

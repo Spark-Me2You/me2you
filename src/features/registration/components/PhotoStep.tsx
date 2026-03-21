@@ -1,13 +1,24 @@
 /**
  * PhotoStep Component
- * Photo capture/upload step for registration
+ * Photo capture/upload step for registration with gesture category selection
  */
 
 import React, { useState, useRef, useCallback } from 'react';
 import styles from './RegistrationSteps.module.css';
 
+/**
+ * Gesture category options
+ */
+const GESTURE_OPTIONS = [
+  { value: 'wave', label: 'Wave', emoji: '👋' },
+  { value: 'peace_sign', label: 'Peace Sign', emoji: '✌️' },
+  { value: 'thumbs_up', label: 'Thumbs Up', emoji: '👍' },
+] as const;
+
+export type GestureCategory = typeof GESTURE_OPTIONS[number]['value'];
+
 interface PhotoStepProps {
-  onSubmit: (photo: Blob | null) => Promise<boolean>;
+  onSubmit: (photo: Blob | null, category: GestureCategory) => Promise<boolean>;
   onBack: () => void;
   isSubmitting: boolean;
   error: string | null;
@@ -77,6 +88,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 }) => {
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [category, setCategory] = useState<GestureCategory>('wave');
   const [localError, setLocalError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +156,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       return;
     }
 
-    await onSubmit(photo);
+    await onSubmit(photo, category);
   };
 
   const displayError = localError || error;
@@ -220,6 +232,35 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
                 {isProcessing ? 'Processing...' : 'Take or Upload Photo'}
               </button>
             )}
+          </div>
+        </div>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.label}>
+            Select Your Gesture
+          </label>
+          <p className={styles.gestureHint}>
+            This gesture will be used to reveal your photo at the kiosk
+          </p>
+          <div className={styles.gestureSelector}>
+            {GESTURE_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className={`${styles.gestureOption} ${category === option.value ? styles.gestureOptionSelected : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="gesture"
+                  value={option.value}
+                  checked={category === option.value}
+                  onChange={(e) => setCategory(e.target.value as GestureCategory)}
+                  disabled={isBusy}
+                  className={styles.gestureRadio}
+                />
+                <span className={styles.gestureEmoji}>{option.emoji}</span>
+                <span className={styles.gestureLabel}>{option.label}</span>
+              </label>
+            ))}
           </div>
         </div>
 
