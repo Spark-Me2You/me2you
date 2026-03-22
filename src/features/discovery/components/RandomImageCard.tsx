@@ -124,7 +124,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
         >
           <img
             src={imageData.imageUrl}
-            alt={`Photo by ${imageData.owner.display_name}`}
+            alt={`Photo by ${imageData.owner.name}`}
             style={{
               maxWidth: "100%",
               maxHeight: "100%",
@@ -155,9 +155,9 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
               color: "#333",
             }}
           >
-            {imageData.owner.display_name}
+            {imageData.owner.name}
           </h3>
-          {imageData.owner.bio && (
+          {imageData.owner.status && (
             <p
               style={{
                 margin: 0,
@@ -166,7 +166,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
                 lineHeight: 1.5,
               }}
             >
-              {imageData.owner.bio}
+              {imageData.owner.status}
             </p>
           )}
         </div>

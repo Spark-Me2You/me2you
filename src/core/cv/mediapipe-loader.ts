@@ -42,9 +42,13 @@ export const createGestureRecognizer = async (config: {
 }): Promise<GestureRecognizer> => {
   const { FilesetResolver, GestureRecognizer } = await loadMediaPipeVision();
 
-  // Load MediaPipe vision WASM files from CDN
+  /**
+   * IMPORTANT: WASM version must match package.json version exactly
+   * When upgrading @mediapipe/tasks-vision, update this URL version
+   * Current package version: 0.10.32
+   */
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm",
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
   );
 
   // Create GestureRecognizer instance with configuration
