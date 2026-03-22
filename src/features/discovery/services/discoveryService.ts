@@ -30,7 +30,7 @@ export const discoveryService = {
    *
    * @param orgId - Organization ID from kiosk session
    * @param category - Optional image category filter ("peace_sign", "wave", "thumbs_up")
-   * @returns Random image with owner display_name and bio, or null if no images found
+   * @returns Random image with owner name and status, or null if no images found
    * @throws Error if database query fails
    *
    * @example
@@ -50,7 +50,7 @@ export const discoveryService = {
 
     try {
       // Query images joined with user data
-      // SQL equivalent: SELECT image.*, user.display_name, user.bio
+      // SQL equivalent: SELECT image.*, user.name, user.status
       //                 FROM image JOIN user ON image.owner_id = user.id
       //                 WHERE image.org_id = orgId AND image.is_public = true
       //                 [AND image.category = category if provided]
@@ -70,8 +70,8 @@ export const discoveryService = {
           created_at,
           user (
             id,
-            display_name,
-            bio
+            name,
+            status
           )
         `
         )
@@ -142,8 +142,8 @@ export const discoveryService = {
         },
         owner: {
           id: userData.id,
-          display_name: userData.display_name,
-          bio: userData.bio,
+          name: userData.name,
+          status: userData.status,
         },
         imageUrl,
       };
@@ -239,6 +239,29 @@ export const discoveryService = {
 
     try {
       // Query images joined with user data
+      // Use a random offset to get different images each time
+      // This ensures all images in the category can appear over multiple fetches
+      const { count } = await supabase
+        .from('image')
+        .select('*', { count: 'exact', head: true })
+        .eq('org_id', orgId)
+        .eq('category', category)
+        .eq('is_public', true);
+
+      const totalCount = count ?? 0;
+
+      if (totalCount === 0) {
+        console.log(
+          `[discoveryService] No images found for batch: ${category}`
+        );
+        return [];
+      }
+
+      // Calculate a random offset to start fetching from
+      // This ensures different images are selected on each call
+      const maxOffset = Math.max(0, totalCount - limit);
+      const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
+
       const { data, error } = await supabase
         .from('image')
         .select(
@@ -252,15 +275,16 @@ export const discoveryService = {
           created_at,
           user (
             id,
-            display_name,
-            bio
+            name,
+            status
           )
         `
         )
         .eq('org_id', orgId)
         .eq('category', category)
         .eq('is_public', true)
-        .limit(limit);
+        .order('id', { ascending: true })
+        .range(randomOffset, randomOffset + limit - 1);
 
       if (error) {
         console.error('[discoveryService] Batch query failed:', error);
@@ -310,8 +334,8 @@ export const discoveryService = {
             },
             owner: {
               id: userData.id,
-              display_name: userData.display_name,
-              bio: userData.bio,
+              name: userData.name,
+              status: userData.status,
             },
             imageUrl,
           };

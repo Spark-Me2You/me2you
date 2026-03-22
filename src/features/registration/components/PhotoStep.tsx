@@ -54,6 +54,22 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     };
   }, []);
 
+  // Track video ready state via loadeddata event
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    const handleLoadedData = () => {
+      setIsCameraReady(true);
+    };
+
+    videoElement.addEventListener('loadeddata', handleLoadedData);
+
+    return () => {
+      videoElement.removeEventListener('loadeddata', handleLoadedData);
+    };
+  }, []);
+
   const startCamera = async () => {
     setCameraError(null);
     setIsCameraReady(false);
@@ -73,8 +89,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setIsCameraReady(true);
+        // Camera ready state will be set via loadeddata event listener
       }
     } catch (err) {
       console.error('Camera access error:', err);
