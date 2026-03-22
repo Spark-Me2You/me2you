@@ -1,18 +1,18 @@
 /**
  * PhotoStep Component
- * Photo capture/upload step for registration with gesture category selection
+ * Photo capture step using device camera with gesture category selection
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 
 /**
  * Gesture category options
  */
 const GESTURE_OPTIONS = [
-  { value: 'wave', label: 'Wave', emoji: '👋' },
-  { value: 'peace_sign', label: 'Peace Sign', emoji: '✌️' },
-  { value: 'thumbs_up', label: 'Thumbs Up', emoji: '👍' },
+  { value: 'wave', label: 'Wave' },
+  { value: 'peace_sign', label: 'Peace Sign' },
+  { value: 'thumbs_up', label: 'Thumbs Up' },
 ] as const;
 
 export type GestureCategory = typeof GESTURE_OPTIONS[number]['value'];
@@ -24,60 +24,6 @@ interface PhotoStepProps {
   error: string | null;
   onClearError: () => void;
 }
-
-/**
- * Compress and resize image
- * @param file - Original image file
- * @param maxWidth - Maximum width in pixels
- * @param quality - JPEG quality (0-1)
- * @returns Compressed image blob
- */
-const compressImage = async (
-  file: File,
-  maxWidth = 1200,
-  quality = 0.8
-): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-
-      // Resize if too large
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Failed to get canvas context'));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to compress image'));
-          }
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(file);
-  });
-};
 
 export const PhotoStep: React.FC<PhotoStepProps> = ({
   onSubmit,
@@ -91,65 +37,136 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const [category, setCategory] = useState<GestureCategory>('wave');
   const [localError, setLocalError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setLocalError('Please select an image file');
-      return;
-    }
+  // Start camera on mount
+  useEffect(() => {
+    startCamera();
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setLocalError('Image must be less than 10MB');
-      return;
-    }
+    // Cleanup on unmount
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
-    setLocalError(null);
-    onClearError();
-    setIsProcessing(true);
+  const startCamera = async () => {
+    setCameraError(null);
+    setIsCameraReady(false);
 
     try {
-      // Compress the image
-      const compressed = await compressImage(file);
-      setPhoto(compressed);
+      // Request camera access - prefer front camera on mobile
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
 
-      // Create preview URL
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setIsCameraReady(true);
       }
-      setPreviewUrl(URL.createObjectURL(compressed));
     } catch (err) {
-      setLocalError('Failed to process image. Please try another.');
-      console.error('Image processing error:', err);
-    } finally {
+      console.error('Camera access error:', err);
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          setCameraError('Camera access denied. Please allow camera access and try again.');
+        } else if (err.name === 'NotFoundError') {
+          setCameraError('No camera found. Please connect a camera and try again.');
+        } else {
+          setCameraError(`Camera error: ${err.message}`);
+        }
+      } else {
+        setCameraError('Failed to access camera. Please try again.');
+      }
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraReady(false);
+  };
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    setIsProcessing(true);
+    setLocalError(null);
+    onClearError();
+
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      // Set canvas size to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Mirror the image horizontally (selfie mode)
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+
+      // Draw video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to blob
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            setPhoto(blob);
+
+            // Create preview URL
+            if (previewUrl) {
+              URL.revokeObjectURL(previewUrl);
+            }
+            setPreviewUrl(URL.createObjectURL(blob));
+
+            // Stop camera after capture
+            stopCamera();
+          } else {
+            setLocalError('Failed to capture photo. Please try again.');
+          }
+          setIsProcessing(false);
+        },
+        'image/jpeg',
+        0.9
+      );
+    } catch (err) {
+      console.error('Photo capture error:', err);
+      setLocalError('Failed to capture photo. Please try again.');
       setIsProcessing(false);
     }
-
-    // Reset input to allow selecting the same file again
-    e.target.value = '';
   }, [previewUrl, onClearError]);
 
-  const handleRemovePhoto = useCallback(() => {
+  const handleRetake = useCallback(() => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
     setPhoto(null);
     setPreviewUrl(null);
+    startCamera();
   }, [previewUrl]);
-
-  const handleCameraClick = useCallback(() => {
-    cameraInputRef.current?.click();
-  }, []);
-
-  const handleGalleryClick = useCallback(() => {
-    galleryInputRef.current?.click();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,14 +174,14 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     onClearError();
 
     if (!photo) {
-      setLocalError('Please take or upload a photo');
+      setLocalError('Please take a photo');
       return;
     }
 
     await onSubmit(photo, category);
   };
 
-  const displayError = localError || error;
+  const displayError = localError || error || cameraError;
   const isBusy = isSubmitting || isProcessing;
 
   return (
@@ -172,7 +189,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       <div className={styles.stepHeader}>
         <h2 className={styles.stepTitle}>Take Your Photo</h2>
         <p className={styles.stepDescription}>
-          Strike your pose and take a selfie!
+          Strike your pose and capture a photo
         </p>
       </div>
 
@@ -185,77 +202,54 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
         <div className={styles.photoContainer}>
           {previewUrl ? (
+            // Show captured photo preview
             <img
               src={previewUrl}
               alt="Profile preview"
               className={styles.photoPreview}
             />
           ) : (
-            <div className={styles.photoPlaceholder}>
-              📸<br />
-              Tap the camera button below
+            // Show live camera feed
+            <div className={styles.cameraContainer}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={styles.cameraFeed}
+              />
+              {!isCameraReady && !cameraError && (
+                <div className={styles.cameraLoading}>
+                  Starting camera...
+                </div>
+              )}
             </div>
           )}
 
-          <div className={styles.photoActions}>
-            {/* Hidden camera input - opens front camera on mobile */}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="user"
-              onChange={handleFileSelect}
-              className={styles.fileInput}
-              disabled={isBusy}
-            />
-            {/* Hidden gallery input - for uploading existing photos */}
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className={styles.fileInput}
-              disabled={isBusy}
-            />
+          {/* Hidden canvas for photo capture */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
 
+          <div className={styles.photoActions}>
             {previewUrl ? (
               <>
                 <button
                   type="button"
                   className={styles.cameraButton}
-                  onClick={handleCameraClick}
+                  onClick={handleRetake}
                   disabled={isBusy}
                 >
-                  {isProcessing ? 'Processing...' : '📷 Retake Photo'}
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={handleRemovePhoto}
-                  disabled={isBusy}
-                >
-                  Remove
+                  Retake Photo
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  type="button"
-                  className={styles.cameraButton}
-                  onClick={handleCameraClick}
-                  disabled={isBusy}
-                >
-                  {isProcessing ? 'Processing...' : '📷 Take Photo'}
-                </button>
-                <button
-                  type="button"
-                  className={styles.galleryButton}
-                  onClick={handleGalleryClick}
-                  disabled={isBusy}
-                >
-                  Choose from Gallery
-                </button>
-              </>
+              <button
+                type="button"
+                className={styles.cameraButton}
+                onClick={capturePhoto}
+                disabled={isBusy || !isCameraReady}
+              >
+                {isProcessing ? 'Capturing...' : 'Capture Photo'}
+              </button>
             )}
           </div>
         </div>
@@ -282,7 +276,6 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
                   disabled={isBusy}
                   className={styles.gestureRadio}
                 />
-                <span className={styles.gestureEmoji}>{option.emoji}</span>
                 <span className={styles.gestureLabel}>{option.label}</span>
               </label>
             ))}
