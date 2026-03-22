@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { useAuth } from "@/core/auth";
 import type { RandomImageData } from "../types/image";
 import { CameraView } from "./CameraView";
 import { RandomImageCard } from "./RandomImageCard";
+import { ProfileCardView } from "./ProfileCardView";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import { useImageChambers } from "../hooks/useImageChambers";
 import {
@@ -28,6 +29,10 @@ export const DiscoveryView: React.FC = () => {
   const [imageData, setImageData] = useState<RandomImageData | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // View mode state for profile detail navigation
+  const [viewMode, setViewMode] = useState<'discovery' | 'profile-detail'>('discovery');
+  const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
+
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
   const hasPoppedImageRef = useRef<boolean>(false);
@@ -45,6 +50,18 @@ export const DiscoveryView: React.FC = () => {
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
+
+  // Handler for viewing profile detail
+  const handleViewProfile = useCallback((profileData: RandomImageData) => {
+    setSelectedProfile(profileData);
+    setViewMode('profile-detail');
+  }, []);
+
+  // Handler for returning to discovery view
+  const handleBackToDiscovery = useCallback(() => {
+    setViewMode('discovery');
+    setSelectedProfile(null);
+  }, []);
 
   // Effect: Pop image from chamber when a supported gesture is detected
   // NOTE: Removed imageData from dependencies to prevent infinite loop
@@ -186,7 +203,7 @@ export const DiscoveryView: React.FC = () => {
           <CameraView onGestureDetected={setDetectedGesture} />
         </div>
 
-        {/* Right side: Matched profile / results */}
+        {/* Right side: Matched profile / results or profile detail */}
         <div
           style={{
             height: "100%",
@@ -194,18 +211,28 @@ export const DiscoveryView: React.FC = () => {
             flexDirection: "column",
           }}
         >
-          <RandomImageCard
-            detectedGesture={detectedGesture}
-            imageData={imageData}
-            isLoading={
-              detectedGesture?.gestureName
-                ? isChamberLoading(
-                    getCategoryFromGesture(detectedGesture.gestureName) ?? ""
-                  )
-                : false
-            }
-            error={imageError}
-          />
+          {viewMode === 'discovery' ? (
+            <RandomImageCard
+              detectedGesture={detectedGesture}
+              imageData={imageData}
+              isLoading={
+                detectedGesture?.gestureName
+                  ? isChamberLoading(
+                      getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                    )
+                  : false
+              }
+              error={imageError}
+              onViewProfile={handleViewProfile}
+            />
+          ) : (
+            selectedProfile && (
+              <ProfileCardView
+                profileData={selectedProfile}
+                onBack={handleBackToDiscovery}
+              />
+            )
+          )}
         </div>
       </div>
     </div>

@@ -35,6 +35,12 @@ export interface UserProfile {
   name: string;
   /** User's status/description (optional) */
   status: string | null;
+  /** User's pronouns (optional) */
+  pronouns: string | null;
+  /** User's major or title (optional) */
+  major: string | null;
+  /** User's interests (optional array) */
+  interests: string[] | null;
 }
 
 /**

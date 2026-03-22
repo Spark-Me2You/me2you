@@ -14,6 +14,7 @@ interface RandomImageCardProps {
   imageData?: RandomImageData | null;
   isLoading?: boolean;
   error?: string | null;
+  onViewProfile?: (imageData: RandomImageData) => void;
 }
 
 /**
@@ -34,6 +35,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   imageData,
   isLoading,
   error,
+  onViewProfile,
 }) => {
   // Check if any supported gesture is detected
   const gestureMapping = getGestureMapping(detectedGesture?.gestureName ?? null);
@@ -168,6 +170,27 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
             >
               {imageData.owner.status}
             </p>
+          )}
+
+          {/* Find out more button */}
+          {onViewProfile && (
+            <button
+              onClick={() => onViewProfile(imageData)}
+              style={{
+                width: "100%",
+                padding: "0.75rem 1rem",
+                marginTop: "1rem",
+                fontSize: "1rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                backgroundColor: "#4caf50",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+              }}
+            >
+              Find out more about me
+            </button>
           )}
         </div>
 

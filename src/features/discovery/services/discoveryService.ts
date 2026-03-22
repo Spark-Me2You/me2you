@@ -3,9 +3,9 @@
  * API for matching gestures and fetching random profiles from the organization
  */
 
-import { supabase } from '@/core/supabase/client';
-import { storageService } from '@/core/supabase/storage';
-import type { RandomImageData } from '../types/image';
+import { supabase } from "@/core/supabase/client";
+import { storageService } from "@/core/supabase/storage";
+import type { RandomImageData } from "../types/image";
 
 export const discoveryService = {
   /**
@@ -42,10 +42,10 @@ export const discoveryService = {
    */
   fetchRandomImage: async (
     orgId: string,
-    category?: string
+    category?: string,
   ): Promise<RandomImageData | null> => {
     if (!orgId) {
-      throw new Error('Organization ID is required');
+      throw new Error("Organization ID is required");
     }
 
     try {
@@ -58,7 +58,7 @@ export const discoveryService = {
       // Note: Requires foreign key relationship from image.owner_id to user.id
       // (see migration 006_add_image_user_foreign_key.sql)
       let query = supabase
-        .from('image')
+        .from("image")
         .select(
           `
           id,
@@ -73,29 +73,29 @@ export const discoveryService = {
             name,
             status
           )
-        `
+        `,
         )
-        .eq('org_id', orgId)
-        .eq('is_public', true);
+        .eq("org_id", orgId)
+        .eq("is_public", true);
 
       // Add category filter if provided
       if (category) {
-        query = query.eq('category', category);
+        query = query.eq("category", category);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('[discoveryService] Database query failed:', error);
+        console.error("[discoveryService] Database query failed:", error);
         throw new Error(`Failed to fetch images: ${error.message}`);
       }
 
       // No public images found in this organization
       if (!data || data.length === 0) {
         console.log(
-          '[discoveryService] No public images found for org:',
+          "[discoveryService] No public images found for org:",
           orgId,
-          category ? `with category: ${category}` : '(all categories)'
+          category ? `with category: ${category}` : "(all categories)",
         );
         return null;
       }
@@ -112,21 +112,23 @@ export const discoveryService = {
 
       if (!userData) {
         console.error(
-          '[discoveryService] Image has no owner:',
-          selectedImage.id
+          "[discoveryService] Image has no owner:",
+          selectedImage.id,
         );
-        throw new Error('Image owner data is missing');
+        throw new Error("Image owner data is missing");
       }
 
       // Generate signed URL for the image from storage bucket
-      const imageUrl = await storageService.getPhotoUrl(selectedImage.storage_path);
+      const imageUrl = await storageService.getPhotoUrl(
+        selectedImage.storage_path,
+      );
 
       console.log(
-        '[discoveryService] Random image selected:',
+        "[discoveryService] Random image selected:",
         selectedImage.id,
-        'from',
+        "from",
         data.length,
-        'available images'
+        "available images",
       );
 
       // Construct return object with image data and owner info
@@ -144,12 +146,15 @@ export const discoveryService = {
           id: userData.id,
           name: userData.name,
           status: userData.status,
+          pronouns: userData.pronouns ?? null,
+          major: userData.major ?? null,
+          interests: userData.interests ?? null,
         },
         imageUrl,
       };
     } catch (error) {
       // Log and re-throw for upper layers to handle
-      console.error('[discoveryService] fetchRandomImage failed:', error);
+      console.error("[discoveryService] fetchRandomImage failed:", error);
       throw error;
     }
   },
@@ -174,30 +179,30 @@ export const discoveryService = {
    */
   getImageCount: async (orgId: string, category: string): Promise<number> => {
     if (!orgId || !category) {
-      throw new Error('Organization ID and category are required');
+      throw new Error("Organization ID and category are required");
     }
 
     try {
       const { count, error } = await supabase
-        .from('image')
-        .select('*', { count: 'exact', head: true })
-        .eq('org_id', orgId)
-        .eq('category', category)
-        .eq('is_public', true);
+        .from("image")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", orgId)
+        .eq("category", category)
+        .eq("is_public", true);
 
       if (error) {
-        console.error('[discoveryService] Count query failed:', error);
+        console.error("[discoveryService] Count query failed:", error);
         throw new Error(`Failed to count images: ${error.message}`);
       }
 
       console.log(
         `[discoveryService] Image count for ${category}:`,
-        count ?? 0
+        count ?? 0,
       );
 
       return count ?? 0;
     } catch (error) {
-      console.error('[discoveryService] getImageCount failed:', error);
+      console.error("[discoveryService] getImageCount failed:", error);
       throw error;
     }
   },
@@ -227,14 +232,14 @@ export const discoveryService = {
   fetchRandomImageBatch: async (
     orgId: string,
     category: string,
-    limit: number
+    limit: number,
   ): Promise<RandomImageData[]> => {
     if (!orgId || !category) {
-      throw new Error('Organization ID and category are required');
+      throw new Error("Organization ID and category are required");
     }
 
     if (limit <= 0) {
-      throw new Error('Limit must be greater than 0');
+      throw new Error("Limit must be greater than 0");
     }
 
     try {
@@ -242,17 +247,17 @@ export const discoveryService = {
       // Use a random offset to get different images each time
       // This ensures all images in the category can appear over multiple fetches
       const { count } = await supabase
-        .from('image')
-        .select('*', { count: 'exact', head: true })
-        .eq('org_id', orgId)
-        .eq('category', category)
-        .eq('is_public', true);
+        .from("image")
+        .select("*", { count: "exact", head: true })
+        .eq("org_id", orgId)
+        .eq("category", category)
+        .eq("is_public", true);
 
       const totalCount = count ?? 0;
 
       if (totalCount === 0) {
         console.log(
-          `[discoveryService] No images found for batch: ${category}`
+          `[discoveryService] No images found for batch: ${category}`,
         );
         return [];
       }
@@ -263,7 +268,7 @@ export const discoveryService = {
       const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
 
       const { data, error } = await supabase
-        .from('image')
+        .from("image")
         .select(
           `
           id,
@@ -278,22 +283,22 @@ export const discoveryService = {
             name,
             status
           )
-        `
+        `,
         )
-        .eq('org_id', orgId)
-        .eq('category', category)
-        .eq('is_public', true)
-        .order('id', { ascending: true })
+        .eq("org_id", orgId)
+        .eq("category", category)
+        .eq("is_public", true)
+        .order("id", { ascending: true })
         .range(randomOffset, randomOffset + limit - 1);
 
       if (error) {
-        console.error('[discoveryService] Batch query failed:', error);
+        console.error("[discoveryService] Batch query failed:", error);
         throw new Error(`Failed to fetch image batch: ${error.message}`);
       }
 
       if (!data || data.length === 0) {
         console.log(
-          `[discoveryService] No images found for batch: ${category}`
+          `[discoveryService] No images found for batch: ${category}`,
         );
         return [];
       }
@@ -313,8 +318,8 @@ export const discoveryService = {
 
           if (!userData) {
             console.warn(
-              '[discoveryService] Image missing owner data:',
-              img.id
+              "[discoveryService] Image missing owner data:",
+              img.id,
             );
             throw new Error(`Image ${img.id} has no owner data`);
           }
@@ -336,21 +341,24 @@ export const discoveryService = {
               id: userData.id,
               name: userData.name,
               status: userData.status,
+              pronouns: userData.pronouns ?? null,
+              major: userData.major ?? null,
+              interests: userData.interests ?? null,
             },
             imageUrl,
           };
-        })
+        }),
       );
 
       console.log(
         `[discoveryService] Fetched batch for ${category}:`,
         processedImages.length,
-        'images'
+        "images",
       );
 
       return processedImages;
     } catch (error) {
-      console.error('[discoveryService] fetchRandomImageBatch failed:', error);
+      console.error("[discoveryService] fetchRandomImageBatch failed:", error);
       throw error;
     }
   },
