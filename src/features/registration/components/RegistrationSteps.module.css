@@ -216,6 +216,33 @@
   background: var(--color-secondary-hover, #4f46e5);
 }
 
+/* Camera button - primary action */
+.cameraButton {
+  composes: submitButton;
+  background: var(--color-primary, #3b82f6);
+  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+}
+
+.cameraButton:hover:not(:disabled) {
+  background: var(--color-primary-hover, #2563eb);
+}
+
+/* Gallery button - secondary option */
+.galleryButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #666);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.galleryButton:hover:not(:disabled) {
+  color: var(--color-text-primary, #1a1a1a);
+}
+
 /* Interests Tags */
 .interestsContainer {
   display: flex;

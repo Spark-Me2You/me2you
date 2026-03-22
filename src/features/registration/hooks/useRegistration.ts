@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/core/auth/AuthContext';
 import { supabase } from '@/core/supabase/client';
+import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth';
 import { registrationService, type RegistrationFormData, type RegistrationResult } from '../services/registrationService';
 
 /**
@@ -186,6 +187,10 @@ export const useRegistration = (): UseRegistrationReturn => {
 
       // Upload photo and create record with gesture category
       const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
+
+      // Sign out the user - registration is complete, they don't need to stay logged in
+      // The main app is only for admins/kiosk mode
+      await userRegistrationAuthService.signOut();
 
       setState(prev => ({
         ...prev,

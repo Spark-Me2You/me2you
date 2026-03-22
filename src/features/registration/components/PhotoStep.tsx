@@ -91,7 +91,8 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const [category, setCategory] = useState<GestureCategory>('wave');
   const [localError, setLocalError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -142,8 +143,12 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     setPreviewUrl(null);
   }, [previewUrl]);
 
-  const handleCaptureClick = useCallback(() => {
-    fileInputRef.current?.click();
+  const handleCameraClick = useCallback(() => {
+    cameraInputRef.current?.click();
+  }, []);
+
+  const handleGalleryClick = useCallback(() => {
+    galleryInputRef.current?.click();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -165,9 +170,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   return (
     <div className={styles.stepContainer}>
       <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>Add Your Photo</h2>
+        <h2 className={styles.stepTitle}>Take Your Photo</h2>
         <p className={styles.stepDescription}>
-          Take a selfie or upload a profile photo
+          Strike your pose and take a selfie!
         </p>
       </div>
 
@@ -187,17 +192,27 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
             />
           ) : (
             <div className={styles.photoPlaceholder}>
-              Tap below to take or upload a photo
+              📸<br />
+              Tap the camera button below
             </div>
           )}
 
           <div className={styles.photoActions}>
-            {/* Hidden file input - uses capture="user" for mobile front camera */}
+            {/* Hidden camera input - opens front camera on mobile */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="user"
+              onChange={handleFileSelect}
+              className={styles.fileInput}
+              disabled={isBusy}
+            />
+            {/* Hidden gallery input - for uploading existing photos */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
               onChange={handleFileSelect}
               className={styles.fileInput}
               disabled={isBusy}
@@ -207,11 +222,11 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
               <>
                 <button
                   type="button"
-                  className={styles.uploadButton}
-                  onClick={handleCaptureClick}
+                  className={styles.cameraButton}
+                  onClick={handleCameraClick}
                   disabled={isBusy}
                 >
-                  {isProcessing ? 'Processing...' : 'Retake Photo'}
+                  {isProcessing ? 'Processing...' : '📷 Retake Photo'}
                 </button>
                 <button
                   type="button"
@@ -223,14 +238,24 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                className={styles.uploadButton}
-                onClick={handleCaptureClick}
-                disabled={isBusy}
-              >
-                {isProcessing ? 'Processing...' : 'Take or Upload Photo'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={styles.cameraButton}
+                  onClick={handleCameraClick}
+                  disabled={isBusy}
+                >
+                  {isProcessing ? 'Processing...' : '📷 Take Photo'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.galleryButton}
+                  onClick={handleGalleryClick}
+                  disabled={isBusy}
+                >
+                  Choose from Gallery
+                </button>
+              </>
             )}
           </div>
         </div>
