@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { useAuth } from "@/core/auth";
@@ -28,6 +28,10 @@ export const DiscoveryView: React.FC = () => {
   const [imageData, setImageData] = useState<RandomImageData | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // Ref to track if we've already popped an image for current gesture
+  // Prevents infinite loops from useEffect re-running when imageData changes
+  const hasPoppedImageRef = useRef<boolean>(false);
+
   // Initialize image chambers for all gesture categories
   // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
   // (which would trigger multiple useEffect re-runs in useImageChambers)
@@ -43,7 +47,8 @@ export const DiscoveryView: React.FC = () => {
   };
 
   // Effect: Pop image from chamber when a supported gesture is detected
-  // NOTE: Dependencies are now stable (popImage, getError, isChamberLoading don't change)
+  // NOTE: Removed imageData from dependencies to prevent infinite loop
+  // Uses hasPopgedImageRef to track if we've already popped for this gesture
   useEffect(() => {
     // Check if any supported gesture is detected
     const isGestureDetected = isSupportedGesture(
@@ -54,12 +59,14 @@ export const DiscoveryView: React.FC = () => {
     );
 
     if (!isGestureDetected || !category) {
+      // No gesture detected - reset the flag
+      hasPoppedImageRef.current = false;
       return;
     }
 
-    // Debounce: Only pop if we don't already have image displayed
+    // Debounce: Only pop if we haven't already popped for this gesture
     // This prevents popping on every frame while gesture is held
-    if (imageData) {
+    if (hasPoppedImageRef.current) {
       return;
     }
 
@@ -70,6 +77,9 @@ export const DiscoveryView: React.FC = () => {
       );
       return;
     }
+
+    // Mark that we're popping an image for this gesture
+    hasPoppedImageRef.current = true;
 
     // Pop image from chamber (instant - no async!)
     console.log("[DiscoveryView] Popping image from chamber:", category);
@@ -100,22 +110,24 @@ export const DiscoveryView: React.FC = () => {
         );
       }
     }
-  }, [detectedGesture, imageData, isInitialized, popImage, getError, isChamberLoading]);
+  }, [detectedGesture, isInitialized, popImage, getError, isChamberLoading]);
 
   // Effect: Clear image when gesture is no longer detected
+  // Removed imageData from dependencies to prevent infinite loop
   useEffect(() => {
     const isGestureDetected = isSupportedGesture(
       detectedGesture?.gestureName ?? null
     );
 
-    if (!isGestureDetected && imageData) {
+    if (!isGestureDetected) {
       // Clear image data when gesture is released
       // This allows fetching a new image on the next gesture
       console.log("[DiscoveryView] Gesture released, clearing image");
       setImageData(null);
       setImageError(null);
+      hasPoppedImageRef.current = false;
     }
-  }, [detectedGesture, imageData]);
+  }, [detectedGesture]);
 
   return (
     <div
