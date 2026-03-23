@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { useAuth } from "@/core/auth";
 import type { RandomImageData } from "../types/image";
 import { CameraView } from "./CameraView";
 import { RandomImageCard } from "./RandomImageCard";
+import { ProfileCardView } from "./ProfileCardView";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import { useImageChambers } from "../hooks/useImageChambers";
 import {
@@ -28,6 +29,10 @@ export const DiscoveryView: React.FC = () => {
   const [imageData, setImageData] = useState<RandomImageData | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // View mode state for profile detail navigation
+  const [viewMode, setViewMode] = useState<'discovery' | 'profile-detail'>('discovery');
+  const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
+
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
   const hasPoppedImageRef = useRef<boolean>(false);
@@ -45,6 +50,18 @@ export const DiscoveryView: React.FC = () => {
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
+
+  // Handler for viewing profile detail
+  const handleViewProfile = useCallback((profileData: RandomImageData) => {
+    setSelectedProfile(profileData);
+    setViewMode('profile-detail');
+  }, []);
+
+  // Handler for returning to discovery view
+  const handleBackToDiscovery = useCallback(() => {
+    setViewMode('discovery');
+    setSelectedProfile(null);
+  }, []);
 
   // Effect: Pop image from chamber when a supported gesture is detected
   // NOTE: Removed imageData from dependencies to prevent infinite loop
@@ -136,6 +153,7 @@ export const DiscoveryView: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         backgroundColor: "#fff",
+        position: "relative",
       }}
     >
       {/* Header */}
@@ -205,9 +223,30 @@ export const DiscoveryView: React.FC = () => {
                 : false
             }
             error={imageError}
+            onViewProfile={handleViewProfile}
           />
         </div>
       </div>
+
+      {/* Full-screen Profile Card Overlay */}
+      {viewMode === 'profile-detail' && selectedProfile && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fff",
+            zIndex: 1000,
+          }}
+        >
+          <ProfileCardView
+            profileData={selectedProfile}
+            onBack={handleBackToDiscovery}
+          />
+        </div>
+      )}
     </div>
   );
 };
