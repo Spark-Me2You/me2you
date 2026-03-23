@@ -53,7 +53,7 @@ export interface UseRegistrationReturn {
   handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
 }
 
-const STEP_ORDER: RegistrationStep[] = ['signup', 'photo', 'profile', 'success'];
+const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
 
 /**
  * Custom hook for managing registration flow
@@ -148,40 +148,11 @@ export const useRegistration = (): UseRegistrationReturn => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
+      // Create profile row here so it always exists before the photo upload,
+      // regardless of how the user navigated to this step.
+      const { name, status, pronouns, major, interests } = state.formData;
+      if (!name || name.trim() === '') throw new Error('Name is required');
 
-      // Store photo blob + image record, then advance to profile step
-      setState(prev => ({
-        ...prev,
-        isSubmitting: false,
-        formData: { ...prev.formData, photo },
-        result: {
-          user,
-          profile: prev.formData as any,
-          imageId: imageRecord.id,
-        },
-      }));
-
-      nextStep(); // → profile
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload photo';
-      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
-      return false;
-    }
-  }, [nextStep]);
-
-  const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
-    const { name, status, pronouns, major, interests } = state.formData;
-
-    if (!name || name.trim() === '') {
-      setState(prev => ({ ...prev, error: 'Name is required' }));
-      return false;
-    }
-
-    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
-
-    try {
       const profile = await registrationService.createProfile({
         name: name.trim(),
         status: status?.trim() || null,
@@ -192,18 +163,44 @@ export const useRegistration = (): UseRegistrationReturn => {
 
       setUserProfile(profile);
 
-      // Sign out after full registration is complete
+      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
+
+      // Sign out now that registration is fully complete
       await userRegistrationAuthService.signOut();
 
-      setState(prev => ({ ...prev, isSubmitting: false }));
+      setState(prev => ({
+        ...prev,
+        isSubmitting: false,
+        formData: { ...prev.formData, photo },
+        result: {
+          user,
+          profile,
+          imageId: imageRecord.id,
+        },
+      }));
+
       nextStep(); // → success
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create profile';
+      const message = error instanceof Error ? error.message : 'Failed to upload photo';
       setState(prev => ({ ...prev, isSubmitting: false, error: message }));
       return false;
     }
   }, [state.formData, setUserProfile, nextStep]);
+
+  const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
+    const { name } = state.formData;
+
+    if (!name || name.trim() === '') {
+      setState(prev => ({ ...prev, error: 'Name is required' }));
+      return false;
+    }
+
+    // Just validate and advance — profile DB write happens in handlePhotoSubmit
+    // so the user row always exists immediately before the photo upload.
+    nextStep(); // → photo
+    return true;
+  }, [state.formData, nextStep]);
 
   return {
     // State
