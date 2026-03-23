@@ -47,7 +47,7 @@ export const OrgSelectorPage: React.FC = () => {
     fetchOrgs();
   }, [admin?.org_id, admin?.id]);
 
-  const handleOrgSelect = async (orgId: string, orgName: string) => {
+  const handleOrgSelect = async (orgId: string) => {
     setIsMinting(true);
     setError(null);
     try {
@@ -90,7 +90,7 @@ export const OrgSelectorPage: React.FC = () => {
         {orgs.map((org) => (
           <button
             key={org.id}
-            onClick={() => handleOrgSelect(org.id, org.name)}
+            onClick={() => handleOrgSelect(org.id)}
             disabled={isMinting}
             className={styles.orgBtn}
             style={{
