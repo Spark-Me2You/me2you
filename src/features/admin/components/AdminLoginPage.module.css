@@ -1,0 +1,30 @@
+.titleBox {
+  position: absolute;
+  top: 30px;
+  left: 0px;
+  width: 400px;
+  height: 80px;
+  background-color: #e405ac;
+  display: flex;
+  align-items: center;
+  padding-left: 70px;
+  box-sizing: border-box;
+}
+
+.titleText {
+  font-family: 'Averia Libre', cursive;
+  font-weight: 300;
+  font-size: 37px;
+  color: white;
+  letter-spacing: 6px;
+  text-transform: lowercase;
+}
+
+.formWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 90px;
+  padding-bottom: 40px;
+}

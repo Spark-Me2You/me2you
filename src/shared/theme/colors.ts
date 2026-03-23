@@ -1,32 +1,32 @@
 /**
- * Color Palette
- * TODO: Define color palette for the app
+ * Color Tokens
+ * All colors used across the app. Reference these instead of hardcoding hex values.
  */
 
 export const colors = {
-  // Primary colors
-  primary: '#000000',
-  secondary: '#ffffff',
 
-  // Semantic colors
-  success: '#00ff00',
-  error: '#ff0000',
-  warning: '#ffaa00',
-  info: '#0088ff',
+  // --- Brand ---
+  magenta: '#e405ac',                       // primary action: title bars, field backgrounds
+  black: '#000000',
+  white: '#ffffff',
 
-  // Neutral colors
-  gray: {
-    50: '#f9f9f9',
-    100: '#f0f0f0',
-    200: '#e0e0e0',
-    300: '#d0d0d0',
-    400: '#a0a0a0',
-    500: '#808080',
-    600: '#606060',
-    700: '#404040',
-    800: '#202020',
-    900: '#101010',
+  // --- Button palette ---
+  btnYellowGreen: 'rgba(211, 228, 5, 0.93)',  // yellow-green
+  btnOrange:      'rgba(228, 72, 5, 0.93)',   // orange-red
+  btnPurple:      'rgba(113, 5, 228, 0.93)',  // purple
+  btnPink:        'rgba(228, 5, 172, 0.93)',  // hot pink
+
+  // --- Background ---
+  gradient: {
+    start: '#58e7f7',           // top of page gradient
+    end: '#fefffb',             // bottom of page gradient
   },
 
-  // TODO: Add more colors as needed
+  // --- Glass card ---
+  glass: 'rgba(255, 255, 255, 0.13)',
+
+  // --- State ---
+  error: '#b0003a',
+  magentaDim: '#b0006a',        // magenta disabled/loading state
+
 };

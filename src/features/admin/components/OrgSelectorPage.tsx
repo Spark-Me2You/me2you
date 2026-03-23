@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { supabase } from '@/core/supabase';
 import { GlassCard } from '@/shared/components/GlassCard';
+import { colors } from '@/shared/theme/colors';
+import styles from './OrgSelectorPage.module.css';
 import backfinger from '@/assets/backfinger.png';
 
 interface Organization {
@@ -61,10 +63,8 @@ export const OrgSelectorPage: React.FC = () => {
   if (isLoading) {
     return (
       <GlassCard>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '28px', color: 'white', letterSpacing: '4px' }}>
-            loading...
-          </span>
+        <div className={styles.loadingWrapper}>
+          <span className={styles.loadingText}>loading...</span>
         </div>
       </GlassCard>
     );
@@ -74,49 +74,17 @@ export const OrgSelectorPage: React.FC = () => {
     <GlassCard>
 
       {/* "choose your organization" title — centered, absolute */}
-      <div style={{
-        position: 'absolute',
-        top: '40px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '680px',
-        height: '84px',
-        backgroundColor: '#e405ac',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        whiteSpace: 'nowrap',
-      }}>
-        <span style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 300,
-          fontSize: '37px',
-          color: 'white',
-          letterSpacing: '6px',
-          textTransform: 'lowercase',
-        }}>
-          choose your organization
-        </span>
+      <div className={styles.titleBox}>
+        <span className={styles.titleText}>choose your organization</span>
       </div>
 
       {/* Org buttons */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: '260px',
-        gap: '16px',
-      }}>
-        {error && (
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '18px', color: '#b0003a', backgroundColor: 'rgba(255,255,255,0.6)', padding: '10px 20px', letterSpacing: '2px' }}>
-            {error}
-          </div>
-        )}
+      <div className={styles.orgList}>
+
+        {error && <div className={styles.errorMsg}>{error}</div>}
 
         {orgs.length === 0 && !error && (
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '24px', color: 'white', letterSpacing: '4px' }}>
-            no organizations found
-          </span>
+          <span className={styles.noOrgs}>no organizations found</span>
         )}
 
         {orgs.map((org) => (
@@ -124,19 +92,9 @@ export const OrgSelectorPage: React.FC = () => {
             key={org.id}
             onClick={() => handleOrgSelect(org.id, org.name)}
             disabled={isMinting}
+            className={styles.orgBtn}
             style={{
-              width: '400px',
-              height: '97px',
-              backgroundColor: isMinting ? 'rgba(211,228,5,0.4)' : 'rgba(211,228,5,0.93)',
-              border: 'none',
-              borderRadius: '10px',
-              boxShadow: '0px 4px 4px rgba(0,0,0,0.25), inset 0px 0px 4px rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.2)',
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 300,
-              fontSize: '37px',
-              color: 'white',
-              letterSpacing: '6px',
-              textTransform: 'lowercase',
+              backgroundColor: isMinting ? 'rgba(211,228,5,0.4)' : colors.btnYellowGreen,
               cursor: isMinting ? 'not-allowed' : 'pointer',
             }}
           >
@@ -144,47 +102,17 @@ export const OrgSelectorPage: React.FC = () => {
           </button>
         ))}
 
-        {isMinting && (
-          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '20px', color: 'white', letterSpacing: '3px', marginTop: '8px' }}>
-            starting kiosk mode...
-          </span>
-        )}
+        {isMinting && <span className={styles.mintingText}>starting kiosk mode...</span>}
+
       </div>
 
-      {/* Back to admin sign-in — bottom left, absolute */}
+      {/* Back to admin sign-in — absolute */}
       <div
+        className={styles.backContainer}
         onClick={async () => { await signOut(); navigate('/login', { replace: true }); }}
-        style={{
-          position: 'absolute',
-          top: '360px',
-          left: '60px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
       >
-        <img
-          src={backfinger}
-          alt=""
-          style={{
-            width: '186px',
-            transform: 'rotate(4.71deg)',
-            pointerEvents: 'none',
-          }}
-        />
-        <span style={{
-          fontFamily: "'Caveat', cursive",
-          fontWeight: 700,
-          fontSize: '18px',
-          color: 'black',
-          letterSpacing: '3px',
-          lineHeight: 1.3,
-          marginTop: '4px',
-        }}>
-          back to admin<br />sign-in
-        </span>
+        <img src={backfinger} alt="" className={styles.backImage} />
+        <span className={styles.backText}>back to admin<br />sign-in</span>
       </div>
 
     </GlassCard>

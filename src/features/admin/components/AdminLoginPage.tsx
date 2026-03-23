@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { LoginForm } from './LoginForm';
 import { GlassCard } from '@/shared/components/GlassCard';
+import styles from './AdminLoginPage.module.css';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,33 +35,13 @@ export const AdminLoginPage: React.FC = () => {
   return (
     <GlassCard>
 
-      {/* "admin sign in" title box — independently positioned */}
-      <div style={{
-        position: 'absolute',
-        top: '30px',
-        left: '0px',
-        width: '400px',
-        height: '80px',
-        backgroundColor: '#e405ac',
-        display: 'flex',
-        alignItems: 'center',
-        paddingLeft: '70px',
-        boxSizing: 'border-box',
-      }}>
-        <span style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 300,
-          fontSize: '37px',
-          color: 'white',
-          letterSpacing: '6px',
-          textTransform: 'lowercase',
-        }}>
-          admin sign in
-        </span>
+      {/* "admin sign in" title — independently positioned */}
+      <div className={styles.titleBox}>
+        <span className={styles.titleText}>admin sign in</span>
       </div>
 
       {/* Form fields */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', paddingTop: '90px', paddingBottom: '40px' }}>
+      <div className={styles.formWrapper}>
         <LoginForm onSubmit={handleSubmit} error={error} isLoading={isLoading} />
       </div>
 
