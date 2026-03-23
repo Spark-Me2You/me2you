@@ -109,7 +109,7 @@ export const userRegistrationAuthService = {
 
     const { data, error } = await supabase
       .from('user')
-      .insert(profileToInsert)
+      .upsert(profileToInsert, { onConflict: 'id' })
       .select()
       .single();
 
