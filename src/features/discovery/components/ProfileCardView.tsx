@@ -7,6 +7,7 @@
 import React from 'react';
 import type { RandomImageData } from '../types/image';
 import me2youLogo from '@/assets/me2you.png';
+import registerQr from '@/assets/registerqr.png';
 
 const ORANGE = '#e44805';
 const PURPLE_GLASS = 'rgba(113, 5, 228, 0.93)';
@@ -92,19 +93,21 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
               flex: '0 0 32%',
               display: 'flex',
               flexDirection: 'column',
-              gap: '4%',
+              gap: '2.5%',
+              minHeight: 0,
+              overflow: 'hidden',
             }}
           >
-            {/* Photo frame */}
+            {/* Photo frame — flex-basis drives height so it stays proportional to card */}
             <div
               style={{
+                flex: '0 0 57%',
                 width: '100%',
-                aspectRatio: '1.04',
+                minHeight: 0,
                 backgroundColor: '#fff',
                 borderRadius: 74,
                 overflow: 'hidden',
                 boxShadow: BOX_INSET,
-                flexShrink: 0,
               }}
             >
               <img
@@ -121,11 +124,12 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             <p
               style={{
                 fontFamily: "'Jersey 10', sans-serif",
-                fontSize: 'clamp(36px, 6.5vw, 128px)',
+                fontSize: 'clamp(24px, 4.5vw, 128px)',
                 letterSpacing: '0.17em',
                 color: '#000',
                 margin: 0,
                 lineHeight: 1,
+                flexShrink: 0,
               }}
             >
               {owner.name}
@@ -135,15 +139,18 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             {owner.pronouns && (
               <div
                 style={{
+                  alignSelf: 'flex-start',
                   backgroundColor: ORANGE,
                   padding: '6px 14px',
+                  paddingRight: '48px',
                   flexShrink: 0,
+                  marginTop: '2%',
                 }}
               >
                 <span
                   style={{
                     fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(16px, 2.6vw, 48px)',
+                    fontSize: 'clamp(12px, 1.8vw, 32px)',
                     letterSpacing: '0.17em',
                     color: '#000',
                   }}
@@ -157,15 +164,17 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             {owner.major && (
               <div
                 style={{
+                  alignSelf: 'flex-start',
                   backgroundColor: ORANGE,
                   padding: '6px 14px',
+                  paddingRight: '48px',
                   flexShrink: 0,
                 }}
               >
                 <span
                   style={{
                     fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(16px, 2.6vw, 48px)',
+                    fontSize: 'clamp(12px, 1.8vw, 32px)',
                     letterSpacing: '0.17em',
                     color: '#000',
                   }}
@@ -187,19 +196,18 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             }}
           >
             {/* Status */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
               <div
                 style={{
                   backgroundColor: ORANGE,
                   display: 'inline-block',
-                  padding: '4px 12px',
-                  marginBottom: 10,
+                  padding: '6px 14px',
                 }}
               >
                 <span
                   style={{
                     fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(16px, 2.6vw, 48px)',
+                    fontSize: 'clamp(12px, 1.8vw, 32px)',
                     letterSpacing: '0.17em',
                     color: '#000',
                   }}
@@ -211,14 +219,18 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                 style={{
                   backgroundColor: '#fff',
                   borderRadius: 10,
-                  padding: '12px 18px',
+                  padding: '10px 14px',
                   boxShadow: BOX_INSET,
+                  width: '70%',
+                  minHeight: '90px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
                 }}
               >
                 <p
                   style={{
                     fontFamily: 'monospace',
-                    fontSize: 'clamp(12px, 1.4vw, 20px)',
+                    fontSize: 'clamp(8px, 0.8vw, 13px)',
                     letterSpacing: '-0.04em',
                     color: '#000',
                     margin: 0,
@@ -231,19 +243,18 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             </div>
 
             {/* Interests */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
               <div
                 style={{
                   backgroundColor: ORANGE,
                   display: 'inline-block',
-                  padding: '4px 12px',
-                  marginBottom: 10,
+                  padding: '6px 14px',
                 }}
               >
                 <span
                   style={{
                     fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(16px, 2.6vw, 48px)',
+                    fontSize: 'clamp(12px, 1.8vw, 32px)',
                     letterSpacing: '0.17em',
                     color: '#000',
                   }}
@@ -255,15 +266,19 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                 style={{
                   backgroundColor: '#fff',
                   borderRadius: 10,
-                  padding: '12px 18px',
+                  padding: '10px 14px',
                   boxShadow: BOX_INSET,
+                  width: '70%',
+                  minHeight: '90px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
                 }}
               >
                 {Array.isArray(owner.interests) && owner.interests.length > 0 ? (
                   <ul
                     style={{
                       fontFamily: 'monospace',
-                      fontSize: 'clamp(12px, 1.4vw, 20px)',
+                      fontSize: 'clamp(8px, 0.8vw, 13px)',
                       letterSpacing: '-0.04em',
                       color: '#000',
                       margin: 0,
@@ -279,7 +294,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                   <p
                     style={{
                       fontFamily: 'monospace',
-                      fontSize: 'clamp(12px, 1.4vw, 20px)',
+                      fontSize: 'clamp(8px, 0.8vw, 13px)',
                       color: '#999',
                       margin: 0,
                       fontStyle: 'italic',
@@ -293,118 +308,115 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           </div>
         </div>
 
-        {/* Card glass inset sheen */}
+        {/* ── "want to add as a friend?" — purple glass card (inside main card) ── */}
         <div
           style={{
             position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            pointerEvents: 'none',
-            boxShadow: GLASS_INSET,
-          }}
-        />
-      </div>
-
-      {/* ── "want to add as a friend?" — purple glass card ────────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '82.97%',
-          left: '60.17%',
-          right: '23.61%',
-          bottom: '4.72%',
-          backgroundColor: PURPLE_GLASS,
-          borderRadius: 10,
-          boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 14px',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "'Averia Libre', sans-serif",
-            fontSize: 'clamp(10px, 1.5vw, 21px)',
-            letterSpacing: '0.17em',
-            color: '#fff',
-            margin: 0,
-            lineHeight: 1.5,
-            whiteSpace: 'pre-line',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          {`want to add as a friend?\ncreate an account!`}
-        </p>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            pointerEvents: 'none',
-            boxShadow: GLASS_INSET,
-          }}
-        />
-      </div>
-
-      {/* ── "scan me!" — green glass card (QR placeholder) ───────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '59.78%',
-          left: '83.64%',
-          right: '4.84%',
-          bottom: '14.36%',
-          backgroundColor: GREEN_GLASS,
-          borderRadius: 10,
-          boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '8% 6%',
-          gap: '8%',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "'Averia Libre', sans-serif",
-            fontSize: 'clamp(10px, 1.5vw, 21px)',
-            letterSpacing: '0.17em',
-            color: '#fff',
-            margin: 0,
-            alignSelf: 'flex-start',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          scan me!
-        </p>
-        {/* QR code placeholder — replace with qrcode.react when ready */}
-        <div
-          style={{
-            flex: 1,
-            width: '100%',
-            backgroundColor: 'rgba(255,255,255,0.25)',
-            borderRadius: 6,
+            top: '82.97%',
+            left: '60.17%',
+            right: '23.61%',
+            bottom: '4.72%',
+            backgroundColor: PURPLE_GLASS,
+            borderRadius: 10,
+            boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
+            overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            position: 'relative',
-            zIndex: 1,
+            padding: '4px 10px',
           }}
         >
-          <span
+          <p
             style={{
-              fontFamily: 'monospace',
-              fontSize: 'clamp(10px, 1vw, 14px)',
-              color: 'rgba(255,255,255,0.6)',
+              fontFamily: "'Averia Libre', sans-serif",
+              fontSize: 'clamp(7px, 1vw, 16px)',
+              letterSpacing: '0.05em',
+              color: '#fff',
+              margin: 0,
+              lineHeight: 1.4,
+              whiteSpace: 'pre-line',
+              textAlign: 'center',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
-            QR
-          </span>
+            {`want to add as a friend?\ncreate an account!`}
+          </p>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              pointerEvents: 'none',
+              boxShadow: GLASS_INSET,
+            }}
+          />
         </div>
+
+        {/* ── "scan me!" — green glass card / QR (inside main card) ────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '59.78%',
+            left: '83.64%',
+            right: '4.84%',
+            bottom: '7%',
+            backgroundColor: GREEN_GLASS,
+            borderRadius: 10,
+            boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
+            overflow: 'visible',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '6px 6% 6%',
+            gap: '6%',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "'Averia Libre', sans-serif",
+              fontSize: 'clamp(12px, 1.8vw, 28px)',
+              letterSpacing: '0.08em',
+              color: '#fff',
+              margin: 0,
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+              flexShrink: 0,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            scan me!
+          </p>
+          {/* QR code — absolutely positioned so it's independent of flex sizing */}
+          <img
+            src={registerQr}
+            alt="Register QR code"
+            style={{
+              position: 'absolute',
+              top: '25%',
+              left: '5%',
+              right: '5%',
+              bottom: '5%',
+              width: '90%',
+              height: '70%',
+              objectFit: 'contain',
+              display: 'block',
+              zIndex: 2,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 'inherit',
+              pointerEvents: 'none',
+              boxShadow: GLASS_INSET,
+            }}
+          />
+        </div>
+
+        {/* Card glass inset sheen — must stay last so it renders on top */}
         <div
           style={{
             position: 'absolute',
@@ -441,7 +453,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             whiteSpace: 'nowrap',
             fontFamily: "'Averia Libre', sans-serif",
             fontWeight: 700,
-            fontSize: 'clamp(12px, 2.2vw, 33px)',
+            fontSize: 'clamp(10px, 1.3vw, 20px)',
             color: '#fff',
             letterSpacing: '5.61px',
           }}
@@ -484,7 +496,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
               transform: 'rotate(-90deg)',
               whiteSpace: 'nowrap',
               fontFamily: "'Averia Libre', sans-serif",
-              fontSize: 'clamp(12px, 2.2vw, 33px)',
+              fontSize: 'clamp(10px, 1.3vw, 20px)',
               color: '#fff',
               letterSpacing: '5.61px',
             }}
