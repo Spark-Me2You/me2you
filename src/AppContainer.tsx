@@ -9,6 +9,7 @@ import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { MyProfileView } from "@/features/profile-editor";
+import { HubView } from "@/features/hub";
 import { useAuth } from "@/core/auth";
 import "./App.css";
 import logo from "@/assets/me2you.png";
@@ -149,6 +150,22 @@ function AppContainerContent() {
             >
               My Profile
             </button>
+            <button
+              onClick={() => transitionTo(AppState.HUB)}
+              style={{
+                padding: "0.75rem 1.5rem",
+                fontSize: "1rem",
+                cursor: "pointer",
+                backgroundColor: "#9c27b0",
+                color: "#fff",
+                border: "none",
+                borderRadius: "4px",
+                marginTop: "1rem",
+                marginRight: "1rem",
+              }}
+            >
+              Community Hub
+            </button>
             {renderLogoutButton()}
           </div>
         );
@@ -180,12 +197,7 @@ function AppContainerContent() {
         );
 
       case AppState.HUB:
-        return (
-          <div>
-            <h1>Community Hub</h1>
-            <p>State: {currentState}</p>
-          </div>
-        );
+        return <HubView />;
 
       case AppState.DISCOVERY:
         return <DiscoveryView />;
