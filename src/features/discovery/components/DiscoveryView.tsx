@@ -1,12 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useAppState } from '@/core/state-machine';
-import { AppState } from '@/core/state-machine/appStateMachine';
-import { useAuth } from '@/core/auth';
-import { discoveryService } from '../services/discoveryService';
-import type { RandomImageData } from '../types/image';
-import { CameraView } from './CameraView';
-import { ImagePlaceholder } from './ImagePlaceholder';
-import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useAppState } from "@/core/state-machine";
+import { AppState } from "@/core/state-machine/appStateMachine";
+import { useAuth } from "@/core/auth";
+import type { RandomImageData } from "../types/image";
+import { CameraView } from "./CameraView";
+import { RandomImageCard } from "./RandomImageCard";
+import { ProfileCardView } from "./ProfileCardView";
+import { PoseOverlay } from "./PoseOverlay";
+import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
+import { useImageChambers } from "../hooks/useImageChambers";
+import {
+  getCategoryFromGesture,
+  isSupportedGesture,
+  CATEGORY_LIST,
+} from "../config/gestureMapping";
+import styles from './DiscoveryView.module.css';
 
 /**
  * DiscoveryView Component
@@ -19,147 +27,181 @@ export const DiscoveryView: React.FC = () => {
   const [detectedGesture, setDetectedGesture] =
     useState<GestureRecognitionResult | null>(null);
 
-  // State for random image data
+  // State for currently displayed image (preserves interaction model)
   const [imageData, setImageData] = useState<RandomImageData | null>(null);
-  const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+
+  // View mode state for profile detail navigation
+  const [viewMode, setViewMode] = useState<'discovery' | 'profile-detail'>('discovery');
+  const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
+
+  // Ref to track if we've already popped an image for current gesture
+  // Prevents infinite loops from useEffect re-running when imageData changes
+  const hasPoppedImageRef = useRef<boolean>(false);
+
+  // Initialize image chambers for all gesture categories
+  // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
+  // (which would trigger multiple useEffect re-runs in useImageChambers)
+  const {
+    popImage,
+    isLoading: isChamberLoading,
+    getError,
+    isInitialized,
+  } = useImageChambers(kioskOrgId, CATEGORY_LIST);
 
   const handleBack = () => {
     transitionTo(AppState.IDLE);
   };
 
-  // Effect: Fetch random image when peace sign is detected
+  // Handler for viewing profile detail
+  const handleViewProfile = useCallback((profileData: RandomImageData) => {
+    setSelectedProfile(profileData);
+    setViewMode('profile-detail');
+  }, []);
+
+  // Handler for returning to discovery view
+  const handleBackToDiscovery = useCallback(() => {
+    setViewMode('discovery');
+    setSelectedProfile(null);
+  }, []);
+
+  // Effect: Pop image from chamber when a supported gesture is detected
+  // NOTE: Removed imageData from dependencies to prevent infinite loop
+  // Uses hasPopgedImageRef to track if we've already popped for this gesture
   useEffect(() => {
-    // Only fetch if peace sign is detected and we have an org ID
-    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+    // Check if any supported gesture is detected
+    const isGestureDetected = isSupportedGesture(
+      detectedGesture?.gestureName ?? null
+    );
+    const category = getCategoryFromGesture(
+      detectedGesture?.gestureName ?? null
+    );
 
-    if (!isPeaceSign || !kioskOrgId) {
+    if (!isGestureDetected || !category) {
+      // No gesture detected - reset the flag
+      hasPoppedImageRef.current = false;
       return;
     }
 
-    // Debounce: Only fetch if we don't already have image data
-    // This prevents refetching on every frame while peace sign is held
-    if (imageData || isLoadingImage) {
+    // Debounce: Only pop if we haven't already popped for this gesture
+    // This prevents popping on every frame while gesture is held
+    if (hasPoppedImageRef.current) {
       return;
     }
 
-    const fetchImage = async () => {
-      setIsLoadingImage(true);
+    // Wait for chambers to initialize
+    if (!isInitialized) {
+      console.log(
+        "[DiscoveryView] Chambers not yet initialized, waiting..."
+      );
+      return;
+    }
+
+    // Mark that we're popping an image for this gesture
+    hasPoppedImageRef.current = true;
+
+    // Pop image from chamber (instant - no async!)
+    console.log("[DiscoveryView] Popping image from chamber:", category);
+    const image = popImage(category);
+
+    if (image) {
+      console.log(
+        "[DiscoveryView] Image popped:",
+        image.image.id,
+        "category:",
+        image.image.category
+      );
+      setImageData(image);
       setImageError(null);
-
-      try {
-        console.log(
-          '[DiscoveryView] Fetching random image for org:',
-          kioskOrgId
+    } else {
+      // No image available - check for error or loading state
+      const error = getError(category);
+      if (error) {
+        console.warn("[DiscoveryView] Chamber error:", error);
+        setImageError(error);
+      } else if (isChamberLoading(category)) {
+        console.log("[DiscoveryView] Chamber still loading for:", category);
+        setImageError(null); // Will show loading state in UI
+      } else {
+        console.warn("[DiscoveryView] Chamber empty for:", category);
+        setImageError(
+          `No images available for ${category} gesture in your organization`
         );
-        const data = await discoveryService.fetchRandomImage(kioskOrgId);
-
-        if (data) {
-          console.log('[DiscoveryView] Image fetched:', data.image.id);
-          setImageData(data);
-        } else {
-          console.log('[DiscoveryView] No images available');
-          setImageError('No images available in your organization');
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Failed to fetch image';
-        console.error('[DiscoveryView] Fetch failed:', error);
-        setImageError(errorMessage);
-      } finally {
-        setIsLoadingImage(false);
       }
-    };
+    }
+  }, [detectedGesture, isInitialized, popImage, getError, isChamberLoading]);
 
-    fetchImage();
-  }, [detectedGesture, kioskOrgId, imageData, isLoadingImage]);
-
-  // Effect: Clear image when peace sign is no longer detected
+  // Effect: Clear image when gesture is no longer detected
+  // Removed imageData from dependencies to prevent infinite loop
   useEffect(() => {
-    const isPeaceSign = detectedGesture?.gestureName === 'Victory';
+    const isGestureDetected = isSupportedGesture(
+      detectedGesture?.gestureName ?? null
+    );
 
-    if (!isPeaceSign && imageData) {
+    if (!isGestureDetected) {
       // Clear image data when gesture is released
-      // This allows fetching a new image on the next peace sign
-      console.log('[DiscoveryView] Peace sign released, clearing image');
+      // This allows fetching a new image on the next gesture
+      console.log("[DiscoveryView] Gesture released, clearing image");
       setImageData(null);
       setImageError(null);
+      hasPoppedImageRef.current = false;
     }
-  }, [detectedGesture, imageData]);
+  }, [detectedGesture]);
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#fff',
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem 2rem',
-          borderBottom: '1px solid #e0e0e0',
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Discovery</h1>
-        <button
-          onClick={handleBack}
-          style={{
-            padding: '0.5rem 1rem',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            backgroundColor: '#f5f5f5',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-          }}
-        >
-          Back to Home
-        </button>
-      </header>
+    <div className={styles.container}>
+      {/* Left side: Camera feed */}
+      <div className={styles.leftPanel}>
+        <CameraView onGestureDetected={setDetectedGesture} />
+      </div>
 
-      {/* Split-screen content */}
-      <div
-        style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-          padding: '1rem',
-          overflow: 'hidden',
-        }}
+      {/* Right side: Matched profile / results */}
+      <div className={styles.rightPanel}>
+        <RandomImageCard
+          detectedGesture={detectedGesture}
+          imageData={imageData}
+          isLoading={
+            detectedGesture?.gestureName
+              ? isChamberLoading(
+                  getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                )
+              : false
+          }
+          error={imageError}
+          onViewProfile={handleViewProfile}
+        />
+      </div>
+
+      {/* "choose a pose:" overlay - always visible */}
+      <PoseOverlay />
+
+      {/* Exit button - top right */}
+      <button
+        className={styles.exitButton}
+        onClick={handleBack}
       >
-        {/* Left side: Camera feed */}
+        exit
+      </button>
+
+      {/* Full-screen Profile Card Overlay */}
+      {viewMode === 'profile-detail' && selectedProfile && (
         <div
           style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fff",
+            zIndex: 1000,
           }}
         >
-          <CameraView onGestureDetected={setDetectedGesture} />
-        </div>
-
-        {/* Right side: Matched profile / results */}
-        <div
-          style={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <ImagePlaceholder
-            detectedGesture={detectedGesture}
-            imageData={imageData}
-            isLoading={isLoadingImage}
-            error={imageError}
+          <ProfileCardView
+            profileData={selectedProfile}
+            onBack={handleBackToDiscovery}
           />
         </div>
-      </div>
+      )}
     </div>
   );
 };

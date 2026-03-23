@@ -14,12 +14,15 @@ interface ProtectedRouteProps {
 
 /**
  * Protected Route
- * Checks if user is authenticated before rendering children
+ * Checks if user is authenticated as admin or kiosk before rendering children
  * Shows loading state while checking authentication
- * Redirects to /login if not authenticated
+ * Redirects to /login if not authenticated or if authenticated as regular user
+ *
+ * Note: Regular 'user' auth mode (mobile registration) is NOT allowed to access
+ * protected routes. Only 'admin' and 'kiosk' modes can access /app.
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, authMode } = useAuth();
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -45,6 +48,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Render children if authenticated
+  // Redirect to login if authenticated as regular user (not admin/kiosk)
+  // Regular users from mobile registration should not access the main app
+  if (authMode === 'user') {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Render children if authenticated as admin or kiosk
   return <>{children}</>;
 };

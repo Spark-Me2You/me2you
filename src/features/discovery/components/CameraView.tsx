@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useCamera } from '../hooks/useCamera';
 import { useGestureRecognition } from '../hooks/useGestureRecognition';
 import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
+import styles from './CameraView.module.css';
 
 /**
  * CameraView Component Props
@@ -130,19 +131,13 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
 
   if (combinedError) {
     return (
-      <div
-        style={{
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem',
-        }}
-      >
-        <div style={{ textAlign: 'center', color: '#d32f2f' }}>
-          <h3>{error ? 'Camera Error' : 'Gesture Recognition Error'}</h3>
-          <p>{combinedError}</p>
-          <p style={{ fontSize: '0.875rem', marginTop: '1rem', color: '#666' }}>
+      <div className={styles.messageContainer}>
+        <div className={styles.messageContent}>
+          <h3 className={styles.errorTitle}>
+            {error ? 'Camera Error' : 'Gesture Recognition Error'}
+          </h3>
+          <p className={styles.errorText}>{combinedError}</p>
+          <p className={styles.errorText}>
             {error
               ? 'Please ensure camera permissions are granted and try again.'
               : 'Please ensure the gesture recognizer model is downloaded.'}
@@ -154,15 +149,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
 
   if (isLoading || !isInitialized) {
     return (
-      <div
-        style={{
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <p>
+      <div className={styles.messageContainer}>
+        <p className={styles.loadingText}>
           {isLoading
             ? 'Loading camera...'
             : 'Initializing gesture recognition...'}
@@ -172,48 +160,18 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
   }
 
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-      }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: '640px',
-          aspectRatio: '16/9',
-        }}
-      >
+    <div className={styles.container}>
+      <div className={styles.videoWrapper}>
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: '8px',
-            backgroundColor: '#000',
-            transform: 'scaleX(-1)', // Mirror effect
-          }}
+          className={styles.video}
         />
         <canvas
           ref={canvasRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            transform: 'scaleX(-1)', // Mirror canvas overlay
-          }}
+          className={styles.canvas}
         />
       </div>
     </div>

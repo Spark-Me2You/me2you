@@ -31,10 +31,16 @@ export interface ImageRecord {
 export interface UserProfile {
   /** User ID (references auth.users) */
   id: string;
-  /** Display name shown to other users */
-  display_name: string;
-  /** User's bio/description (optional) */
-  bio: string | null;
+  /** User's name shown to other users */
+  name: string;
+  /** User's status/description (optional) */
+  status: string | null;
+  /** User's pronouns (optional) */
+  pronouns: string | null;
+  /** User's major or title (optional) */
+  major: string | null;
+  /** User's interests (optional array) */
+  interests: string[] | null;
 }
 
 /**

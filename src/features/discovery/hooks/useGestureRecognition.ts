@@ -33,6 +33,7 @@ export const useGestureRecognition = () => {
   const [error, setError] = useState<string | null>(null);
 
   const gestureRecognizerRef = useRef<GestureRecognizer | null>(null);
+  const previousGestureRef = useRef<GestureRecognitionResult | null>(null);
 
   // Initialize MediaPipe GestureRecognizer
   useEffect(() => {
@@ -103,16 +104,30 @@ export const useGestureRecognition = () => {
           const gesture = results.gestures[0][0]; // First hand, first gesture
           const handedness = results.handedness[0]?.[0];
 
-          setDetectedGesture({
+          const newGesture: GestureRecognitionResult = {
             gestureName: gesture.categoryName,
             confidence: gesture.score,
             handedness: handedness
               ? (handedness.categoryName as "Left" | "Right")
               : null,
-          });
+          };
+
+          // Only update state if gesture changed (prevents re-renders on every frame)
+          const previousGesture = previousGestureRef.current;
+          if (
+            !previousGesture ||
+            previousGesture.gestureName !== newGesture.gestureName ||
+            previousGesture.handedness !== newGesture.handedness
+          ) {
+            previousGestureRef.current = newGesture;
+            setDetectedGesture(newGesture);
+          }
         } else {
-          // No gesture detected
-          setDetectedGesture(null);
+          // No gesture detected - only update if we previously had a gesture
+          if (previousGestureRef.current !== null) {
+            previousGestureRef.current = null;
+            setDetectedGesture(null);
+          }
         }
       } catch (err) {
         // Log processing errors but don't crash

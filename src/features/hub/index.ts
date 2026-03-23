@@ -1,13 +1,8 @@
-// Hub exports
-// TODO: Export all public APIs from this module
+/**
+ * Hub Feature Exports
+ * Public API for the Community Hub feature
+ */
 
-export * from './components/HubScene';
-export * from './components/ProfileGrid';
-export * from './components/ProfileCard';
-export * from './components/ProfileDetail';
-export * from './components/HubNavigation';
-export * from './hooks/useProfileFetch';
-export * from './hooks/useProfilePagination';
-export * from './hooks/useProfileFilter';
-export * from './services/hubService';
-export * from './HubView';
+export { HubView } from "./HubView";
+export { hubService } from "./services/hubService";
+export type { HubUserData } from "./services/hubService";

@@ -11,7 +11,24 @@ import type { User, Session } from '@supabase/supabase-js';
  * Auth Mode Type
  * Represents the current authentication mode
  */
-export type AuthMode = 'admin' | 'kiosk' | 'unauthenticated';
+export type AuthMode = 'admin' | 'kiosk' | 'user' | 'unauthenticated';
+
+/**
+ * User Profile Data
+ * Represents a registered user's profile from the user table
+ */
+export interface UserProfile {
+  id: string;
+  org_id: string | null;
+  name: string;
+  status: string | null;
+  pronouns: string | null;
+  major: string | null;
+  interests: string[] | null;
+  visibility: string;
+  created_at: string;
+  updated_at: string;
+}
 
 /**
  * Auth Context Type
@@ -28,6 +45,12 @@ export interface AuthContextType {
    * Only populated when authMode is 'admin'
    */
   admin: AdminUser | null;
+
+  /**
+   * User profile data from the user table
+   * Only populated when authMode is 'user'
+   */
+  userProfile: UserProfile | null;
 
   /**
    * Current Supabase session
@@ -49,6 +72,7 @@ export interface AuthContextType {
    * Current authentication mode
    * - 'admin': Authenticated as admin with full access
    * - 'kiosk': Authenticated as kiosk user with read-only access to specific org
+   * - 'user': Authenticated as regular user (mobile registration)
    * - 'unauthenticated': Not authenticated
    */
   authMode: AuthMode;
@@ -91,6 +115,22 @@ export interface AuthContextType {
    * @throws Error if exit fails
    */
   exitKioskMode: () => Promise<void>;
+
+  /**
+   * Sign up a new user with email and password
+   * Used for mobile registration flow
+   * @param email - User email
+   * @param password - User password
+   * @returns The newly created auth user
+   * @throws Error if signup fails
+   */
+  signUpUser: (email: string, password: string) => Promise<User>;
+
+  /**
+   * Set the user profile after registration is complete
+   * @param profile - The user profile data
+   */
+  setUserProfile: (profile: UserProfile) => void;
 }
 
 /**
