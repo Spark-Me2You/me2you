@@ -1,193 +1,129 @@
 /**
  * Profile Card Component
- * Displays user card in the Community Hub grid
+ * Displays a user card (or anon placeholder) in the Hub Network grid.
+ * Matches the Figma "Network" screen card design.
  */
 
-import React from "react";
-import type { HubUserData } from "../services/hubService";
+import React from 'react';
+import type { HubUserData } from '../services/hubService';
 
-interface ProfileCardProps {
-  userData: HubUserData;
-  onClick: () => void;
+const FRAME_COLORS = ['#e405ac', '#d3e405', '#58e7f7'] as const;
+
+/** Person silhouette for anon cards — two ellipses matching the Figma anon-user components */
+const PersonSilhouette: React.FC = () => (
+  <svg
+    viewBox="0 0 100 120"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ width: '78%', height: '78%', position: 'absolute', bottom: '-8%', left: '11%' }}
+  >
+    {/* Head */}
+    <circle cx="50" cy="38" r="23" fill="rgba(255,255,255,0.78)" />
+    {/* Body — partially clipped by card overflow:hidden */}
+    <ellipse cx="50" cy="114" rx="40" ry="28" fill="rgba(255,255,255,0.78)" />
+  </svg>
+);
+
+export interface ProfileCardProps {
+  /** null = anon placeholder */
+  userData: HubUserData | null;
+  colorIndex: number;
+  onClick?: () => void;
 }
 
-/**
- * Generate text initials from user name
- * - Single name: First 2 letters
- * - Multiple names: First letter of first two words
- * @example "John Doe" -> "JD"
- * @example "Alice" -> "AL"
- */
-function getInitials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "??";
+export const ProfileCard: React.FC<ProfileCardProps> = ({ userData, colorIndex, onClick }) => {
+  const [imgError, setImgError] = React.useState(false);
 
-  const words = trimmed.split(/\s+/);
-  if (words.length === 1) {
-    return words[0].substring(0, 2).toUpperCase();
-  }
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
-
-/**
- * Generate consistent background color from user ID
- * Uses hash of ID to generate hue value for pastel colors
- */
-function getInitialsColor(userId: string): string {
-  // Simple hash to generate hue (0-360)
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-
-  // Use HSL for consistent saturation/lightness (pastel colors)
-  return `hsl(${hue}, 60%, 70%)`;
-}
-
-/**
- * Profile Card Component
- * Displays user info with image or text initials
- */
-export const ProfileCard: React.FC<ProfileCardProps> = ({
-  userData,
-  onClick,
-}) => {
-  const { user, profileImageUrl } = userData;
-  const [imageError, setImageError] = React.useState(false);
-
-  // Show initials if no URL or if image failed to load
-  const showInitials = !profileImageUrl || imageError;
+  const isAnon = userData === null;
+  const color = FRAME_COLORS[colorIndex % FRAME_COLORS.length];
+  const profileImageUrl = userData?.profileImageUrl ?? null;
+  const showPhoto = !isAnon && !!profileImageUrl && !imgError;
+  const name = userData?.user.name ?? '';
 
   return (
     <div
       onClick={onClick}
       style={{
-        display: "flex",
-        flexDirection: "column",
-        border: "1px solid #e0e0e0",
-        borderRadius: "8px",
-        overflow: "hidden",
-        backgroundColor: "#fff",
-        cursor: "pointer",
-        transition: "box-shadow 0.2s, transform 0.1s",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "none";
-        e.currentTarget.style.transform = "translateY(0)";
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        cursor: onClick ? 'pointer' : 'default',
       }}
     >
-      {/* Image or Initials - 60% of card height */}
+      {/* Outer colored frame */}
       <div
         style={{
-          width: "100%",
-          aspectRatio: "1",
-          overflow: "hidden",
-          backgroundColor: "#f5f5f5",
-          position: "relative",
+          width: '100%',
+          aspectRatio: '1',
+          backgroundColor: color,
+          borderRadius: 20,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          padding: isAnon ? 0 : '6%',
+          boxSizing: 'border-box',
         }}
       >
-        {showInitials ? (
+        {isAnon ? (
+          <PersonSilhouette />
+        ) : (
+          /* White inner photo rectangle */
           <div
             style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: getInitialsColor(user.id),
-              color: "#fff",
-              fontSize: "3rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              userSelect: "none",
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#fff',
+              borderRadius: 14,
+              overflow: 'hidden',
+              boxShadow:
+                'inset -1px -1px 4px 0px rgba(0,0,0,0.25), inset 0px 4px 4px 0px rgba(0,0,0,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {getInitials(user.name)}
+            {showPhoto && (
+              <img
+                src={profileImageUrl!}
+                alt={name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={() => setImgError(true)}
+              />
+            )}
           </div>
-        ) : (
-          <img
-            src={profileImageUrl}
-            alt={`${user.name}'s profile`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            onError={() => {
-              console.error(
-                `[ProfileCard] Image failed to load for ${user.name}:`,
-                profileImageUrl,
-              );
-              setImageError(true);
-            }}
-          />
         )}
       </div>
 
-      {/* User Info - 40% of card */}
+      {/* Name label strip */}
       <div
         style={{
-          padding: "1rem",
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.25rem",
+          width: '90%',
+          height: 44,
+          backgroundColor: 'rgba(255, 245, 245, 0.38)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
         }}
       >
-        {/* Name */}
-        <h3
-          style={{
-            margin: 0,
-            fontSize: "1.5rem",
-            fontWeight: 700,
-            color: "#333",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {user.name}
-        </h3>
-
-        {/* Pronouns */}
-        {user.pronouns && (
-          <p
+        {name && (
+          <span
             style={{
-              margin: 0,
-              fontSize: "1rem",
-              color: "#666",
-              fontStyle: "italic",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              fontFamily: "'Jersey 10', sans-serif",
+              fontSize: 'clamp(11px, 1.3vw, 20px)',
+              color: '#fff',
+              textAlign: 'center',
+              padding: '0 8px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
+              letterSpacing: '1px',
             }}
           >
-            {user.pronouns}
-          </p>
-        )}
-
-        {/* Status - Truncate to 2 lines */}
-        {user.status && (
-          <p
-            style={{
-              margin: 0,
-              fontSize: "1rem",
-              color: "#666",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              lineHeight: "1.4",
-              minHeight: "2.8rem", // 2 lines worth of height
-            }}
-          >
-            {user.status}
-          </p>
+            {name}
+          </span>
         )}
       </div>
     </div>
