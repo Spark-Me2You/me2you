@@ -53,7 +53,7 @@ export interface UseRegistrationReturn {
   handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
 }
 
-const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
+const STEP_ORDER: RegistrationStep[] = ['signup', 'photo', 'profile', 'success'];
 
 /**
  * Custom hook for managing registration flow
@@ -136,6 +136,41 @@ export const useRegistration = (): UseRegistrationReturn => {
     }
   }, [signUpUser, nextStep]);
 
+  const handlePhotoSubmit = useCallback(async (photo: Blob | null, category: string): Promise<boolean> => {
+    if (!photo) {
+      setState(prev => ({ ...prev, error: 'Please take a photo' }));
+      return false;
+    }
+
+    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
+
+      // Store photo blob + image record, then advance to profile step
+      setState(prev => ({
+        ...prev,
+        isSubmitting: false,
+        formData: { ...prev.formData, photo },
+        result: {
+          user,
+          profile: prev.formData as any,
+          imageId: imageRecord.id,
+        },
+      }));
+
+      nextStep(); // → profile
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to upload photo';
+      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
+      return false;
+    }
+  }, [nextStep]);
+
   const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
     const { name, status, pronouns, major, interests } = state.formData;
 
@@ -147,7 +182,6 @@ export const useRegistration = (): UseRegistrationReturn => {
     setState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
-      // Create profile via service
       const profile = await registrationService.createProfile({
         name: name.trim(),
         status: status?.trim() || null,
@@ -156,11 +190,13 @@ export const useRegistration = (): UseRegistrationReturn => {
         interests: interests || null,
       });
 
-      // Update auth context with profile
       setUserProfile(profile);
 
+      // Sign out after full registration is complete
+      await userRegistrationAuthService.signOut();
+
       setState(prev => ({ ...prev, isSubmitting: false }));
-      nextStep();
+      nextStep(); // → success
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create profile';
@@ -168,49 +204,6 @@ export const useRegistration = (): UseRegistrationReturn => {
       return false;
     }
   }, [state.formData, setUserProfile, nextStep]);
-
-  const handlePhotoSubmit = useCallback(async (photo: Blob | null, category: string): Promise<boolean> => {
-    if (!photo) {
-      setState(prev => ({ ...prev, error: 'Please take or upload a photo' }));
-      return false;
-    }
-
-    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
-
-    try {
-      // Get user ID from auth context
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Upload photo and create record with gesture category
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
-
-      // Sign out the user - registration is complete, they don't need to stay logged in
-      // The main app is only for admins/kiosk mode
-      await userRegistrationAuthService.signOut();
-
-      setState(prev => ({
-        ...prev,
-        isSubmitting: false,
-        formData: { ...prev.formData, photo },
-        result: {
-          user,
-          profile: prev.formData as any, // Profile was already created
-          imageId: imageRecord.id,
-        },
-      }));
-
-      nextStep();
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload photo';
-      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
-      return false;
-    }
-  }, [nextStep]);
 
   return {
     // State

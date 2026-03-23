@@ -1,6 +1,7 @@
 /**
  * PhotoStep Component — Figma "profile-picture-capture" screen
- * Camera with automatic gesture detection via MediaPipe
+ * Step order: signup → photo → profile → success
+ * "Looks good" uploads photo and advances to profile.
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -80,18 +81,12 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') {
-          setCameraError('camera access denied — please allow camera access');
-        } else if (err.name === 'NotFoundError') {
-          setCameraError('no camera found');
-        } else {
-          setCameraError(`camera error: ${err.message}`);
-        }
+        if (err.name === 'NotAllowedError') setCameraError('camera access denied — please allow camera access');
+        else if (err.name === 'NotFoundError') setCameraError('no camera found');
+        else setCameraError(`camera error: ${err.message}`);
       } else {
         setCameraError('failed to access camera');
       }
@@ -123,9 +118,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      if (isGestureRecognizerReady) {
-        processVideoFrame(video, Date.now());
-      }
+      if (isGestureRecognizerReady) processVideoFrame(video, Date.now());
 
       canvas.toBlob(
         (blob) => {
@@ -135,7 +128,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
             setPreviewUrl(URL.createObjectURL(blob));
             stopCamera();
           } else {
-            setLocalError('failed to capture photo — please try again');
+            setLocalError('failed to capture — please try again');
           }
           setIsProcessing(false);
         },
@@ -143,7 +136,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         0.9,
       );
     } catch {
-      setLocalError('failed to capture photo — please try again');
+      setLocalError('failed to capture — please try again');
       setIsProcessing(false);
     }
   }, [previewUrl, onClearError, isGestureRecognizerReady, processVideoFrame]);
@@ -157,13 +150,10 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     startCamera();
   }, [previewUrl]);
 
-  const handleSubmit = async () => {
+  const handleLooksGood = async () => {
     setLocalError(null);
     onClearError();
-    if (!photo) {
-      setLocalError('please take a photo first');
-      return;
-    }
+    if (!photo) { setLocalError('please take a photo first'); return; }
     if (!detectedCategory) {
       setLocalError('no gesture detected — show a clear wave, peace sign, or thumbs up and retake');
       return;
@@ -182,7 +172,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         </div>
       </div>
 
-      {/* Decorative hands that overlap the camera card */}
+      {/* Decorative hands */}
       <div className={styles.handsRow}>
         <img src={peaceImg} alt="peace" className={styles.handPeace} />
         <img src={waveImg} alt="wave" className={styles.handWave} />
@@ -194,47 +184,35 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
           <div className={styles.photoErrorBanner}>{displayError}</div>
         )}
 
+        {/* Camera / preview area */}
         <div className={styles.cameraArea}>
           {previewUrl ? (
             <img src={previewUrl} alt="Profile preview" className={styles.cameraPreview} />
           ) : (
             <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={styles.cameraFeed}
-              />
+              <video ref={videoRef} autoPlay playsInline muted className={styles.cameraFeed} />
               {!isCameraReady && !cameraError && (
                 <div className={styles.cameraLoadingOverlay}>starting camera...</div>
               )}
             </>
           )}
+
+          {/* Gesture status — small text, bottom-right of frame */}
+          {previewUrl && (
+            <div className={styles.gestureOverlay}>
+              {detectedGestureName
+                ? `✓ ${detectedGestureName.replace(/_/g, ' ')}`
+                : 'detecting...'}
+            </div>
+          )}
         </div>
 
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        <div className={styles.cameraBottomRow}>
-          {/* Left: retake (only when photo taken) */}
-          <div>
-            {previewUrl && (
-              <div className={styles.retakeGroup}>
-                <img src={thumbsUpImg} alt="" className={styles.retakeFinger} />
-                <button
-                  type="button"
-                  className={styles.retakeBtn}
-                  onClick={handleRetake}
-                  disabled={isBusy}
-                >
-                  retake{'\n'}please!
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Center: capture button (no photo) or done button (photo taken) */}
-          {!previewUrl ? (
+        {/* Bottom controls */}
+        {!previewUrl ? (
+          /* No photo yet — centered capture button */
+          <div className={styles.captureCenter}>
             <button
               type="button"
               className={styles.captureBtn}
@@ -242,34 +220,36 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
               disabled={isBusy || !isCameraReady}
               aria-label="Capture photo"
             />
-          ) : (
-            <div className={styles.submitThumbGroup}>
-              <img src={thumbsUpImg} alt="" className={styles.submitThumbFinger} />
-              <button
-                type="button"
-                className={styles.submitThumbBtn}
-                onClick={handleSubmit}
-                disabled={isBusy || !detectedCategory}
-              >
-                {isSubmitting ? '...' : "looks good!"}
-              </button>
-            </div>
-          )}
-
-          {/* Right: gesture status */}
-          <div>
-            {previewUrl && detectedGestureName && (
-              <p className={`${styles.gestureStatus} ${styles.gestureDetected}`}>
-                ✓ {detectedGestureName.replace(/_/g, ' ')}
-              </p>
-            )}
-            {previewUrl && !detectedGestureName && (
-              <p className={styles.gestureStatus}>detecting...</p>
-            )}
           </div>
-        </div>
+        ) : (
+          /* Photo taken — retake (left) | looks good (right) */
+          <div className={styles.photoActionRow}>
+            {/* Retake */}
+            <button
+              type="button"
+              className={styles.photoActionBtn}
+              onClick={handleRetake}
+              disabled={isBusy}
+            >
+              <img src={thumbsUpImg} alt="" className={styles.retakeFinger} />
+              retake please!
+            </button>
+
+            {/* Looks good */}
+            <button
+              type="button"
+              className={styles.photoActionBtn}
+              onClick={handleLooksGood}
+              disabled={isBusy || !detectedCategory}
+            >
+              <img src={thumbsUpImg} alt="" className={styles.looksGoodFinger} />
+              {isSubmitting ? '...' : 'looks good!'}
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Go back */}
       <button
         type="button"
         className={styles.photoStepBackBtn}

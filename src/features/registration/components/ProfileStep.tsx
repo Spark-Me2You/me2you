@@ -17,6 +17,7 @@ interface ProfileStepProps {
   isSubmitting: boolean;
   error: string | null;
   onClearError: () => void;
+  capturedPhoto?: Blob;
 }
 
 export const ProfileStep: React.FC<ProfileStepProps> = ({
@@ -27,6 +28,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   isSubmitting,
   error,
   onClearError,
+  capturedPhoto,
 }) => {
   const [name, setName] = useState(formData.name || '');
   const [pronouns, setPronouns] = useState(formData.pronouns || '');
@@ -35,6 +37,14 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   const [interests, setInterests] = useState(formData.interests?.join(', ') || '');
   const [localError, setLocalError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!capturedPhoto) return;
+    const url = URL.createObjectURL(capturedPhoto);
+    setPhotoUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [capturedPhoto]);
 
   useEffect(() => {
     onUpdateFormData({
@@ -71,9 +81,9 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
     setShowWarning(true);
   };
 
-  const handlePhotoAreaClick = async () => {
-    if (!validateForm()) return;
-    await onSubmit();
+  // Go back to photo step so user can retake
+  const handlePhotoAreaClick = () => {
+    onBack();
   };
 
   const handleConfirmGoBack = () => {
@@ -109,10 +119,20 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handlePhotoAreaClick()}
             >
-              <div className={styles.photoPlaceholderBox} />
-              <div className={styles.photoClickBanner}>
-                click here to take your photo!
+              <div className={styles.photoPlaceholderBox}>
+                {photoUrl && (
+                  <img
+                    src={photoUrl}
+                    alt="Your photo"
+                    className={styles.photoPlaceholderImg}
+                  />
+                )}
               </div>
+              {!photoUrl && (
+                <div className={styles.photoClickBanner}>
+                  click here to take your photo!
+                </div>
+              )}
             </div>
 
             <div className={styles.fieldGroupLeft}>
