@@ -126,7 +126,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
             setPhoto(blob);
             if (previewUrl) URL.revokeObjectURL(previewUrl);
             setPreviewUrl(URL.createObjectURL(blob));
-            stopCamera();
+            // Keep the stream alive so retake is instant — stopCamera() runs on unmount
           } else {
             setLocalError('failed to capture — please try again');
           }
@@ -147,7 +147,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     setPreviewUrl(null);
     setDetectedCategory(null);
     setDetectedGestureName(null);
-    startCamera();
+    // Stream is still running — no need to restart the camera
   }, [previewUrl]);
 
   const handleLooksGood = async () => {
@@ -186,15 +186,19 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
         {/* Camera / preview area */}
         <div className={styles.cameraArea}>
-          {previewUrl ? (
+          {previewUrl && (
             <img src={previewUrl} alt="Profile preview" className={styles.cameraPreview} />
-          ) : (
-            <>
-              <video ref={videoRef} autoPlay playsInline muted className={styles.cameraFeed} />
-              {!isCameraReady && !cameraError && (
-                <div className={styles.cameraLoadingOverlay}>starting camera...</div>
-              )}
-            </>
+          )}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={styles.cameraFeed}
+            style={{ display: previewUrl ? 'none' : undefined }}
+          />
+          {!previewUrl && !isCameraReady && !cameraError && (
+            <div className={styles.cameraLoadingOverlay}>starting camera...</div>
           )}
 
           {/* Gesture status — small text, bottom-right of frame */}
