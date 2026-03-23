@@ -22,21 +22,46 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        border: '2px solid #4caf50',
-        borderRadius: '8px',
         backgroundColor: '#fff',
-        padding: '1.5rem',
-        overflow: 'auto',
       }}
     >
+      {/* Header */}
+      <header
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 2rem',
+          borderBottom: '1px solid #e0e0e0',
+        }}
+      >
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Profile Details</h1>
+        <button
+          onClick={onBack}
+          style={{
+            padding: '0.5rem 1rem',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            backgroundColor: '#4caf50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontWeight: 600,
+          }}
+        >
+          Back to Discovery
+        </button>
+      </header>
+
       {/* Content Grid - Two Columns */}
       <div
         style={{
           flex: 1,
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '2rem',
-          marginBottom: '1.5rem',
+          gap: '3rem',
+          padding: '2rem',
+          overflow: 'auto',
         }}
       >
         {/* Left Column - Image and Basic Info */}
@@ -71,7 +96,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           {/* Name */}
           <h2
             style={{
-              fontSize: '2rem',
+              fontSize: '3rem',
               fontWeight: 700,
               margin: 0,
               color: '#333',
@@ -90,7 +115,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             >
               <p
                 style={{
-                  fontSize: '1.2rem',
+                  fontSize: '1.5rem',
                   color: '#666',
                   margin: 0,
                   fontStyle: 'italic',
@@ -110,7 +135,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             >
               <p
                 style={{
-                  fontSize: '1.2rem',
+                  fontSize: '1.5rem',
                   color: '#666',
                   margin: 0,
                   fontWeight: 500,
@@ -134,9 +159,9 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           <div>
             <h3
               style={{
-                fontSize: '1.5rem',
+                fontSize: '2rem',
                 fontWeight: 600,
-                margin: '0 0 0.75rem 0',
+                margin: '0 0 1rem 0',
                 color: '#333',
               }}
             >
@@ -144,10 +169,10 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             </h3>
             <p
               style={{
-                fontSize: '1.2rem',
+                fontSize: '1.5rem',
                 color: '#555',
                 margin: 0,
-                lineHeight: 1.5,
+                lineHeight: 1.6,
               }}
             >
               {owner.status || 'No status set'}
@@ -158,9 +183,9 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           <div>
             <h3
               style={{
-                fontSize: '1.5rem',
+                fontSize: '2rem',
                 fontWeight: 600,
-                margin: '0 0 0.75rem 0',
+                margin: '0 0 1rem 0',
                 color: '#333',
               }}
             >
@@ -169,11 +194,11 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             {owner.interests && owner.interests.length > 0 ? (
               <ul
                 style={{
-                  fontSize: '1.2rem',
+                  fontSize: '1.5rem',
                   color: '#555',
                   margin: 0,
-                  paddingLeft: '1.5rem',
-                  lineHeight: 1.8,
+                  paddingLeft: '2rem',
+                  lineHeight: 2,
                 }}
               >
                 {owner.interests.map((interest, index) => (
@@ -183,7 +208,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             ) : (
               <p
                 style={{
-                  fontSize: '1.2rem',
+                  fontSize: '1.5rem',
                   color: '#999',
                   margin: 0,
                   fontStyle: 'italic',
@@ -195,25 +220,6 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        style={{
-          width: '100%',
-          padding: '1rem 1.5rem',
-          fontSize: '1.2rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-          backgroundColor: '#4caf50',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          marginTop: 'auto',
-        }}
-      >
-        Back to Discovery
-      </button>
     </div>
   );
 };

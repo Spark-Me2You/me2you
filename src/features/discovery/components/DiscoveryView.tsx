@@ -153,6 +153,7 @@ export const DiscoveryView: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         backgroundColor: "#fff",
+        position: "relative",
       }}
     >
       {/* Header */}
@@ -203,7 +204,7 @@ export const DiscoveryView: React.FC = () => {
           <CameraView onGestureDetected={setDetectedGesture} />
         </div>
 
-        {/* Right side: Matched profile / results or profile detail */}
+        {/* Right side: Matched profile / results */}
         <div
           style={{
             height: "100%",
@@ -211,30 +212,41 @@ export const DiscoveryView: React.FC = () => {
             flexDirection: "column",
           }}
         >
-          {viewMode === 'discovery' ? (
-            <RandomImageCard
-              detectedGesture={detectedGesture}
-              imageData={imageData}
-              isLoading={
-                detectedGesture?.gestureName
-                  ? isChamberLoading(
-                      getCategoryFromGesture(detectedGesture.gestureName) ?? ""
-                    )
-                  : false
-              }
-              error={imageError}
-              onViewProfile={handleViewProfile}
-            />
-          ) : (
-            selectedProfile && (
-              <ProfileCardView
-                profileData={selectedProfile}
-                onBack={handleBackToDiscovery}
-              />
-            )
-          )}
+          <RandomImageCard
+            detectedGesture={detectedGesture}
+            imageData={imageData}
+            isLoading={
+              detectedGesture?.gestureName
+                ? isChamberLoading(
+                    getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                  )
+                : false
+            }
+            error={imageError}
+            onViewProfile={handleViewProfile}
+          />
         </div>
       </div>
+
+      {/* Full-screen Profile Card Overlay */}
+      {viewMode === 'profile-detail' && selectedProfile && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#fff",
+            zIndex: 1000,
+          }}
+        >
+          <ProfileCardView
+            profileData={selectedProfile}
+            onBack={handleBackToDiscovery}
+          />
+        </div>
+      )}
     </div>
   );
 };
