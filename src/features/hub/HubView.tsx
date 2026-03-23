@@ -1,30 +1,30 @@
 /**
- * Hub View Component
- * Main entry point for the Community Hub feature
- * Displays all users in the organization in a grid layout
+ * Hub View — "Network" screen
+ * Implements the Figma Network design: purple glass scrollable card grid,
+ * me2you logo, network label, and exit button.
  */
 
-import React, { useEffect, useState } from "react";
-import { useAuth } from "@/core/auth";
-import { useAppState } from "@/core/state-machine";
-import { AppState } from "@/core/state-machine/appStateMachine";
-import { hubService, type HubUserData } from "./services/hubService";
-import { ProfileCard } from "./components/ProfileCard";
-import { ProfileCardView } from "@/features/discovery/components/ProfileCardView";
-import type { RandomImageData } from "@/features/discovery/types/image";
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/core/auth';
+import { useAppState } from '@/core/state-machine';
+import { AppState } from '@/core/state-machine/appStateMachine';
+import { hubService, type HubUserData } from './services/hubService';
+import { ProfileCard } from './components/ProfileCard';
+import { ProfileCardView } from '@/features/discovery/components/ProfileCardView';
+import type { RandomImageData } from '@/features/discovery/types/image';
+import me2youLogo from '@/assets/me2you.png';
 
-/**
- * Convert HubUserData to RandomImageData format for ProfileCardView
- * ProfileCardView expects RandomImageData, so we adapt our hub data structure
- */
+/** Minimum visible card slots (5 cols × 2 rows) — fill the rest with anon cards */
+const MIN_SLOTS = 10;
+
 function toRandomImageData(hubUser: HubUserData): RandomImageData {
   return {
     image: {
-      id: "",
+      id: '',
       owner_id: hubUser.user.id,
-      org_id: "",
-      storage_path: "",
-      category: "profile",
+      org_id: '',
+      storage_path: '',
+      category: 'profile',
       is_public: true,
       created_at: hubUser.user.created_at,
     },
@@ -36,7 +36,7 @@ function toRandomImageData(hubUser: HubUserData): RandomImageData {
       major: hubUser.user.major,
       interests: hubUser.user.interests,
     },
-    imageUrl: hubUser.profileImageUrl || "",
+    imageUrl: hubUser.profileImageUrl || '',
   };
 }
 
@@ -49,283 +49,108 @@ export const HubView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<HubUserData | null>(null);
 
-  // Fetch users on mount
   useEffect(() => {
     const fetchUsers = async () => {
       if (!kioskOrgId) {
-        setError("No organization ID available");
+        setError('No organization ID available');
         setIsLoading(false);
         return;
       }
-
       try {
         setIsLoading(true);
         const fetchedUsers = await hubService.getAllOrgUsers(kioskOrgId);
         setUsers(fetchedUsers);
         setError(null);
       } catch (err) {
-        console.error("[HubView] Failed to fetch users:", err);
+        console.error('[HubView] Failed to fetch users:', err);
         setError(
-          err instanceof Error
-            ? err.message
-            : "An unexpected error occurred while loading users",
+          err instanceof Error ? err.message : 'An unexpected error occurred while loading users',
         );
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchUsers();
   }, [kioskOrgId]);
 
-  // Handle back button
-  const handleBack = () => {
-    transitionTo(AppState.IDLE);
-  };
+  const handleBack = () => transitionTo(AppState.IDLE);
 
-  // Loading State
+  // Build the grid item list: real users first, then anon fillers up to MIN_SLOTS
+  const anonCount = Math.max(0, MIN_SLOTS - users.length);
+  const gridItems: Array<HubUserData | null> = [
+    ...users,
+    ...Array(anonCount).fill(null),
+  ];
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#fff",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.5rem", color: "#666", margin: 0 }}>
-            Loading community members...
-          </p>
+      <div style={styles.screen}>
+        <img src={me2youLogo} alt="me2you" style={styles.logo} />
+        <div style={styles.centerMessage}>
+          <p style={styles.messageText}>Loading community members…</p>
         </div>
+        <button onClick={handleBack} style={styles.exitButton}>exit</button>
       </div>
     );
   }
 
-  // Error State
+  // ── Error ─────────────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#fff",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-            maxWidth: "500px",
-            padding: "2rem",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "1.5rem",
-              color: "#d32f2f",
-              marginBottom: "1rem",
-            }}
-          >
+      <div style={styles.screen}>
+        <img src={me2youLogo} alt="me2you" style={styles.logo} />
+        <div style={styles.centerMessage}>
+          <p style={{ ...styles.messageText, color: '#ffaacc' }}>
             Failed to load community members
           </p>
-          <p
-            style={{
-              fontSize: "1rem",
-              color: "#666",
-              marginBottom: "2rem",
-            }}
-          >
-            {error}
-          </p>
-          <button
-            onClick={handleBack}
-            style={{
-              padding: "0.75rem 1.5rem",
-              fontSize: "1rem",
-              cursor: "pointer",
-              backgroundColor: "#4caf50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-            }}
-          >
-            Back to Home
-          </button>
+          <p style={{ ...styles.messageText, fontSize: '1rem', marginTop: '0.5rem' }}>{error}</p>
         </div>
+        <button onClick={handleBack} style={styles.exitButton}>exit</button>
       </div>
     );
   }
 
-  // Empty State
-  if (users.length === 0) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          backgroundColor: "#fff",
-        }}
-      >
-        {/* Header */}
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "1rem 2rem",
-            borderBottom: "1px solid #e0e0e0",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Community Hub</h1>
-          <button
-            onClick={handleBack}
-            style={{
-              padding: "0.5rem 1rem",
-              fontSize: "1rem",
-              cursor: "pointer",
-              backgroundColor: "#4caf50",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              fontWeight: 600,
-            }}
-          >
-            Back to Home
-          </button>
-        </header>
-
-        {/* Empty message */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              maxWidth: "500px",
-              padding: "2rem",
-            }}
-          >
-            <p style={{ fontSize: "1.5rem", color: "#666", margin: 0 }}>
-              No community members found
-            </p>
-            <p
-              style={{
-                fontSize: "1rem",
-                color: "#999",
-                marginTop: "1rem",
-              }}
-            >
-              Users will appear here once they create public profiles
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Success State - Show grid
+  // ── Main view ────────────────────────────────────────────────────────────────
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#fff",
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem 2rem",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>
-          Community Hub ({users.length} members)
-        </h1>
-        <button
-          onClick={handleBack}
-          style={{
-            padding: "0.5rem 1rem",
-            fontSize: "1rem",
-            cursor: "pointer",
-            backgroundColor: "#4caf50",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            fontWeight: 600,
-          }}
-        >
-          Back to Home
-        </button>
-      </header>
+    <div style={styles.screen}>
+      {/* me2you logo */}
+      <img src={me2youLogo} alt="me2you" style={styles.logo} />
 
-      {/* User Grid */}
-      <div
-        style={{
-          flex: 1,
-          padding: "2rem",
-          overflow: "auto",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-            gap: "1.5rem",
-            maxWidth: "1400px",
-            margin: "0 auto",
-          }}
-        >
-          {users.map((userData) => (
+      {/* "network" purple glass label — top right */}
+      <div style={styles.networkLabel}>
+        <p style={styles.networkText}>network</p>
+        <div style={styles.networkInsetShadow} />
+      </div>
+
+      {/* Purple glass scrollable container */}
+      <div style={styles.scrollContainer}>
+        {/* 5-column user card grid */}
+        <div style={styles.grid}>
+          {gridItems.map((item, i) => (
             <ProfileCard
-              key={userData.user.id}
-              userData={userData}
-              onClick={() => setSelectedUser(userData)}
+              key={item ? item.user.id : `anon-${i}`}
+              userData={item}
+              colorIndex={i}
+              onClick={item ? () => setSelectedUser(item) : undefined}
             />
           ))}
         </div>
       </div>
 
-      {/* Profile Detail Overlay */}
+      {/* Exit button */}
+      <button onClick={handleBack} style={styles.exitButton}>
+        exit
+      </button>
+
+      {/* Profile detail overlay */}
       {selectedUser && (
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
+          style={styles.overlayBackdrop}
           onClick={() => setSelectedUser(null)}
         >
           <div
-            style={{
-              width: "90vw",
-              height: "90vh",
-              backgroundColor: "#fff",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
+            style={styles.overlayCard}
             onClick={(e) => e.stopPropagation()}
           >
             <ProfileCardView
@@ -338,3 +163,130 @@ export const HubView: React.FC = () => {
     </div>
   );
 };
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = {
+  screen: {
+    position: 'fixed' as const,
+    inset: 0,
+    overflow: 'hidden',
+    // background gradient is already on body in index.css
+  },
+
+  logo: {
+    position: 'absolute' as const,
+    top: '20px',
+    left: '60px',
+    width: '52%',
+    maxWidth: '700px',
+    transform: 'rotate(3.41deg)',
+    transformOrigin: 'left top',
+    zIndex: 4,
+    pointerEvents: 'none' as const,
+    userSelect: 'none' as const,
+  },
+
+  networkLabel: {
+    position: 'absolute' as const,
+    top: '8%',
+    right: '2%',
+    backgroundColor: 'rgba(113, 5, 228, 0.93)',
+    borderRadius: 10,
+    padding: '4px 24px 4px 24px',
+    zIndex: 3,
+    overflow: 'hidden' as const,
+  },
+
+  networkText: {
+    fontFamily: "'Averia Libre', sans-serif",
+    fontSize: 'clamp(28px, 4vw, 64px)',
+    color: '#fff',
+    letterSpacing: '10.88px',
+    margin: 0,
+    position: 'relative' as const,
+    zIndex: 1,
+  },
+
+  networkInsetShadow: {
+    position: 'absolute' as const,
+    inset: 0,
+    borderRadius: 'inherit',
+    pointerEvents: 'none' as const,
+    boxShadow:
+      'inset 0px 0px 4px 0px rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.2)',
+  },
+
+  /** Scrollable purple glass card — the "Network" container from Figma */
+  scrollContainer: {
+    position: 'absolute' as const,
+    top: '24%',
+    left: '6%',
+    right: '16%',
+    bottom: '2%',
+    overflowY: 'auto' as const,
+    overflowX: 'hidden' as const,
+    borderRadius: 46,
+    backgroundColor: 'rgba(113, 5, 228, 0.57)',
+    boxShadow:
+      'inset 0px 0px 4px 0px rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.2)',
+    zIndex: 2,
+  },
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: '3.5vh 2.5vw',
+    padding: '4.5vh 3vw 5vh',
+  },
+
+  exitButton: {
+    position: 'fixed' as const,
+    bottom: '3%',
+    right: '4%',
+    backgroundColor: '#7105e4',
+    color: '#fff',
+    border: 'none',
+    padding: '14px 28px',
+    fontFamily: "'Jersey 10', sans-serif",
+    fontSize: 'clamp(16px, 1.8vw, 28px)',
+    letterSpacing: '5px',
+    cursor: 'pointer',
+    borderRadius: 6,
+    zIndex: 10,
+  },
+
+  centerMessage: {
+    position: 'absolute' as const,
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  messageText: {
+    fontFamily: "'Averia Libre', sans-serif",
+    fontSize: '1.5rem',
+    color: '#fff',
+    margin: 0,
+  },
+
+  overlayBackdrop: {
+    position: 'fixed' as const,
+    inset: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+
+  overlayCard: {
+    width: '90vw',
+    height: '90vh',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+} as const;
