@@ -5,6 +5,7 @@
 
 import React from "react";
 import type { RandomImageData } from "../types/image";
+import me2youLogo from "@/assets/me2you.png";
 
 interface ProfileCardViewProps {
   profileData: RandomImageData;
@@ -108,7 +109,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                 objectFit: "cover",
               }}
               onError={(e) => {
-                e.currentTarget.src = "/placeholder.png";
+                e.currentTarget.src = me2youLogo;
               }}
             />
           </div>
