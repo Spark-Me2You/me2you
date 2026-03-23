@@ -1,34 +1,42 @@
 /**
- * Typography
- * TODO: Define font sizes for legibility (kiosk display)
+ * Typography Tokens
+ * Fonts, sizes, and letter-spacing used across the app.
  */
 
 export const typography = {
-  // Font sizes (optimized for kiosk/large display)
+
+  // --- Font families ---
+  font: {
+    condensed:   "'Barlow Condensed', sans-serif",  // main UI font (titles, labels, buttons)
+    handwritten: "'Caveat', cursive",               // casual labels (e.g. "back to sign-in")
+    jersey:      "'Jersey 10', sans-serif",         // pixel/retro display font
+    averia:      "'Averia Libre', cursive",         // soft irregular display font
+    system:      'system-ui, Avenir, Helvetica, Arial, sans-serif',
+  },
+
+  // --- Font sizes (kiosk-scaled at ~0.74× from 1440×1024 Figma) ---
   fontSize: {
-    xs: '14px',
-    sm: '16px',
-    md: '20px',
-    lg: '24px',
-    xl: '32px',
-    '2xl': '48px',
-    '3xl': '64px',
+    sm:  '16px',   // small labels, error messages
+    md:  '18px',   // handwritten labels
+    lg:  '21px',   // buttons
+    xl:  '24px',   // field labels
+    '2xl': '37px', // title bars, org buttons
+    '3xl': '50px', // Figma original (pre-scale reference)
   },
 
-  // Font weights
+  // --- Font weights ---
   fontWeight: {
+    light:  300,
     normal: 400,
-    medium: 500,
-    semibold: 600,
-    bold: 700,
+    bold:   700,
   },
 
-  // Line heights
-  lineHeight: {
-    tight: 1.2,
-    normal: 1.5,
-    relaxed: 1.8,
+  // --- Letter spacing ---
+  letterSpacing: {
+    tight:  '2px',
+    normal: '4px',
+    wide:   '6px',
+    xwide:  '8.5px',
   },
 
-  // TODO: Add font families if needed
 };
