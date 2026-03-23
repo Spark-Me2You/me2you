@@ -24,6 +24,7 @@ export const RegistrationPage: React.FC = () => {
     handleProfileSubmit,
     handlePhotoSubmit,
     previousStep,
+    nextStep,
   } = useRegistration();
 
   const renderStep = () => {
@@ -45,6 +46,7 @@ export const RegistrationPage: React.FC = () => {
             onUpdateFormData={updateFormData}
             onSubmit={handleProfileSubmit}
             onBack={previousStep}
+            onGoToPhoto={nextStep}
             isSubmitting={isSubmitting}
             error={error}
             onClearError={clearError}

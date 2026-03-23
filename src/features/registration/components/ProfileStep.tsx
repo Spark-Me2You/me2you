@@ -14,6 +14,7 @@ interface ProfileStepProps {
   onUpdateFormData: (data: Partial<RegistrationFormData>) => void;
   onSubmit: () => Promise<boolean>;
   onBack: () => void;
+  onGoToPhoto: () => void;
   isSubmitting: boolean;
   error: string | null;
   onClearError: () => void;
@@ -25,6 +26,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   onUpdateFormData,
   onSubmit,
   onBack,
+  onGoToPhoto,
   isSubmitting,
   error,
   onClearError,
@@ -81,9 +83,9 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
     setShowWarning(true);
   };
 
-  // Go back to photo step so user can retake
+  // Go forward to photo step so user can take/retake their photo
   const handlePhotoAreaClick = () => {
-    onBack();
+    onGoToPhoto();
   };
 
   const handleConfirmGoBack = () => {
