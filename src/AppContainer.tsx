@@ -3,7 +3,6 @@
  * Contains the authenticated app with state machine
  */
 
-import { useEffect } from "react";
 import { StateProvider, useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
@@ -12,6 +11,7 @@ import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
+import otterImage from "@/assets/otter.png";
 import styles from "./AppContainer.module.css";
 
 /**
@@ -21,7 +21,7 @@ import styles from "./AppContainer.module.css";
  */
 function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
-  const { signOut, admin, authMode, kioskOrgId, exitKioskMode } = useAuth();
+  const { signOut, authMode, exitKioskMode } = useAuth();
 
   // Log current auth mode on mount and when it changes
   // useEffect(() => {
@@ -87,31 +87,42 @@ function AppContainerContent() {
       case AppState.IDLE:
         return (
           <div>
-            <img id="logo" src={logo} alt="me2you"></img>
-            {/* {authMode === "admin" && admin && (
-              <p className={styles.authMeta}>Admin: {admin.email}</p>
-            )}
-            {authMode === "kiosk" && kioskOrgId && (
-              <p className={styles.authMeta}>Kiosk Mode - Org: {kioskOrgId}</p>
-            )} */}
-            <button
-              onClick={() => transitionTo(AppState.DISCOVERY)}
-              className={`${styles.buttonBase} ${styles.stateActionButton} ${styles.discoveryButton}`}
-            >
-              Try Discovery
-            </button>
-            {/* <button
-              onClick={() => transitionTo(AppState.MY_PROFILE)}
-              className={`${styles.buttonBase} ${styles.stateActionButton} ${styles.profileButton}`}
-            >
-              My Profile
-            </button> */}
-            <button
-              onClick={() => transitionTo(AppState.HUB)}
-              className={`${styles.buttonBase} ${styles.stateActionButton} ${styles.hubButton}`}
-            >
-              Community Hub
-            </button>
+            {/* Logo - positioned absolutely at top center */}
+            <img src={logo} alt="me2you" className={styles.logo} />
+
+            {/* Decorative otter image - top right */}
+            <img src={otterImage} alt="" className={styles.otterImage} />
+
+            {/* Main glass container */}
+            <div className={styles.idleContainer}>
+              <div className={styles.idleContentWrapper}>
+                {/* Discover button - top left */}
+                <button
+                  onClick={() => transitionTo(AppState.DISCOVERY)}
+                  className={`${styles.buttonBase} ${styles.discoveryButton}`}
+                >
+                  discover
+                </button>
+
+                {/* Network/Hub button - bottom right */}
+                <button
+                  onClick={() => transitionTo(AppState.HUB)}
+                  className={`${styles.buttonBase} ${styles.hubButton}`}
+                >
+                  network
+                </button>
+
+                {/* Create account placeholder - bottom left */}
+                <div className={styles.createAccountPlaceholder}>
+                  create account
+                </div>
+
+                {/* Decorative purple rectangle - right side */}
+                <div className={styles.decorativePurpleRect} />
+              </div>
+            </div>
+
+            {/* Exit button - renders based on auth mode */}
             {renderLogoutButton()}
           </div>
         );
