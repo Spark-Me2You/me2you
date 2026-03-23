@@ -1,13 +1,15 @@
 /**
  * PhotoStep Component
- * Photo capture step using device camera with gesture category selection
+ * Photo capture step using device camera with automatic gesture detection via MediaPipe
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
+import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
+import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
 
 /**
- * Gesture category options
+ * Gesture category options (for reference)
  */
 const GESTURE_OPTIONS = [
   { value: 'wave', label: 'Wave' },
@@ -34,7 +36,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 }) => {
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [category, setCategory] = useState<GestureCategory>('wave');
+  const [detectedCategory, setDetectedCategory] = useState<GestureCategory | null>(null);
+  const [detectedGestureName, setDetectedGestureName] = useState<string | null>(null);
+  const [detectionConfidence, setDetectionConfidence] = useState<number>(0);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -43,6 +47,13 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Use gesture recognition for automatic detection
+  const {
+    detectedGesture,
+    isInitialized: isGestureRecognizerReady,
+    processVideoFrame,
+  } = useGestureRecognition();
 
   // Start camera on mount
   useEffect(() => {
@@ -69,6 +80,18 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       videoElement.removeEventListener('loadeddata', handleLoadedData);
     };
   }, []);
+
+  // Detect gesture from captured video frame when gesture recognizer is ready
+  useEffect(() => {
+    if (detectedGesture && detectedGesture.gestureName) {
+      const category = getCategoryFromGesture(detectedGesture.gestureName);
+      if (category) {
+        setDetectedCategory(category as GestureCategory);
+        setDetectedGestureName(detectedGesture.gestureName);
+        setDetectionConfidence(detectedGesture.confidence);
+      }
+    }
+  }, [detectedGesture]);
 
   const startCamera = async () => {
     setCameraError(null);
@@ -145,6 +168,11 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       // Draw video frame to canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+      // Process gesture detection from the video frame
+      if (isGestureRecognizerReady && video) {
+        processVideoFrame(video, Date.now());
+      }
+
       // Convert to blob
       canvas.toBlob(
         (blob) => {
@@ -172,7 +200,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       setLocalError('Failed to capture photo. Please try again.');
       setIsProcessing(false);
     }
-  }, [previewUrl, onClearError]);
+  }, [previewUrl, onClearError, isGestureRecognizerReady, processVideoFrame]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) {
@@ -180,6 +208,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     }
     setPhoto(null);
     setPreviewUrl(null);
+    setDetectedCategory(null);
+    setDetectedGestureName(null);
+    setDetectionConfidence(0);
     startCamera();
   }, [previewUrl]);
 
@@ -193,7 +224,12 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       return;
     }
 
-    await onSubmit(photo, category);
+    if (!detectedCategory) {
+      setLocalError('Could not detect a gesture in your photo. Please make sure you are showing a clear hand gesture (Wave, Peace Sign, or Thumbs Up) and try again.');
+      return;
+    }
+
+    await onSubmit(photo, detectedCategory);
   };
 
   const displayError = localError || error || cameraError;
@@ -271,30 +307,32 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
         <div className={styles.inputGroup}>
           <label className={styles.label}>
-            Select Your Gesture
+            Detected Gesture
           </label>
           <p className={styles.gestureHint}>
-            This gesture will be used to reveal your photo at the kiosk
+            {isGestureRecognizerReady
+              ? 'Your gesture will be automatically detected from your photo'
+              : 'Loading gesture detection model...'}
           </p>
-          <div className={styles.gestureSelector}>
-            {GESTURE_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className={`${styles.gestureOption} ${category === option.value ? styles.gestureOptionSelected : ''}`}
-              >
-                <input
-                  type="radio"
-                  name="gesture"
-                  value={option.value}
-                  checked={category === option.value}
-                  onChange={(e) => setCategory(e.target.value as GestureCategory)}
-                  disabled={isBusy}
-                  className={styles.gestureRadio}
-                />
-                <span className={styles.gestureLabel}>{option.label}</span>
-              </label>
-            ))}
-          </div>
+          
+          {previewUrl && (
+            <div className={styles.gestureSelector}>
+              {detectedGestureName ? (
+                <div className={styles.detectedGesture}>
+                  <div className={styles.gestureName}>
+                    ✓ {detectedGestureName.replace(/_/g, ' ')}
+                  </div>
+                  <div className={styles.gestureConfidence}>
+                    Confidence: {(detectionConfidence * 100).toFixed(1)}%
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.detectingGesture}>
+                  Analyzing gesture...
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className={styles.buttonRow}>
@@ -309,7 +347,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
           <button
             type="submit"
             className={styles.submitButton}
-            disabled={isBusy || !photo}
+            disabled={isBusy || !photo || !detectedCategory}
           >
             {isSubmitting ? 'Uploading...' : 'Complete Registration'}
           </button>
