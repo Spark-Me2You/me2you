@@ -1,0 +1,63 @@
+/**
+ * DiscoveryView Layout Styles
+ * Full-screen split layout with gradient background
+ */
+
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: linear-gradient(180deg, #58e7f7 0%, #fefffb 100%);
+  overflow: hidden;
+}
+
+/* Left side - webcam stream */
+.leftPanel {
+  background-color: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Right side - matched profile or white background */
+.rightPanel {
+  background-color: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Exit button - top right */
+.exitButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 194px;
+  height: 83px;
+  background-color: #7105e4;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  font-family: "Averia Libre", cursive;
+  font-weight: 700;
+  font-size: 35px;
+  color: #ffffff;
+  letter-spacing: 5.95px;
+  text-transform: lowercase;
+}
+
+.exitButton:hover {
+  background-color: #5a04b8;
+}

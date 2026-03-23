@@ -6,6 +6,7 @@ import type { RandomImageData } from "../types/image";
 import { CameraView } from "./CameraView";
 import { RandomImageCard } from "./RandomImageCard";
 import { ProfileCardView } from "./ProfileCardView";
+import { PoseOverlay } from "./PoseOverlay";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import { useImageChambers } from "../hooks/useImageChambers";
 import {
@@ -13,6 +14,7 @@ import {
   isSupportedGesture,
   CATEGORY_LIST,
 } from "../config/gestureMapping";
+import styles from './DiscoveryView.module.css';
 
 /**
  * DiscoveryView Component
@@ -147,86 +149,39 @@ export const DiscoveryView: React.FC = () => {
   }, [detectedGesture]);
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#fff",
-        position: "relative",
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "1rem 2rem",
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Discovery</h1>
-        <button
-          onClick={handleBack}
-          style={{
-            padding: "0.5rem 1rem",
-            fontSize: "1rem",
-            cursor: "pointer",
-            backgroundColor: "#f5f5f5",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-          }}
-        >
-          Back to Home
-        </button>
-      </header>
-
-      {/* Split-screen content */}
-      <div
-        style={{
-          flex: 1,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1rem",
-          padding: "1rem",
-          overflow: "hidden",
-        }}
-      >
-        {/* Left side: Camera feed */}
-        <div
-          style={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <CameraView onGestureDetected={setDetectedGesture} />
-        </div>
-
-        {/* Right side: Matched profile / results */}
-        <div
-          style={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <RandomImageCard
-            detectedGesture={detectedGesture}
-            imageData={imageData}
-            isLoading={
-              detectedGesture?.gestureName
-                ? isChamberLoading(
-                    getCategoryFromGesture(detectedGesture.gestureName) ?? ""
-                  )
-                : false
-            }
-            error={imageError}
-            onViewProfile={handleViewProfile}
-          />
-        </div>
+    <div className={styles.container}>
+      {/* Left side: Camera feed */}
+      <div className={styles.leftPanel}>
+        <CameraView onGestureDetected={setDetectedGesture} />
       </div>
+
+      {/* Right side: Matched profile / results */}
+      <div className={styles.rightPanel}>
+        <RandomImageCard
+          detectedGesture={detectedGesture}
+          imageData={imageData}
+          isLoading={
+            detectedGesture?.gestureName
+              ? isChamberLoading(
+                  getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                )
+              : false
+          }
+          error={imageError}
+          onViewProfile={handleViewProfile}
+        />
+      </div>
+
+      {/* "choose a pose:" overlay - always visible */}
+      <PoseOverlay />
+
+      {/* Exit button - top right */}
+      <button
+        className={styles.exitButton}
+        onClick={handleBack}
+      >
+        exit
+      </button>
 
       {/* Full-screen Profile Card Overlay */}
       {viewMode === 'profile-detail' && selectedProfile && (
