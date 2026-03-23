@@ -5,16 +5,12 @@
 
 import { supabase } from "@/core/supabase/client";
 import { storageService } from "@/core/supabase/storage";
-import type { RandomImageData } from "../types/image";
+import type { RandomImageData, UserProfile } from "../types/image";
 
-type DiscoveryUserData = {
-  id: string;
-  name: string;
-  status: string | null;
-  pronouns: string | null;
-  major: string | null;
-  interests: string[] | null;
-};
+type DiscoveryUserData = Pick<
+  UserProfile,
+  "id" | "name" | "status" | "pronouns" | "major" | "interests"
+>;
 
 export const discoveryService = {
   /**
