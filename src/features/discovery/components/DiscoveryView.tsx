@@ -148,6 +148,17 @@ export const DiscoveryView: React.FC = () => {
     }
   }, [detectedGesture]);
 
+  // Profile detail — replaces discovery entirely so nothing overlaps
+  if (viewMode === 'profile-detail' && selectedProfile) {
+    return (
+      <ProfileCardView
+        profileData={selectedProfile}
+        onBack={handleBackToDiscovery}
+        onHome={() => transitionTo(AppState.IDLE)}
+      />
+    );
+  }
+
   return (
     <div className={styles.container}>
       {/* Left side: Camera feed */}
@@ -183,25 +194,6 @@ export const DiscoveryView: React.FC = () => {
         exit
       </button>
 
-      {/* Full-screen Profile Card Overlay */}
-      {viewMode === 'profile-detail' && selectedProfile && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "#fff",
-            zIndex: 1000,
-          }}
-        >
-          <ProfileCardView
-            profileData={selectedProfile}
-            onBack={handleBackToDiscovery}
-          />
-        </div>
-      )}
     </div>
   );
 };

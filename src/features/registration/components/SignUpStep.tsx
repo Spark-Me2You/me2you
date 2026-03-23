@@ -1,10 +1,10 @@
 /**
- * SignUpStep Component
- * Email/password signup form for registration
+ * SignUpStep Component — Figma "create account" screen
  */
 
 import React, { useState } from 'react';
 import styles from './RegistrationSteps.module.css';
+import backfingerImg from '../../../assets/backfinger.png';
 
 interface SignUpStepProps {
   onSubmit: (email: string, password: string) => Promise<boolean>;
@@ -22,7 +22,6 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
@@ -30,128 +29,115 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
     onClearError();
 
     if (!email.trim()) {
-      setLocalError('Email is required');
+      setLocalError('email is required');
       return false;
     }
-
     if (!email.includes('@') || !email.includes('.')) {
-      setLocalError('Please enter a valid email address');
+      setLocalError('please enter a valid email address');
       return false;
     }
-
     if (!password) {
-      setLocalError('Password is required');
+      setLocalError('password is required');
       return false;
     }
-
     if (password.length < 6) {
-      setLocalError('Password must be at least 6 characters');
+      setLocalError('password must be at least 6 characters');
       return false;
     }
-
     if (password !== confirmPassword) {
-      setLocalError('Passwords do not match');
+      setLocalError('passwords do not match');
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     await onSubmit(email.trim(), password);
   };
 
   const displayError = localError || error;
 
   return (
-    <div className={styles.stepContainer}>
-      <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>Create Your Account</h2>
-        <p className={styles.stepDescription}>
-          Sign up to create your me2you profile
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className={styles.form}>
-        {displayError && (
-          <div className={styles.errorMessage}>
-            {displayError}
-          </div>
-        )}
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="email" className={styles.label}>
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={styles.input}
-            placeholder="your.email@example.com"
-            disabled={isSubmitting}
-            autoComplete="email"
-            autoFocus
-          />
+    <div className={styles.signupWrapper}>
+      <div className={styles.signupCard}>
+        <div className={styles.createTab}>
+          <p className={styles.createTabText}>create account</p>
         </div>
 
-        <div className={styles.inputGroup}>
-          <label htmlFor="password" className={styles.label}>
-            Password
-          </label>
-          <div className={styles.passwordWrapper}>
+        <form onSubmit={handleSubmit} noValidate>
+          {displayError && (
+            <div className={styles.errorBanner}>{displayError}</div>
+          )}
+
+          <div className={styles.inputBlock}>
+            <label htmlFor="su-email" className={styles.inputBlockLabel}>
+              email:
+            </label>
             <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
+              id="su-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={styles.inputBlockField}
+              placeholder="youremail@gmail.com"
+              disabled={isSubmitting}
+              autoComplete="email"
+              autoCapitalize="none"
+            />
+          </div>
+
+          <div className={styles.inputBlock}>
+            <label htmlFor="su-password" className={styles.inputBlockLabel}>
+              password:
+            </label>
+            <input
+              id="su-password"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={styles.input}
-              placeholder="At least 6 characters"
+              className={styles.inputBlockField}
+              placeholder="6+ characters please :)"
               disabled={isSubmitting}
               autoComplete="new-password"
             />
+          </div>
+
+          <div className={styles.inputBlock}>
+            <label htmlFor="su-confirm" className={styles.inputBlockLabel}>
+              confirm password:
+            </label>
+            <input
+              id="su-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={styles.inputBlockField}
+              placeholder="re-enter your password"
+              disabled={isSubmitting}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className={styles.nextBtnWrapper}>
             <button
-              type="button"
-              className={styles.passwordToggle}
-              onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              type="submit"
+              className={styles.nextBtn}
+              disabled={isSubmitting}
             >
-              {showPassword ? 'Hide' : 'Show'}
+              <img
+                src={backfingerImg}
+                alt="next"
+                className={styles.nextFinger}
+              />
+              <span className={styles.nextLabel}>
+                {isSubmitting ? '...' : 'next!'}
+              </span>
             </button>
           </div>
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="confirmPassword" className={styles.label}>
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className={styles.input}
-            placeholder="Re-enter your password"
-            disabled={isSubmitting}
-            autoComplete="new-password"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className={styles.submitButton}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Creating account...' : 'Continue'}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
