@@ -1,41 +1,17 @@
 /**
  * RegistrationPage Component
- * Main registration wizard that coordinates all registration steps
+ * Main registration wizard — Figma mobile redesign
  */
 
 import React from 'react';
-import { useRegistration, type RegistrationStep } from '../hooks/useRegistration';
+import { useRegistration } from '../hooks/useRegistration';
 import { SignUpStep } from './SignUpStep';
 import { ProfileStep } from './ProfileStep';
 import { PhotoStep } from './PhotoStep';
 import { SuccessStep } from './SuccessStep';
 import styles from './RegistrationPage.module.css';
+import me2youLogo from '../../../assets/me2you.png';
 
-/**
- * Progress indicator for registration steps
- */
-const ProgressIndicator: React.FC<{ currentStep: RegistrationStep }> = ({ currentStep }) => {
-  const steps: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
-  const currentIndex = steps.indexOf(currentStep);
-
-  return (
-    <div className={styles.progressContainer}>
-      {steps.slice(0, -1).map((step, index) => (
-        <div
-          key={step}
-          className={`${styles.progressDot} ${
-            index < currentIndex ? styles.completed : ''
-          } ${index === currentIndex ? styles.active : ''}`}
-        />
-      ))}
-    </div>
-  );
-};
-
-/**
- * RegistrationPage Component
- * Multi-step registration wizard
- */
 export const RegistrationPage: React.FC = () => {
   const {
     currentStep,
@@ -95,22 +71,13 @@ export const RegistrationPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <h1 className={styles.logo}>me2you</h1>
-      </header>
-
+    <div className={styles.page}>
       {currentStep !== 'success' && (
-        <ProgressIndicator currentStep={currentStep} />
+        <img src={me2youLogo} alt="me2you" className={styles.logo} />
       )}
-
-      <main className={styles.mainContent}>
+      <div className={styles.stepContent}>
         {renderStep()}
-      </main>
-
-      <footer className={styles.footer}>
-        <p className={styles.footerText}>SPARK Space Interactive Installation</p>
-      </footer>
+      </div>
     </div>
   );
 };

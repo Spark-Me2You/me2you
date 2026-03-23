@@ -1,10 +1,12 @@
 /**
- * ProfileStep Component
- * Profile information form for registration
+ * ProfileStep Component — Figma "profile-creation-1 + 2" (single scrollable page)
  */
 
 import React, { useState, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
+import { GoBackWarning } from './GoBackWarning';
+import backfingerImg from '../../../assets/backfinger.png';
+import thumbsUpImg from '../../../assets/thumbsUP.png';
 import type { RegistrationFormData } from '../services/registrationService';
 
 interface ProfileStepProps {
@@ -17,8 +19,6 @@ interface ProfileStepProps {
   onClearError: () => void;
 }
 
-const MAX_STATUS_LENGTH = 150;
-
 export const ProfileStep: React.FC<ProfileStepProps> = ({
   formData,
   onUpdateFormData,
@@ -29,204 +29,210 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   onClearError,
 }) => {
   const [name, setName] = useState(formData.name || '');
-  const [status, setStatus] = useState(formData.status || '');
   const [pronouns, setPronouns] = useState(formData.pronouns || '');
   const [major, setMajor] = useState(formData.major || '');
-  const [interests, setInterests] = useState<string[]>(formData.interests || []);
-  const [interestInput, setInterestInput] = useState('');
+  const [status, setStatus] = useState(formData.status || '');
+  const [interests, setInterests] = useState(formData.interests?.join(', ') || '');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showWarning, setShowWarning] = useState(false);
 
-  // Update form data in parent when fields change
   useEffect(() => {
     onUpdateFormData({
       name,
-      status: status || undefined,
       pronouns: pronouns || undefined,
       major: major || undefined,
-      interests: interests.length > 0 ? interests : undefined,
+      status: status || undefined,
+      interests: interests
+        ? interests
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
     });
-  }, [name, status, pronouns, major, interests, onUpdateFormData]);
-
-  const handleAddInterest = () => {
-    const trimmed = interestInput.trim();
-    if (trimmed && !interests.includes(trimmed) && interests.length < 10) {
-      setInterests([...interests, trimmed]);
-      setInterestInput('');
-    }
-  };
-
-  const handleRemoveInterest = (interest: string) => {
-    setInterests(interests.filter(i => i !== interest));
-  };
-
-  const handleInterestKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddInterest();
-    }
-  };
+  }, [name, pronouns, major, status, interests, onUpdateFormData]);
 
   const validateForm = (): boolean => {
     setLocalError(null);
     onClearError();
-
     if (!name.trim()) {
-      setLocalError('Name is required');
+      setLocalError('name is required');
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     await onSubmit();
   };
 
+  const handleGoBack = () => {
+    setShowWarning(true);
+  };
+
+  const handlePhotoAreaClick = async () => {
+    if (!validateForm()) return;
+    await onSubmit();
+  };
+
+  const handleConfirmGoBack = () => {
+    setShowWarning(false);
+    onBack();
+  };
+
+  const handleCancelGoBack = () => {
+    setShowWarning(false);
+  };
+
   const displayError = localError || error;
-  const statusLength = status.length;
-  const statusWarning = statusLength > MAX_STATUS_LENGTH * 0.9;
-  const statusError = statusLength > MAX_STATUS_LENGTH;
 
   return (
-    <div className={styles.stepContainer}>
-      <div className={styles.stepHeader}>
-        <h2 className={styles.stepTitle}>Tell Us About Yourself</h2>
-        <p className={styles.stepDescription}>
-          Fill in your profile information
-        </p>
+    <>
+      <div className={styles.profileWrapper}>
+        <div className={styles.profileTab}>
+          <p className={styles.profileTabText}>profile creation</p>
+        </div>
+
+        <div className={styles.profileCard}>
+          <form onSubmit={handleSubmit} noValidate>
+            {displayError && (
+              <div className={styles.errorBanner}>{displayError}</div>
+            )}
+
+            {/* ── PART 1: photo placeholder + name / pronouns / major ── */}
+
+            <div
+              className={styles.photoPlaceholderWrapper}
+              onClick={handlePhotoAreaClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && handlePhotoAreaClick()}
+            >
+              <div className={styles.photoPlaceholderBox} />
+              <div className={styles.photoClickBanner}>
+                click here to take your photo!
+              </div>
+            </div>
+
+            <div className={styles.fieldGroupLeft}>
+              <div className={styles.fieldLabelLeftWrapper}>
+                <p className={styles.fieldLabelLeftText}>name:</p>
+              </div>
+              <input
+                id="pf-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={styles.fieldInputWhite}
+                placeholder="type here"
+                disabled={isSubmitting}
+                autoCapitalize="words"
+              />
+            </div>
+
+            <div className={styles.fieldGroupLeft}>
+              <div className={styles.fieldLabelLeftWrapper}>
+                <p className={styles.fieldLabelLeftText}>pronouns:</p>
+              </div>
+              <input
+                id="pf-pronouns"
+                type="text"
+                value={pronouns}
+                onChange={(e) => setPronouns(e.target.value)}
+                className={styles.fieldInputWhite}
+                placeholder="type here"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className={styles.fieldGroupLeft}>
+              <div className={styles.fieldLabelLeftWrapper}>
+                <p className={styles.fieldLabelLeftText}>major/title:</p>
+              </div>
+              <input
+                id="pf-major"
+                type="text"
+                value={major}
+                onChange={(e) => setMajor(e.target.value)}
+                className={styles.fieldInputWhite}
+                placeholder="type here"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* ── PART 2: status + interests + nav ── */}
+
+            <div className={styles.fieldGroupRight}>
+              <div className={styles.fieldLabelRightWrapper}>
+                <p className={styles.fieldLabelRightText}>status:</p>
+              </div>
+              <textarea
+                id="pf-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className={styles.fieldTextarea}
+                placeholder="type here"
+                disabled={isSubmitting}
+                rows={4}
+              />
+            </div>
+
+            <div className={styles.fieldGroupRight}>
+              <div className={styles.fieldLabelRightWrapper}>
+                <p className={styles.fieldLabelRightText}>interests:</p>
+              </div>
+              <textarea
+                id="pf-interests"
+                value={interests}
+                onChange={(e) => setInterests(e.target.value)}
+                className={styles.fieldTextarea}
+                placeholder="type here"
+                disabled={isSubmitting}
+                rows={4}
+              />
+            </div>
+
+            <div className={styles.profileNavRow}>
+              <button
+                type="button"
+                className={styles.navBtnLeft}
+                onClick={handleGoBack}
+                disabled={isSubmitting}
+              >
+                <img
+                  src={backfingerImg}
+                  alt="go back"
+                  className={styles.navFingerLeft}
+                />
+                <span className={styles.navBtnLabel}>go back</span>
+              </button>
+
+              <button
+                type="submit"
+                className={styles.navBtnRight}
+                disabled={isSubmitting}
+              >
+                <img
+                  src={thumbsUpImg}
+                  alt="create me"
+                  className={styles.navFingerRight}
+                />
+                <span className={styles.navBtnLabel}>
+                  {isSubmitting ? '...' : 'create me!'}
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.form}>
-        {displayError && (
-          <div className={styles.errorMessage}>
-            {displayError}
-          </div>
-        )}
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="name" className={styles.label}>
-            Name *
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={styles.input}
-            placeholder="Your display name"
-            disabled={isSubmitting}
-            autoFocus
-          />
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="pronouns" className={styles.label}>
-            Pronouns
-          </label>
-          <input
-            id="pronouns"
-            type="text"
-            value={pronouns}
-            onChange={(e) => setPronouns(e.target.value)}
-            className={styles.input}
-            placeholder="e.g., she/her, he/him, they/them"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="major" className={styles.label}>
-            Major
-          </label>
-          <input
-            id="major"
-            type="text"
-            value={major}
-            onChange={(e) => setMajor(e.target.value)}
-            className={styles.input}
-            placeholder="Your field of study"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="status" className={styles.label}>
-            Status
-          </label>
-          <textarea
-            id="status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value.slice(0, MAX_STATUS_LENGTH))}
-            className={styles.textarea}
-            placeholder="A short bio or status message"
-            disabled={isSubmitting}
-            rows={3}
-          />
-          <span className={`${styles.charCount} ${statusWarning ? styles.warning : ''} ${statusError ? styles.error : ''}`}>
-            {statusLength}/{MAX_STATUS_LENGTH}
-          </span>
-        </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="interests" className={styles.label}>
-            Interests
-          </label>
-          <div className={styles.interestsContainer}>
-            {interests.length > 0 && (
-              <div className={styles.interestTags}>
-                {interests.map((interest) => (
-                  <span key={interest} className={styles.interestTag}>
-                    {interest}
-                    <button
-                      type="button"
-                      className={styles.removeTag}
-                      onClick={() => handleRemoveInterest(interest)}
-                      disabled={isSubmitting}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <input
-              id="interests"
-              type="text"
-              value={interestInput}
-              onChange={(e) => setInterestInput(e.target.value)}
-              onKeyDown={handleInterestKeyDown}
-              onBlur={handleAddInterest}
-              className={styles.interestInput}
-              placeholder={interests.length >= 10 ? 'Max 10 interests' : 'Type an interest and press Enter'}
-              disabled={isSubmitting || interests.length >= 10}
-            />
-          </div>
-        </div>
-
-        <div className={styles.buttonRow}>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={onBack}
-            disabled={isSubmitting}
-          >
-            Back
-          </button>
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Continue'}
-          </button>
-        </div>
-      </form>
-    </div>
+      {showWarning && (
+        <GoBackWarning
+          onConfirm={handleConfirmGoBack}
+          onCancel={handleCancelGoBack}
+        />
+      )}
+    </>
   );
 };
