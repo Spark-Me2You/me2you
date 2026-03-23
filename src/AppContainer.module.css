@@ -1,0 +1,46 @@
+.app {
+  text-align: center;
+}
+
+.authMeta {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.buttonBase {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #fff;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.stateActionButton {
+  margin-right: 1rem;
+}
+
+.discoveryButton {
+  background-color: #1976d2;
+  border: none;
+}
+
+.profileButton {
+  background-color: #333;
+  border: 1px solid #555;
+}
+
+.hubButton {
+  background-color: #9c27b0;
+  border: none;
+}
+
+.adminLogoutButton {
+  background-color: #d32f2f;
+  border: none;
+}
+
+.kioskLogoutButton {
+  background-color: #ff6f00;
+  border: none;
+}
