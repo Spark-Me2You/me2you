@@ -33,6 +33,8 @@ export const transitions: StateTransition[] = [
   { from: AppState.DISCOVERY, to: AppState.IDLE, event: 'EXIT_DISCOVERY' },
   { from: AppState.IDLE, to: AppState.MY_PROFILE, event: 'VIEW_MY_PROFILE' },
   { from: AppState.MY_PROFILE, to: AppState.IDLE, event: 'EXIT_MY_PROFILE' },
+  { from: AppState.IDLE, to: AppState.HUB, event: 'VIEW_HUB' },
+  { from: AppState.HUB, to: AppState.IDLE, event: 'EXIT_HUB' },
   // TODO: Add more transitions
 ];
 
