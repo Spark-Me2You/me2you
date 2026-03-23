@@ -23,14 +23,17 @@
   position: absolute;
   top: 5rem;
   left: 0rem;
-  height: 18rem;
-  width: 33rem;
+  height: 17rem;
+  width: 32rem;
   padding: 20px 60px;
   background: rgba(228, 72, 5, 0.93);
   border-radius: 46px;
   font-size: 80px;
   letter-spacing: 13.6px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 2;
 }
 
@@ -41,16 +44,19 @@
 
 .hubButton {
   position: absolute;
-  top: 20rem;
+  top: 19.5rem;
   right: 0rem;
-  height: 18rem;
-  width: 33rem;
+  height: 17rem;
+  width: 31rem;
   padding: 20px 60px;
   background: rgba(211, 228, 5, 0.93);
   border-radius: 46px;
   font-size: 80px;
   letter-spacing: 13.6px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 2;
 }
 
@@ -117,38 +123,49 @@
 
 .createAccountPlaceholder {
   position: absolute;
-  bottom: 12rem;
-  left: 14rem;
-  height: 10rem;
-  width: 20rem;
-  padding: 20px 40px;
+  top: 25rem;
+  left: 13rem;
+  height: 17rem;
+  width: 26rem;
+  padding: 16px 20px;
   background: rgba(228, 5, 172, 0.93);
-  border-radius: 24px;
+  border-radius: 46px;
   font-family: "Jersey 10", sans-serif;
-  font-size: 24px;
   color: #ffffff;
-  letter-spacing: 2px;
   text-transform: lowercase;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 2;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  overflow: hidden;
 }
 
 .createAccountText {
-  line-height: 1;
+  font-size: 52px;
+  letter-spacing: 4px;
+  line-height: 1.2;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2.4rem;
 }
 
 .createAccountQr {
-  width: 112px;
-  height: 112px;
+  width: 170px;
+  height: 170px;
   object-fit: contain;
   border-radius: 8px;
   background: #ffffff;
   padding: 4px;
+  flex-shrink: 0;
+  margin-top: 10px;
 }
 
 .otterImage {

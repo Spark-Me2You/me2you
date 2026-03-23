@@ -82,6 +82,18 @@ export const HubView: React.FC = () => {
     ...Array(anonCount).fill(null),
   ];
 
+  // ── Profile detail — replaces hub entirely so nothing overlaps ───────────────
+  if (selectedUser) {
+    return (
+      <ProfileCardView
+        profileData={toRandomImageData(selectedUser)}
+        onBack={() => setSelectedUser(null)}
+        backLabel="back to network"
+        onHome={handleBack}
+      />
+    );
+  }
+
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -143,23 +155,6 @@ export const HubView: React.FC = () => {
         exit
       </button>
 
-      {/* Profile detail overlay */}
-      {selectedUser && (
-        <div
-          style={styles.overlayBackdrop}
-          onClick={() => setSelectedUser(null)}
-        >
-          <div
-            style={styles.overlayCard}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ProfileCardView
-              profileData={toRandomImageData(selectedUser)}
-              onBack={() => setSelectedUser(null)}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -272,21 +267,5 @@ const styles = {
     margin: 0,
   },
 
-  overlayBackdrop: {
-    position: 'fixed' as const,
-    inset: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
 
-  overlayCard: {
-    width: '90vw',
-    height: '90vh',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
 } as const;

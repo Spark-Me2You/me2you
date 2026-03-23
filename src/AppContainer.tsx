@@ -12,7 +12,7 @@ import { HubView } from "@/features/hub";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import otterImage from "@/assets/otter.png";
-import qrCodeImage from "@/assets/me2you_QR.png";
+import qrCodeImage from "@/assets/registerqr.png";
 import styles from "./AppContainer.module.css";
 
 /**
@@ -116,7 +116,7 @@ function AppContainerContent() {
                 {/* Create account placeholder - bottom left */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
-                    create account
+                    create<br />account
                   </span>
                   <img
                     src={qrCodeImage}
