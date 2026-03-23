@@ -7,6 +7,15 @@ import { supabase } from "@/core/supabase/client";
 import { storageService } from "@/core/supabase/storage";
 import type { RandomImageData } from "../types/image";
 
+type DiscoveryUserData = {
+  id: string;
+  name: string;
+  status: string | null;
+  pronouns: string | null;
+  major: string | null;
+  interests: string[] | null;
+};
+
 export const discoveryService = {
   /**
    * Match gesture to profile
@@ -71,7 +80,10 @@ export const discoveryService = {
           user (
             id,
             name,
-            status
+            status,
+            pronouns,
+            major,
+            interests
           )
         `,
         )
@@ -106,9 +118,11 @@ export const discoveryService = {
 
       // Validate joined user data exists
       // Note: Supabase returns joined data as an array, even for single relationships
-      const userData = Array.isArray(selectedImage.user)
+      const rawUserData = Array.isArray(selectedImage.user)
         ? selectedImage.user[0]
         : selectedImage.user;
+
+      const userData = rawUserData as DiscoveryUserData | null;
 
       if (!userData) {
         console.error(
@@ -281,7 +295,10 @@ export const discoveryService = {
           user (
             id,
             name,
-            status
+            status,
+            pronouns,
+            major,
+            interests
           )
         `,
         )
@@ -314,7 +331,8 @@ export const discoveryService = {
       const processedImages: RandomImageData[] = await Promise.all(
         shuffled.map(async (img) => {
           // Validate user data
-          const userData = Array.isArray(img.user) ? img.user[0] : img.user;
+          const rawUserData = Array.isArray(img.user) ? img.user[0] : img.user;
+          const userData = rawUserData as DiscoveryUserData | null;
 
           if (!userData) {
             console.warn(
