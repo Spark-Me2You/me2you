@@ -54,6 +54,10 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onClick,
 }) => {
   const { user, profileImageUrl } = userData;
+  const [imageError, setImageError] = React.useState(false);
+
+  // Show initials if no URL or if image failed to load
+  const showInitials = !profileImageUrl || imageError;
 
   return (
     <div
@@ -87,21 +91,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           position: "relative",
         }}
       >
-        {profileImageUrl ? (
-          <img
-            src={profileImageUrl}
-            alt={`${user.name}'s profile`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            onError={(e) => {
-              // Hide image on error and let parent show initials
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        ) : (
+        {showInitials ? (
           <div
             style={{
               width: "100%",
@@ -119,6 +109,23 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           >
             {getInitials(user.name)}
           </div>
+        ) : (
+          <img
+            src={profileImageUrl}
+            alt={`${user.name}'s profile`}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            onError={() => {
+              console.error(
+                `[ProfileCard] Image failed to load for ${user.name}:`,
+                profileImageUrl,
+              );
+              setImageError(true);
+            }}
+          />
         )}
       </div>
 
