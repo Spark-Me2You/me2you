@@ -15,24 +15,16 @@
   cursor: pointer;
   color: #ffffff;
   border: none;
-  font-family: 'Jersey 10', sans-serif;
+  font-family: "Jersey 10", sans-serif;
   text-transform: lowercase;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.buttonBase:hover {
-  transform: scale(1.05);
-  box-shadow: 0px 6px 6px 0px rgba(0, 0, 0, 0.3);
-}
-
-.buttonBase:active {
-  transform: scale(0.98);
 }
 
 .discoveryButton {
   position: absolute;
-  top: 180px;
-  left: 120px;
+  top: 5rem;
+  left: 0rem;
+  height: 18rem;
+  width: 33rem;
   padding: 20px 60px;
   background: rgba(228, 72, 5, 0.93);
   border-radius: 46px;
@@ -49,8 +41,10 @@
 
 .hubButton {
   position: absolute;
-  bottom: 120px;
-  right: 120px;
+  top: 20rem;
+  right: 0rem;
+  height: 18rem;
+  width: 33rem;
   padding: 20px 60px;
   background: rgba(211, 228, 5, 0.93);
   border-radius: 46px;
@@ -91,14 +85,15 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -30%);
   width: 1200px;
   height: 800px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 40px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-              inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-              inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 1;
 }
 
@@ -110,10 +105,10 @@
 
 .logo {
   position: absolute;
-  top: 60px;
-  left: 50%;
+  top: 2rem;
+  left: 35%;
   transform: translateX(-50%);
-  width: 600px;
+  width: 800px;
   max-width: 60vw;
   z-index: 5;
   pointer-events: none;
@@ -122,12 +117,14 @@
 
 .createAccountPlaceholder {
   position: absolute;
-  bottom: 100px;
-  left: 100px;
+  bottom: 12rem;
+  left: 14rem;
+  height: 10rem;
+  width: 20rem;
   padding: 20px 40px;
   background: rgba(228, 5, 172, 0.93);
   border-radius: 24px;
-  font-family: 'Jersey 10', sans-serif;
+  font-family: "Jersey 10", sans-serif;
   font-size: 24px;
   color: #ffffff;
   letter-spacing: 2px;
@@ -135,8 +132,23 @@
   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
   z-index: 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
+}
+
+.createAccountText {
+  line-height: 1;
+}
+
+.createAccountQr {
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 4px;
 }
 
 .otterImage {
