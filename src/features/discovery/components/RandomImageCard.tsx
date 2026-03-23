@@ -1,10 +1,9 @@
 import React from "react";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import type { RandomImageData } from "../types/image";
-import {
-  GESTURE_MAPPINGS,
-  getGestureMapping,
-} from "../config/gestureMapping";
+import { getGestureMapping } from "../config/gestureMapping";
+import styles from "./RandomImageCard.module.css";
+import backfingerIcon from "@/assets/backfinger.png";
 
 /**
  * RandomImageCard Component Props
@@ -19,16 +18,14 @@ interface RandomImageCardProps {
 
 /**
  * RandomImageCard Component
- * Displays a random public image with owner info when a supported gesture is detected
+ * Displays user photo with orange namecard overlay when gesture is detected
  * Right side of the discovery split-screen layout
  *
- * Supported gestures: Peace Sign (Victory), Wave (Open_Palm), Thumbs Up (Thumb_Up)
- *
  * States:
- * 1. Default - Show instructions for all available gestures
+ * 1. Empty - White background when no gesture detected
  * 2. Loading - Show loading message while fetching image
  * 3. Error - Show error message if fetch fails
- * 4. Success - Display image with owner's display name and bio
+ * 4. Success - Display photo with orange namecard overlay
  */
 export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   detectedGesture,
@@ -38,236 +35,110 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   onViewProfile,
 }) => {
   // Check if any supported gesture is detected
-  const gestureMapping = getGestureMapping(detectedGesture?.gestureName ?? null);
+  const gestureMapping = getGestureMapping(
+    detectedGesture?.gestureName ?? null,
+  );
   const isGestureDetected = gestureMapping !== null;
 
-  // State 1: Loading image
-  if (isGestureDetected && isLoading) {
-    return (
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "2px dashed #ccc",
-          borderRadius: "8px",
-          backgroundColor: "#f5f5f5",
-          padding: "2rem",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.2rem", color: "#666" }}>Loading image...</p>
-        </div>
-      </div>
-    );
+  // State 1: Empty state (no gesture detected) - White background
+  if (!isGestureDetected) {
+    return <div className={styles.emptyState} />;
   }
 
-  // State 2: Error occurred
-  if (isGestureDetected && error) {
+  // State 2: Loading image
+  if (isLoading) {
     return (
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "2px dashed #ccc",
-          borderRadius: "8px",
-          backgroundColor: "#fff3cd",
-          padding: "2rem",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              color: "#856404",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {error}
-          </p>
-          <p style={{ fontSize: "0.875rem", color: "#856404" }}>
-            Try showing the gesture again or try a different gesture
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // State 3: Image loaded successfully
-  if (isGestureDetected && imageData) {
-    return (
-      <div
-        style={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          border: "2px solid #4caf50",
-          borderRadius: "8px",
-          backgroundColor: "#fff",
-          padding: "1.5rem",
-          overflow: "hidden",
-        }}
-      >
-        {/* Image container */}
-        <div
+      <div className={styles.emptyState}>
+        <p
           style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: "1rem",
-            overflow: "hidden",
-            borderRadius: "4px",
-            backgroundColor: "#f5f5f5",
+            fontFamily: "Averia Libre, cursive",
+            fontSize: "24px",
+            color: "#666",
           }}
         >
+          Loading...
+        </p>
+      </div>
+    );
+  }
+
+  // State 3: Error occurred
+  if (error) {
+    return (
+      <div className={styles.emptyState}>
+        <p
+          style={{
+            fontFamily: "Averia Libre, cursive",
+            fontSize: "20px",
+            color: "#d32f2f",
+            textAlign: "center",
+            padding: "2rem",
+          }}
+        >
+          {error}
+        </p>
+      </div>
+    );
+  }
+
+  // State 4: Image loaded successfully - Full photo with orange namecard overlay
+  if (imageData) {
+    const { owner, imageUrl } = imageData;
+
+    return (
+      <div className={styles.container}>
+        {/* User photo - full screen */}
+        <div className={styles.photoContainer}>
           <img
-            src={imageData.imageUrl}
-            alt={`Photo by ${imageData.owner.name}`}
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              objectFit: "contain",
-            }}
+            src={imageUrl}
+            alt={`Photo by ${owner.name}`}
+            className={styles.photo}
             onError={(e) => {
-              // Fallback if image fails to load
               console.error(
-                "[ImagePlaceholder] Failed to load image:",
-                imageData.imageUrl,
+                "[RandomImageCard] Failed to load image:",
+                imageUrl,
               );
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />
         </div>
 
-        {/* User info */}
-        <div
-          style={{
-            borderTop: "1px solid #e0e0e0",
-            paddingTop: "1rem",
-          }}
+        {/* Orange namecard overlay (clickable) */}
+        <button
+          className={styles.namecard}
+          onClick={() => onViewProfile?.(imageData)}
+          type="button"
         >
-          <h3
-            style={{
-              margin: "0 0 0.5rem 0",
-              fontSize: "1.5rem",
-              color: "#333",
-            }}
-          >
-            {imageData.owner.name}
-          </h3>
-          {imageData.owner.status && (
-            <p
-              style={{
-                margin: 0,
-                fontSize: "1rem",
-                color: "#666",
-                lineHeight: 1.5,
-              }}
-            >
-              {imageData.owner.status}
-            </p>
+          <p className={styles.greeting}>hi! i'm {owner.name}!</p>
+          {owner.pronouns && (
+            <p className={styles.pronouns}>{owner.pronouns}</p>
           )}
+          {owner.major && <p className={styles.major}>{owner.major}</p>}
 
-          {/* Find out more button */}
+          <div className={styles.statusGroup}>
+            <p className={styles.statusLabel}>status:</p>
+            <div className={styles.statusBox}>
+              <p className={styles.statusText}>
+                {owner.status || "No status set"}
+              </p>
+            </div>
+          </div>
+
           {onViewProfile && (
-            <button
-              onClick={() => onViewProfile(imageData)}
-              style={{
-                width: "100%",
-                padding: "0.75rem 1rem",
-                marginTop: "1rem",
-                fontSize: "1rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                backgroundColor: "#4caf50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-              }}
-            >
-              Find out more about me
-            </button>
+            <span className={styles.seeMoreBadge}>
+              <img
+                src={backfingerIcon}
+                alt="See more"
+                className={styles.handIcon}
+              />
+              <span className={styles.seeMoreText}>see more!</span>
+            </span>
           )}
-        </div>
-
-        {/* Display which gesture was used */}
-        {gestureMapping && (
-          <p
-            style={{
-              fontSize: "0.875rem",
-              marginTop: "0.5rem",
-              color: "#4caf50",
-              textAlign: "center",
-              fontWeight: 500,
-            }}
-          >
-            Matched with: {gestureMapping.displayName}
-          </p>
-        )}
-
-        {/* Gesture info (optional, for debugging) */}
-        {detectedGesture?.handedness && (
-          <p
-            style={{
-              fontSize: "0.75rem",
-              marginTop: "0.25rem",
-              color: "#999",
-              textAlign: "center",
-            }}
-          >
-            {detectedGesture.handedness} hand •{" "}
-            {Math.round((detectedGesture.confidence || 0) * 100)}% confidence
-          </p>
-        )}
+        </button>
       </div>
     );
   }
 
-  // State 4: Default state (no gesture or waiting for gesture)
-  return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "2px dashed #ccc",
-        borderRadius: "8px",
-        backgroundColor: "#f5f5f5",
-        padding: "2rem",
-      }}
-    >
-      <div style={{ textAlign: "center", color: "#666" }}>
-        <p
-          style={{
-            fontSize: "1.2rem",
-            marginBottom: "1rem",
-            fontWeight: 600,
-          }}
-        >
-          Try one of these gestures:
-        </p>
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
-        >
-          {GESTURE_MAPPINGS.map((mapping) => (
-            <p
-              key={mapping.gestureName}
-              style={{ fontSize: "1rem", margin: 0, color: "#666" }}
-            >
-              {mapping.instructionText}
-            </p>
-          ))}
-        </div>
-        <p style={{ fontSize: "0.875rem", color: "#999", marginTop: "1rem" }}>
-          A random image from your organization will appear when you make a
-          gesture
-        </p>
-      </div>
-    </div>
-  );
+  // Fallback - empty state
+  return <div className={styles.emptyState} />;
 };
