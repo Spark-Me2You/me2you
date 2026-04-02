@@ -51,6 +51,57 @@ const getDefaultOrgId = (): string => {
   return orgId;
 };
 
+/**
+ * Compress photo: resize to max 1200px, encode at 80% quality
+ * Reduces file size before upload
+ */
+const compressPhoto = async (photo: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(photo);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 1200;
+      let width = img.width;
+      let height = img.height;
+
+      // Scale down if needed
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+        width = width * ratio;
+        height = height * ratio;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context unavailable'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Failed to compress photo'));
+        }
+      }, 'image/jpeg', 0.8);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    img.src = url;
+  });
+};
+
 export const registrationService = {
   /**
    * Step 1: Sign up with email and password
@@ -84,23 +135,34 @@ export const registrationService = {
   /**
    * Step 3: Upload photo and create image record
    * Uploads photo to storage and creates database record with gesture category
+   * Calls onDbInsertComplete callback immediately after DB insert (don't wait for smart crop)
    *
    * @param photo - Photo blob
    * @param userId - User ID (owner)
    * @param category - Gesture category (wave, peace_sign, thumbs_up)
+   * @param onDbInsertComplete - Optional callback fired after DB insert (before smart crop), can be async
+   * @param onProgress - Optional callback for progress updates (0-100)
    * @returns The created image record
    */
   uploadPhotoAndCreateRecord: async (
     photo: Blob,
     userId: string,
-    category: string = 'wave'
+    category: string = 'wave',
+    onDbInsertComplete?: (imageId: string) => Promise<void> | void,
+    onProgress?: (progress: number) => void
   ): Promise<{ id: string; storage_path: string }> => {
     const orgId = getDefaultOrgId();
 
+    // Compress photo before upload
+    onProgress?.(10);
+    const compressedPhoto = await compressPhoto(photo);
+
     // Upload to storage
-    const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
+    onProgress?.(30);
+    const storagePath = await storageService.uploadPhoto(compressedPhoto, userId, orgId);
 
     // Create image record with gesture category
+    onProgress?.(70);
     const imageRecord = await userRegistrationAuthService.createImageRecord({
       owner_id: userId,
       org_id: orgId,
@@ -109,6 +171,13 @@ export const registrationService = {
       is_public: true,
     });
 
+    // Notify caller that DB insert is complete (before triggering smart crop)
+    onProgress?.(85);
+    if (onDbInsertComplete) {
+      await onDbInsertComplete(imageRecord.id);
+    }
+
+    onProgress?.(100);
     return imageRecord;
   },
 

@@ -118,7 +118,12 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      if (isGestureRecognizerReady) processVideoFrame(video, Date.now());
+      // Fire-and-forget gesture detection (don't block on it)
+      if (isGestureRecognizerReady) {
+        Promise.resolve().then(() => processVideoFrame(video, Date.now())).catch((err) => {
+          console.error('[PhotoStep] Gesture detection error:', err);
+        });
+      }
 
       canvas.toBlob(
         (blob) => {

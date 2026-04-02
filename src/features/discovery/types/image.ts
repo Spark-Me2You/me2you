@@ -16,6 +16,8 @@ export interface ImageRecord {
   org_id: string;
   /** Storage path in Supabase storage bucket */
   storage_path: string;
+  /** Cropped image storage path (populated after smart crop) */
+  cropped_path?: string | null;
   /** Category of the image (e.g., 'profile', 'uncategorized') */
   category: string;
   /** Whether the image is publicly visible */

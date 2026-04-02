@@ -8,6 +8,7 @@ import { useAuth } from '@/core/auth/AuthContext';
 import { supabase } from '@/core/supabase/client';
 import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth';
 import { registrationService, type RegistrationFormData, type RegistrationResult } from '../services/registrationService';
+import { smartCropService } from '../services/smartCropService';
 
 /**
  * Registration steps
@@ -21,6 +22,7 @@ export interface RegistrationState {
   currentStep: RegistrationStep;
   formData: Partial<RegistrationFormData>;
   isSubmitting: boolean;
+  uploadProgress: number; // 0-100
   error: string | null;
   result: RegistrationResult | null;
 }
@@ -33,6 +35,7 @@ export interface UseRegistrationReturn {
   currentStep: RegistrationStep;
   formData: Partial<RegistrationFormData>;
   isSubmitting: boolean;
+  uploadProgress: number;
   error: string | null;
   result: RegistrationResult | null;
 
@@ -65,11 +68,11 @@ export const useRegistration = (): UseRegistrationReturn => {
     currentStep: 'signup',
     formData: {},
     isSubmitting: false,
+    uploadProgress: 0,
     error: null,
     result: null,
   });
 
-  // Step navigation
   const goToStep = useCallback((step: RegistrationStep) => {
     setState(prev => ({ ...prev, currentStep: step, error: null }));
   }, []);
@@ -99,7 +102,6 @@ export const useRegistration = (): UseRegistrationReturn => {
   const isFirstStep = state.currentStep === STEP_ORDER[0];
   const isLastStep = state.currentStep === STEP_ORDER[STEP_ORDER.length - 1];
 
-  // Form data management
   const updateFormData = useCallback((data: Partial<RegistrationFormData>) => {
     setState(prev => ({
       ...prev,
@@ -111,22 +113,16 @@ export const useRegistration = (): UseRegistrationReturn => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Step handlers
   const handleSignUp = useCallback(async (email: string, password: string): Promise<boolean> => {
     setState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
-      // Sign up via AuthProvider (updates auth context)
       await signUpUser(email, password);
-
-      // Store credentials in form data (needed for complete flow reference)
       setState(prev => ({
         ...prev,
         isSubmitting: false,
         formData: { ...prev.formData, email, password },
       }));
-
-      // Move to next step
       nextStep();
       return true;
     } catch (error) {
@@ -142,14 +138,10 @@ export const useRegistration = (): UseRegistrationReturn => {
       return false;
     }
 
-    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
-
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Create profile row here so it always exists before the photo upload,
-      // regardless of how the user navigated to this step.
       const { name, status, pronouns, major, interests } = state.formData;
       if (!name || name.trim() === '') throw new Error('Name is required');
 
@@ -163,27 +155,39 @@ export const useRegistration = (): UseRegistrationReturn => {
 
       setUserProfile(profile);
 
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
-
-      // Sign out now that registration is fully complete
-      await userRegistrationAuthService.signOut();
-
       setState(prev => ({
         ...prev,
-        isSubmitting: false,
-        formData: { ...prev.formData, photo },
         result: {
           user,
           profile,
-          imageId: imageRecord.id,
+          imageId: undefined,
         },
       }));
+      nextStep();
 
-      nextStep(); // → success
+      registrationService.uploadPhotoAndCreateRecord(
+        photo,
+        user.id,
+        category,
+        async (dbInsertedImageId) => {
+          if (dbInsertedImageId) {
+            smartCropService.triggerCrop(dbInsertedImageId).catch((err) => {
+              console.error('[handlePhotoSubmit] Smart crop failed:', err);
+            });
+          }
+          await userRegistrationAuthService.signOut();
+        },
+        (progress) => {
+          setState(prev => ({ ...prev, uploadProgress: progress }));
+        }
+      ).catch((err) => {
+        console.error('[handlePhotoSubmit] Background upload failed:', err);
+      });
+
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload photo';
-      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
+      const message = error instanceof Error ? error.message : 'Failed to process photo';
+      setState(prev => ({ ...prev, error: message }));
       return false;
     }
   }, [state.formData, setUserProfile, nextStep]);
@@ -196,32 +200,24 @@ export const useRegistration = (): UseRegistrationReturn => {
       return false;
     }
 
-    // Just validate and advance — profile DB write happens in handlePhotoSubmit
-    // so the user row always exists immediately before the photo upload.
-    nextStep(); // → photo
+    nextStep();
     return true;
   }, [state.formData, nextStep]);
 
   return {
-    // State
     currentStep: state.currentStep,
     formData: state.formData,
     isSubmitting: state.isSubmitting,
+    uploadProgress: state.uploadProgress,
     error: state.error,
     result: state.result,
-
-    // Step navigation
     goToStep,
     nextStep,
     previousStep,
     isFirstStep,
     isLastStep,
-
-    // Form data
     updateFormData,
     clearError,
-
-    // Step handlers
     handleSignUp,
     handleProfileSubmit,
     handlePhotoSubmit,
