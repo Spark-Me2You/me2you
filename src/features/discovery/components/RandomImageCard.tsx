@@ -2,6 +2,7 @@ import React from "react";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import type { RandomImageData } from "../types/image";
 import { getGestureMapping } from "../config/gestureMapping";
+import { BorderProgress } from "./BorderProgress";
 import styles from "./RandomImageCard.module.css";
 import backfingerIcon from "@/assets/backfinger.png";
 
@@ -14,6 +15,10 @@ interface RandomImageCardProps {
   isLoading?: boolean;
   error?: string | null;
   onViewProfile?: (imageData: RandomImageData) => void;
+  /** Timer progress 0-100 for border animation */
+  timerProgress?: number;
+  /** Whether to show completion flash */
+  isFlashing?: boolean;
 }
 
 /**
@@ -33,6 +38,8 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   isLoading,
   error,
   onViewProfile,
+  timerProgress,
+  isFlashing,
 }) => {
   // Check if any supported gesture is detected
   const gestureMapping = getGestureMapping(
@@ -86,7 +93,14 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
     const { owner, imageUrl } = imageData;
 
     return (
-      <div className={styles.container}>
+      <div
+        className={`${styles.container} ${isFlashing ? styles.completionFlash : ""}`}
+      >
+        {/* Border progress overlay - only show when timer is active */}
+        {timerProgress !== undefined && timerProgress > 0 && (
+          <BorderProgress progress={timerProgress} color="#e44805" strokeWidth={6} />
+        )}
+
         {/* User photo - full screen */}
         <div className={styles.photoContainer}>
           <img
