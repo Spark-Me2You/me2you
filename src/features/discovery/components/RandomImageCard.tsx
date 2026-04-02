@@ -98,7 +98,12 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
       >
         {/* Border progress overlay - only show when timer is active */}
         {timerProgress !== undefined && timerProgress > 0 && (
-          <BorderProgress progress={timerProgress} color="#e44805" strokeWidth={6} />
+          <BorderProgress
+            key={imageData.image.id}
+            progress={timerProgress}
+            color="#22c55e"
+            strokeWidth={7}
+          />
         )}
 
         {/* User photo - full screen */}

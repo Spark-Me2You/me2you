@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /**
  * BorderProgress Component Props
@@ -30,36 +30,58 @@ interface BorderProgressProps {
  */
 export const BorderProgress: React.FC<BorderProgressProps> = ({
   progress,
-  color = "#e44805", // Orange theme color
+  color = "#22c55e", // Green for countdown visibility
   strokeWidth = 6,
   borderRadius = 0,
 }) => {
-  const pathRef = useRef<SVGRectElement>(null);
-  const [pathLength, setPathLength] = useState(0);
+  const normalizedProgress = Math.min(100, Math.max(0, progress));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
-  /**
-   * Calculate the total perimeter length of the rectangle
-   * This is used for the stroke-dasharray and stroke-dashoffset calculations
-   */
   useEffect(() => {
-    if (pathRef.current) {
-      const rect = pathRef.current;
-      const bbox = rect.getBBox();
+    if (!containerRef.current) return;
 
-      // For a rectangle: perimeter = 2 * (width + height)
-      const perimeter = 2 * (bbox.width + bbox.height);
-      setPathLength(perimeter);
-    }
+    const el = containerRef.current;
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (!rect) return;
+
+      setSize({
+        width: Math.max(0, rect.width),
+        height: Math.max(0, rect.height),
+      });
+    });
+
+    observer.observe(el);
+
+    return () => observer.disconnect();
   }, []);
 
-  /**
-   * Calculate how much of the path should be visible based on progress
-   * stroke-dashoffset starts at pathLength (nothing visible) and decreases to 0 (fully visible)
-   */
-  const dashOffset = pathLength - (pathLength * progress) / 100;
+  const width = size.width;
+  const height = size.height;
+  const perimeter = 2 * (width + height);
+  const drawLength = (perimeter * normalizedProgress) / 100;
+
+  const topLength = Math.min(drawLength, width);
+  const rightLength = Math.min(Math.max(drawLength - width, 0), height);
+  const bottomLength = Math.min(
+    Math.max(drawLength - width - height, 0),
+    width,
+  );
+  const leftLength = Math.min(
+    Math.max(drawLength - 2 * width - height, 0),
+    height,
+  );
+
+  const segmentStyle: React.CSSProperties = {
+    position: "absolute",
+    backgroundColor: color,
+    boxShadow: "0 0 2px rgba(0,0,0,0.35)",
+  };
 
   return (
-    <svg
+    <div
+      ref={containerRef}
       style={{
         position: "absolute",
         top: 0,
@@ -69,27 +91,60 @@ export const BorderProgress: React.FC<BorderProgressProps> = ({
         pointerEvents: "none",
         zIndex: 20,
         overflow: "visible",
+        borderRadius,
       }}
-      preserveAspectRatio="none"
     >
-      <rect
-        ref={pathRef}
-        x={strokeWidth / 2}
-        y={strokeWidth / 2}
-        width={`calc(100% - ${strokeWidth}px)`}
-        height={`calc(100% - ${strokeWidth}px)`}
-        rx={borderRadius}
-        ry={borderRadius}
-        fill="none"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeDasharray={pathLength}
-        strokeDashoffset={dashOffset}
+      {/* Top segment: left to right */}
+      <div
         style={{
-          // Smooth transition for progress updates
-          transition: "stroke-dashoffset 0.05s linear",
+          ...segmentStyle,
+          top: 0,
+          left: 0,
+          width: `${topLength}px`,
+          height: `${strokeWidth}px`,
+          borderTopLeftRadius: borderRadius,
+          borderTopRightRadius: borderRadius,
         }}
       />
-    </svg>
+
+      {/* Right segment: top to bottom */}
+      <div
+        style={{
+          ...segmentStyle,
+          top: 0,
+          right: 0,
+          width: `${strokeWidth}px`,
+          height: `${rightLength}px`,
+          borderTopRightRadius: borderRadius,
+          borderBottomRightRadius: borderRadius,
+        }}
+      />
+
+      {/* Bottom segment: right to left */}
+      <div
+        style={{
+          ...segmentStyle,
+          right: 0,
+          bottom: 0,
+          width: `${bottomLength}px`,
+          height: `${strokeWidth}px`,
+          borderBottomRightRadius: borderRadius,
+          borderBottomLeftRadius: borderRadius,
+        }}
+      />
+
+      {/* Left segment: bottom to top */}
+      <div
+        style={{
+          ...segmentStyle,
+          left: 0,
+          bottom: 0,
+          width: `${strokeWidth}px`,
+          height: `${leftLength}px`,
+          borderBottomLeftRadius: borderRadius,
+          borderTopLeftRadius: borderRadius,
+        }}
+      />
+    </div>
   );
 };

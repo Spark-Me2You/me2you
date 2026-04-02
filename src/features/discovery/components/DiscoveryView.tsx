@@ -15,7 +15,7 @@ import {
   isSupportedGesture,
   CATEGORY_LIST,
 } from "../config/gestureMapping";
-import styles from './DiscoveryView.module.css';
+import styles from "./DiscoveryView.module.css";
 
 /**
  * DiscoveryView Component
@@ -33,8 +33,11 @@ export const DiscoveryView: React.FC = () => {
   const [imageError, setImageError] = useState<string | null>(null);
 
   // View mode state for profile detail navigation
-  const [viewMode, setViewMode] = useState<'discovery' | 'profile-detail'>('discovery');
-  const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
+  const [viewMode, setViewMode] = useState<"discovery" | "profile-detail">(
+    "discovery",
+  );
+  const [selectedProfile, setSelectedProfile] =
+    useState<RandomImageData | null>(null);
 
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
@@ -43,6 +46,7 @@ export const DiscoveryView: React.FC = () => {
   // Timer state for hands-free navigation
   const [isFlashing, setIsFlashing] = useState(false);
   const previousImageIdRef = useRef<string | null>(null);
+  const gestureReleaseTimeoutRef = useRef<number | null>(null);
 
   // Initialize image chambers for all gesture categories
   // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
@@ -61,12 +65,12 @@ export const DiscoveryView: React.FC = () => {
   // Handler for viewing profile detail
   const handleViewProfile = useCallback((profileData: RandomImageData) => {
     setSelectedProfile(profileData);
-    setViewMode('profile-detail');
+    setViewMode("profile-detail");
   }, []);
 
   // Handler for returning to discovery view
   const handleBackToDiscovery = useCallback(() => {
-    setViewMode('discovery');
+    setViewMode("discovery");
     setSelectedProfile(null);
   }, []);
 
@@ -97,10 +101,10 @@ export const DiscoveryView: React.FC = () => {
   useEffect(() => {
     // Check if any supported gesture is detected
     const isGestureDetected = isSupportedGesture(
-      detectedGesture?.gestureName ?? null
+      detectedGesture?.gestureName ?? null,
     );
     const category = getCategoryFromGesture(
-      detectedGesture?.gestureName ?? null
+      detectedGesture?.gestureName ?? null,
     );
 
     if (!isGestureDetected || !category) {
@@ -117,9 +121,7 @@ export const DiscoveryView: React.FC = () => {
 
     // Wait for chambers to initialize
     if (!isInitialized) {
-      console.log(
-        "[DiscoveryView] Chambers not yet initialized, waiting..."
-      );
+      console.log("[DiscoveryView] Chambers not yet initialized, waiting...");
       return;
     }
 
@@ -135,7 +137,7 @@ export const DiscoveryView: React.FC = () => {
         "[DiscoveryView] Image popped:",
         image.image.id,
         "category:",
-        image.image.category
+        image.image.category,
       );
       setImageData(image);
       setImageError(null);
@@ -151,28 +153,55 @@ export const DiscoveryView: React.FC = () => {
       } else {
         console.warn("[DiscoveryView] Chamber empty for:", category);
         setImageError(
-          `No images available for ${category} gesture in your organization`
+          `No images available for ${category} gesture in your organization`,
         );
       }
     }
   }, [detectedGesture, isInitialized, popImage, getError, isChamberLoading]);
 
   // Effect: Clear image when gesture is no longer detected
+  // Debounced to avoid one-frame detection drops from resetting the timer.
   // Removed imageData from dependencies to prevent infinite loop
   useEffect(() => {
     const isGestureDetected = isSupportedGesture(
-      detectedGesture?.gestureName ?? null
+      detectedGesture?.gestureName ?? null,
     );
 
-    if (!isGestureDetected) {
-      // Clear image data when gesture is released
-      // This allows fetching a new image on the next gesture
+    if (isGestureDetected) {
+      if (gestureReleaseTimeoutRef.current !== null) {
+        window.clearTimeout(gestureReleaseTimeoutRef.current);
+        gestureReleaseTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (gestureReleaseTimeoutRef.current !== null) {
+      return;
+    }
+
+    gestureReleaseTimeoutRef.current = window.setTimeout(() => {
       console.log("[DiscoveryView] Gesture released, clearing image");
       setImageData(null);
       setImageError(null);
       hasPoppedImageRef.current = false;
-    }
+      gestureReleaseTimeoutRef.current = null;
+    }, 10);
+
+    return () => {
+      if (gestureReleaseTimeoutRef.current !== null) {
+        window.clearTimeout(gestureReleaseTimeoutRef.current);
+        gestureReleaseTimeoutRef.current = null;
+      }
+    };
   }, [detectedGesture]);
+
+  useEffect(() => {
+    return () => {
+      if (gestureReleaseTimeoutRef.current !== null) {
+        window.clearTimeout(gestureReleaseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Effect: Start/reset timer based on imageData changes
   useEffect(() => {
@@ -197,7 +226,7 @@ export const DiscoveryView: React.FC = () => {
   }, [imageData, resetTimer, startTimer]);
 
   // Profile detail — replaces discovery entirely so nothing overlaps
-  if (viewMode === 'profile-detail' && selectedProfile) {
+  if (viewMode === "profile-detail" && selectedProfile) {
     return (
       <ProfileCardView
         profileData={selectedProfile}
@@ -222,7 +251,7 @@ export const DiscoveryView: React.FC = () => {
           isLoading={
             detectedGesture?.gestureName
               ? isChamberLoading(
-                  getCategoryFromGesture(detectedGesture.gestureName) ?? ""
+                  getCategoryFromGesture(detectedGesture.gestureName) ?? "",
                 )
               : false
           }
@@ -237,13 +266,9 @@ export const DiscoveryView: React.FC = () => {
       <PoseOverlay />
 
       {/* Exit button - top right */}
-      <button
-        className={styles.exitButton}
-        onClick={handleBack}
-      >
+      <button className={styles.exitButton} onClick={handleBack}>
         exit
       </button>
-
     </div>
   );
 };

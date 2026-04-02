@@ -25,9 +25,9 @@ interface UseProfileTimerReturn {
 }
 
 /**
- * Hardcoded timer duration (5 seconds)
+ * Hardcoded timer duration (3 seconds)
  */
-const TIMER_DURATION = 5000;
+const TIMER_DURATION = 3000;
 
 /**
  * useProfileTimer Hook
@@ -83,7 +83,7 @@ export const useProfileTimer = ({
         rafIdRef.current = requestAnimationFrame(animate);
       }
     },
-    [duration, onComplete]
+    [duration, onComplete],
   );
 
   /**
