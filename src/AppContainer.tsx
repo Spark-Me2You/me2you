@@ -9,10 +9,10 @@ import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
+import { RegistrationQRDisplay } from "@/features/kiosk";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import otterImage from "@/assets/otter.png";
-import qrCodeImage from "@/assets/registerqr.png";
 import styles from "./AppContainer.module.css";
 
 /**
@@ -113,16 +113,12 @@ function AppContainerContent() {
                   network
                 </button>
 
-                {/* Create account placeholder - bottom left */}
+                {/* Create account with dynamic QR code - bottom left */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
                     create<br />account
                   </span>
-                  <img
-                    src={qrCodeImage}
-                    alt="Scan to create account"
-                    className={styles.createAccountQr}
-                  />
+                  <RegistrationQRDisplay className={styles.createAccountQr} />
                 </div>
 
                 {/* Decorative purple rectangle - right side */}
