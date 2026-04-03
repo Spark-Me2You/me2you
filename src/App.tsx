@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute, AdminOnlyRoute } from '@/core/auth';
+import { ProtectedRoute, AdminOnlyRoute, UserProtectedRoute } from '@/core/auth';
 import { AdminLoginPage, OrgSelectorPage } from '@/features/admin';
 import { RegistrationPage } from '@/features/registration';
+import { UserLandingPage, UserProfileView } from '@/features/user';
 import AppContainer from './AppContainer';
 import './App.css';
 
@@ -20,8 +21,21 @@ function App() {
       {/* Public route: Admin login */}
       <Route path="/login" element={<AdminLoginPage />} />
 
+      {/* Public route: Mobile user sign-in */}
+      <Route path="/user" element={<UserLandingPage />} />
+
       {/* Public route: Mobile user registration */}
       <Route path="/register" element={<RegistrationPage />} />
+
+      {/* User-only route: Mobile user profile */}
+      <Route
+        path="/user/profile"
+        element={
+          <UserProtectedRoute>
+            <UserProfileView />
+          </UserProtectedRoute>
+        }
+      />
 
       {/* Admin-only route: Organization selector */}
       <Route

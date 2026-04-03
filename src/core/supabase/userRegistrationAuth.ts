@@ -77,6 +77,40 @@ export const userRegistrationAuthService = {
   },
 
   /**
+   * Sign in an existing user with email and password
+   * Used by mobile users to access their profile
+   *
+   * @param email - User email address
+   * @param password - User password
+   * @returns Promise with user and session
+   * @throws Error if sign in fails
+   */
+  signIn: async (email: string, password: string): Promise<{ user: User; session: Session }> => {
+    console.log('[userRegistrationAuth] Signing in user:', email);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('[userRegistrationAuth] Sign in error:', error);
+      throw new Error(`Sign in failed: ${error.message}`);
+    }
+
+    if (!data.user || !data.session) {
+      throw new Error('Sign in failed - no user or session returned');
+    }
+
+    console.log('[userRegistrationAuth] Sign in successful, user ID:', data.user.id);
+
+    return {
+      user: data.user,
+      session: data.session,
+    };
+  },
+
+  /**
    * Create a user profile record in the user table
    * Must be called after successful signup (user must be authenticated)
    *

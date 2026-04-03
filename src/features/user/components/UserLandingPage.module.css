@@ -1,0 +1,174 @@
+/* User Landing Page Styles */
+
+.page {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 270px;
+  transform: translateX(-50%) rotate(3.41deg);
+  transform-origin: center top;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 30px 40px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px 30px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 350px;
+}
+
+.title {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 48px;
+  color: #e44805;
+  margin: 0 0 30px 0;
+  text-align: center;
+  text-transform: lowercase;
+  letter-spacing: 3px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #333;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+}
+
+.input {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  padding: 12px 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #e44805;
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #d32f2f;
+  padding: 12px;
+  background: rgba(211, 47, 47, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.signInButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 28px;
+  color: #ffffff;
+  background: #e44805;
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 10px;
+}
+
+.signInButton:hover:not(:disabled) {
+  background: #cc4004;
+}
+
+.signInButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.signInButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.dividerText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #666;
+  padding: 0 16px;
+  text-transform: lowercase;
+}
+
+.createButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.1);
+  border: 2px solid #e44805;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.createButton:hover {
+  background: rgba(228, 72, 5, 0.2);
+}
+
+.createButton:active {
+  transform: scale(0.98);
+}
