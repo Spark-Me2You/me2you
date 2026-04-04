@@ -1,5 +1,5 @@
 .overlay {
-  position: absolute;
+  position: fixed;
   bottom: 20px;
   right: 20px;
   width: 200px;
@@ -9,6 +9,8 @@
   border: 3px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   z-index: 100;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .video {
@@ -16,6 +18,7 @@
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1); /* Mirror for natural interaction */
+  backface-visibility: hidden;
 }
 
 .errorState,

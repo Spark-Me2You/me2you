@@ -5,8 +5,10 @@
 
 import React, { useRef, useEffect, useCallback } from "react";
 import { usePixiApp } from "../../hooks/usePixiApp";
-import { useGameLoop } from "../../hooks/useGameLoop";
-import { usePoseDetection } from "../../hooks/usePoseDetection";
+import {
+  usePoseDetection,
+  POSE_PROCESS_INTERVAL_MS,
+} from "../../hooks/usePoseDetection";
 import { useArmFlap } from "../hooks/useArmFlap";
 import { CameraOverlay } from "../../components/CameraOverlay";
 import { FlapFlapEngine } from "../game/FlapFlapEngine";
@@ -22,20 +24,44 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     width: FLAPFLAP_CONFIG.GAME_WIDTH,
     height: FLAPFLAP_CONFIG.GAME_HEIGHT,
     backgroundColor: FLAPFLAP_CONFIG.SKY_COLOR,
+    resolution: Math.min(window.devicePixelRatio, 1.25),
   });
 
   const engineRef = useRef<FlapFlapEngine | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Pose detection hooks
-  const { landmarksRef, isInitialized: poseReady, processFrame } = usePoseDetection();
-  const { flapDetected, processLandmarks } = useArmFlap({
+  const {
+    landmarksRef,
+    frameSequenceRef,
+    isInitialized: poseReady,
+    processFrame,
+  } = usePoseDetection();
+  const handleFlap = useCallback(() => {
+    engineRef.current?.flap();
+  }, []);
+
+  const { processLandmarks } = useArmFlap({
     velocityThreshold: 0.012,
     bufferSize: 4,
-    cooldownMs: 250,
+    cooldownMs: 320,
+    publishState: false,
+    onFlap: handleFlap,
   });
 
-  // Initialize game engine when PixiJS is ready
+  // Store callbacks in refs to prevent recreation
+  const processLandmarksRef = useRef(processLandmarks);
+  const processFrameRef = useRef(processFrame);
+  const poseReadyRef = useRef(poseReady);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    processLandmarksRef.current = processLandmarks;
+    processFrameRef.current = processFrame;
+    poseReadyRef.current = poseReady;
+  }, [processLandmarks, processFrame, poseReady]);
+
+  // Initialize game engine and PixiJS ticker game loop
   useEffect(() => {
     if (!app || !isReady) return;
 
@@ -47,48 +73,63 @@ export const FlapFlapGame: React.FC<GameProps> = ({
       (score) => onScoreChange?.(score),
     );
     engineRef.current = engine;
+    const FIXED_STEP_SECONDS = 1 / 60;
+    const MAX_UPDATE_STEPS = 4;
+    let accumulator = 0;
+    let lastProcessedFrameSequence = -1;
+
+    // Use PixiJS ticker for game loop (single unified animation system)
+    const ticker = app.ticker;
+    const tickerCallback = (time: any) => {
+      const deltaTime = Math.min(time.deltaMS / 1000, 0.05);
+      accumulator += deltaTime;
+
+      // Fixed-step simulation improves consistency under frame drops.
+      let steps = 0;
+      while (accumulator >= FIXED_STEP_SECONDS && steps < MAX_UPDATE_STEPS) {
+        engineRef.current?.update(FIXED_STEP_SECONDS);
+        accumulator -= FIXED_STEP_SECONDS;
+        steps += 1;
+      }
+
+      // Only process freshly inferred landmarks once.
+      const currentFrameSequence = frameSequenceRef.current;
+      const currentLandmarks = landmarksRef.current;
+      if (
+        currentLandmarks &&
+        currentFrameSequence !== lastProcessedFrameSequence
+      ) {
+        processLandmarksRef.current(currentLandmarks);
+        lastProcessedFrameSequence = currentFrameSequence;
+      }
+    };
+
+    ticker.add(tickerCallback);
 
     return () => {
+      ticker.remove(tickerCallback);
       engine.destroy();
       engineRef.current = null;
     };
-  }, [app, isReady, onScoreChange]);
+  }, [app, isReady, onScoreChange, landmarksRef, frameSequenceRef]);
 
-  // Trigger flap when detected
+  // Run CV inference in a separate cadence from render/physics ticker.
   useEffect(() => {
-    if (flapDetected && engineRef.current) {
-      engineRef.current.flap();
-    }
-  }, [flapDetected]);
+    if (!poseReady) return;
 
-  // Game physics update
-  const handleUpdate = useCallback((deltaTime: number) => {
-    engineRef.current?.update(deltaTime);
+    const intervalId = window.setInterval(() => {
+      if (!videoRef.current || !poseReadyRef.current) return;
+      processFrameRef.current(videoRef.current, performance.now());
+    }, POSE_PROCESS_INTERVAL_MS);
 
-    // Process landmarks from ref (no state dependency)
-    const currentLandmarks = landmarksRef.current;
-    if (currentLandmarks) {
-      processLandmarks(currentLandmarks);
-    }
-  }, [landmarksRef, processLandmarks]);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [poseReady]);
 
-  // Camera frame processing for pose detection (runs once per frame)
-  const handleVideoFrame = useCallback(() => {
-    if (videoRef.current && poseReady) {
-      processFrame(videoRef.current, performance.now());
-    }
-  }, [poseReady, processFrame]);
-
-  // Separate game loop - physics at 60 FPS, pose detection throttled to 30 FPS
-  useGameLoop({
-    onUpdate: handleUpdate,  // Physics only
-    onRender: handleVideoFrame,  // Pose detection (throttled internally)
-    paused: false,
-  });
-
-  const handleVideoReady = useCallback((video: HTMLVideoElement) => {
+  const handleVideoReady = (video: HTMLVideoElement) => {
     videoRef.current = video;
-  }, []);
+  };
 
   // Keyboard fallback for testing
   useEffect(() => {

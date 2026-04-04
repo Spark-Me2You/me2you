@@ -3,7 +3,7 @@
  * Small corner overlay showing player's camera feed during gameplay
  */
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { useCamera } from "@/features/discovery/hooks/useCamera";
 import styles from "./CameraOverlay.module.css";
 
@@ -15,7 +15,18 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
   onVideoReady,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { stream, isLoading, error } = useCamera();
+  const cameraOptions = useMemo(
+    () => ({
+      videoConstraints: {
+        width: { ideal: 480 },
+        height: { ideal: 270 },
+        frameRate: { ideal: 24, max: 24 },
+        facingMode: "user" as const,
+      },
+    }),
+    [],
+  );
+  const { stream, isLoading, error } = useCamera(cameraOptions);
 
   useEffect(() => {
     const video = videoRef.current;

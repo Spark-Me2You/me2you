@@ -1,11 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
+
+interface UseCameraOptions {
+  videoConstraints?: MediaTrackConstraints;
+}
+
+const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  facingMode: "user",
+};
 
 /**
  * useCamera Hook
  * Manages camera lifecycle and MediaStream for discovery feature
  * Returns camera stream, loading state, and error state
  */
-export const useCamera = () => {
+export const useCamera = (options: UseCameraOptions = {}) => {
+  const { videoConstraints = DEFAULT_VIDEO_CONSTRAINTS } = options;
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,11 +37,7 @@ export const useCamera = () => {
 
         // Direct getUserMedia call for now
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user',
-          },
+          video: videoConstraints,
           audio: false,
         });
 
@@ -44,9 +51,9 @@ export const useCamera = () => {
       } catch (err) {
         if (mounted) {
           const errorMessage =
-            err instanceof Error ? err.message : 'Failed to access camera';
+            err instanceof Error ? err.message : "Failed to access camera";
           setError(errorMessage);
-          console.error('Camera initialization error:', err);
+          console.error("Camera initialization error:", err);
         }
       } finally {
         if (mounted) {
@@ -65,7 +72,7 @@ export const useCamera = () => {
         streamRef.current = null;
       }
     };
-  }, []);
+  }, [videoConstraints]);
 
   return { stream, isLoading, error };
 };
