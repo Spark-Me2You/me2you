@@ -5,8 +5,8 @@
 
 export const FLAPFLAP_CONFIG = {
   // Canvas
-  GAME_WIDTH: 800,
-  GAME_HEIGHT: 600,
+  GAME_WIDTH: 1200,
+  GAME_HEIGHT: 900,
 
   // Bird physics
   GRAVITY: 1200, // pixels/second^2

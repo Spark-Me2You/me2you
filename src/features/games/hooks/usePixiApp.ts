@@ -31,7 +31,13 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear any existing canvases first
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
 
     const app = new Application();
 
@@ -44,8 +50,8 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
         autoDensity: true,
       });
 
-      if (containerRef.current) {
-        containerRef.current.appendChild(app.canvas);
+      if (container && !appRef.current) {
+        container.appendChild(app.canvas);
         appRef.current = app;
         setIsReady(true);
       }
