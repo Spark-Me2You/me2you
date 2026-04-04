@@ -23,10 +23,11 @@ interface UseArmFlapReturn {
   processLandmarks: (landmarks: NormalizedLandmark[]) => void;
 }
 
-const DEFAULT_VELOCITY_THRESHOLD = 0.012;
+const DEFAULT_VELOCITY_THRESHOLD = 0.014;
 const DEFAULT_BUFFER_SIZE = 4;
-const DEFAULT_COOLDOWN_MS = 250;
-const MIN_LANDMARK_VISIBILITY = 0.35;
+const DEFAULT_COOLDOWN_MS = 230;
+const MIN_LANDMARK_VISIBILITY = 0.2;
+const RELEASE_THRESHOLD_MULTIPLIER = 0.6;
 
 export const useArmFlap = (
   options: UseArmFlapOptions = {},
@@ -83,19 +84,24 @@ export const useArmFlap = (
         return;
       }
 
-      if (now - lastFlapTime.current < cooldownMs) {
-        return;
-      }
-
       const leftVelocity = calculateVelocity(leftWristBuffer.current);
       const rightVelocity = calculateVelocity(rightWristBuffer.current);
+      const releaseThreshold = velocityThreshold * RELEASE_THRESHOLD_MULTIPLIER;
 
       const leftFlap = leftWristVisible && leftVelocity > velocityThreshold;
       const rightFlap = rightWristVisible && rightVelocity > velocityThreshold;
+      const leftReleased = !leftWristVisible || leftVelocity < releaseThreshold;
+      const rightReleased =
+        !rightWristVisible || rightVelocity < releaseThreshold;
+
+      if (leftReleased && rightReleased) {
+        wasFlapSignalRef.current = false;
+      }
+
       const hasFlapSignal = leftFlap || rightFlap;
       const isRisingEdge = hasFlapSignal && !wasFlapSignalRef.current;
 
-      if (isRisingEdge) {
+      if (isRisingEdge && now - lastFlapTime.current >= cooldownMs) {
         const arm =
           leftFlap && rightFlap ? "both" : leftFlap ? "left" : "right";
         const velocity = Math.max(leftVelocity, rightVelocity);
@@ -125,7 +131,9 @@ export const useArmFlap = (
         }, 100);
       }
 
-      wasFlapSignalRef.current = hasFlapSignal;
+      if (hasFlapSignal) {
+        wasFlapSignalRef.current = true;
+      }
     },
     [velocityThreshold, bufferSize, cooldownMs, publishState, onFlap],
   );

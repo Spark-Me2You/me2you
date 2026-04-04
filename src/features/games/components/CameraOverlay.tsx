@@ -20,7 +20,7 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
       videoConstraints: {
         width: { ideal: 480 },
         height: { ideal: 270 },
-        frameRate: { ideal: 24, max: 24 },
+        frameRate: { ideal: 30, max: 30 },
         facingMode: "user" as const,
       },
     }),

@@ -20,7 +20,7 @@ export interface UsePoseDetectionReturn {
   processFrame: (video: HTMLVideoElement, timestamp: number) => void;
 }
 
-export const POSE_PROCESS_INTERVAL_MS = 90; // ms (~11 FPS to reduce CV load)
+export const POSE_PROCESS_INTERVAL_MS = 75; // ms (~13 FPS, better input response)
 
 export const usePoseDetection = (): UsePoseDetectionReturn => {
   const landmarksRef = useRef<NormalizedLandmark[] | null>(null);

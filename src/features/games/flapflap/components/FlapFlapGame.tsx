@@ -42,9 +42,9 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, []);
 
   const { processLandmarks } = useArmFlap({
-    velocityThreshold: 0.012,
-    bufferSize: 4,
-    cooldownMs: 320,
+    velocityThreshold: 0.014,
+    bufferSize: 3,
+    cooldownMs: 230,
     publishState: false,
     onFlap: handleFlap,
   });
