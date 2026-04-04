@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
+import { GamesView } from "@/features/games";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import otterImage from "@/assets/otter.png";
@@ -113,6 +114,14 @@ function AppContainerContent() {
                   network
                 </button>
 
+                {/* Games button - top right */}
+                <button
+                  onClick={() => transitionTo(AppState.GAMES)}
+                  className={`${styles.buttonBase} ${styles.gamesButton}`}
+                >
+                  games
+                </button>
+
                 {/* Create account placeholder - bottom left */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
@@ -166,6 +175,9 @@ function AppContainerContent() {
 
       case AppState.MY_PROFILE:
         return <MyProfileView onBack={() => transitionTo(AppState.IDLE)} />;
+
+      case AppState.GAMES:
+        return <GamesView />;
 
       default:
         return (
