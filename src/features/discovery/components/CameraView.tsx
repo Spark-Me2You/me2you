@@ -35,7 +35,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
   // Depends on isInitialized because the <video> element only renders
   // after the gesture recognizer finishes loading.
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (videoRef.current && stream && isInitialized) {
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(() => {});
     }
