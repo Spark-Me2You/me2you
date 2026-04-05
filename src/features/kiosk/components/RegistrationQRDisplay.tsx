@@ -99,8 +99,18 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ cl
     return null;
   }
 
+  // For dev: Click to navigate to registration URL
+  const handleClick = () => {
+    window.open(qrData.url, '_blank');
+  };
+
   return (
-    <div className={`${styles.qrContainer} ${className || ''}`}>
+    <div
+      className={`${styles.qrContainer} ${className || ''}`}
+      onClick={handleClick}
+      style={{ cursor: 'pointer' }}
+      title="Click to open registration (dev)"
+    >
       <div className={styles.qrWrapper}>
         <QRCodeSVG
           value={qrData.url}
