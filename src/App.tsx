@@ -8,12 +8,14 @@ import './App.css';
 
 /**
  * Main App Component
- * Configures routing for admin login, org selection, registration, and kiosk mode
+ * Configures routing for user sign-in, admin login, registration, and kiosk mode
+ * - /: Redirects to /user (main entry point)
+ * - /user: Public mobile user sign-in landing page
+ * - /user/profile: Protected user profile view
+ * - /register: Public mobile user registration page (via QR code)
  * - /login: Public admin login page
- * - /register: Public mobile user registration page
  * - /select-org: Admin-only organization selector (leads to kiosk mode)
- * - /app: Protected route wrapping the state machine (admin or kiosk)
- * - /: Redirects to /app (will redirect to /login if not authenticated)
+ * - /app: Protected route wrapping the state machine (admin or kiosk only)
  */
 function App() {
   return (
@@ -57,11 +59,11 @@ function App() {
         }
       />
 
-      {/* Default redirect to app (will redirect to login if not authenticated) */}
-      <Route path="/" element={<Navigate to="/app" replace />} />
+      {/* Default redirect to user landing page */}
+      <Route path="/" element={<Navigate to="/user" replace />} />
 
-      {/* Catch-all: redirect to app */}
-      <Route path="*" element={<Navigate to="/app" replace />} />
+      {/* Catch-all: redirect to user landing page */}
+      <Route path="*" element={<Navigate to="/user" replace />} />
     </Routes>
   );
 }

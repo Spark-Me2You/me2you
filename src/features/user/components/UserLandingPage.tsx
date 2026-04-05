@@ -46,6 +46,15 @@ export const UserLandingPage: React.FC = () => {
     <div className={styles.page}>
       <img src={logo} alt="me2you" className={styles.logo} />
 
+      {/* Admin button - top right */}
+      <button
+        onClick={() => navigate('/login')}
+        className={styles.adminButton}
+        type="button"
+      >
+        admin?
+      </button>
+
       <div className={styles.content}>
         <div className={styles.card}>
           <h1 className={styles.title}>sign in</h1>
