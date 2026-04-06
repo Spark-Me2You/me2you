@@ -4,11 +4,14 @@
  */
 
 import { StateProvider, useAppState } from "@/core/state-machine";
+import { CvCursorOverlay, CvCursorEnabledProvider, useCvCursorEnabled } from "@/core/cv/cursor";
+import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
+import { GamesView } from "@/features/games";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import otterImage from "@/assets/otter.png";
@@ -113,6 +116,14 @@ function AppContainerContent() {
                   network
                 </button>
 
+                {/* Games button - top right */}
+                <button
+                  onClick={() => transitionTo(AppState.GAMES)}
+                  className={`${styles.buttonBase} ${styles.gamesButton}`}
+                >
+                  games
+                </button>
+
                 {/* Create account placeholder - bottom left */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
@@ -167,6 +178,9 @@ function AppContainerContent() {
       case AppState.MY_PROFILE:
         return <MyProfileView onBack={() => transitionTo(AppState.IDLE)} />;
 
+      case AppState.GAMES:
+        return <GamesView />;
+
       default:
         return (
           <div>
@@ -183,15 +197,29 @@ function AppContainerContent() {
   );
 }
 
+function AppContainerInner() {
+  const { enabled } = useCvCursorEnabled();
+  return (
+    <>
+      <AppContainerContent />
+      <CvCursorOverlay enabled={enabled} />
+    </>
+  );
+}
+
 /**
  * App Container
  * Wraps authenticated app with StateProvider
  */
 function AppContainer() {
   return (
-    <StateProvider>
-      <AppContainerContent />
-    </StateProvider>
+    <CvCursorEnabledProvider>
+      <SharedCameraProvider>
+        <StateProvider>
+          <AppContainerInner />
+        </StateProvider>
+      </SharedCameraProvider>
+    </CvCursorEnabledProvider>
   );
 }
 
