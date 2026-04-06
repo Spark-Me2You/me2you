@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from "react";
 import { useCvCursor } from "./useCvCursor";
+import { useCvCursorEnabled } from "./CvCursorEnabledContext";
 
 interface CvCursorOverlayProps {
   enabled?: boolean;
@@ -13,8 +14,14 @@ interface CvCursorOverlayProps {
 
 export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
   const { x, y, visible, clicking, videoRef } = useCvCursor(enabled);
+  const { notifyCursorVisible } = useCvCursorEnabled();
   const prevTargetRef = useRef<Element | null>(null);
   const prevClickingRef = useRef(false);
+
+  // Keep cursorVisibleRef in sync so arm-flap detection can read it without rerenders
+  useEffect(() => {
+    notifyCursorVisible(visible);
+  }, [visible, notifyCursorVisible]);
 
   // Dispatch synthetic mouse events
   useEffect(() => {
