@@ -12,7 +12,9 @@ import {
 import { useArmFlap } from "../hooks/useArmFlap";
 import { CameraOverlay } from "../../components/CameraOverlay";
 import { FlapFlapEngine } from "../game/FlapFlapEngine";
+import type { FlapFlapState } from "../game/FlapFlapEngine";
 import { FLAPFLAP_CONFIG } from "../config/flapflapConfig";
+import { useCvCursorEnabled } from "@/core/cv/cursor";
 import type { GameProps } from "../../types/game";
 import styles from "./FlapFlapGame.module.css";
 
@@ -20,6 +22,8 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   onExit,
   onScoreChange,
 }) => {
+  const { setEnabled: setCvCursorEnabled, cursorVisibleRef } = useCvCursorEnabled();
+
   const { app, containerRef, isReady } = usePixiApp({
     width: FLAPFLAP_CONFIG.GAME_WIDTH,
     height: FLAPFLAP_CONFIG.GAME_HEIGHT,
@@ -37,6 +41,18 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     isInitialized: poseReady,
     processFrame,
   } = usePoseDetection();
+  // Re-enable cursor when leaving the game screen
+  useEffect(() => {
+    return () => setCvCursorEnabled(true);
+  }, [setCvCursorEnabled]);
+
+  const handleGameStateChange = useCallback(
+    (state: FlapFlapState) => {
+      setCvCursorEnabled(state !== "PLAYING");
+    },
+    [setCvCursorEnabled],
+  );
+
   const handleFlap = useCallback(() => {
     engineRef.current?.flap();
   }, []);
@@ -66,11 +82,8 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     if (!app || !isReady) return;
 
     const engine = new FlapFlapEngine(app);
-    engine.setCallbacks(
-      () => {
-        // State change callback (unused for now)
-      },
-      (score) => onScoreChange?.(score),
+    engine.setCallbacks(handleGameStateChange, (score) =>
+      onScoreChange?.(score),
     );
     engineRef.current = engine;
     const FIXED_STEP_SECONDS = 1 / 60;
@@ -93,13 +106,17 @@ export const FlapFlapGame: React.FC<GameProps> = ({
       }
 
       // Only process freshly inferred landmarks once.
+      // Skip flap detection while the CV cursor's pointing pose is active —
+      // moving the pointing hand would otherwise false-trigger a flap.
       const currentFrameSequence = frameSequenceRef.current;
       const currentLandmarks = landmarksRef.current;
       if (
         currentLandmarks &&
         currentFrameSequence !== lastProcessedFrameSequence
       ) {
-        processLandmarksRef.current(currentLandmarks);
+        if (!cursorVisibleRef.current) {
+          processLandmarksRef.current(currentLandmarks);
+        }
         lastProcessedFrameSequence = currentFrameSequence;
       }
     };
@@ -111,7 +128,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
       engine.destroy();
       engineRef.current = null;
     };
-  }, [app, isReady, onScoreChange, landmarksRef, frameSequenceRef]);
+  }, [app, isReady, onScoreChange, landmarksRef, frameSequenceRef, handleGameStateChange, cursorVisibleRef]);
 
   // Run CV inference in a separate cadence from render/physics ticker.
   useEffect(() => {

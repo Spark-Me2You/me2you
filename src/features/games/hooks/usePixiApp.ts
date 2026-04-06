@@ -51,6 +51,9 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
       });
 
       if (container && !appRef.current) {
+        // FlapFlap uses MediaPipe for all input — canvas should never intercept
+        // pointer events (would block HTML buttons rendered above the canvas).
+        app.canvas.style.pointerEvents = "none";
         container.appendChild(app.canvas);
         appRef.current = app;
         setIsReady(true);
