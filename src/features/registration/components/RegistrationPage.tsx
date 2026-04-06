@@ -54,7 +54,6 @@ const RegistrationWizard: React.FC = () => {
             onUpdateFormData={updateFormData}
             onSubmit={handleProfileSubmit}
             onBack={previousStep}
-            onGoToPhoto={nextStep}
             isSubmitting={isSubmitting}
             error={error}
             onClearError={clearError}
