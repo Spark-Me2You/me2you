@@ -53,7 +53,7 @@ export interface UseRegistrationReturn {
   // Step handlers
   handleSignUp: (email: string, password: string) => Promise<boolean>;
   handleProfileSubmit: () => Promise<boolean>;
-  handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
+  handlePhotoSubmit: (original: Blob, cropped: Blob, category: string) => Promise<boolean>;
 }
 
 const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
@@ -132,8 +132,8 @@ export const useRegistration = (): UseRegistrationReturn => {
     }
   }, [signUpUser, nextStep]);
 
-  const handlePhotoSubmit = useCallback(async (photo: Blob | null, category: string): Promise<boolean> => {
-    if (!photo) {
+  const handlePhotoSubmit = useCallback(async (original: Blob, cropped: Blob, category: string): Promise<boolean> => {
+    if (!original || !cropped) {
       setState(prev => ({ ...prev, error: 'Please take a photo' }));
       return false;
     }
@@ -165,16 +165,14 @@ export const useRegistration = (): UseRegistrationReturn => {
       }));
       nextStep();
 
-      registrationService.uploadPhotoAndCreateRecord(
-        photo,
+      // Upload both original and cropped photos in background
+      registrationService.uploadPhotosAndCreateRecord(
+        original,
+        cropped,
         user.id,
         category,
-        async (dbInsertedImageId) => {
-          if (dbInsertedImageId) {
-            smartCropService.triggerCrop(dbInsertedImageId).catch((err) => {
-              console.error('[handlePhotoSubmit] Smart crop failed:', err);
-            });
-          }
+        async (_dbInsertedImageId) => {
+          // Sign out after upload completes
           await userRegistrationAuthService.signOut();
         },
         (progress) => {

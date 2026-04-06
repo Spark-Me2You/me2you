@@ -3,6 +3,7 @@
 
 export * from "./mediapipe-config";
 export * from "./mediapipe-loader";
+export * from "./face-detector-config";
 export * from "./cameraManager";
 export * from "./cvBridge";
 export * from "./gestureEncoder";

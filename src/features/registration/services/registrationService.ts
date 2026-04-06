@@ -9,6 +9,7 @@
 
 import { userRegistrationAuthService, type CreateUserProfileInput } from '@/core/supabase/userRegistrationAuth';
 import { storageService } from '@/core/supabase/storage';
+import { supabase } from '@/core/supabase/client';
 import type { UserProfile } from '@/core/auth/AuthContext';
 import type { User } from '@supabase/supabase-js';
 
@@ -179,6 +180,90 @@ export const registrationService = {
 
     onProgress?.(100);
     return imageRecord;
+  },
+
+  /**
+   * Upload both original and cropped photos and create image record
+   * Updates image record with cropped_path immediately (no async edge function needed)
+   *
+   * @param originalPhoto - Original photo blob
+   * @param croppedPhoto - Cropped photo blob
+   * @param userId - User ID (owner)
+   * @param category - Gesture category (wave, peace_sign, thumbs_up)
+   * @param onDbInsertComplete - Optional callback fired after DB insert, can be async
+   * @param onProgress - Optional callback for progress updates (0-100)
+   * @returns The created image record with both paths
+   */
+  uploadPhotosAndCreateRecord: async (
+    originalPhoto: Blob,
+    croppedPhoto: Blob,
+    userId: string,
+    category: string = 'wave',
+    onDbInsertComplete?: (imageId: string) => Promise<void> | void,
+    onProgress?: (progress: number) => void
+  ): Promise<{ id: string; storage_path: string; cropped_path: string }> => {
+    const orgId = getDefaultOrgId();
+
+    // Compress original photo before upload
+    onProgress?.(10);
+    const compressedOriginal = await compressPhoto(originalPhoto);
+
+    // Upload original to storage
+    onProgress?.(30);
+    const storagePath = await storageService.uploadPhoto(compressedOriginal, userId, orgId);
+
+    // Extract base filename from storage path for cropped version
+    // storagePath format: org_id/user_id/uuid.jpg
+    const pathParts = storagePath.split('/');
+    const filename = pathParts[pathParts.length - 1];
+    const baseFileName = filename.replace(/\.[^.]+$/, ''); // Remove extension
+
+    // Upload cropped photo to storage
+    onProgress?.(50);
+    const croppedPath = await storageService.uploadCroppedPhoto(
+      croppedPhoto,
+      userId,
+      orgId,
+      baseFileName
+    );
+
+    // Create image record with both paths
+    onProgress?.(70);
+    const imageRecord = await userRegistrationAuthService.createImageRecord({
+      owner_id: userId,
+      org_id: orgId,
+      storage_path: storagePath,
+      category: category,
+      is_public: true,
+    });
+
+    // Update image record with cropped_path
+    onProgress?.(85);
+    const { error: updateError } = await supabase
+      .from('image')
+      .update({
+        cropped_path: croppedPath,
+        cropped_at: new Date().toISOString(),
+      })
+      .eq('id', imageRecord.id);
+
+    if (updateError) {
+      console.error('[registrationService] Failed to update cropped_path:', updateError);
+      // Don't throw - original upload succeeded, this is just metadata
+    }
+
+    // Notify caller that DB insert is complete
+    onProgress?.(95);
+    if (onDbInsertComplete) {
+      await onDbInsertComplete(imageRecord.id);
+    }
+
+    onProgress?.(100);
+    return {
+      id: imageRecord.id,
+      storage_path: storagePath,
+      cropped_path: croppedPath,
+    };
   },
 
   /**

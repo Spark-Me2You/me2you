@@ -8,6 +8,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
 import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
+import { useFaceCrop } from '../hooks/useFaceCrop';
+import { FaceNotDetectedError } from '../services/faceCropService';
 import backfingerImg from '../../../assets/backfinger.png';
 import thumbsUpImg from '../../../assets/thumbsUP.png';
 import peaceImg from '../../../assets/peace.png';
@@ -16,7 +18,7 @@ import waveImg from '../../../assets/wave.png';
 export type GestureCategory = 'wave' | 'peace_sign' | 'thumbs_up';
 
 interface PhotoStepProps {
-  onSubmit: (photo: Blob | null, category: GestureCategory) => Promise<boolean>;
+  onSubmit: (original: Blob, cropped: Blob, category: GestureCategory) => Promise<boolean>;
   onBack: () => void;
   isSubmitting: boolean;
   error: string | null;
@@ -30,7 +32,8 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   error,
   onClearError,
 }) => {
-  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [originalPhoto, setOriginalPhoto] = useState<Blob | null>(null);
+  const [croppedPhoto, setCroppedPhoto] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [detectedCategory, setDetectedCategory] = useState<GestureCategory | null>(null);
   const [detectedGestureName, setDetectedGestureName] = useState<string | null>(null);
@@ -48,6 +51,12 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     isInitialized: isGestureRecognizerReady,
     processVideoFrame,
   } = useGestureRecognition();
+
+  const {
+    isInitializing: isFaceCropInitializing,
+    isProcessing: isFaceCropProcessing,
+    cropPhoto,
+  } = useFaceCrop();
 
   useEffect(() => {
     startCamera();
@@ -100,7 +109,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     setIsCameraReady(false);
   };
 
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     setIsProcessing(true);
     setLocalError(null);
@@ -126,16 +135,35 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       }
 
       canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            setPhoto(blob);
-            if (previewUrl) URL.revokeObjectURL(previewUrl);
-            setPreviewUrl(URL.createObjectURL(blob));
-            // Keep the stream alive so retake is instant — stopCamera() runs on unmount
-          } else {
+        async (blob) => {
+          if (!blob) {
             setLocalError('failed to capture — please try again');
+            setIsProcessing(false);
+            return;
           }
-          setIsProcessing(false);
+
+          // Crop the photo using face detection
+          try {
+            const cropResult = await cropPhoto(blob);
+            setOriginalPhoto(cropResult.originalBlob);
+            setCroppedPhoto(cropResult.croppedBlob);
+
+            // Show cropped version as preview
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(URL.createObjectURL(cropResult.croppedBlob));
+
+            console.log('[PhotoStep] Photo cropped successfully:', cropResult.cropMetadata);
+          } catch (error) {
+            if (error instanceof FaceNotDetectedError) {
+              setLocalError('no face detected — center your face and try again');
+            } else {
+              setLocalError('photo processing failed — please try again');
+            }
+            setOriginalPhoto(null);
+            setCroppedPhoto(null);
+          } finally {
+            setIsProcessing(false);
+          }
         },
         'image/jpeg',
         0.9,
@@ -144,30 +172,35 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       setLocalError('failed to capture — please try again');
       setIsProcessing(false);
     }
-  }, [previewUrl, onClearError, isGestureRecognizerReady, processVideoFrame]);
+  }, [previewUrl, onClearError, isGestureRecognizerReady, processVideoFrame, cropPhoto]);
 
   const handleRetake = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPhoto(null);
+    setOriginalPhoto(null);
+    setCroppedPhoto(null);
     setPreviewUrl(null);
     setDetectedCategory(null);
     setDetectedGestureName(null);
+    setLocalError(null);
     // Stream is still running — no need to restart the camera
   }, [previewUrl]);
 
   const handleLooksGood = async () => {
     setLocalError(null);
     onClearError();
-    if (!photo) { setLocalError('please take a photo first'); return; }
+    if (!originalPhoto || !croppedPhoto) {
+      setLocalError('please take a photo first');
+      return;
+    }
     if (!detectedCategory) {
       setLocalError('no gesture detected — show a clear wave, peace sign, or thumbs up and retake');
       return;
     }
-    await onSubmit(photo, detectedCategory);
+    await onSubmit(originalPhoto, croppedPhoto, detectedCategory);
   };
 
   const displayError = localError || error || cameraError;
-  const isBusy = isSubmitting || isProcessing;
+  const isBusy = isSubmitting || isProcessing || isFaceCropProcessing;
 
   return (
     <div className={styles.photoStepWrapper}>
@@ -226,9 +259,14 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
               type="button"
               className={styles.captureBtn}
               onClick={capturePhoto}
-              disabled={isBusy || !isCameraReady}
+              disabled={isBusy || !isCameraReady || isFaceCropInitializing}
               aria-label="Capture photo"
             />
+            {isFaceCropInitializing && (
+              <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '14px', color: '#666' }}>
+                loading face detector...
+              </div>
+            )}
           </div>
         ) : (
           /* Photo taken — retake (left) | looks good (right) */
