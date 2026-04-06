@@ -5,7 +5,8 @@
  * This context is populated after validating the QR code token.
  */
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext } from "react";
+import type { ReactNode } from "react";
 
 export interface RegistrationContextType {
   org_id: string;
@@ -27,7 +28,10 @@ interface RegistrationProviderProps {
  * @param context - Organization info from token validation
  * @param children - Registration flow components
  */
-export const RegistrationProvider: React.FC<RegistrationProviderProps> = ({ context, children }) => {
+export const RegistrationProvider: React.FC<RegistrationProviderProps> = ({
+  context,
+  children,
+}) => {
   return (
     <RegistrationContext.Provider value={context}>
       {children}
@@ -48,7 +52,9 @@ export const useRegistrationContext = (): RegistrationContextType => {
   const context = useContext(RegistrationContext);
 
   if (!context) {
-    throw new Error('useRegistrationContext must be used within RegistrationProvider');
+    throw new Error(
+      "useRegistrationContext must be used within RegistrationProvider",
+    );
   }
 
   return context;
