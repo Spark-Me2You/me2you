@@ -4,7 +4,7 @@
  */
 
 import { StateProvider, useAppState } from "@/core/state-machine";
-import { CvCursorOverlay } from "@/core/cv/cursor";
+import { CvCursorOverlay, CvCursorEnabledProvider, useCvCursorEnabled } from "@/core/cv/cursor";
 import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
@@ -197,18 +197,29 @@ function AppContainerContent() {
   );
 }
 
+function AppContainerInner() {
+  const { enabled } = useCvCursorEnabled();
+  return (
+    <>
+      <AppContainerContent />
+      <CvCursorOverlay enabled={enabled} />
+    </>
+  );
+}
+
 /**
  * App Container
  * Wraps authenticated app with StateProvider
  */
 function AppContainer() {
   return (
-    <SharedCameraProvider>
-      <StateProvider>
-        <AppContainerContent />
-        <CvCursorOverlay />
-      </StateProvider>
-    </SharedCameraProvider>
+    <CvCursorEnabledProvider>
+      <SharedCameraProvider>
+        <StateProvider>
+          <AppContainerInner />
+        </StateProvider>
+      </SharedCameraProvider>
+    </CvCursorEnabledProvider>
   );
 }
 

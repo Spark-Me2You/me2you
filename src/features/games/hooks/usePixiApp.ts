@@ -40,6 +40,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
     }
 
     const app = new Application();
+    let cleanedUp = false;
 
     const init = async () => {
       await app.init({
@@ -50,20 +51,41 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
         autoDensity: true,
       });
 
-      if (container && !appRef.current) {
-        container.appendChild(app.canvas);
-        appRef.current = app;
-        setIsReady(true);
+      if (cleanedUp) {
+        // Component unmounted before init resolved — destroy orphaned app so
+        // its ticker doesn't keep running and leaking memory.
+        app.destroy({ removeView: true });
+        return;
       }
+
+      // FlapFlap uses MediaPipe for all input — disable canvas pointer events
+      // so HTML buttons (exit button) always receive clicks.
+      app.canvas.style.pointerEvents = "none";
+      container.appendChild(app.canvas);
+      appRef.current = app;
+      setIsReady(true);
     };
 
     init();
 
     return () => {
+      cleanedUp = true;
       if (appRef.current) {
-        appRef.current.destroy({ removeView: true });
+        // Stop the ticker synchronously so no RAF fires during teardown.
+        appRef.current.ticker.stop();
+
+        // Defer app.destroy() to the next macrotask. This is critical because
+        // React runs useEffect cleanups in the order the hooks were defined.
+        // usePixiApp is defined BEFORE the engine useEffect, so this cleanup
+        // runs first. If we destroy the ticker here (ticker._head = null),
+        // the engine cleanup that follows will crash when it calls
+        // ticker.remove(tickerCallback) — "Cannot read .next of null".
+        // By deferring, all React cleanup effects (including the engine's
+        // ticker.remove) complete safely before the ticker is torn down.
+        const appToDestroy = appRef.current;
+        setTimeout(() => appToDestroy.destroy({ removeView: true }), 0);
+
         appRef.current = null;
-        setIsReady(false);
       }
     };
   }, [width, height, backgroundColor, resolution]);
