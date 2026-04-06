@@ -41,14 +41,12 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     isInitialized: poseReady,
     processFrame,
   } = usePoseDetection();
-  // Re-enable cursor when leaving the game screen
-  useEffect(() => {
-    return () => setCvCursorEnabled(true);
-  }, [setCvCursorEnabled]);
-
   const handleGameStateChange = useCallback(
     (state: FlapFlapState) => {
-      setCvCursorEnabled(state !== "PLAYING");
+      // Defer the React state update out of the PixiJS RAF callback context.
+      // Calling setState directly inside a RAF (via ticker → engine → onStateChange)
+      // can corrupt React's fiber linked list in some batching edge cases.
+      setTimeout(() => setCvCursorEnabled(state !== "PLAYING"), 0);
     },
     [setCvCursorEnabled],
   );
