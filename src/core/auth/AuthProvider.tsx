@@ -348,6 +348,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
+   * Sign in an existing user with email and password
+   * Used for mobile user sign-in
+   */
+  const signInUser = useCallback(async (email: string, password: string): Promise<void> => {
+    try {
+      console.log('[AuthProvider] Signing in user:', email);
+
+      const result = await userRegistrationAuthService.signIn(email, password);
+
+      // Fetch user profile
+      const profile = await userRegistrationAuthService.getCurrentUserProfile();
+
+      // Update local state with authenticated user
+      console.log('[AuthProvider] User signed in:', result.user.id);
+      setUser(result.user);
+      setSession(result.session);
+      setUserProfileState(profile);
+      setAuthMode('user');
+      setAdmin(null);
+      setKioskOrgId(null);
+    } catch (error) {
+      console.error('[AuthProvider] User sign in failed:', error);
+      throw error;
+    }
+  }, []);
+
+  /**
    * Set the user profile after registration is complete
    */
   const setUserProfile = useCallback((profile: UserProfile) => {
@@ -374,9 +401,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       mintKioskSession,
       exitKioskMode,
       signUpUser,
+      signInUser,
       setUserProfile,
     }),
-    [user, admin, userProfile, session, isLoading, authMode, kioskOrgId, signUpUser, setUserProfile]
+    [user, admin, userProfile, session, isLoading, authMode, kioskOrgId, signUpUser, signInUser, setUserProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

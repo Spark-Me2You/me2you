@@ -127,6 +127,15 @@ export interface AuthContextType {
   signUpUser: (email: string, password: string) => Promise<User>;
 
   /**
+   * Sign in an existing user with email and password
+   * Used for mobile user sign-in
+   * @param email - User email
+   * @param password - User password
+   * @throws Error if sign in fails
+   */
+  signInUser: (email: string, password: string) => Promise<void>;
+
+  /**
    * Set the user profile after registration is complete
    * @param profile - The user profile data
    */
