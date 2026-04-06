@@ -1,0 +1,120 @@
+/* Create Account Prompt Styles */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+  border-radius: 24px;
+  padding: 40px 30px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 42px;
+  color: #e44805;
+  margin: 0 0 24px 0;
+  text-align: center;
+  text-transform: lowercase;
+  letter-spacing: 3px;
+}
+
+.content {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.message {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #333;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stepNumber {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #ffffff;
+  background: #e44805;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #333;
+  line-height: 1.8;
+  padding-top: 4px;
+}
+
+.note {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #666;
+  margin: 0;
+  text-align: center;
+  font-style: italic;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.closeButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #ffffff;
+  background: #e44805;
+  border: none;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  transition: background 0.2s, transform 0.1s;
+  width: 100%;
+}
+
+.closeButton:hover {
+  background: #cc4004;
+}
+
+.closeButton:active {
+  transform: scale(0.98);
+}

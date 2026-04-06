@@ -8,6 +8,7 @@ import { useAuth } from '@/core/auth/AuthContext';
 import { supabase } from '@/core/supabase/client';
 import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth';
 import { registrationService, type RegistrationFormData, type RegistrationResult } from '../services/registrationService';
+import { useRegistrationContext } from '../context/RegistrationContext';
 
 /**
  * Registration steps
@@ -60,6 +61,7 @@ const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success']
  */
 export const useRegistration = (): UseRegistrationReturn => {
   const { signUpUser, setUserProfile } = useAuth();
+  const { org_id } = useRegistrationContext();
 
   const [state, setState] = useState<RegistrationState>({
     currentStep: 'signup',
@@ -153,17 +155,20 @@ export const useRegistration = (): UseRegistrationReturn => {
       const { name, status, pronouns, major, interests } = state.formData;
       if (!name || name.trim() === '') throw new Error('Name is required');
 
-      const profile = await registrationService.createProfile({
-        name: name.trim(),
-        status: status?.trim() || null,
-        pronouns: pronouns?.trim() || null,
-        major: major?.trim() || null,
-        interests: interests || null,
-      });
+      const profile = await registrationService.createProfile(
+        {
+          name: name.trim(),
+          status: status?.trim() || null,
+          pronouns: pronouns?.trim() || null,
+          major: major?.trim() || null,
+          interests: interests || null,
+        },
+        org_id
+      );
 
       setUserProfile(profile);
 
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, category);
+      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, org_id, category);
 
       // Sign out now that registration is fully complete
       await userRegistrationAuthService.signOut();
@@ -186,7 +191,7 @@ export const useRegistration = (): UseRegistrationReturn => {
       setState(prev => ({ ...prev, isSubmitting: false, error: message }));
       return false;
     }
-  }, [state.formData, setUserProfile, nextStep]);
+  }, [state.formData, setUserProfile, nextStep, org_id]);
 
   const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
     const { name } = state.formData;

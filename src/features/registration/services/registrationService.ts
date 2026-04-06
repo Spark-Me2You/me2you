@@ -40,17 +40,6 @@ export interface RegistrationResult {
   imageId?: string;
 }
 
-/**
- * Get the default org ID from environment
- */
-const getDefaultOrgId = (): string => {
-  const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
-  if (!orgId) {
-    throw new Error('VITE_DEFAULT_ORG_ID environment variable is not set');
-  }
-  return orgId;
-};
-
 export const registrationService = {
   /**
    * Step 1: Sign up with email and password
@@ -70,11 +59,13 @@ export const registrationService = {
    * Creates a record in the user table
    *
    * @param profileData - Profile data (excluding org_id)
+   * @param orgId - Organization ID from validated QR token
    * @returns The created profile
    */
-  createProfile: async (profileData: Omit<CreateUserProfileInput, 'org_id'>): Promise<UserProfile> => {
-    const orgId = getDefaultOrgId();
-
+  createProfile: async (
+    profileData: Omit<CreateUserProfileInput, 'org_id'>,
+    orgId: string
+  ): Promise<UserProfile> => {
     return userRegistrationAuthService.createUserProfile({
       ...profileData,
       org_id: orgId,
@@ -87,16 +78,16 @@ export const registrationService = {
    *
    * @param photo - Photo blob
    * @param userId - User ID (owner)
+   * @param orgId - Organization ID from validated QR token
    * @param category - Gesture category (wave, peace_sign, thumbs_up)
    * @returns The created image record
    */
   uploadPhotoAndCreateRecord: async (
     photo: Blob,
     userId: string,
+    orgId: string,
     category: string = 'wave'
   ): Promise<{ id: string; storage_path: string }> => {
-    const orgId = getDefaultOrgId();
-
     // Upload to storage
     const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
 
@@ -120,27 +111,35 @@ export const registrationService = {
    * 3. Upload photo (if provided)
    *
    * @param formData - Complete registration form data
+   * @param orgId - Organization ID from validated QR token
    * @returns Registration result with user, profile, and optional image
    */
-  completeRegistration: async (formData: RegistrationFormData): Promise<RegistrationResult> => {
+  completeRegistration: async (
+    formData: RegistrationFormData,
+    orgId: string
+  ): Promise<RegistrationResult> => {
     // Step 1: Sign up
     const user = await registrationService.signUp(formData.email, formData.password);
 
     // Step 2: Create profile
-    const profile = await registrationService.createProfile({
-      name: formData.name,
-      status: formData.status || null,
-      pronouns: formData.pronouns || null,
-      major: formData.major || null,
-      interests: formData.interests || null,
-    });
+    const profile = await registrationService.createProfile(
+      {
+        name: formData.name,
+        status: formData.status || null,
+        pronouns: formData.pronouns || null,
+        major: formData.major || null,
+        interests: formData.interests || null,
+      },
+      orgId
+    );
 
     // Step 3: Upload photo if provided
     let imageId: string | undefined;
     if (formData.photo) {
       const imageRecord = await registrationService.uploadPhotoAndCreateRecord(
         formData.photo,
-        user.id
+        user.id,
+        orgId
       );
       imageId = imageRecord.id;
     }

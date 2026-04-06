@@ -4,18 +4,22 @@
  */
 
 import { StateProvider, useAppState } from "@/core/state-machine";
-import { CvCursorOverlay, CvCursorEnabledProvider, useCvCursorEnabled } from "@/core/cv/cursor";
+import {
+  CvCursorOverlay,
+  CvCursorEnabledProvider,
+  useCvCursorEnabled,
+} from "@/core/cv/cursor";
 import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
-import { GamesView } from "@/features/games";
+import { RegistrationQRDisplay } from "@/features/kiosk";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
+import { GamesView } from "@/features/games";
 import otterImage from "@/assets/otter_default_rough_draft.png";
-import qrCodeImage from "@/assets/registerqr.png";
 import styles from "./AppContainer.module.css";
 
 /**
@@ -121,22 +125,21 @@ function AppContainerContent() {
                   games
                 </button>
 
-                {/* Create account + QR - right edge */}
+                {/* Create account with dynamic QR code - bottom left */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
                     create account
                   </span>
-                  <img
-                    src={qrCodeImage}
-                    alt="Scan to create account"
-                    className={styles.createAccountQr}
-                  />
+                  <RegistrationQRDisplay className={styles.createAccountQr} />
                 </div>
 
                 {/* Welcome speech bubble - bottom right */}
                 <div className={styles.otterSpeechBubble}>
                   <p>welcome to me2you!</p>
-                  <p>i'm <span className={styles.otterNameHighlight}>ozzy</span>! nice2meetu ;)</p>
+                  <p>
+                    i'm <span className={styles.otterNameHighlight}>ozzy</span>!
+                    nice2meetu ;)
+                  </p>
                 </div>
 
                 {/* Otter mascot - overlapping speech bubble */}
