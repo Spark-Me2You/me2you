@@ -21,10 +21,29 @@ export const PixiHub: React.FC = () => {
         canvasRef.current.appendChild(app.canvas);
         appRef.current = app;
 
-        const [bgTexture, textureA, textureB] = await Promise.all([
-          Assets.load('/penguin.png'),
-          Assets.load('/shawn.png'),
-          Assets.load('/jack.png'),
+        function loadFrames(prefix: string, names: string[]) {
+          return Promise.all(
+            names.map(name =>
+              Assets.load(`/animations/${prefix}${name}.PNG`).catch(e => {
+                console.error(`Failed to load: /animations/${prefix}${name}.PNG`, e);
+                return Texture.WHITE;
+              })
+            )
+          );
+        }
+
+        const [
+          bgTexture,
+          [jackDefault, jackDefault2, jackDefault3, jackRightStep, jackLeftStep],
+          [noraDefault, noraDefault2, noraDefault3, noraRightStep, noraLeftStep],
+          [shawnDefault, shawnDefault2, shawnDefault3, shawnRightStep, shawnLeftStep],
+          [asadDefault, asadDefault2, asadDefault3, asadRightStep, asadLeftStep],
+        ] = await Promise.all([
+          Assets.load('/bg_v0.png'),
+          loadFrames('jack_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
+          loadFrames('nora_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
+          loadFrames('shawn_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
+          loadFrames('asad_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
         ]);
 
         if (!isMounted) { app.destroy(); return; }
@@ -34,7 +53,25 @@ export const PixiHub: React.FC = () => {
         bg.height = app.screen.height;
         app.stage.addChild(bg);
 
-        function createWalker(startX: number, startY: number, texture: Texture) {
+        const IDLE_FRAME_DURATION = 60 / 4;
+        const WALK_FRAME_DURATION = 60 / 6;
+
+        function buildFrameSets(def: Texture, def2: Texture, def3: Texture, right: Texture, left: Texture) {
+          return {
+            idle: [def, def2, def3, def2],
+            walkRight: [right, left, def],
+            walkLeft: [left, right, def],
+          };
+        }
+
+        function createWalker(
+          startX: number,
+          startY: number,
+          texture: Texture,
+          idleFrames?: Texture[],
+          walkFramesRight?: Texture[],
+          walkFramesLeft?: Texture[],
+        ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
           walker.scale.set(0.25);
@@ -48,16 +85,27 @@ export const PixiHub: React.FC = () => {
           let state: 'idle' | 'walk' = 'idle';
           let bobPhase = 0;
 
+          let idleFrameIndex = 0;
+          let idleFrameTimer = 0;
+          let walkFrameIndex = 0;
+          let walkFrameTimer = 0;
+
           function pickState() {
             if (Math.random() < 0.6) {
               state = 'idle';
               speed = 0;
               stateTimer = 180 + Math.random() * 300;
+              idleFrameIndex = 0;
+              idleFrameTimer = 0;
+              if (idleFrames) walker.texture = idleFrames[0];
             } else {
               state = 'walk';
               speed = 0.3 + Math.random() * 0.4;
               angle = Math.random() * Math.PI * 2;
               stateTimer = 60 + Math.random() * 90;
+              walkFrameIndex = 0;
+              walkFrameTimer = 0;
+              if (walkFramesRight) walker.texture = walkFramesRight[0];
             }
           }
           pickState();
@@ -72,17 +120,40 @@ export const PixiHub: React.FC = () => {
               wy += Math.sin(angle) * speed * dt;
 
               const M = 40;
+              const yMin = app.screen.height / 3;
+
               if (wx < M) { wx = M; angle = Math.PI - angle; }
               if (wx > app.screen.width - M) { wx = app.screen.width - M; angle = Math.PI - angle; }
-              if (wy < M) { wy = M; angle = -angle; }
+              if (wy < yMin) { wy = yMin; angle = -angle; }
               if (wy > app.screen.height - M) { wy = app.screen.height - M; angle = -angle; }
 
-              walker.scale.x = Math.cos(angle) >= 0 ? 0.25 : -0.25;
+              const movingRight = Math.cos(angle) >= 0;
+              const activeWalkFrames = movingRight ? walkFramesRight : walkFramesLeft;
+
+              walker.scale.x = 0.25;
               bobPhase += 0.1 * dt;
               walker.y = wy + Math.sin(bobPhase) * 1.8;
+
+              if (activeWalkFrames) {
+                walkFrameTimer += dt;
+                if (walkFrameTimer >= WALK_FRAME_DURATION) {
+                  walkFrameTimer -= WALK_FRAME_DURATION;
+                  walkFrameIndex = (walkFrameIndex + 1) % activeWalkFrames.length;
+                  walker.texture = activeWalkFrames[walkFrameIndex];
+                }
+              }
             } else {
               walker.y = wy;
               walker.rotation = 0;
+
+              if (idleFrames) {
+                idleFrameTimer += dt;
+                if (idleFrameTimer >= IDLE_FRAME_DURATION) {
+                  idleFrameTimer -= IDLE_FRAME_DURATION;
+                  idleFrameIndex = (idleFrameIndex + 1) % idleFrames.length;
+                  walker.texture = idleFrames[idleFrameIndex];
+                }
+              }
             }
 
             walker.x = wx;
@@ -92,12 +163,33 @@ export const PixiHub: React.FC = () => {
           };
         }
 
-        const tickA = createWalker(app.screen.width * 0.35, app.screen.height * 0.8, textureA);
-        const tickB = createWalker(app.screen.width * 0.65, app.screen.height * 0.8, textureB);
+        const jack  = buildFrameSets(jackDefault,  jackDefault2,  jackDefault3,  jackRightStep,  jackLeftStep);
+        const nora  = buildFrameSets(noraDefault,  noraDefault2,  noraDefault3,  noraRightStep,  noraLeftStep);
+        const shawn = buildFrameSets(shawnDefault, shawnDefault2, shawnDefault3, shawnRightStep, shawnLeftStep);
+        const asad  = buildFrameSets(asadDefault,  asadDefault2,  asadDefault3,  asadRightStep,  asadLeftStep);
+
+        const w = app.screen.width;
+        const h = app.screen.height;
+
+        // Spawn in lower 2/3, randomized per character
+        function randSpawn() {
+          return {
+            x: w * (0.15 + Math.random() * 0.7),
+            y: h * (0.55 + Math.random() * 0.35),
+          };
+        }
+
+        const positions = [randSpawn(), randSpawn(), randSpawn(), randSpawn()];
+
+        const tickers = [
+          createWalker(positions[0].x, positions[0].y, jackDefault,  jack.idle,  jack.walkRight,  jack.walkLeft),
+          createWalker(positions[1].x, positions[1].y, noraDefault,  nora.idle,  nora.walkRight,  nora.walkLeft),
+          createWalker(positions[2].x, positions[2].y, shawnDefault, shawn.idle, shawn.walkRight, shawn.walkLeft),
+          createWalker(positions[3].x, positions[3].y, asadDefault,  asad.idle,  asad.walkRight,  asad.walkLeft),
+        ];
 
         app.ticker.add((time) => {
-          tickA(time.deltaTime);
-          tickB(time.deltaTime);
+          tickers.forEach(tick => tick(time.deltaTime));
         });
       } catch (err) {
         console.error('Failed to initialize Pixi app:', err);
