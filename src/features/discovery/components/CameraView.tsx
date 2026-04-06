@@ -31,12 +31,15 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
   // import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
   // const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
 
-  // Attach camera stream to video element
+  // Attach shared camera stream to video element.
+  // Depends on isInitialized because the <video> element only renders
+  // after the gesture recognizer finishes loading.
   useEffect(() => {
-    if (videoRef.current && stream) {
+    if (videoRef.current && stream && isInitialized) {
       videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => {});
     }
-  }, [stream]);
+  }, [stream, isInitialized]);
 
   // Pass detected gesture to parent component
   useEffect(() => {
