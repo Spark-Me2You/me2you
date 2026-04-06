@@ -4,6 +4,8 @@
  */
 
 import { StateProvider, useAppState } from "@/core/state-machine";
+import { CvCursorOverlay } from "@/core/cv/cursor";
+import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
@@ -201,9 +203,12 @@ function AppContainerContent() {
  */
 function AppContainer() {
   return (
-    <StateProvider>
-      <AppContainerContent />
-    </StateProvider>
+    <SharedCameraProvider>
+      <StateProvider>
+        <AppContainerContent />
+        <CvCursorOverlay />
+      </StateProvider>
+    </SharedCameraProvider>
   );
 }
 

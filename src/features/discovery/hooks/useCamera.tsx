@@ -1,3 +1,4 @@
+import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
 import { useState, useEffect, useRef } from "react";
 
 interface UseCameraOptions {
@@ -12,8 +13,9 @@ const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 
 /**
  * useCamera Hook
- * Manages camera lifecycle and MediaStream for discovery feature
- * Returns camera stream, loading state, and error state
+ * Consumes the shared camera stream from SharedCameraProvider.
+ * Previously called getUserMedia() directly — now shares a single stream
+ * with the CV cursor to avoid camera conflicts.
  */
 export const useCamera = (options: UseCameraOptions = {}) => {
   const { videoConstraints = DEFAULT_VIDEO_CONSTRAINTS } = options;
