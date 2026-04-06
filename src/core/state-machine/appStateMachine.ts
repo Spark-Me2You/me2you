@@ -11,7 +11,6 @@ export const AppState = {
   MY_PROFILE: 'MY_PROFILE',
   HUB: 'HUB',
   DISCOVERY: 'DISCOVERY',
-  GAMES: 'GAMES',
 } as const;
 
 export type AppState = typeof AppState[keyof typeof AppState];
@@ -36,8 +35,6 @@ export const transitions: StateTransition[] = [
   { from: AppState.MY_PROFILE, to: AppState.IDLE, event: 'EXIT_MY_PROFILE' },
   { from: AppState.IDLE, to: AppState.HUB, event: 'VIEW_HUB' },
   { from: AppState.HUB, to: AppState.IDLE, event: 'EXIT_HUB' },
-  { from: AppState.IDLE, to: AppState.GAMES, event: 'OPEN_GAMES' },
-  { from: AppState.GAMES, to: AppState.IDLE, event: 'EXIT_GAMES' },
   // TODO: Add more transitions
 ];
 

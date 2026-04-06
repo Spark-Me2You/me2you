@@ -9,13 +9,12 @@ import { ProfileCardView } from "./ProfileCardView";
 import { PoseOverlay } from "./PoseOverlay";
 import type { GestureRecognitionResult } from "../hooks/useGestureRecognition";
 import { useImageChambers } from "../hooks/useImageChambers";
-import { useProfileTimer } from "../hooks/useProfileTimer";
 import {
   getCategoryFromGesture,
   isSupportedGesture,
   CATEGORY_LIST,
 } from "../config/gestureMapping";
-import styles from "./DiscoveryView.module.css";
+import styles from './DiscoveryView.module.css';
 
 /**
  * DiscoveryView Component
@@ -33,20 +32,12 @@ export const DiscoveryView: React.FC = () => {
   const [imageError, setImageError] = useState<string | null>(null);
 
   // View mode state for profile detail navigation
-  const [viewMode, setViewMode] = useState<"discovery" | "profile-detail">(
-    "discovery",
-  );
-  const [selectedProfile, setSelectedProfile] =
-    useState<RandomImageData | null>(null);
+  const [viewMode, setViewMode] = useState<'discovery' | 'profile-detail'>('discovery');
+  const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
 
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
   const hasPoppedImageRef = useRef<boolean>(false);
-
-  // Timer state for hands-free navigation
-  const [isFlashing, setIsFlashing] = useState(false);
-  const previousImageIdRef = useRef<string | null>(null);
-  const gestureReleaseTimeoutRef = useRef<number | null>(null);
 
   // Initialize image chambers for all gesture categories
   // CRITICAL: Use pre-computed CATEGORY_LIST to avoid recreating array on every render
@@ -65,35 +56,14 @@ export const DiscoveryView: React.FC = () => {
   // Handler for viewing profile detail
   const handleViewProfile = useCallback((profileData: RandomImageData) => {
     setSelectedProfile(profileData);
-    setViewMode("profile-detail");
+    setViewMode('profile-detail');
   }, []);
 
   // Handler for returning to discovery view
   const handleBackToDiscovery = useCallback(() => {
-    setViewMode("discovery");
+    setViewMode('discovery');
     setSelectedProfile(null);
   }, []);
-
-  // Handler for timer completion
-  const handleTimerComplete = useCallback(() => {
-    if (imageData) {
-      // Start flash animation
-      setIsFlashing(true);
-
-      // Navigate after flash completes (400ms)
-      setTimeout(() => {
-        setIsFlashing(false);
-        handleViewProfile(imageData);
-      }, 400);
-    }
-  }, [imageData, handleViewProfile]);
-
-  // Timer hook for hands-free navigation
-  const {
-    progress: timerProgress,
-    start: startTimer,
-    reset: resetTimer,
-  } = useProfileTimer({ onComplete: handleTimerComplete });
 
   // Effect: Pop image from chamber when a supported gesture is detected
   // NOTE: Removed imageData from dependencies to prevent infinite loop
@@ -101,10 +71,10 @@ export const DiscoveryView: React.FC = () => {
   useEffect(() => {
     // Check if any supported gesture is detected
     const isGestureDetected = isSupportedGesture(
-      detectedGesture?.gestureName ?? null,
+      detectedGesture?.gestureName ?? null
     );
     const category = getCategoryFromGesture(
-      detectedGesture?.gestureName ?? null,
+      detectedGesture?.gestureName ?? null
     );
 
     if (!isGestureDetected || !category) {
@@ -121,7 +91,9 @@ export const DiscoveryView: React.FC = () => {
 
     // Wait for chambers to initialize
     if (!isInitialized) {
-      console.log("[DiscoveryView] Chambers not yet initialized, waiting...");
+      console.log(
+        "[DiscoveryView] Chambers not yet initialized, waiting..."
+      );
       return;
     }
 
@@ -137,7 +109,7 @@ export const DiscoveryView: React.FC = () => {
         "[DiscoveryView] Image popped:",
         image.image.id,
         "category:",
-        image.image.category,
+        image.image.category
       );
       setImageData(image);
       setImageError(null);
@@ -153,80 +125,31 @@ export const DiscoveryView: React.FC = () => {
       } else {
         console.warn("[DiscoveryView] Chamber empty for:", category);
         setImageError(
-          `No images available for ${category} gesture in your organization`,
+          `No images available for ${category} gesture in your organization`
         );
       }
     }
   }, [detectedGesture, isInitialized, popImage, getError, isChamberLoading]);
 
   // Effect: Clear image when gesture is no longer detected
-  // Debounced to avoid one-frame detection drops from resetting the timer.
   // Removed imageData from dependencies to prevent infinite loop
   useEffect(() => {
     const isGestureDetected = isSupportedGesture(
-      detectedGesture?.gestureName ?? null,
+      detectedGesture?.gestureName ?? null
     );
 
-    if (isGestureDetected) {
-      if (gestureReleaseTimeoutRef.current !== null) {
-        window.clearTimeout(gestureReleaseTimeoutRef.current);
-        gestureReleaseTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    if (gestureReleaseTimeoutRef.current !== null) {
-      return;
-    }
-
-    gestureReleaseTimeoutRef.current = window.setTimeout(() => {
+    if (!isGestureDetected) {
+      // Clear image data when gesture is released
+      // This allows fetching a new image on the next gesture
       console.log("[DiscoveryView] Gesture released, clearing image");
       setImageData(null);
       setImageError(null);
       hasPoppedImageRef.current = false;
-      gestureReleaseTimeoutRef.current = null;
-    }, 10);
-
-    return () => {
-      if (gestureReleaseTimeoutRef.current !== null) {
-        window.clearTimeout(gestureReleaseTimeoutRef.current);
-        gestureReleaseTimeoutRef.current = null;
-      }
-    };
+    }
   }, [detectedGesture]);
 
-  useEffect(() => {
-    return () => {
-      if (gestureReleaseTimeoutRef.current !== null) {
-        window.clearTimeout(gestureReleaseTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Effect: Start/reset timer based on imageData changes
-  useEffect(() => {
-    const currentImageId = imageData?.image?.id ?? null;
-    const previousImageId = previousImageIdRef.current;
-
-    // Case 1: Image was cleared (gesture released)
-    if (currentImageId === null) {
-      resetTimer();
-      previousImageIdRef.current = null;
-      return;
-    }
-
-    // Case 2: New image displayed (first image or different image)
-    if (currentImageId !== previousImageId) {
-      resetTimer(); // Reset first to clear any existing timer
-      startTimer(); // Start fresh timer for new image
-      previousImageIdRef.current = currentImageId;
-    }
-
-    // Case 3: Same image, timer continues (no action needed)
-  }, [imageData, resetTimer, startTimer]);
-
   // Profile detail — replaces discovery entirely so nothing overlaps
-  if (viewMode === "profile-detail" && selectedProfile) {
+  if (viewMode === 'profile-detail' && selectedProfile) {
     return (
       <ProfileCardView
         profileData={selectedProfile}
@@ -251,14 +174,12 @@ export const DiscoveryView: React.FC = () => {
           isLoading={
             detectedGesture?.gestureName
               ? isChamberLoading(
-                  getCategoryFromGesture(detectedGesture.gestureName) ?? "",
+                  getCategoryFromGesture(detectedGesture.gestureName) ?? ""
                 )
               : false
           }
           error={imageError}
           onViewProfile={handleViewProfile}
-          timerProgress={timerProgress}
-          isFlashing={isFlashing}
         />
       </div>
 
@@ -266,9 +187,13 @@ export const DiscoveryView: React.FC = () => {
       <PoseOverlay />
 
       {/* Exit button - top right */}
-      <button className={styles.exitButton} onClick={handleBack}>
+      <button
+        className={styles.exitButton}
+        onClick={handleBack}
+      >
         exit
       </button>
+
     </div>
   );
 };

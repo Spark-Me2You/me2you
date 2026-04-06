@@ -29,8 +29,6 @@
 
 /* Right side - matched profile or white background */
 .rightPanel {
-  height: 100%;
-  overflow: hidden;
   background-color: #ffffff;
   position: relative;
   display: flex;

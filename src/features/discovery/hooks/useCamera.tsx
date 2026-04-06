@@ -1,24 +1,11 @@
-// import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
-import { useState, useEffect, useRef } from "react";
-
-interface UseCameraOptions {
-  videoConstraints?: MediaTrackConstraints;
-}
-
-const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  facingMode: "user",
-};
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * useCamera Hook
- * Consumes the shared camera stream from SharedCameraProvider.
- * Previously called getUserMedia() directly — now shares a single stream
- * with the CV cursor to avoid camera conflicts.
+ * Manages camera lifecycle and MediaStream for discovery feature
+ * Returns camera stream, loading state, and error state
  */
-export const useCamera = (options: UseCameraOptions = {}) => {
-  const { videoConstraints = DEFAULT_VIDEO_CONSTRAINTS } = options;
+export const useCamera = () => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +26,11 @@ export const useCamera = (options: UseCameraOptions = {}) => {
 
         // Direct getUserMedia call for now
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: videoConstraints,
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user',
+          },
           audio: false,
         });
 
@@ -53,9 +44,9 @@ export const useCamera = (options: UseCameraOptions = {}) => {
       } catch (err) {
         if (mounted) {
           const errorMessage =
-            err instanceof Error ? err.message : "Failed to access camera";
+            err instanceof Error ? err.message : 'Failed to access camera';
           setError(errorMessage);
-          console.error("Camera initialization error:", err);
+          console.error('Camera initialization error:', err);
         }
       } finally {
         if (mounted) {
@@ -74,7 +65,7 @@ export const useCamera = (options: UseCameraOptions = {}) => {
         streamRef.current = null;
       }
     };
-  }, [videoConstraints]);
+  }, []);
 
   return { stream, isLoading, error };
 };
