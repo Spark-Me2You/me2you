@@ -22,14 +22,14 @@
 .discoveryButton {
   position: absolute;
   top: 5rem;
-  left: 0rem;
-  height: 17rem;
-  width: 32rem;
+  left: 1rem;
+  height: 12rem;
+  width: 24rem;
   padding: 20px 60px;
   background: rgba(228, 72, 5, 0.93);
   border-radius: 46px;
-  font-size: 80px;
-  letter-spacing: 13.6px;
+  font-size: 62px;
+  letter-spacing: 10.5px;
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
@@ -44,15 +44,15 @@
 
 .hubButton {
   position: absolute;
-  top: 19.5rem;
-  right: 0rem;
-  height: 17rem;
-  width: 31rem;
+  top: 21rem;
+  left: 8rem;
+  height: 12rem;
+  width: 24rem;
   padding: 20px 60px;
-  background: rgba(211, 228, 5, 0.93);
+  background: rgba(20, 5, 228, 0.93);
   border-radius: 46px;
-  font-size: 80px;
-  letter-spacing: 13.6px;
+  font-size: 62px;
+  letter-spacing: 10.5px;
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
@@ -62,15 +62,16 @@
 
 .gamesButton {
   position: absolute;
-  top: 12rem;
-  right: 15rem;
-  height: 10rem;
-  width: 18rem;
+  top: 7rem;
+  left: 48%;
+  transform: translateX(-20%);
+  height: 12rem;
+  width: 22rem;
   padding: 20px 40px;
   background: rgba(113, 5, 228, 0.93);
   border-radius: 46px;
-  font-size: 60px;
-  letter-spacing: 8px;
+  font-size: 62px;
+  letter-spacing: 10.5px;
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
@@ -125,6 +126,8 @@
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: 40px;
 }
 
 .logo {
@@ -141,10 +144,10 @@
 
 .createAccountPlaceholder {
   position: absolute;
-  top: 25rem;
-  left: 13rem;
-  height: 17rem;
-  width: 26rem;
+  top: 1rem;
+  right: -1rem;
+  height: 16rem;
+  width: 16rem;
   padding: 16px 20px;
   background: rgba(228, 5, 172, 0.93);
   border-radius: 46px;
@@ -157,43 +160,75 @@
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 2;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   overflow: hidden;
 }
 
 .createAccountText {
-  font-size: 52px;
-  letter-spacing: 4px;
+  font-size: 30px;
+  letter-spacing: 5.27px;
   line-height: 1.2;
   text-align: center;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 2.4rem;
+  white-space: nowrap;
 }
 
 .createAccountQr {
-  width: 170px;
-  height: 170px;
+  width: 190px;
+  height: 190px;
   object-fit: contain;
   border-radius: 8px;
   background: #ffffff;
   padding: 4px;
   flex-shrink: 0;
-  margin-top: 10px;
 }
 
+/* Otter mascot — overlapping speech bubble from above */
 .otterImage {
   position: absolute;
-  top: 11rem;
-  left: 65%;
-  width: 230px;
-  z-index: 3;
+  bottom: 17rem;
+  right: 12rem;
+  width: 320px;
+  z-index: 4;
   pointer-events: none;
   user-select: none;
+}
+
+/* Welcome speech bubble — bottom right of glass card */
+.otterSpeechBubble {
+  position: absolute;
+  bottom: 12.9rem;
+  right: -1.5rem;
+  width: 36rem;
+  padding: 1.2rem 2rem;
+  background: rgba(211, 228, 5, 0.93);
+  border-radius: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 32px;
+  letter-spacing: 5.44px;
+  color: #000;
+  text-align: center;
+  line-height: 1.4;
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  z-index: 3;
+}
+
+.otterSpeechBubble p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.otterNameHighlight {
+  color: #d12aa7;
+  font-family: "Averia Libre", sans-serif;
+  font-weight: bold;
 }
 
 .decorativePurpleRect {

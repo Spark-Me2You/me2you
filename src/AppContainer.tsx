@@ -14,7 +14,7 @@ import { HubView } from "@/features/hub";
 import { GamesView } from "@/features/games";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
-import otterImage from "@/assets/otter.png";
+import otterImage from "@/assets/otter_default_rough_draft.png";
 import qrCodeImage from "@/assets/registerqr.png";
 import styles from "./AppContainer.module.css";
 
@@ -94,9 +94,6 @@ function AppContainerContent() {
             {/* Logo - positioned absolutely at top center */}
             <img src={logo} alt="me2you" className={styles.logo} />
 
-            {/* Decorative otter image - top right */}
-            <img src={otterImage} alt="" className={styles.otterImage} />
-
             {/* Main glass container */}
             <div className={styles.idleContainer}>
               <div className={styles.idleContentWrapper}>
@@ -108,7 +105,7 @@ function AppContainerContent() {
                   discover
                 </button>
 
-                {/* Network/Hub button - bottom right */}
+                {/* Network/Hub button - bottom left */}
                 <button
                   onClick={() => transitionTo(AppState.HUB)}
                   className={`${styles.buttonBase} ${styles.hubButton}`}
@@ -116,7 +113,7 @@ function AppContainerContent() {
                   network
                 </button>
 
-                {/* Games button - top right */}
+                {/* Games button - center */}
                 <button
                   onClick={() => transitionTo(AppState.GAMES)}
                   className={`${styles.buttonBase} ${styles.gamesButton}`}
@@ -124,10 +121,10 @@ function AppContainerContent() {
                   games
                 </button>
 
-                {/* Create account placeholder - bottom left */}
+                {/* Create account + QR - right edge */}
                 <div className={styles.createAccountPlaceholder}>
                   <span className={styles.createAccountText}>
-                    create<br />account
+                    create account
                   </span>
                   <img
                     src={qrCodeImage}
@@ -136,8 +133,14 @@ function AppContainerContent() {
                   />
                 </div>
 
-                {/* Decorative purple rectangle - right side */}
-                {/* <div className={styles.decorativePurpleRect} /> */}
+                {/* Welcome speech bubble - bottom right */}
+                <div className={styles.otterSpeechBubble}>
+                  <p>welcome to me2you!</p>
+                  <p>i'm <span className={styles.otterNameHighlight}>ozzy</span>! nice2meetu ;)</p>
+                </div>
+
+                {/* Otter mascot - overlapping speech bubble */}
+                <img src={otterImage} alt="" className={styles.otterImage} />
               </div>
             </div>
 
