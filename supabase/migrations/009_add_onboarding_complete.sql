@@ -14,7 +14,3 @@ WHERE onboarding_complete = false;
 UPDATE "user"
 SET onboarding_complete = true
 WHERE onboarding_complete IS NULL OR onboarding_complete = false;
-
--- Comment for documentation
-COMMENT ON COLUMN "user".onboarding_complete IS
-'Indicates whether the user has completed the registration flow. False for users who quit mid-registration.';
