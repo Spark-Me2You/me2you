@@ -26,9 +26,19 @@
 .content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 120px 30px 40px;
+  padding: 120px 30px 60px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Center the card when there's space, otherwise start from top */
+.content::before,
+.content::after {
+  content: '';
+  flex: 1 0 0;
+  min-height: 0;
 }
 
 .profileCard {
