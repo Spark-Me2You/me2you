@@ -65,7 +65,6 @@ const RegistrationWizard: React.FC = () => {
             isSubmitting={isSubmitting}
             error={error}
             onClearError={clearError}
-            capturedPhoto={formData.photo as Blob | undefined}
           />
         );
 

@@ -17,7 +17,6 @@ interface ProfileStepProps {
   isSubmitting: boolean;
   error: string | null;
   onClearError: () => void;
-  capturedPhoto?: Blob;
 }
 
 export const ProfileStep: React.FC<ProfileStepProps> = ({
@@ -28,7 +27,6 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   isSubmitting,
   error,
   onClearError,
-  capturedPhoto,
 }) => {
   const [name, setName] = useState(formData.name || '');
   const [pronouns, setPronouns] = useState(formData.pronouns || '');
@@ -37,14 +35,6 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   const [interests, setInterests] = useState(formData.interests?.join(', ') || '');
   const [localError, setLocalError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!capturedPhoto) return;
-    const url = URL.createObjectURL(capturedPhoto);
-    setPhotoUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [capturedPhoto]);
 
   useEffect(() => {
     onUpdateFormData({
@@ -105,23 +95,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               <div className={styles.errorBanner}>{displayError}</div>
             )}
 
-            {/* ── PART 1: photo placeholder + name / pronouns / major ── */}
-
-            <div className={styles.photoPlaceholderWrapper}>
-              <div className={styles.photoPlaceholderBox}>
-                {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt="Your photo"
-                    className={styles.photoPlaceholderImg}
-                  />
-                ) : (
-                  <div className={styles.photoPlaceholderEmpty}>
-                    {/* Empty placeholder - photo taken in next step */}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* ── PART 1: name / pronouns / major ── */}
 
             <div className={styles.fieldGroupLeft}>
               <div className={styles.fieldLabelLeftWrapper}>
