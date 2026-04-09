@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { kioskQrService } from '@/core/supabase/kioskQrService';
 import { RegistrationProvider, type RegistrationContextType } from '../context/RegistrationContext';
 import { RegistrationError } from './RegistrationError';
@@ -21,6 +21,7 @@ import me2youLogo from '../../../assets/me2you.png';
  * Registration Wizard (inner component after token validation)
  */
 const RegistrationWizard: React.FC = () => {
+  const navigate = useNavigate();
   const {
     currentStep,
     formData,
@@ -32,8 +33,15 @@ const RegistrationWizard: React.FC = () => {
     handleProfileSubmit,
     handlePhotoSubmit,
     previousStep,
-    nextStep,
+    registrationComplete,
   } = useRegistration();
+
+  // Redirect to profile page when registration completes
+  useEffect(() => {
+    if (registrationComplete) {
+      navigate('/user/profile', { replace: true });
+    }
+  }, [registrationComplete, navigate]);
 
   const renderStep = () => {
     switch (currentStep) {

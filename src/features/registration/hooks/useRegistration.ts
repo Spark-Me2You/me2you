@@ -28,6 +28,7 @@ export interface RegistrationState {
   isSubmitting: boolean;
   error: string | null;
   result: RegistrationResult | null;
+  registrationComplete: boolean;
 }
 
 /**
@@ -40,6 +41,7 @@ export interface UseRegistrationReturn {
   isSubmitting: boolean;
   error: string | null;
   result: RegistrationResult | null;
+  registrationComplete: boolean;
 
   // Step navigation
   goToStep: (step: RegistrationStep) => void;
@@ -69,7 +71,7 @@ const STEP_ORDER: RegistrationStep[] = [
  * Custom hook for managing registration flow
  */
 export const useRegistration = (): UseRegistrationReturn => {
-  const { signUpUser, setUserProfile } = useAuth();
+  const { signUpUser, signInUser, setUserProfile } = useAuth();
   const { org_id } = useRegistrationContext();
 
   const [state, setState] = useState<RegistrationState>({
@@ -78,6 +80,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     isSubmitting: false,
     error: null,
     result: null,
+    registrationComplete: false,
   });
 
   // Step navigation
@@ -172,8 +175,14 @@ export const useRegistration = (): UseRegistrationReturn => {
 
           try {
             // SECURITY CRITICAL: Must authenticate first before revealing any info
-            const { user: signedInUser } =
-              await userRegistrationAuthService.signIn(email, password);
+            await signInUser(email, password);
+
+            // Get authenticated user
+            const {
+              data: { user: signedInUser },
+            } = await supabase.auth.getUser();
+            if (!signedInUser)
+              throw new Error("User not authenticated after sign-in");
 
             // Only after successful sign-in, check onboarding status
             const isComplete =
@@ -238,7 +247,7 @@ export const useRegistration = (): UseRegistrationReturn => {
         return false;
       }
     },
-    [signUpUser, nextStep],
+    [signUpUser, signInUser, nextStep],
   );
 
   const handlePhotoSubmit = useCallback(
@@ -281,9 +290,7 @@ export const useRegistration = (): UseRegistrationReturn => {
             category,
           );
 
-        // Sign out now that registration is fully complete
-        await userRegistrationAuthService.signOut();
-
+        // Registration complete - keep user signed in and signal redirect
         setState((prev) => ({
           ...prev,
           isSubmitting: false,
@@ -293,9 +300,9 @@ export const useRegistration = (): UseRegistrationReturn => {
             profile,
             imageId: imageRecord.id,
           },
+          registrationComplete: true,
         }));
 
-        nextStep(); // → success
         return true;
       } catch (error) {
         const message =
@@ -328,6 +335,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     isSubmitting: state.isSubmitting,
     error: state.error,
     result: state.result,
+    registrationComplete: state.registrationComplete,
 
     // Step navigation
     goToStep,
