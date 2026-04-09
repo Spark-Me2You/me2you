@@ -163,14 +163,21 @@ export const useRegistration = (): UseRegistrationReturn => {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Signup failed";
+        const errorCode = (error as Error & { code?: string })?.code;
 
         // AUTOMATIC RESCUE FLOW: Check if this is a "user already exists" error
-        if (
-          errorMessage.toLowerCase().includes("already") ||
-          errorMessage.toLowerCase().includes("exists")
-        ) {
+        // Using error code for robust detection (Supabase returns "user_already_exists" or similar)
+        const isUserExistsError =
+          errorCode === "user_already_exists" ||
+          errorCode === "23505" || // PostgreSQL unique violation
+          (errorMessage.toLowerCase().includes("already") &&
+            errorMessage.toLowerCase().includes("registered"));
+
+        if (isUserExistsError) {
           console.log(
-            "[handleSignUp] User already exists, attempting Automatic Rescue...",
+            "[handleSignUp] User already exists (code: " +
+              errorCode +
+              "), attempting Automatic Rescue...",
           );
 
           try {

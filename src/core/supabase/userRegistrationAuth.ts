@@ -57,7 +57,10 @@ export const userRegistrationAuthService = {
 
     if (error) {
       console.error("[userRegistrationAuth] Signup error:", error);
-      throw new Error(`Signup failed: ${error.message}`);
+      // Preserve error code for better error handling
+      const errorWithCode = new Error(`Signup failed: ${error.message}`) as Error & { code?: string };
+      errorWithCode.code = error.code;
+      throw errorWithCode;
     }
 
     if (!data.user) {
@@ -109,7 +112,7 @@ export const userRegistrationAuthService = {
       org_id: orgId,
       name: "", // Empty, filled during profile step
       onboarding_complete: false,
-      visibility: "public",
+      visibility: "private", // Private until onboarding complete (security: prevents ghost profiles)
     };
 
     const { error } = await supabase.from("user").insert(minimalUser);
@@ -256,6 +259,7 @@ export const userRegistrationAuthService = {
       major: profileData.major || null,
       interests: profileData.interests || null,
       onboarding_complete: true,
+      visibility: "public", // Make profile public when onboarding completes
     };
 
     const { data, error } = await supabase
