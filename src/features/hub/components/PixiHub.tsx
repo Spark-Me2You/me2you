@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { Application, Assets, Sprite, Texture } from 'pixi.js';
 import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
+import { croppedImageService } from '@/features/hub/services/croppedImageService';
+import { storageService } from '@/core/supabase/storage';
 
 export const PixiHub: React.FC = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -24,28 +26,15 @@ export const PixiHub: React.FC = () => {
         function loadFrames(prefix: string, names: string[]) {
           return Promise.all(
             names.map(name =>
-              Assets.load(`/animations/${prefix}${name}.PNG`).catch(e => {
-                console.error(`Failed to load: /animations/${prefix}${name}.PNG`, e);
+              Assets.load(`/animations/${prefix}${name}.png`).catch(e => {
+                console.error(`Failed to load: /animations/${prefix}${name}.png`, e);
                 return Texture.WHITE;
               })
             )
           );
         }
 
-        const [
-          bgTexture,
-          [jackDefault, jackDefault2, jackDefault3, jackRightStep, jackLeftStep],
-          [noraDefault, noraDefault2, noraDefault3, noraRightStep, noraLeftStep],
-          [shawnDefault, shawnDefault2, shawnDefault3, shawnRightStep, shawnLeftStep],
-          [asadDefault, asadDefault2, asadDefault3, asadRightStep, asadLeftStep],
-        ] = await Promise.all([
-          Assets.load('/bg_v0.png'),
-          loadFrames('jack_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
-          loadFrames('nora_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
-          loadFrames('shawn_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
-          loadFrames('asad_', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
-        ]);
-
+        const bgTexture = await Assets.load('/bg_v0.png');
         if (!isMounted) { app.destroy(); return; }
 
         const bg = new Sprite(bgTexture);
@@ -55,6 +44,8 @@ export const PixiHub: React.FC = () => {
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
+        const HEAD_OFFSET_X = 0;
+        const HEAD_OFFSET_Y = -150;
 
         function buildFrameSets(def: Texture, def2: Texture, def3: Texture, right: Texture, left: Texture) {
           return {
@@ -71,11 +62,24 @@ export const PixiHub: React.FC = () => {
           idleFrames?: Texture[],
           walkFramesRight?: Texture[],
           walkFramesLeft?: Texture[],
+          faceTexture?: Texture,
+          centroidPoint?: { x: number; y: number }
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
-          walker.scale.set(0.25);
+          walker.scale.set(0.4);
           app.stage.addChild(walker);
+
+          let faceSprite: Sprite | null = null;
+          if (faceTexture && centroidPoint) {
+            faceSprite = new Sprite(faceTexture);
+            faceSprite.anchor.set(
+              centroidPoint.x / faceTexture.width,
+              centroidPoint.y / faceTexture.height
+            );
+            faceSprite.scale.set(0.35);
+            app.stage.addChild(faceSprite);
+          }
 
           let wx = startX;
           let wy = startY;
@@ -141,7 +145,7 @@ export const PixiHub: React.FC = () => {
               const movingRight = Math.cos(angle) >= 0;
               const activeWalkFrames = movingRight ? walkFramesRight : walkFramesLeft;
 
-              walker.scale.x = 0.25;
+              walker.scale.x = 0.4;
               bobPhase += 0.1 * dt;
               walker.y = wy + Math.sin(bobPhase) * 1.8;
 
@@ -179,13 +183,33 @@ export const PixiHub: React.FC = () => {
             if (state === 'walk') {
               walker.rotation = Math.sin(bobPhase * 0.5) * 0.04;
             }
+
+            if (faceSprite) {
+              faceSprite.x = walker.x + HEAD_OFFSET_X;
+              faceSprite.y = walker.y + HEAD_OFFSET_Y;
+              if (state === 'walk') {
+                faceSprite.rotation = Math.sin(bobPhase * 0.5) * 0.04;
+              } else {
+                faceSprite.rotation = 0;
+              }
+            }
           };
         }
 
-        const jack  = buildFrameSets(jackDefault,  jackDefault2,  jackDefault3,  jackRightStep,  jackLeftStep);
-        const nora  = buildFrameSets(noraDefault,  noraDefault2,  noraDefault3,  noraRightStep,  noraLeftStep);
-        const shawn = buildFrameSets(shawnDefault, shawnDefault2, shawnDefault3, shawnRightStep, shawnLeftStep);
-        const asad  = buildFrameSets(asadDefault,  asadDefault2,  asadDefault3,  asadRightStep,  asadLeftStep);
+        // Cache body frame textures (loaded once and reused across all walkers)
+        const bodyFrames = await Promise.all([
+          loadFrames('', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
+        ]);
+
+        const defaultBodyFrames = buildFrameSets(
+          bodyFrames[0][0],
+          bodyFrames[0][1],
+          bodyFrames[0][2],
+          bodyFrames[0][3],
+          bodyFrames[0][4]
+        );
+
+        if (!isMounted) { app.destroy(); return; }
 
         const w = app.screen.width;
         const h = app.screen.height;
@@ -197,15 +221,75 @@ export const PixiHub: React.FC = () => {
           };
         }
 
-        const positions = [randSpawn(), randSpawn(), randSpawn(), randSpawn()];
+        const tickers: Array<(dt: number) => void> = [];
 
-        const tickers = [
-          createWalker(positions[0].x, positions[0].y, jackDefault,  jack.idle,  jack.walkRight,  jack.walkLeft),
-          createWalker(positions[1].x, positions[1].y, noraDefault,  nora.idle,  nora.walkRight,  nora.walkLeft),
-          createWalker(positions[2].x, positions[2].y, shawnDefault, shawn.idle, shawn.walkRight, shawn.walkLeft),
-          createWalker(positions[3].x, positions[3].y, asadDefault,  asad.idle,  asad.walkRight,  asad.walkLeft),
-        ];
+        // Fetch and load characters in paginated batches
+        const loadBatches = async () => {
+          let offset = 0;
+          const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
 
+          while (isMounted) {
+            try {
+              const { rows, pagination } = await croppedImageService.getPaginatedCroppedImages(
+                orgId,
+                offset,
+                10
+              );
+
+              if (rows.length === 0) break;
+
+              // Load all characters in this batch in parallel
+              await Promise.all(
+                rows.map(async (row) => {
+                  try {
+                    // Generate public URL from storage_path
+                    const faceUrl = await storageService.getPhotoUrl(row.storage_path);
+                    console.log('[PixiHub] centroid_point:', row.centroid_point); // add here
+                    console.log('[PixiHub] face url:', faceUrl);
+
+                    // Load face texture
+                    const faceTexture = await Assets.load(faceUrl);
+
+                    if (!isMounted) return;
+
+                    // Create walker with face
+                    const position = randSpawn();
+                    const ticker = createWalker(
+                      position.x,
+                      position.y,
+                      defaultBodyFrames.idle[0],
+                      defaultBodyFrames.idle,
+                      defaultBodyFrames.walkRight,
+                      defaultBodyFrames.walkLeft,
+                      faceTexture,
+                      row.centroid_point
+                    );
+
+                    // Add ticker to array immediately
+                    tickers.push(ticker);
+                  } catch (error) {
+                    console.error(
+                      `[PixiHub] Failed to load character for ${row.id}:`,
+                      error
+                    );
+                  }
+                })
+              );
+
+              // Check if there are more batches
+              if (!pagination.hasMore) break;
+              offset = pagination.offset;
+            } catch (error) {
+              console.error('[PixiHub] Failed to fetch batch:', error);
+              break;
+            }
+          }
+        };
+
+        // Start loading batches
+        loadBatches();
+
+        // Add ticker to update all walkers
         app.ticker.add((time) => {
           tickers.forEach(tick => tick(time.deltaTime));
         });
@@ -255,3 +339,5 @@ export const PixiHub: React.FC = () => {
     </div>
   );
 };
+
+
