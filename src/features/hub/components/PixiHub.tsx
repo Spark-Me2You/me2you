@@ -5,7 +5,15 @@ import { AppState } from '@/core/state-machine/appStateMachine';
 import { croppedImageService } from '@/features/hub/services/croppedImageService';
 import { storageService } from '@/core/supabase/storage';
 
-export const PixiHub: React.FC = () => {
+export interface CharacterClickData {
+  owner_id: string;
+  cropped_image_id: string;
+  storage_path: string;
+}
+
+export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) => void }> = ({
+  onCharacterClick,
+}) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const { transitionTo } = useAppState();
@@ -63,12 +71,28 @@ export const PixiHub: React.FC = () => {
           walkFramesRight?: Texture[],
           walkFramesLeft?: Texture[],
           faceTexture?: Texture,
-          centroidPoint?: { x: number; y: number }
+          centroidPoint?: { x: number; y: number },
+          ownerId?: string,
+          croppedImageId?: string,
+          storagePath?: string
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
           walker.scale.set(0.4);
           app.stage.addChild(walker);
+
+          // Make walker clickable if we have owner data
+          if (ownerId && onCharacterClick) {
+            walker.interactive = true;
+            walker.cursor = 'pointer';
+            walker.on('pointerdown', () => {
+              onCharacterClick({
+                owner_id: ownerId,
+                cropped_image_id: croppedImageId || '',
+                storage_path: storagePath || '',
+              });
+            });
+          }
 
           let faceSprite: Sprite | null = null;
           if (faceTexture && centroidPoint) {
@@ -262,7 +286,10 @@ export const PixiHub: React.FC = () => {
                       defaultBodyFrames.walkRight,
                       defaultBodyFrames.walkLeft,
                       faceTexture,
-                      row.centroid_point
+                      row.centroid_point,
+                      row.owner_id,
+                      row.id,
+                      row.storage_path
                     );
 
                     // Add ticker to array immediately

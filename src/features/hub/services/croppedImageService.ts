@@ -6,11 +6,12 @@
 import { supabase } from '@/core/supabase/client';
 
 /**
- * Cropped image row with centroid and storage path
+ * Cropped image row with centroid, storage path, and owner info
  */
 export interface CroppedImageRow {
   id: string;
   storage_path: string;
+  owner_id: string;
   centroid_point: {
     x: number;
     y: number;
@@ -57,7 +58,7 @@ export const croppedImageService = {
     try {
       const { data, error } = await supabase
         .from('cropped_image')
-        .select('id, storage_path, centroid_point', { count: 'exact' })
+        .select('id, storage_path, owner_id, centroid_point', { count: 'exact' })
         .eq('org_id', orgId)
         .eq('is_public', true)
         .order('created_at', { ascending: false })
