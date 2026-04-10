@@ -82,7 +82,7 @@ export const PixiHub: React.FC = () => {
           let speed = 0;
           let angle = Math.random() * Math.PI * 2;
           let stateTimer = 0;
-          let state: 'idle' | 'walk' | 'jump' = 'idle';
+          let state: 'idle' | 'walk' = 'idle';
           let bobPhase = 0;
 
           let idleFrameIndex = 0;
@@ -90,24 +90,13 @@ export const PixiHub: React.FC = () => {
           let walkFrameIndex = 0;
           let walkFrameTimer = 0;
 
-          let jumpVY = 0;
-          let jumpY = 0;
-
           function pickState() {
-            const r = Math.random();
-            if (r < 0.55) {
+            if (Math.random() < 0.6) {
               state = 'idle';
               speed = 0;
               stateTimer = 180 + Math.random() * 300;
               idleFrameIndex = 0;
               idleFrameTimer = 0;
-              if (idleFrames) walker.texture = idleFrames[0];
-            } else if (r < 0.75) {
-              state = 'jump';
-              speed = 0;
-              jumpVY = -(3 + Math.random() * 2);
-              jumpY = 0;
-              stateTimer = 999;
               if (idleFrames) walker.texture = idleFrames[0];
             } else {
               state = 'walk';
@@ -153,14 +142,6 @@ export const PixiHub: React.FC = () => {
                   walker.texture = activeWalkFrames[walkFrameIndex];
                 }
               }
-            } else if (state === 'jump') {
-              jumpVY += 0.25 * dt;
-              jumpY += jumpVY * dt;
-              walker.y = wy + jumpY;
-              if (jumpY >= 0) {
-                jumpY = 0;
-                pickState();
-              }
             } else {
               walker.y = wy;
               walker.rotation = 0;
@@ -190,6 +171,7 @@ export const PixiHub: React.FC = () => {
         const w = app.screen.width;
         const h = app.screen.height;
 
+        // Spawn in lower 2/3, randomized per character
         function randSpawn() {
           return {
             x: w * (0.15 + Math.random() * 0.7),
