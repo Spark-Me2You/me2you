@@ -286,7 +286,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                       defaultBodyFrames.walkRight,
                       defaultBodyFrames.walkLeft,
                       faceTexture,
-                      row.centroid_point,
+                      row.centroid_point ?? undefined,
                       row.owner_id,
                       row.id,
                       row.storage_path
