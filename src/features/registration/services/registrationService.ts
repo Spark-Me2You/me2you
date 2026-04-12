@@ -11,6 +11,7 @@ import { userRegistrationAuthService, type CreateUserProfileInput } from '@/core
 import { storageService } from '@/core/supabase/storage';
 import type { UserProfile } from '@/core/auth/AuthContext';
 import type { User } from '@supabase/supabase-js';
+import type { FaceLandmarks } from './faceCropService';
 
 /**
  * Registration form data
@@ -101,6 +102,76 @@ export const registrationService = {
     });
 
     return imageRecord;
+  },
+
+  /**
+   * Upload gesture photo and create gesture_image record
+   * New method that uses gesture_image table instead of legacy image table
+   *
+   * @param photo - Photo blob (gesture photo)
+   * @param userId - User ID (owner)
+   * @param orgId - Organization ID from validated QR token
+   * @param category - Gesture category (wave, peace_sign, thumbs_up)
+   * @returns The created gesture_image record
+   */
+  uploadGesturePhoto: async (
+    photo: Blob,
+    userId: string,
+    orgId: string,
+    category: string
+  ): Promise<{ id: string; storage_path: string }> => {
+    // Upload to storage
+    const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
+
+    // Create gesture_image record
+    const gestureImageRecord = await userRegistrationAuthService.createGestureImageRecord({
+      owner_id: userId,
+      org_id: orgId,
+      storage_path: storagePath,
+      category: category,
+      is_public: true,
+    });
+
+    return gestureImageRecord;
+  },
+
+  /**
+   * Upload cropped photo and create cropped_image record with landmarks
+   * Uploads PNG with transparency and stores face landmark metadata
+   *
+   * @param croppedBlob - Cropped photo blob (PNG with transparency)
+   * @param userId - User ID (owner)
+   * @param orgId - Organization ID from validated QR token
+   * @param landmarks - Face landmark positions (normalized 0-1 coordinates)
+   * @returns The created cropped_image record
+   */
+  uploadCroppedPhotoWithLandmarks: async (
+    croppedBlob: Blob,
+    userId: string,
+    orgId: string,
+    landmarks: FaceLandmarks
+  ): Promise<{ id: string; storage_path: string }> => {
+    // Generate base filename for cropped version
+    const baseFileName = crypto.randomUUID();
+
+    // Upload cropped photo to storage (PNG with transparency)
+    const storagePath = await storageService.uploadCroppedPhoto(
+      croppedBlob,
+      userId,
+      orgId,
+      baseFileName
+    );
+
+    // Create cropped_image record with landmark metadata
+    const croppedImageRecord = await userRegistrationAuthService.createCroppedImageRecord({
+      owner_id: userId,
+      org_id: orgId,
+      storage_path: storagePath,
+      landmarks: landmarks,
+      is_public: true,
+    });
+
+    return croppedImageRecord;
   },
 
   /**

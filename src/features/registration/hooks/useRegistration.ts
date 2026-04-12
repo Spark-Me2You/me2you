@@ -3,7 +3,7 @@
  * Manages multi-step registration flow state
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/core/auth/AuthContext";
 import { supabase } from "@/core/supabase/client";
 import { userRegistrationAuthService } from "@/core/supabase/userRegistrationAuth";
@@ -13,11 +13,12 @@ import {
   type RegistrationResult,
 } from "../services/registrationService";
 import { useRegistrationContext } from "../context/RegistrationContext";
+import { faceCropService, type CropMetadata } from "../services/faceCropService";
 
 /**
  * Registration steps
  */
-export type RegistrationStep = "signup" | "profile" | "photo" | "success";
+export type RegistrationStep = "signup" | "profile" | "photo" | "bobblehead" | "success";
 
 /**
  * Registration state
@@ -29,6 +30,8 @@ export interface RegistrationState {
   error: string | null;
   result: RegistrationResult | null;
   registrationComplete: boolean;
+  croppedPhoto: Blob | null;
+  cropMetadata: CropMetadata | null;
 }
 
 /**
@@ -42,6 +45,7 @@ export interface UseRegistrationReturn {
   error: string | null;
   result: RegistrationResult | null;
   registrationComplete: boolean;
+  croppedPhotoUrl: string | null;
 
   // Step navigation
   goToStep: (step: RegistrationStep) => void;
@@ -58,12 +62,14 @@ export interface UseRegistrationReturn {
   handleSignUp: (email: string, password: string) => Promise<boolean>;
   handleProfileSubmit: () => Promise<boolean>;
   handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
+  handleBobbleheadSubmit: (joinNetwork: boolean) => Promise<boolean>;
 }
 
 const STEP_ORDER: RegistrationStep[] = [
   "signup",
   "profile",
   "photo",
+  "bobblehead",
   "success",
 ];
 
@@ -81,7 +87,20 @@ export const useRegistration = (): UseRegistrationReturn => {
     error: null,
     result: null,
     registrationComplete: false,
+    croppedPhoto: null,
+    cropMetadata: null,
   });
+
+  const [croppedPhotoUrl, setCroppedPhotoUrl] = useState<string | null>(null);
+
+  // Cleanup cropped photo URL on unmount
+  useEffect(() => {
+    return () => {
+      if (croppedPhotoUrl) {
+        URL.revokeObjectURL(croppedPhotoUrl);
+      }
+    };
+  }, [croppedPhotoUrl]);
 
   // Step navigation
   const goToStep = useCallback((step: RegistrationStep) => {
@@ -289,15 +308,25 @@ export const useRegistration = (): UseRegistrationReturn => {
 
         setUserProfile(profile);
 
-        const imageRecord =
-          await registrationService.uploadPhotoAndCreateRecord(
+        // Upload gesture photo to gesture_image table
+        const gestureImageRecord =
+          await registrationService.uploadGesturePhoto(
             photo,
             user.id,
             org_id,
             category,
           );
 
-        // Registration complete - keep user signed in and signal redirect
+        // Run face cropping to get bobblehead
+        console.log('[useRegistration] Running face crop...');
+        const cropResult = await faceCropService.cropFace(photo);
+        console.log('[useRegistration] Face crop complete');
+
+        // Create preview URL for cropped photo
+        const previewUrl = URL.createObjectURL(cropResult.croppedBlob);
+        setCroppedPhotoUrl(previewUrl);
+
+        // Store gesture photo result
         setState((prev) => ({
           ...prev,
           isSubmitting: false,
@@ -305,11 +334,14 @@ export const useRegistration = (): UseRegistrationReturn => {
           result: {
             user,
             profile,
-            imageId: imageRecord.id,
+            imageId: gestureImageRecord.id,
           },
-          registrationComplete: true,
+          croppedPhoto: cropResult.croppedBlob,
+          cropMetadata: cropResult.cropMetadata,
         }));
 
+        // Advance to bobblehead step
+        nextStep();
         return true;
       } catch (error) {
         const message =
@@ -335,6 +367,48 @@ export const useRegistration = (): UseRegistrationReturn => {
     return true;
   }, [state.formData, nextStep]);
 
+  const handleBobbleheadSubmit = useCallback(
+    async (joinNetwork: boolean): Promise<boolean> => {
+      setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
+
+      try {
+        if (joinNetwork && state.croppedPhoto && state.cropMetadata?.landmarks) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) throw new Error("User not authenticated");
+
+          // Upload cropped photo with landmarks to cropped_image table
+          console.log('[useRegistration] Uploading cropped photo...');
+          await registrationService.uploadCroppedPhotoWithLandmarks(
+            state.croppedPhoto,
+            user.id,
+            org_id,
+            state.cropMetadata.landmarks,
+          );
+          console.log('[useRegistration] Cropped photo uploaded successfully');
+        } else {
+          console.log('[useRegistration] User declined network join, skipping cropped photo upload');
+        }
+
+        // Registration complete - keep user signed in and signal redirect
+        setState((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          registrationComplete: true,
+        }));
+
+        return true;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to complete registration";
+        setState((prev) => ({ ...prev, isSubmitting: false, error: message }));
+        return false;
+      }
+    },
+    [state.croppedPhoto, state.cropMetadata, org_id],
+  );
+
   return {
     // State
     currentStep: state.currentStep,
@@ -343,6 +417,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     error: state.error,
     result: state.result,
     registrationComplete: state.registrationComplete,
+    croppedPhotoUrl,
 
     // Step navigation
     goToStep,
@@ -359,5 +434,6 @@ export const useRegistration = (): UseRegistrationReturn => {
     handleSignUp,
     handleProfileSubmit,
     handlePhotoSubmit,
+    handleBobbleheadSubmit,
   };
 };
