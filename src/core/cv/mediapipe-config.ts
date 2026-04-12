@@ -3,9 +3,10 @@
  * TODO: Configure pose detection settings
  */
 
-export const mediapipeConfig = {
-  // TODO: Configure MediaPipe pose landmarker settings
-  modelAssetPath: "/models/pose_landmarker.task",
+export const poseLandmarkerConfig = {
+  // Fetch directly from Google Cloud Storage CDN
+  modelAssetPath:
+    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task",
   numPoses: 1,
   minPoseDetectionConfidence: 0.5,
   minPosePresenceConfidence: 0.5,

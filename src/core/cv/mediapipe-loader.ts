@@ -13,6 +13,8 @@ import type {
   ImageSegmenterResult,
   FaceLandmarker,
   FaceLandmarkerResult,
+  PoseLandmarker,
+  PoseLandmarkerResult,
 } from "@mediapipe/tasks-vision";
 
 // Cache the loaded modules to avoid re-importing
@@ -187,6 +189,46 @@ export const createFaceLandmarker = async (config: {
   return faceLandmarker;
 };
 
+/**
+ * Create a PoseLandmarker instance with lazy loading
+ * @param config Configuration options for the pose landmarker
+ * @returns Promise resolving to a PoseLandmarker instance
+ */
+export const createPoseLandmarker = async (config: {
+  modelAssetPath: string;
+  runningMode: "IMAGE" | "VIDEO";
+  numPoses: number;
+  minPoseDetectionConfidence: number;
+  minPosePresenceConfidence: number;
+  minTrackingConfidence: number;
+}): Promise<PoseLandmarker> => {
+  const { FilesetResolver, PoseLandmarker } = await loadMediaPipeVision();
+
+  /**
+   * IMPORTANT: WASM version must match package.json version exactly
+   * When upgrading @mediapipe/tasks-vision, update this URL version
+   * Current package version: 0.10.32
+   */
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  );
+
+  // Create PoseLandmarker instance with configuration
+  const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: config.modelAssetPath,
+      delegate: "GPU", // Use GPU acceleration if available
+    },
+    runningMode: config.runningMode,
+    numPoses: config.numPoses,
+    minPoseDetectionConfidence: config.minPoseDetectionConfidence,
+    minPosePresenceConfidence: config.minPosePresenceConfidence,
+    minTrackingConfidence: config.minTrackingConfidence,
+  });
+
+  return poseLandmarker;
+};
+
 // Re-export types for convenience
 export type {
   GestureRecognizer,
@@ -197,5 +239,7 @@ export type {
   ImageSegmenterResult,
   FaceLandmarker,
   FaceLandmarkerResult,
-  FilesetResolver
+  PoseLandmarker,
+  PoseLandmarkerResult,
+  FilesetResolver,
 };

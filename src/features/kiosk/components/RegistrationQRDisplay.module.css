@@ -1,0 +1,68 @@
+/**
+ * Registration QR Display Styles
+ * Matches the existing kiosk design aesthetic
+ */
+
+.qrContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.qrWrapper {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+.qrCode {
+  display: block;
+  border-radius: 8px;
+}
+
+.qrInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.scanText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 28px;
+  color: #ffffff;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.timer {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 1px;
+}
+
+.loadingState,
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 174px;
+  height: 174px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.loadingText,
+.errorText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: lowercase;
+}

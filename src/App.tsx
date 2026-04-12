@@ -1,25 +1,35 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute, AdminOnlyRoute } from '@/core/auth';
-import { AdminLoginPage, OrgSelectorPage } from '@/features/admin';
-import { RegistrationPage } from '@/features/registration';
-import { FaceCropTestPage } from '@/features/dev';
-import AppContainer from './AppContainer';
-import './App.css';
+import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  ProtectedRoute,
+  AdminOnlyRoute,
+  UserProtectedRoute,
+} from "@/core/auth";
+import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
+import { RegistrationPage } from "@/features/registration";
+import { FaceCropTestPage } from "@/features/dev";
+import { UserLandingPage, UserProfileView } from "@/features/user";
+import AppContainer from "./AppContainer";
+import "./App.css";
 
 /**
  * Main App Component
- * Configures routing for admin login, org selection, registration, and kiosk mode
+ * Configures routing for user sign-in, admin login, registration, and kiosk mode
+ * - /: Redirects to /user (main entry point)
+ * - /user: Public mobile user sign-in landing page
+ * - /user/profile: Protected user profile view
+ * - /register: Public mobile user registration page (via QR code)
  * - /login: Public admin login page
- * - /register: Public mobile user registration page
  * - /select-org: Admin-only organization selector (leads to kiosk mode)
- * - /app: Protected route wrapping the state machine (admin or kiosk)
- * - /: Redirects to /app (will redirect to /login if not authenticated)
+ * - /app: Protected route wrapping the state machine (admin or kiosk only)
  */
 function App() {
   return (
     <Routes>
       {/* Public route: Admin login */}
       <Route path="/login" element={<AdminLoginPage />} />
+
+      {/* Public route: Mobile user sign-in */}
+      <Route path="/user" element={<UserLandingPage />} />
 
       {/* Public route: Mobile user registration */}
       <Route path="/register" element={<RegistrationPage />} />
@@ -28,6 +38,15 @@ function App() {
       {import.meta.env.DEV && (
         <Route path="/dev/face-crop" element={<FaceCropTestPage />} />
       )}
+      {/* User-only route: Mobile user profile */}
+      <Route
+        path="/user/profile"
+        element={
+          <UserProtectedRoute>
+            <UserProfileView />
+          </UserProtectedRoute>
+        }
+      />
 
       {/* Admin-only route: Organization selector */}
       <Route
@@ -49,11 +68,11 @@ function App() {
         }
       />
 
-      {/* Default redirect to app (will redirect to login if not authenticated) */}
-      <Route path="/" element={<Navigate to="/app" replace />} />
+      {/* Default redirect to user landing page */}
+      <Route path="/" element={<Navigate to="/user" replace />} />
 
-      {/* Catch-all: redirect to app */}
-      <Route path="*" element={<Navigate to="/app" replace />} />
+      {/* Catch-all: redirect to user landing page */}
+      <Route path="*" element={<Navigate to="/user" replace />} />
     </Routes>
   );
 }

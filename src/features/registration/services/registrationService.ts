@@ -9,7 +9,6 @@
 
 import { userRegistrationAuthService, type CreateUserProfileInput } from '@/core/supabase/userRegistrationAuth';
 import { storageService } from '@/core/supabase/storage';
-import { supabase } from '@/core/supabase/client';
 import type { UserProfile } from '@/core/auth/AuthContext';
 import type { User } from '@supabase/supabase-js';
 
@@ -41,68 +40,6 @@ export interface RegistrationResult {
   imageId?: string;
 }
 
-/**
- * Get the default org ID from environment
- */
-const getDefaultOrgId = (): string => {
-  const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
-  if (!orgId) {
-    throw new Error('VITE_DEFAULT_ORG_ID environment variable is not set');
-  }
-  return orgId;
-};
-
-/**
- * Compress photo: resize to max 1200px, encode at 80% quality
- * Reduces file size before upload
- */
-const compressPhoto = async (photo: Blob): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(photo);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-
-      const canvas = document.createElement('canvas');
-      const MAX_SIZE = 1200;
-      let width = img.width;
-      let height = img.height;
-
-      // Scale down if needed
-      if (width > MAX_SIZE || height > MAX_SIZE) {
-        const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
-        width = width * ratio;
-        height = height * ratio;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas context unavailable'));
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to compress photo'));
-        }
-      }, 'image/jpeg', 0.8);
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image for compression'));
-    };
-
-    img.src = url;
-  });
-};
-
 export const registrationService = {
   /**
    * Step 1: Sign up with email and password
@@ -122,11 +59,13 @@ export const registrationService = {
    * Creates a record in the user table
    *
    * @param profileData - Profile data (excluding org_id)
+   * @param orgId - Organization ID from validated QR token
    * @returns The created profile
    */
-  createProfile: async (profileData: Omit<CreateUserProfileInput, 'org_id'>): Promise<UserProfile> => {
-    const orgId = getDefaultOrgId();
-
+  createProfile: async (
+    profileData: Omit<CreateUserProfileInput, 'org_id'>,
+    orgId: string
+  ): Promise<UserProfile> => {
     return userRegistrationAuthService.createUserProfile({
       ...profileData,
       org_id: orgId,
@@ -136,34 +75,23 @@ export const registrationService = {
   /**
    * Step 3: Upload photo and create image record
    * Uploads photo to storage and creates database record with gesture category
-   * Calls onDbInsertComplete callback immediately after DB insert (don't wait for smart crop)
    *
    * @param photo - Photo blob
    * @param userId - User ID (owner)
+   * @param orgId - Organization ID from validated QR token
    * @param category - Gesture category (wave, peace_sign, thumbs_up)
-   * @param onDbInsertComplete - Optional callback fired after DB insert (before smart crop), can be async
-   * @param onProgress - Optional callback for progress updates (0-100)
    * @returns The created image record
    */
   uploadPhotoAndCreateRecord: async (
     photo: Blob,
     userId: string,
-    category: string = 'wave',
-    onDbInsertComplete?: (imageId: string) => Promise<void> | void,
-    onProgress?: (progress: number) => void
+    orgId: string,
+    category: string = 'wave'
   ): Promise<{ id: string; storage_path: string }> => {
-    const orgId = getDefaultOrgId();
-
-    // Compress photo before upload
-    onProgress?.(10);
-    const compressedPhoto = await compressPhoto(photo);
-
     // Upload to storage
-    onProgress?.(30);
-    const storagePath = await storageService.uploadPhoto(compressedPhoto, userId, orgId);
+    const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
 
     // Create image record with gesture category
-    onProgress?.(70);
     const imageRecord = await userRegistrationAuthService.createImageRecord({
       owner_id: userId,
       org_id: orgId,
@@ -172,98 +100,7 @@ export const registrationService = {
       is_public: true,
     });
 
-    // Notify caller that DB insert is complete (before triggering smart crop)
-    onProgress?.(85);
-    if (onDbInsertComplete) {
-      await onDbInsertComplete(imageRecord.id);
-    }
-
-    onProgress?.(100);
     return imageRecord;
-  },
-
-  /**
-   * Upload both original and cropped photos and create image record
-   * Updates image record with cropped_path immediately (no async edge function needed)
-   *
-   * @param originalPhoto - Original photo blob
-   * @param croppedPhoto - Cropped photo blob
-   * @param userId - User ID (owner)
-   * @param category - Gesture category (wave, peace_sign, thumbs_up)
-   * @param onDbInsertComplete - Optional callback fired after DB insert, can be async
-   * @param onProgress - Optional callback for progress updates (0-100)
-   * @returns The created image record with both paths
-   */
-  uploadPhotosAndCreateRecord: async (
-    originalPhoto: Blob,
-    croppedPhoto: Blob,
-    userId: string,
-    category: string = 'wave',
-    onDbInsertComplete?: (imageId: string) => Promise<void> | void,
-    onProgress?: (progress: number) => void
-  ): Promise<{ id: string; storage_path: string; cropped_path: string }> => {
-    const orgId = getDefaultOrgId();
-
-    // Compress original photo before upload
-    onProgress?.(10);
-    const compressedOriginal = await compressPhoto(originalPhoto);
-
-    // Upload original to storage
-    onProgress?.(30);
-    const storagePath = await storageService.uploadPhoto(compressedOriginal, userId, orgId);
-
-    // Extract base filename from storage path for cropped version
-    // storagePath format: org_id/user_id/uuid.jpg
-    const pathParts = storagePath.split('/');
-    const filename = pathParts[pathParts.length - 1];
-    const baseFileName = filename.replace(/\.[^.]+$/, ''); // Remove extension
-
-    // Upload cropped photo to storage
-    onProgress?.(50);
-    const croppedPath = await storageService.uploadCroppedPhoto(
-      croppedPhoto,
-      userId,
-      orgId,
-      baseFileName
-    );
-
-    // Create image record with both paths
-    onProgress?.(70);
-    const imageRecord = await userRegistrationAuthService.createImageRecord({
-      owner_id: userId,
-      org_id: orgId,
-      storage_path: storagePath,
-      category: category,
-      is_public: true,
-    });
-
-    // Update image record with cropped_path
-    onProgress?.(85);
-    const { error: updateError } = await supabase
-      .from('image')
-      .update({
-        cropped_path: croppedPath,
-        cropped_at: new Date().toISOString(),
-      })
-      .eq('id', imageRecord.id);
-
-    if (updateError) {
-      console.error('[registrationService] Failed to update cropped_path:', updateError);
-      // Don't throw - original upload succeeded, this is just metadata
-    }
-
-    // Notify caller that DB insert is complete
-    onProgress?.(95);
-    if (onDbInsertComplete) {
-      await onDbInsertComplete(imageRecord.id);
-    }
-
-    onProgress?.(100);
-    return {
-      id: imageRecord.id,
-      storage_path: storagePath,
-      cropped_path: croppedPath,
-    };
   },
 
   /**
@@ -274,27 +111,35 @@ export const registrationService = {
    * 3. Upload photo (if provided)
    *
    * @param formData - Complete registration form data
+   * @param orgId - Organization ID from validated QR token
    * @returns Registration result with user, profile, and optional image
    */
-  completeRegistration: async (formData: RegistrationFormData): Promise<RegistrationResult> => {
+  completeRegistration: async (
+    formData: RegistrationFormData,
+    orgId: string
+  ): Promise<RegistrationResult> => {
     // Step 1: Sign up
     const user = await registrationService.signUp(formData.email, formData.password);
 
     // Step 2: Create profile
-    const profile = await registrationService.createProfile({
-      name: formData.name,
-      status: formData.status || null,
-      pronouns: formData.pronouns || null,
-      major: formData.major || null,
-      interests: formData.interests || null,
-    });
+    const profile = await registrationService.createProfile(
+      {
+        name: formData.name,
+        status: formData.status || null,
+        pronouns: formData.pronouns || null,
+        major: formData.major || null,
+        interests: formData.interests || null,
+      },
+      orgId
+    );
 
     // Step 3: Upload photo if provided
     let imageId: string | undefined;
     if (formData.photo) {
       const imageRecord = await registrationService.uploadPhotoAndCreateRecord(
         formData.photo,
-        user.id
+        user.id,
+        orgId
       );
       imageId = imageRecord.id;
     }
