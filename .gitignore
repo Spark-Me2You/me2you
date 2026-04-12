@@ -3,7 +3,7 @@
 .env
 
 # Models
-*.tflite
+/public/models/*
 
 # Supabase local development
 supabase/.temp/
