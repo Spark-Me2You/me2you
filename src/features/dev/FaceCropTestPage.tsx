@@ -72,9 +72,6 @@ export const FaceCropTestPage: React.FC = () => {
         audio: false,
       });
       setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to access camera');
@@ -150,6 +147,13 @@ export const FaceCropTestPage: React.FC = () => {
     },
     []
   );
+
+  // Assign stream to video element after it renders
+  React.useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
 
   // Cleanup URLs on unmount
   React.useEffect(() => {
