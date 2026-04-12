@@ -25,7 +25,7 @@ User attempts signup with existing email
          │
          ├─ Error: "Email already exists"
          │
-         ├─ 🔒 SECURITY: Attempt sign-in with provided password
+         ├─  SECURITY: Attempt sign-in with provided password
          │     │
          │     ├─ Sign-in FAILS → Show "Invalid credentials" (don't reveal email exists)
          │     │
@@ -33,7 +33,7 @@ User attempts signup with existing email
          │           │
          │           ├─ onboarding_complete = true → Show "Account exists, please log in"
          │           │
-         │           └─ onboarding_complete = false → ✨ RESCUE
+         │           └─ onboarding_complete = false →  RESCUE
          │                 │
          │                 └─ Show "Welcome back! Let's finish setting up."
          │                       → Resume at profile step
@@ -48,21 +48,23 @@ ALTER TABLE "user" ADD COLUMN onboarding_complete BOOLEAN DEFAULT false;
 ```
 
 **Updated Flow:**
+
 1. **Step 1 (Signup)**: Creates auth account + minimal `user` record with `onboarding_complete = false`
 2. **Step 2 (Profile)**: Data stored locally (not yet persisted)
 3. **Step 3 (Photo)**: Updates `user` record with full profile data + sets `onboarding_complete = true`
 
 ## Security Considerations
 
-**🔒 CRITICAL**: The flow MUST authenticate the user before revealing any information about account existence.
+** CRITICAL**: The flow MUST authenticate the user before revealing any information about account existence.
 
 ### Why This Matters
 
 **Email Enumeration Attack**: Attackers could try many emails to discover which ones have accounts in the system.
 
 **Vulnerable Implementation** (DON'T DO THIS):
+
 ```typescript
-// ❌ BAD: Reveals if email exists before validating password
+//  BAD: Reveals if email exists before validating password
 if (emailExists) {
   const isComplete = await checkOnboardingStatus(email);
   if (!isComplete) {
@@ -72,8 +74,9 @@ if (emailExists) {
 ```
 
 **Secure Implementation** (CORRECT):
+
 ```typescript
-// ✅ GOOD: Only reveals info after successful authentication
+// GOOD: Only reveals info after successful authentication
 try {
   const user = await signIn(email, password); // MUST succeed first
   const isComplete = await checkOnboardingStatus(user.id);
@@ -102,11 +105,13 @@ See `src/features/registration/hooks/useRegistration.ts:handleSignUp()`:
 ### Scenario 1: User abandons registration, returns later
 
 **Without Automatic Rescue:**
+
 - User tries to sign up again
 - Gets error: "Email already registered"
 - Frustrated, confused, may create duplicate account with different email
 
 **With Automatic Rescue:**
+
 - User tries to sign up again with same credentials
 - Sees: "Welcome back! Let's finish setting up your account."
 - Seamlessly continues to profile step
@@ -115,6 +120,7 @@ See `src/features/registration/hooks/useRegistration.ts:handleSignUp()`:
 ### Scenario 2: User tries to sign up with wrong password
 
 **Secure behavior:**
+
 - User enters existing email but wrong password
 - System attempts sign-in (fails)
 - Shows generic error: "Invalid email or password"
@@ -123,6 +129,7 @@ See `src/features/registration/hooks/useRegistration.ts:handleSignUp()`:
 ### Scenario 3: User completed registration, forgot they have an account
 
 **Friendly redirect:**
+
 - User tries to sign up again
 - System signs them in (password validated)
 - Checks `onboarding_complete = true`
@@ -132,9 +139,11 @@ See `src/features/registration/hooks/useRegistration.ts:handleSignUp()`:
 ## Code References
 
 ### Database Migration
+
 - `supabase/migrations/008_add_onboarding_complete.sql`
 
 ### Core Services
+
 - `src/core/supabase/userRegistrationAuth.ts`
   - `createMinimalUserRecord()`: Creates initial user record on signup
   - `updateUserProfile()`: Updates user record with full data on completion
@@ -142,6 +151,7 @@ See `src/features/registration/hooks/useRegistration.ts:handleSignUp()`:
   - `checkOnboardingComplete()`: Queries onboarding status
 
 ### Registration Flow
+
 - `src/features/registration/hooks/useRegistration.ts`
   - `handleSignUp()`: Implements rescue flow with security validation
   - `handlePhotoSubmit()`: Marks onboarding complete
@@ -159,11 +169,13 @@ WHERE id NOT IN (SELECT id FROM "user")
 ```
 
 **Why 24 hours?**
+
 - Gives users time to return and resume
 - Prevents buildup of old orphans
 - Only cleans accounts that were never completed
 
 This cleanup is intentionally **not** in the current implementation to:
+
 1. Avoid accidentally deleting active mid-registration users
 2. Allow manual review of orphaned accounts
 3. Gather metrics on abandonment rates
