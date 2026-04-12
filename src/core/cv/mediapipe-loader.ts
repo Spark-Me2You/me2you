@@ -9,6 +9,10 @@ import type {
   GestureRecognizerResult,
   FaceDetector,
   FaceDetectorResult,
+  ImageSegmenter,
+  ImageSegmenterResult,
+  FaceLandmarker,
+  FaceLandmarkerResult,
 } from "@mediapipe/tasks-vision";
 
 // Cache the loaded modules to avoid re-importing
@@ -103,5 +107,95 @@ export const createFaceDetector = async (config: {
   return faceDetector;
 };
 
+/**
+ * Create an ImageSegmenter instance with lazy loading
+ * @param config Configuration options for the image segmenter
+ * @returns Promise resolving to an ImageSegmenter instance
+ */
+export const createImageSegmenter = async (config: {
+  modelAssetPath: string;
+  runningMode: "IMAGE" | "VIDEO";
+  outputCategoryMask: boolean;
+  outputConfidenceMasks: boolean;
+}): Promise<ImageSegmenter> => {
+  const { FilesetResolver, ImageSegmenter } = await loadMediaPipeVision();
+
+  /**
+   * IMPORTANT: WASM version must match package.json version exactly
+   * When upgrading @mediapipe/tasks-vision, update this URL version
+   * Current package version: 0.10.32
+   */
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  );
+
+  // Create ImageSegmenter instance with configuration
+  const imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: config.modelAssetPath,
+      delegate: "GPU", // Use GPU acceleration if available
+    },
+    runningMode: config.runningMode,
+    outputCategoryMask: config.outputCategoryMask,
+    outputConfidenceMasks: config.outputConfidenceMasks,
+  });
+
+  return imageSegmenter;
+};
+
+/**
+ * Create a FaceLandmarker instance with lazy loading
+ * @param config Configuration options for the face landmarker
+ * @returns Promise resolving to a FaceLandmarker instance
+ */
+export const createFaceLandmarker = async (config: {
+  modelAssetPath: string;
+  runningMode: "IMAGE" | "VIDEO";
+  numFaces: number;
+  minFaceDetectionConfidence: number;
+  minFacePresenceConfidence: number;
+  minTrackingConfidence: number;
+  outputFaceBlendshapes: boolean;
+  outputFacialTransformationMatrixes: boolean;
+}): Promise<FaceLandmarker> => {
+  const { FilesetResolver, FaceLandmarker } = await loadMediaPipeVision();
+
+  /**
+   * IMPORTANT: WASM version must match package.json version exactly
+   * When upgrading @mediapipe/tasks-vision, update this URL version
+   * Current package version: 0.10.32
+   */
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  );
+
+  // Create FaceLandmarker instance with configuration
+  const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: config.modelAssetPath,
+      delegate: "GPU", // Use GPU acceleration if available
+    },
+    runningMode: config.runningMode,
+    numFaces: config.numFaces,
+    minFaceDetectionConfidence: config.minFaceDetectionConfidence,
+    minFacePresenceConfidence: config.minFacePresenceConfidence,
+    minTrackingConfidence: config.minTrackingConfidence,
+    outputFaceBlendshapes: config.outputFaceBlendshapes,
+    outputFacialTransformationMatrixes: config.outputFacialTransformationMatrixes,
+  });
+
+  return faceLandmarker;
+};
+
 // Re-export types for convenience
-export type { GestureRecognizer, GestureRecognizerResult, FaceDetector, FaceDetectorResult, FilesetResolver };
+export type {
+  GestureRecognizer,
+  GestureRecognizerResult,
+  FaceDetector,
+  FaceDetectorResult,
+  ImageSegmenter,
+  ImageSegmenterResult,
+  FaceLandmarker,
+  FaceLandmarkerResult,
+  FilesetResolver
+};

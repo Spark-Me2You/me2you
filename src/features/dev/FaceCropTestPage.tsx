@@ -119,34 +119,58 @@ export const FaceCropTestPage: React.FC = () => {
   }, [processImage]);
 
   /**
-   * Draw bounding box on original image
+   * Draw head bounds and landmarks on original image
    */
-  const drawBoundingBox = useCallback(
-    (canvas: HTMLCanvasElement, imageUrl: string, box: { x: number; y: number; width: number; height: number }) => {
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+  const drawAnnotations = useCallback((canvas: HTMLCanvasElement, imageUrl: string) => {
+    if (!cropResult) return;
 
-        ctx.drawImage(img, 0, 0);
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-        // Draw bounding box
+      ctx.drawImage(img, 0, 0);
+
+      // Draw head bounds (green rectangle)
+      if (cropResult.cropMetadata.headBounds) {
+        const bounds = cropResult.cropMetadata.headBounds;
         ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(box.x * img.width, box.y * img.height, box.width * img.width, box.height * img.height);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bounds.xMin, bounds.yMin, bounds.width, bounds.height);
+      }
 
-        // Draw center point
+      // Draw face bounding box (blue rectangle - for comparison)
+      if (cropResult.cropMetadata.boundingBox) {
+        const box = cropResult.cropMetadata.boundingBox;
+        ctx.strokeStyle = '#0088ff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(box.x * img.width, box.y * img.height, box.width * img.width, box.height * img.height);
+        ctx.setLineDash([]);
+      }
+
+      // Draw landmarks (red dots)
+      if (cropResult.cropMetadata.landmarks) {
+        const lm = cropResult.cropMetadata.landmarks;
         ctx.fillStyle = '#ff0000';
+
+        [lm.leftEye, lm.rightEye, lm.noseTip, lm.mouthCenter, lm.chinBottom, lm.foreheadTop].forEach((point) => {
+          ctx.beginPath();
+          ctx.arc(point.x * img.width, point.y * img.height, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw face center (yellow dot)
+        ctx.fillStyle = '#ffff00';
         ctx.beginPath();
-        ctx.arc((box.x + box.width / 2) * img.width, (box.y + box.height / 2) * img.height, 5, 0, Math.PI * 2);
+        ctx.arc(lm.faceCenter.x * img.width, lm.faceCenter.y * img.height, 6, 0, Math.PI * 2);
         ctx.fill();
-      };
-      img.src = imageUrl;
-    },
-    []
-  );
+      }
+    };
+    img.src = imageUrl;
+  }, [cropResult]);
 
   // Assign stream to video element after it renders
   React.useEffect(() => {
@@ -264,28 +288,44 @@ export const FaceCropTestPage: React.FC = () => {
       {cropResult && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-            {/* Original with bounding box */}
+            {/* Original with annotations */}
             <div>
-              <h3>Original (with face bounding box)</h3>
-              {originalUrl && cropResult.cropMetadata.boundingBox && (
+              <h3>Original (with head bounds & landmarks)</h3>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                Green: head bounds | Blue dashed: face box | Red: landmarks | Yellow: face center
+              </div>
+              {originalUrl && (
                 <canvas
                   ref={(canvas) => {
-                    if (canvas && originalUrl && cropResult.cropMetadata.boundingBox) {
-                      drawBoundingBox(canvas, originalUrl, cropResult.cropMetadata.boundingBox);
+                    if (canvas && originalUrl) {
+                      drawAnnotations(canvas, originalUrl);
                     }
                   }}
                   style={{ width: '100%', border: '2px solid #ccc' }}
                 />
               )}
-              {originalUrl && !cropResult.cropMetadata.boundingBox && (
-                <img src={originalUrl} alt="Original" style={{ width: '100%', border: '2px solid #ccc' }} />
-              )}
             </div>
 
-            {/* Cropped result */}
+            {/* Cropped result with transparency preview */}
             <div>
-              <h3>Cropped Result</h3>
-              {croppedUrl && <img src={croppedUrl} alt="Cropped" style={{ width: '100%', border: '2px solid #ccc' }} />}
+              <h3>Isolated Head (PNG with transparency)</h3>
+              {croppedUrl && (
+                <div
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(45deg, #ccc 25%, transparent 25%),
+                      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #ccc 75%),
+                      linear-gradient(-45deg, transparent 75%, #ccc 75%)
+                    `,
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                    border: '2px solid #ccc',
+                  }}
+                >
+                  <img src={croppedUrl} alt="Isolated Head" style={{ width: '100%', display: 'block' }} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -301,14 +341,31 @@ export const FaceCropTestPage: React.FC = () => {
                   </td>
                 </tr>
                 <tr>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Segmentation Used</td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                    {cropResult.cropMetadata.segmentationMaskUsed ? '✓ Yes' : '✗ No'}
+                  </td>
+                </tr>
+                <tr>
                   <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Confidence</td>
                   <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
                     {(cropResult.cropMetadata.confidence * 100).toFixed(1)}%
                   </td>
                 </tr>
+                {cropResult.cropMetadata.headBounds && (
+                  <tr>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Head Bounds (px)</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                      {cropResult.cropMetadata.headBounds.width}x{cropResult.cropMetadata.headBounds.height} at (
+                      {cropResult.cropMetadata.headBounds.xMin}, {cropResult.cropMetadata.headBounds.yMin})
+                    </td>
+                  </tr>
+                )}
                 {cropResult.cropMetadata.boundingBox && (
                   <tr>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Bounding Box</td>
+                    <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>
+                      Face Box (normalized)
+                    </td>
                     <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
                       x: {cropResult.cropMetadata.boundingBox.x.toFixed(3)}, y: {cropResult.cropMetadata.boundingBox.y.toFixed(3)}, w:{' '}
                       {cropResult.cropMetadata.boundingBox.width.toFixed(3)}, h: {cropResult.cropMetadata.boundingBox.height.toFixed(3)}
@@ -316,9 +373,15 @@ export const FaceCropTestPage: React.FC = () => {
                   </tr>
                 )}
                 <tr>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Landmarks Detected</td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
+                    {cropResult.cropMetadata.landmarks ? '✓ Yes (7 key points)' : '✗ No'}
+                  </td>
+                </tr>
+                <tr>
                   <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6', fontWeight: 'bold' }}>Output Size</td>
                   <td style={{ padding: '8px', borderBottom: '1px solid #dee2e6' }}>
-                    {cropResult.cropMetadata.outputSize.width}x{cropResult.cropMetadata.outputSize.height}
+                    {cropResult.cropMetadata.outputSize.width}x{cropResult.cropMetadata.outputSize.height} (PNG)
                   </td>
                 </tr>
                 <tr>

@@ -1,10 +1,21 @@
 /**
  * Face Crop Service
- * Client-side face detection and cropping using MediaPipe FaceDetector
+ * Client-side head isolation using MediaPipe ImageSegmenter + FaceLandmarker
+ * Extracts head shape (hair + face pixels) with transparent background
  */
 
-import { createFaceDetector, faceDetectorConfig } from '@/core/cv';
-import type { FaceDetector } from '@/core/cv';
+import {
+  createImageSegmenter,
+  createFaceLandmarker,
+  imageSegmenterConfig,
+  faceLandmarkerConfig,
+} from '@/core/cv';
+import type {
+  ImageSegmenter,
+  ImageSegmenterResult,
+  FaceLandmarker,
+  FaceLandmarkerResult,
+} from '@/core/cv';
 
 /**
  * Custom error for when no face is detected
@@ -28,15 +39,44 @@ export interface FaceBoundingBox {
 }
 
 /**
+ * Head bounding box (pixel coordinates)
+ */
+export interface HeadBounds {
+  xMin: number;
+  yMin: number;
+  xMax: number;
+  yMax: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Face landmark positions (normalized 0-1 coordinates)
+ * Key landmarks extracted from MediaPipe's 468-point face mesh
+ */
+export interface FaceLandmarks {
+  leftEye: { x: number; y: number }; // Landmark 33 (left eye center)
+  rightEye: { x: number; y: number }; // Landmark 263 (right eye center)
+  noseTip: { x: number; y: number }; // Landmark 1 (nose tip)
+  mouthCenter: { x: number; y: number }; // Landmark 13 (upper lip center)
+  faceCenter: { x: number; y: number }; // Calculated centroid
+  chinBottom: { x: number; y: number }; // Landmark 152 (chin bottom)
+  foreheadTop: { x: number; y: number }; // Landmark 10 (forehead top)
+}
+
+/**
  * Metadata about the crop operation
  */
 export interface CropMetadata {
   faceDetected: boolean;
-  boundingBox: FaceBoundingBox | null;
+  headBounds: HeadBounds | null; // Actual head pixel bounds
+  boundingBox: FaceBoundingBox | null; // For backward compatibility
   confidence: number;
   outputSize: { width: number; height: number };
   padding: number;
   processingTimeMs: number;
+  landmarks: FaceLandmarks | null; // Face landmark positions
+  segmentationMaskUsed: boolean; // Whether segmentation succeeded
 }
 
 /**
@@ -49,25 +89,31 @@ export interface CropResult {
 }
 
 /**
- * Options for cropping
+ * Options for head isolation
  */
 export interface CropOptions {
-  outputSize?: number; // Default: 400
-  padding?: number; // Default: 0.25 (25%)
-  quality?: number; // Default: 0.85 (85%)
+  padding?: number; // Default: 0.08 (8% padding around head)
+  edgeBlurRadius?: number; // Default: 2 (pixels to blur mask edges)
+  includeLandmarks?: boolean; // Default: true (run FaceLandmarker)
 }
 
-// Singleton face detector instance
-let faceDetectorInstance: FaceDetector | null = null;
+// Segmentation category indices from selfie_multiclass model
+const CATEGORY_HAIR = 1;
+const CATEGORY_FACE_SKIN = 3;
+const HEAD_CATEGORIES = [CATEGORY_HAIR, CATEGORY_FACE_SKIN];
+
+// Singleton instances (lazy loaded)
+let imageSegmenterInstance: ImageSegmenter | null = null;
+let faceLandmarkerInstance: FaceLandmarker | null = null;
 let isInitializing = false;
 let initializationPromise: Promise<void> | null = null;
 
 /**
- * Initialize the face detector (lazy load MediaPipe model)
+ * Initialize both ImageSegmenter and FaceLandmarker (lazy load MediaPipe models)
  * Can be called multiple times safely (subsequent calls return immediately)
  */
 const initialize = async (): Promise<void> => {
-  if (faceDetectorInstance) {
+  if (imageSegmenterInstance && faceLandmarkerInstance) {
     return; // Already initialized
   }
 
@@ -78,12 +124,21 @@ const initialize = async (): Promise<void> => {
   isInitializing = true;
   initializationPromise = (async () => {
     try {
-      console.log('[faceCropService] Initializing FaceDetector...');
-      faceDetectorInstance = await createFaceDetector(faceDetectorConfig);
-      console.log('[faceCropService] FaceDetector initialized successfully');
+      console.log('[faceCropService] Initializing ImageSegmenter and FaceLandmarker...');
+
+      // Load both models in parallel
+      const [segmenter, landmarker] = await Promise.all([
+        createImageSegmenter(imageSegmenterConfig),
+        createFaceLandmarker(faceLandmarkerConfig),
+      ]);
+
+      imageSegmenterInstance = segmenter;
+      faceLandmarkerInstance = landmarker;
+
+      console.log('[faceCropService] Models initialized successfully');
     } catch (error) {
-      console.error('[faceCropService] Failed to initialize FaceDetector:', error);
-      throw new Error('Failed to load face detection model');
+      console.error('[faceCropService] Failed to initialize models:', error);
+      throw new Error('Failed to load head isolation models');
     } finally {
       isInitializing = false;
     }
@@ -93,64 +148,195 @@ const initialize = async (): Promise<void> => {
 };
 
 /**
- * Check if the face detector is ready
+ * Check if the models are ready
  */
 const isReady = (): boolean => {
-  return faceDetectorInstance !== null;
+  return imageSegmenterInstance !== null && faceLandmarkerInstance !== null;
 };
 
 /**
- * Calculate crop region with padding around face bounding box
+ * Create binary mask from segmentation result
+ * @param segmentationResult MediaPipe segmentation result
  * @param imageWidth Image width in pixels
  * @param imageHeight Image height in pixels
- * @param face Normalized face bounding box (0-1)
- * @param padding Padding percentage (0.25 = 25%)
- * @returns Crop region in pixel coordinates
+ * @returns Binary mask (255 for head pixels, 0 for background) and head bounds
  */
-const calculateCropRegion = (
+const segmentHead = (
+  segmentationResult: ImageSegmenterResult,
   imageWidth: number,
-  imageHeight: number,
-  face: FaceBoundingBox,
-  padding: number
-): { x: number; y: number; size: number } => {
-  // Convert normalized coords to pixels
-  const faceX = face.x * imageWidth;
-  const faceY = face.y * imageHeight;
-  const faceWidth = face.width * imageWidth;
-  const faceHeight = face.height * imageHeight;
+  imageHeight: number
+): { mask: Uint8ClampedArray; bounds: HeadBounds | null } => {
+  const categoryMask = segmentationResult.categoryMask!.getAsUint8Array();
 
-  // Apply padding around face
-  const faceSize = Math.max(faceWidth, faceHeight);
-  const paddedSize = faceSize * (1 + padding);
+  // Create binary mask: 255 for head pixels, 0 for background
+  const mask = new Uint8ClampedArray(imageWidth * imageHeight);
+  let xMin = imageWidth,
+    yMin = imageHeight,
+    xMax = 0,
+    yMax = 0;
+  let hasHeadPixels = false;
 
-  // Center the padded region on the face
-  let cropX = faceX + faceWidth / 2 - paddedSize / 2;
-  let cropY = faceY + faceHeight / 2 - paddedSize / 2;
+  for (let i = 0; i < categoryMask.length; i++) {
+    const category = categoryMask[i];
+    if (HEAD_CATEGORIES.includes(category)) {
+      mask[i] = 255;
+      hasHeadPixels = true;
 
-  // Clamp to image bounds
-  cropX = Math.max(0, Math.min(cropX, imageWidth - paddedSize));
-  cropY = Math.max(0, Math.min(cropY, imageHeight - paddedSize));
+      const x = i % imageWidth;
+      const y = Math.floor(i / imageWidth);
+      xMin = Math.min(xMin, x);
+      yMin = Math.min(yMin, y);
+      xMax = Math.max(xMax, x);
+      yMax = Math.max(yMax, y);
+    }
+  }
 
-  // Ensure square crop fits in image
-  const maxSize = Math.min(
-    imageWidth - cropX,
-    imageHeight - cropY,
-    paddedSize
-  );
+  if (!hasHeadPixels) {
+    return { mask, bounds: null };
+  }
 
   return {
-    x: Math.round(cropX),
-    y: Math.round(cropY),
-    size: Math.round(maxSize),
+    mask,
+    bounds: {
+      xMin,
+      yMin,
+      xMax,
+      yMax,
+      width: xMax - xMin,
+      height: yMax - yMin,
+    },
   };
 };
 
 /**
- * Crop image around detected face
+ * Extract key face landmarks from MediaPipe result
+ * @param landmarkerResult MediaPipe face landmarker result
+ * @returns Face landmarks or null if no face detected
+ */
+const extractLandmarks = (
+  landmarkerResult: FaceLandmarkerResult
+): FaceLandmarks | null => {
+  if (!landmarkerResult.faceLandmarks?.length) {
+    return null;
+  }
+
+  const landmarks = landmarkerResult.faceLandmarks[0];
+
+  // MediaPipe face mesh indices for key landmarks
+  const leftEye = landmarks[33];
+  const rightEye = landmarks[263];
+  const noseTip = landmarks[1];
+  const mouthCenter = landmarks[13];
+  const chinBottom = landmarks[152];
+  const foreheadTop = landmarks[10];
+
+  return {
+    leftEye: { x: leftEye.x, y: leftEye.y },
+    rightEye: { x: rightEye.x, y: rightEye.y },
+    noseTip: { x: noseTip.x, y: noseTip.y },
+    mouthCenter: { x: mouthCenter.x, y: mouthCenter.y },
+    faceCenter: {
+      x: (leftEye.x + rightEye.x) / 2,
+      y: (noseTip.y + mouthCenter.y) / 2,
+    },
+    chinBottom: { x: chinBottom.x, y: chinBottom.y },
+    foreheadTop: { x: foreheadTop.x, y: foreheadTop.y },
+  };
+};
+
+/**
+ * Convert head bounds to normalized bounding box (for backward compatibility)
+ */
+const boundsToNormalizedBox = (
+  bounds: HeadBounds,
+  imageWidth: number,
+  imageHeight: number
+): FaceBoundingBox => {
+  return {
+    x: bounds.xMin / imageWidth,
+    y: bounds.yMin / imageHeight,
+    width: bounds.width / imageWidth,
+    height: bounds.height / imageHeight,
+  };
+};
+
+/**
+ * Apply segmentation mask to image and crop to head bounds
+ * @param sourceCanvas Canvas containing the original image
+ * @param mask Binary mask (255 for head, 0 for background)
+ * @param bounds Head pixel bounds
+ * @param padding Padding percentage around head
+ * @returns Canvas with transparent background, cropped to head bounds
+ */
+const applyMaskToCanvas = (
+  sourceCanvas: HTMLCanvasElement,
+  mask: Uint8ClampedArray,
+  bounds: HeadBounds,
+  padding: number
+): HTMLCanvasElement => {
+  // Calculate padded bounds
+  const padX = Math.round(bounds.width * padding);
+  const padY = Math.round(bounds.height * padding);
+  const cropX = Math.max(0, bounds.xMin - padX);
+  const cropY = Math.max(0, bounds.yMin - padY);
+  const cropW = Math.min(sourceCanvas.width - cropX, bounds.width + 2 * padX);
+  const cropH = Math.min(sourceCanvas.height - cropY, bounds.height + 2 * padY);
+
+  // Create output canvas at cropped dimensions
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = cropW;
+  outputCanvas.height = cropH;
+  const ctx = outputCanvas.getContext('2d')!;
+
+  // Draw cropped region from source
+  ctx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  // Get image data and apply mask
+  const imageData = ctx.getImageData(0, 0, cropW, cropH);
+  const data = imageData.data;
+
+  for (let y = 0; y < cropH; y++) {
+    for (let x = 0; x < cropW; x++) {
+      const srcX = cropX + x;
+      const srcY = cropY + y;
+      const maskIdx = srcY * sourceCanvas.width + srcX;
+      const pixelIdx = (y * cropW + x) * 4;
+
+      // Set alpha based on mask (255 = opaque, 0 = transparent)
+      data[pixelIdx + 3] = mask[maskIdx] ?? 0;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return outputCanvas;
+};
+
+/**
+ * Load image blob into HTMLImageElement
+ */
+const loadImage = async (blob: Blob): Promise<HTMLImageElement> => {
+  const imageUrl = URL.createObjectURL(blob);
+  const img = new Image();
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+
+  return img;
+};
+
+/**
+ * Crop image to isolated head shape with transparent background
  * @param imageBlob Input image blob
- * @param options Crop options (outputSize, padding, quality)
- * @returns Promise resolving to crop result
- * @throws FaceNotDetectedError if no face detected
+ * @param options Crop options (padding, edgeBlurRadius, includeLandmarks)
+ * @returns Promise resolving to crop result with PNG blob
+ * @throws FaceNotDetectedError if no head detected in segmentation
  * @throws Error for other processing errors
  */
 const cropFace = async (
@@ -158,124 +344,88 @@ const cropFace = async (
   options: CropOptions = {}
 ): Promise<CropResult> => {
   const startTime = performance.now();
-  const { outputSize = 400, padding = 0.25, quality = 0.85 } = options;
+  const {
+    padding = 0.08,
+    includeLandmarks = true,
+  } = options;
 
-  // Ensure detector is initialized
+  // Ensure models are initialized
   await initialize();
-  if (!faceDetectorInstance) {
-    throw new Error('Face detector not initialized');
+  if (!imageSegmenterInstance || !faceLandmarkerInstance) {
+    throw new Error('Models not initialized');
   }
 
   try {
-    // Load image into HTMLImageElement
-    const imageUrl = URL.createObjectURL(imageBlob);
-    const img = new Image();
+    // Load image
+    console.log('[faceCropService] Loading image...');
+    const img = await loadImage(imageBlob);
 
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = imageUrl;
-    });
+    // Run segmentation
+    console.log('[faceCropService] Running segmentation...');
+    const segmentationResult = imageSegmenterInstance.segment(img);
+    const { mask, bounds } = segmentHead(
+      segmentationResult,
+      img.width,
+      img.height
+    );
 
-    // Detect face
-    console.log('[faceCropService] Detecting face...');
-    const detectionResult = faceDetectorInstance.detect(img);
-    URL.revokeObjectURL(imageUrl);
-
-    // Check if face detected
-    if (!detectionResult.detections || detectionResult.detections.length === 0) {
-      console.warn('[faceCropService] No face detected');
-      throw new FaceNotDetectedError();
+    if (!bounds) {
+      console.warn('[faceCropService] No head detected in segmentation');
+      throw new FaceNotDetectedError('No head detected in segmentation');
     }
 
-    // Get first detected face
-    const detection = detectionResult.detections[0];
-    const boundingBox = detection.boundingBox;
-    const confidence = detection.categories?.[0]?.score ?? 0;
+    console.log('[faceCropService] Head detected:', bounds);
 
-    console.log('[faceCropService] Face detected:', {
-      confidence,
-      box: boundingBox,
-    });
+    // Run landmark detection (if enabled)
+    let landmarks: FaceLandmarks | null = null;
+    let confidence = 0;
 
-    // Normalize bounding box
-    const normalizedBox: FaceBoundingBox = {
-      x: boundingBox.originX / img.width,
-      y: boundingBox.originY / img.height,
-      width: boundingBox.width / img.width,
-      height: boundingBox.height / img.height,
-    };
+    if (includeLandmarks) {
+      console.log('[faceCropService] Extracting landmarks...');
+      const landmarkResult = faceLandmarkerInstance.detect(img);
+      landmarks = extractLandmarks(landmarkResult);
+      confidence = landmarks ? 0.95 : 0;
 
-    // Calculate crop region
-    const cropRegion = calculateCropRegion(
-      img.width,
-      img.height,
-      normalizedBox,
+      if (landmarks) {
+        console.log('[faceCropService] Landmarks extracted:', landmarks);
+      } else {
+        console.warn('[faceCropService] No landmarks detected');
+      }
+    }
+
+    // Create source canvas from image
+    const sourceCanvas = document.createElement('canvas');
+    sourceCanvas.width = img.width;
+    sourceCanvas.height = img.height;
+    const sourceCtx = sourceCanvas.getContext('2d')!;
+    sourceCtx.drawImage(img, 0, 0);
+
+    // Apply mask and crop
+    console.log('[faceCropService] Applying mask and cropping...');
+    const outputCanvas = applyMaskToCanvas(
+      sourceCanvas,
+      mask,
+      bounds,
       padding
     );
 
-    console.log('[faceCropService] Crop region:', cropRegion);
-
-    // Create canvas and crop
-    const canvas = document.createElement('canvas');
-    canvas.width = cropRegion.size;
-    canvas.height = cropRegion.size;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('Failed to get canvas context');
-    }
-
-    // Draw cropped region
-    ctx.drawImage(
-      img,
-      cropRegion.x,
-      cropRegion.y,
-      cropRegion.size,
-      cropRegion.size,
-      0,
-      0,
-      cropRegion.size,
-      cropRegion.size
-    );
-
-    // Resize to output size if needed
-    if (cropRegion.size !== outputSize) {
-      const resizeCanvas = document.createElement('canvas');
-      resizeCanvas.width = outputSize;
-      resizeCanvas.height = outputSize;
-      const resizeCtx = resizeCanvas.getContext('2d');
-
-      if (!resizeCtx) {
-        throw new Error('Failed to get resize canvas context');
-      }
-
-      resizeCtx.drawImage(canvas, 0, 0, outputSize, outputSize);
-      canvas.width = outputSize;
-      canvas.height = outputSize;
-      ctx.drawImage(resizeCanvas, 0, 0);
-    }
-
-    // Convert to blob
+    // Convert to PNG blob (for transparency)
     const croppedBlob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create cropped blob'));
-          }
-        },
-        'image/jpeg',
-        quality
+      outputCanvas.toBlob(
+        (blob) =>
+          blob
+            ? resolve(blob)
+            : reject(new Error('Failed to create PNG blob')),
+        'image/png'
       );
     });
 
     const processingTime = performance.now() - startTime;
 
-    console.log('[faceCropService] Crop complete:', {
+    console.log('[faceCropService] Head isolation complete:', {
       processingTimeMs: Math.round(processingTime),
-      outputSize: { width: outputSize, height: outputSize },
+      outputSize: { width: outputCanvas.width, height: outputCanvas.height },
+      landmarks: landmarks ? 'detected' : 'not detected',
     });
 
     return {
@@ -283,41 +433,51 @@ const cropFace = async (
       croppedBlob,
       cropMetadata: {
         faceDetected: true,
-        boundingBox: normalizedBox,
+        headBounds: bounds,
+        boundingBox: boundsToNormalizedBox(bounds, img.width, img.height),
         confidence,
-        outputSize: { width: outputSize, height: outputSize },
+        outputSize: {
+          width: outputCanvas.width,
+          height: outputCanvas.height,
+        },
         padding,
         processingTimeMs: Math.round(processingTime),
+        landmarks,
+        segmentationMaskUsed: true,
       },
     };
   } catch (error) {
-    const processingTime = performance.now() - startTime;
-
     // Preserve FaceNotDetectedError
     if (error instanceof FaceNotDetectedError) {
       throw error;
     }
 
-    console.error('[faceCropService] Crop error:', error);
+    console.error('[faceCropService] Processing error:', error);
     throw new Error('Failed to process photo');
   }
 };
 
 /**
- * Dispose of the face detector instance
+ * Dispose of model instances
  * Call on unmount to free GPU memory
  */
 const dispose = (): void => {
-  if (faceDetectorInstance) {
-    console.log('[faceCropService] Disposing FaceDetector');
-    faceDetectorInstance.close();
-    faceDetectorInstance = null;
+  if (imageSegmenterInstance) {
+    console.log('[faceCropService] Disposing ImageSegmenter');
+    imageSegmenterInstance.close();
+    imageSegmenterInstance = null;
+  }
+
+  if (faceLandmarkerInstance) {
+    console.log('[faceCropService] Disposing FaceLandmarker');
+    faceLandmarkerInstance.close();
+    faceLandmarkerInstance = null;
   }
 };
 
 /**
  * Face Crop Service
- * Provides client-side face detection and cropping
+ * Provides client-side head isolation with transparent background
  */
 export const faceCropService = {
   initialize,

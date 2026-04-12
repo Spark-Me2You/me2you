@@ -41,7 +41,8 @@ export const storageService = {
 
   /**
    * Upload cropped photo to storage
-   * Stores in path: {org_id}/{user_id}/{uuid}_cropped.jpg
+   * Stores in path: {org_id}/{user_id}/{uuid}_cropped.{ext}
+   * Supports both PNG (for transparency) and JPEG
    *
    * @param file - File or Blob to upload (cropped version)
    * @param userId - User ID for path organization
@@ -56,14 +57,19 @@ export const storageService = {
     orgId: string,
     baseFileName: string
   ): Promise<string> => {
-    const path = `${orgId}/${userId}/${baseFileName}_cropped.jpg`;
+    // Determine content type and extension from blob type
+    const isPng = file.type === 'image/png';
+    const ext = isPng ? 'png' : 'jpg';
+    const contentType = isPng ? 'image/png' : 'image/jpeg';
 
-    console.log('[storage] Uploading cropped photo to path:', path);
+    const path = `${orgId}/${userId}/${baseFileName}_cropped.${ext}`;
+
+    console.log('[storage] Uploading cropped photo to path:', path, `(${contentType})`);
 
     const { error } = await supabase.storage
       .from('images')
       .upload(path, file, {
-        contentType: 'image/jpeg',
+        contentType,
         upsert: false,
       });
 
