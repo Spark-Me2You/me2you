@@ -3,17 +3,21 @@
  * Manages multi-step registration flow state
  */
 
-import { useState, useCallback } from 'react';
-import { useAuth } from '@/core/auth/AuthContext';
-import { supabase } from '@/core/supabase/client';
-import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth';
-import { registrationService, type RegistrationFormData, type RegistrationResult } from '../services/registrationService';
-import { useRegistrationContext } from '../context/RegistrationContext';
+import { useState, useCallback } from "react";
+import { useAuth } from "@/core/auth/AuthContext";
+import { supabase } from "@/core/supabase/client";
+import { userRegistrationAuthService } from "@/core/supabase/userRegistrationAuth";
+import {
+  registrationService,
+  type RegistrationFormData,
+  type RegistrationResult,
+} from "../services/registrationService";
+import { useRegistrationContext } from "../context/RegistrationContext";
 
 /**
  * Registration steps
  */
-export type RegistrationStep = 'signup' | 'profile' | 'photo' | 'success';
+export type RegistrationStep = "signup" | "profile" | "photo" | "success";
 
 /**
  * Registration state
@@ -24,6 +28,7 @@ export interface RegistrationState {
   isSubmitting: boolean;
   error: string | null;
   result: RegistrationResult | null;
+  registrationComplete: boolean;
 }
 
 /**
@@ -36,6 +41,7 @@ export interface UseRegistrationReturn {
   isSubmitting: boolean;
   error: string | null;
   result: RegistrationResult | null;
+  registrationComplete: boolean;
 
   // Step navigation
   goToStep: (step: RegistrationStep) => void;
@@ -54,32 +60,38 @@ export interface UseRegistrationReturn {
   handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
 }
 
-const STEP_ORDER: RegistrationStep[] = ['signup', 'profile', 'photo', 'success'];
+const STEP_ORDER: RegistrationStep[] = [
+  "signup",
+  "profile",
+  "photo",
+  "success",
+];
 
 /**
  * Custom hook for managing registration flow
  */
 export const useRegistration = (): UseRegistrationReturn => {
-  const { signUpUser, setUserProfile } = useAuth();
+  const { signUpUser, signInUser, setUserProfile } = useAuth();
   const { org_id } = useRegistrationContext();
 
   const [state, setState] = useState<RegistrationState>({
-    currentStep: 'signup',
+    currentStep: "signup",
     formData: {},
     isSubmitting: false,
     error: null,
     result: null,
+    registrationComplete: false,
   });
 
   // Step navigation
   const goToStep = useCallback((step: RegistrationStep) => {
-    setState(prev => ({ ...prev, currentStep: step, error: null }));
+    setState((prev) => ({ ...prev, currentStep: step, error: null }));
   }, []);
 
   const nextStep = useCallback(() => {
     const currentIndex = STEP_ORDER.indexOf(state.currentStep);
     if (currentIndex < STEP_ORDER.length - 1) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         currentStep: STEP_ORDER[currentIndex + 1],
         error: null,
@@ -90,7 +102,7 @@ export const useRegistration = (): UseRegistrationReturn => {
   const previousStep = useCallback(() => {
     const currentIndex = STEP_ORDER.indexOf(state.currentStep);
     if (currentIndex > 0) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         currentStep: STEP_ORDER[currentIndex - 1],
         error: null,
@@ -103,101 +115,217 @@ export const useRegistration = (): UseRegistrationReturn => {
 
   // Form data management
   const updateFormData = useCallback((data: Partial<RegistrationFormData>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       formData: { ...prev.formData, ...data },
     }));
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   // Step handlers
-  const handleSignUp = useCallback(async (email: string, password: string): Promise<boolean> => {
-    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
+  const handleSignUp = useCallback(
+    async (email: string, password: string): Promise<boolean> => {
+      setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
-    try {
-      // Sign up via AuthProvider (updates auth context)
-      await signUpUser(email, password);
+      try {
+        // Sign up via AuthProvider (updates auth context)
+        await signUpUser(email, password);
 
-      // Store credentials in form data (needed for complete flow reference)
-      setState(prev => ({
-        ...prev,
-        isSubmitting: false,
-        formData: { ...prev.formData, email, password },
-      }));
+        // Get current authenticated user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated after signup");
 
-      // Move to next step
-      nextStep();
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Signup failed';
-      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
-      return false;
-    }
-  }, [signUpUser, nextStep]);
+        // Get org ID from environment
+        const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
+        if (!orgId) throw new Error("VITE_DEFAULT_ORG_ID not configured");
 
-  const handlePhotoSubmit = useCallback(async (photo: Blob | null, category: string): Promise<boolean> => {
-    if (!photo) {
-      setState(prev => ({ ...prev, error: 'Please take a photo' }));
-      return false;
-    }
+        // Create minimal user record immediately
+        await userRegistrationAuthService.createMinimalUserRecord(
+          user.id,
+          orgId,
+        );
 
-    setState(prev => ({ ...prev, isSubmitting: true, error: null }));
+        // Store credentials in form data (needed for complete flow reference)
+        setState((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          formData: { ...prev.formData, email, password },
+        }));
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+        // Move to next step
+        nextStep();
+        return true;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Signup failed";
+        const errorCode = (error as Error & { code?: string })?.code;
 
-      // Create profile row here so it always exists before the photo upload,
-      // regardless of how the user navigated to this step.
-      const { name, status, pronouns, major, interests } = state.formData;
-      if (!name || name.trim() === '') throw new Error('Name is required');
+        // AUTOMATIC RESCUE FLOW: Check if this is a "user already exists" error
+        // Using error code for robust detection (Supabase returns "user_already_exists" or similar)
+        const isUserExistsError =
+          errorCode === "user_already_exists" ||
+          errorCode === "23505" || // PostgreSQL unique violation
+          (errorMessage.toLowerCase().includes("already") &&
+            errorMessage.toLowerCase().includes("registered"));
 
-      const profile = await registrationService.createProfile(
-        {
-          name: name.trim(),
-          status: status?.trim() || null,
-          pronouns: pronouns?.trim() || null,
-          major: major?.trim() || null,
-          interests: interests || null,
-        },
-        org_id
-      );
+        if (isUserExistsError) {
+          console.log(
+            "[handleSignUp] User already exists (code: " +
+              errorCode +
+              "), attempting Automatic Rescue...",
+          );
 
-      setUserProfile(profile);
+          try {
+            // SECURITY CRITICAL: Must authenticate first before revealing any info
+            await signInUser(email, password);
 
-      const imageRecord = await registrationService.uploadPhotoAndCreateRecord(photo, user.id, org_id, category);
+            // Get authenticated user
+            const {
+              data: { user: signedInUser },
+            } = await supabase.auth.getUser();
+            if (!signedInUser)
+              throw new Error("User not authenticated after sign-in");
 
-      // Sign out now that registration is fully complete
-      await userRegistrationAuthService.signOut();
+            // Only after successful sign-in, check onboarding status
+            const isComplete =
+              await userRegistrationAuthService.checkOnboardingComplete(
+                signedInUser.id,
+              );
 
-      setState(prev => ({
-        ...prev,
-        isSubmitting: false,
-        formData: { ...prev.formData, photo },
-        result: {
-          user,
-          profile,
-          imageId: imageRecord.id,
-        },
-      }));
+            if (isComplete === false) {
+              // Incomplete onboarding - resume flow
+              console.log(
+                "[handleSignUp] Incomplete onboarding detected, resuming...",
+              );
+              setState((prev) => ({
+                ...prev,
+                isSubmitting: false,
+                error: null,
+                formData: { ...prev.formData, email, password },
+              }));
+              nextStep(); // Resume at profile step
+              return true;
+            } else if (isComplete === true) {
+              // Complete onboarding - redirect to login
+              await userRegistrationAuthService.signOut();
+              setState((prev) => ({
+                ...prev,
+                isSubmitting: false,
+                error: "Account already exists. Please log in instead.",
+              }));
+              return false;
+            } else {
+              // User record not found - shouldn't happen but handle gracefully
+              await userRegistrationAuthService.signOut();
+              setState((prev) => ({
+                ...prev,
+                isSubmitting: false,
+                error:
+                  "Account exists but profile not found. Please contact support.",
+              }));
+              return false;
+            }
+          } catch (rescueError) {
+            // Sign-in failed - show generic error (don't reveal if email exists)
+            console.log(
+              "[handleSignUp] Rescue flow sign-in failed:",
+              rescueError,
+            );
+            setState((prev) => ({
+              ...prev,
+              isSubmitting: false,
+              error: "Invalid email or password.",
+            }));
+            return false;
+          }
+        }
 
-      nextStep(); // → success
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload photo';
-      setState(prev => ({ ...prev, isSubmitting: false, error: message }));
-      return false;
-    }
-  }, [state.formData, setUserProfile, nextStep, org_id]);
+        // Not an "already exists" error - show original error
+        setState((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          error: errorMessage,
+        }));
+        return false;
+      }
+    },
+    [signUpUser, signInUser, nextStep],
+  );
+
+  const handlePhotoSubmit = useCallback(
+    async (photo: Blob | null, category: string): Promise<boolean> => {
+      if (!photo) {
+        setState((prev) => ({ ...prev, error: "Please take a photo" }));
+        return false;
+      }
+
+      setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        // Update profile row with complete data and mark onboarding complete
+        const { name, status, pronouns, major, interests } = state.formData;
+        if (!name || name.trim() === "") throw new Error("Name is required");
+
+        const profile = await userRegistrationAuthService.updateUserProfile(
+          user.id,
+          {
+            name: name.trim(),
+            status: status?.trim() || null,
+            pronouns: pronouns?.trim() || null,
+            major: major?.trim() || null,
+            interests: interests || null,
+          },
+        );
+
+        setUserProfile(profile);
+
+        const imageRecord =
+          await registrationService.uploadPhotoAndCreateRecord(
+            photo,
+            user.id,
+            org_id,
+            category,
+          );
+
+        // Registration complete - keep user signed in and signal redirect
+        setState((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          formData: { ...prev.formData, photo },
+          result: {
+            user,
+            profile,
+            imageId: imageRecord.id,
+          },
+          registrationComplete: true,
+        }));
+
+        return true;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to upload photo";
+        setState((prev) => ({ ...prev, isSubmitting: false, error: message }));
+        return false;
+      }
+    },
+    [state.formData, setUserProfile, nextStep, org_id],
+  );
 
   const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
     const { name } = state.formData;
 
-    if (!name || name.trim() === '') {
-      setState(prev => ({ ...prev, error: 'Name is required' }));
+    if (!name || name.trim() === "") {
+      setState((prev) => ({ ...prev, error: "Name is required" }));
       return false;
     }
 
@@ -214,6 +342,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     isSubmitting: state.isSubmitting,
     error: state.error,
     result: state.result,
+    registrationComplete: state.registrationComplete,
 
     // Step navigation
     goToStep,
