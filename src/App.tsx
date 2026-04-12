@@ -6,7 +6,6 @@ import {
 } from "@/core/auth";
 import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
 import { RegistrationPage } from "@/features/registration";
-import { FaceCropTestPage } from "@/features/dev";
 import { UserLandingPage, UserProfileView } from "@/features/user";
 import AppContainer from "./AppContainer";
 import "./App.css";
@@ -34,10 +33,6 @@ function App() {
       {/* Public route: Mobile user registration */}
       <Route path="/register" element={<RegistrationPage />} />
 
-      {/* Dev-only route: Face crop test page */}
-      {import.meta.env.DEV && (
-        <Route path="/dev/face-crop" element={<FaceCropTestPage />} />
-      )}
       {/* User-only route: Mobile user profile */}
       <Route
         path="/user/profile"

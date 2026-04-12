@@ -172,10 +172,6 @@ The service throws two types of errors:
 
 The model is cached after first load, so subsequent detections are fast.
 
-### Testing
-
-See `src/features/dev/FaceCropTestPage.tsx` for a visual test page at `/dev/face-crop` (dev mode only).
-
 ## Registration Service
 
 `registrationService.ts` orchestrates the complete registration flow including photo upload.
