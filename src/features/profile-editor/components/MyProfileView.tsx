@@ -1,77 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import { ProfileCreator } from './ProfileCreator';
+import React, { useState } from 'react';
+import { useAuth } from '@/core/auth';
+import { useProfileData } from '../hooks/useProfileData';
+import { profileService } from '../services/profileService';
 import { ProfileDisplay } from './ProfileDisplay';
-
-const PROFILE_STORAGE_KEY = 'me2you_my_profile';
-
-interface Profile {
-  name: string;
-  photo: string;
-  bio: string;
-}
+import { ProfileEditForm } from './ProfileEditForm';
+import { PhotoCaptureModal } from './PhotoCaptureModal';
+import type { UpdateProfileInput, GestureCategory } from '../types/profileTypes';
 
 interface MyProfileViewProps {
   onBack: () => void;
 }
 
 export const MyProfileView: React.FC<MyProfileViewProps> = ({ onBack }) => {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const { user, setUserProfile } = useAuth();
+  const { profileData, isLoading, error, refetch } = useProfileData();
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
-    if (saved) {
-      try {
-        setProfile(JSON.parse(saved));
-      } catch {
-        // corrupted data — ignore and start fresh
-      }
+  const handleSaveProfile = async (data: UpdateProfileInput) => {
+    if (!user || !profileData) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await profileService.updateProfile(user.id, data);
+      setUserProfile(updated);
+      await refetch();
+      setMode('view');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to update profile';
+      setSaveError(message);
+      console.error('[MyProfileView] Failed to save profile:', e);
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
-
-  const handleCreate = (p: Profile) => {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(p));
-    setProfile(p);
-    setIsCreating(false);
   };
 
-  if (isCreating) {
-    return (
-      <ProfileCreator
-        onComplete={handleCreate}
-        onCancel={() => setIsCreating(false)}
-      />
-    );
-  }
+  const handlePhotoCapture = async (photo: Blob, category: GestureCategory) => {
+    if (!user || !profileData) return;
 
-  if (profile) {
-    return (
-      <ProfileDisplay
-        profile={profile}
-        onEdit={() => setIsCreating(true)}
-        onBack={onBack}
-      />
-    );
-  }
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await profileService.updatePhoto(
+        photo,
+        user.id,
+        profileData.profile.org_id!,
+        category,
+        profileData.imageId,
+        profileData.imageStoragePath
+      );
+      await refetch();
+      setIsPhotoModalOpen(false);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to update photo';
+      setSaveError(message);
+      console.error('[MyProfileView] Failed to update photo:', e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  // No profile yet
-  return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.textGroup}>
-          <h2 style={styles.title}>My Profile</h2>
-          <p style={styles.subtitle}>You don't have a profile yet.</p>
-        </div>
-        <div style={styles.actions}>
-          <button onClick={onBack} style={styles.backBtn}>
-            ← Back
-          </button>
-          <button onClick={() => setIsCreating(true)} style={styles.createBtn}>
-            Create Profile
-          </button>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <p style={styles.message}>Loading profile...</p>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  // Error or no profile state
+  if (error || !profileData) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <div style={styles.textGroup}>
+            <h2 style={styles.title}>My Profile</h2>
+            <p style={styles.subtitle}>
+              {error || 'Profile not found. Please complete registration.'}
+            </p>
+          </div>
+          <div style={styles.actions}>
+            <button onClick={onBack} style={styles.backBtn}>
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit mode
+  if (mode === 'edit') {
+    return (
+      <>
+        <ProfileEditForm
+          initialData={profileData}
+          onSave={handleSaveProfile}
+          onCancel={() => {
+            setMode('view');
+            setSaveError(null);
+          }}
+          onChangePhoto={() => setIsPhotoModalOpen(true)}
+          isSubmitting={isSaving}
+          error={saveError}
+        />
+        <PhotoCaptureModal
+          isOpen={isPhotoModalOpen}
+          onClose={() => {
+            setIsPhotoModalOpen(false);
+            setSaveError(null);
+          }}
+          onCapture={handlePhotoCapture}
+          isSubmitting={isSaving}
+        />
+      </>
+    );
+  }
+
+  // View mode
+  return (
+    <ProfileDisplay
+      profile={profileData.profile}
+      imageUrl={profileData.imageUrl}
+      onEdit={() => setMode('edit')}
+      onBack={onBack}
+    />
   );
 };
 
@@ -113,6 +172,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.95rem',
     color: '#888',
   },
+  message: {
+    margin: 0,
+    fontSize: '1rem',
+    color: '#555',
+  },
   actions: {
     display: 'flex',
     gap: '0.75rem',
@@ -124,16 +188,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     color: '#555',
     border: '1px solid #ccc',
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-  createBtn: {
-    padding: '0.75rem 1.75rem',
-    fontSize: '1rem',
-    fontWeight: 600,
-    background: '#111111',
-    color: '#ffffff',
-    border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
   },

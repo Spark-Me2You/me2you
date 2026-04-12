@@ -1,30 +1,57 @@
 import React from 'react';
-
-interface Profile {
-  name: string;
-  photo: string;
-  bio: string;
-}
+import type { UserProfile } from '@/core/auth/AuthContext';
 
 interface ProfileDisplayProps {
-  profile: Profile;
+  profile: UserProfile;
+  imageUrl: string | null;
   onEdit: () => void;
   onBack: () => void;
 }
 
-export const ProfileDisplay: React.FC<ProfileDisplayProps> = ({ profile, onEdit, onBack }) => {
+export const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
+  profile,
+  imageUrl,
+  onEdit,
+  onBack
+}) => {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
         {/* Left — photo */}
         <div style={styles.left}>
-          <img src={profile.photo} alt="Your profile" style={styles.photo} />
+          {imageUrl ? (
+            <img src={imageUrl} alt="Your profile" style={styles.photo} />
+          ) : (
+            <div style={styles.photoPlaceholder}>No Photo</div>
+          )}
         </div>
 
         {/* Right — info */}
         <div style={styles.right}>
           <h1 style={styles.name}>{profile.name}</h1>
-          <p style={styles.bio}>{profile.bio}</p>
+
+          {profile.pronouns && (
+            <p style={styles.pronouns}>{profile.pronouns}</p>
+          )}
+
+          {profile.status && (
+            <p style={styles.status}>{profile.status}</p>
+          )}
+
+          {profile.major && (
+            <div style={styles.field}>
+              <span style={styles.fieldLabel}>Major:</span>
+              <span style={styles.fieldValue}>{profile.major}</span>
+            </div>
+          )}
+
+          {profile.interests && profile.interests.length > 0 && (
+            <div style={styles.field}>
+              <span style={styles.fieldLabel}>Interests:</span>
+              <span style={styles.fieldValue}>{profile.interests.join(', ')}</span>
+            </div>
+          )}
+
           <div style={styles.actions}>
             <button onClick={onBack} style={styles.backBtn}>
               ← Back
@@ -71,6 +98,18 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #e8e8e8',
     display: 'block',
   },
+  photoPlaceholder: {
+    width: '280px',
+    height: '280px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f5f5f5',
+    color: '#999',
+    fontSize: '1rem',
+  },
   right: {
     flex: 1,
     display: 'flex',
@@ -83,11 +122,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: '#111111',
   },
-  bio: {
+  pronouns: {
+    margin: 0,
+    fontSize: '0.95rem',
+    color: '#777',
+    fontStyle: 'italic',
+  },
+  status: {
     margin: 0,
     fontSize: '1.05rem',
     color: '#555',
     lineHeight: 1.7,
+  },
+  field: {
+    display: 'flex',
+    gap: '0.5rem',
+    fontSize: '1rem',
+  },
+  fieldLabel: {
+    fontWeight: 600,
+    color: '#333',
+  },
+  fieldValue: {
+    color: '#555',
   },
   actions: {
     display: 'flex',
