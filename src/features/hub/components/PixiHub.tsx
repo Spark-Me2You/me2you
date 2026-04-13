@@ -97,10 +97,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           let faceSprite: Sprite | null = null;
           if (faceTexture && centroidPoint) {
             faceSprite = new Sprite(faceTexture);
-            faceSprite.anchor.set(
-              centroidPoint.x / faceTexture.width,
-              centroidPoint.y / faceTexture.height
-            );
+            faceSprite.anchor.set(centroidPoint.x, centroidPoint.y);
             faceSprite.scale.set(0.35);
             app.stage.addChild(faceSprite);
           }
