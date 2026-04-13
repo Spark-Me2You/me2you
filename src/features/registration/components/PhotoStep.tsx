@@ -8,10 +8,11 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
 import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
-import backfingerImg from '../../../assets/backfinger.png';
-import thumbsUpImg from '../../../assets/thumbsUP.png';
+import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
+import nextButtonImg from '../../../assets/next_button.svg';
 import peaceImg from '../../../assets/peace.png';
 import waveImg from '../../../assets/wave.png';
+import thumbsUpImg from '../../../assets/thumbsUP.png';
 
 export type GestureCategory = 'wave' | 'peace_sign' | 'thumbs_up';
 
@@ -75,18 +76,87 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const startCamera = async () => {
     setCameraError(null);
     setIsCameraReady(false);
+
+    // Stop any existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
+
+      // Check if component is still mounted
+      if (!videoRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      videoRef.current.srcObject = stream;
+
+      // Explicitly play the video
+      try {
+        await videoRef.current.play();
+      } catch (playError) {
+        // play() can fail if user hasn't interacted with page
+        // Video should still work with autoPlay attribute
+        console.warn('[PhotoStep] Video play() failed:', playError);
+      }
+
+      // Wait for video to be ready with timeout
+      await new Promise<void>((resolve, reject) => {
+        const video = videoRef.current;
+        if (!video) {
+          reject(new Error('Video element not found'));
+          return;
+        }
+
+        const onLoadedData = () => {
+          video.removeEventListener('loadeddata', onLoadedData);
+          video.removeEventListener('error', onError);
+          setIsCameraReady(true);
+          resolve();
+        };
+
+        const onError = () => {
+          video.removeEventListener('loadeddata', onLoadedData);
+          video.removeEventListener('error', onError);
+          reject(new Error('Video failed to load'));
+        };
+
+        video.addEventListener('loadeddata', onLoadedData);
+        video.addEventListener('error', onError);
+
+        // Timeout fallback (5 seconds)
+        setTimeout(() => {
+          video.removeEventListener('loadeddata', onLoadedData);
+          video.removeEventListener('error', onError);
+
+          // Check if video is actually playing
+          if (video.readyState >= 2) {
+            // HAVE_CURRENT_DATA or better
+            setIsCameraReady(true);
+            resolve();
+          } else {
+            reject(new Error('Camera initialization timeout'));
+          }
+        }, 5000);
+      });
     } catch (err) {
       if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') setCameraError('camera access denied — please allow camera access');
-        else if (err.name === 'NotFoundError') setCameraError('no camera found');
-        else setCameraError(`camera error: ${err.message}`);
+        if (err.name === 'NotAllowedError') {
+          setCameraError('camera access denied — please allow camera access in your browser settings');
+        } else if (err.name === 'NotFoundError') {
+          setCameraError('no camera found — please connect a camera and try again');
+        } else if (err.message.includes('timeout')) {
+          setCameraError('camera initialization timeout — please try again');
+        } else {
+          setCameraError(`camera error: ${err.message}`);
+        }
       } else {
         setCameraError('failed to access camera');
       }
@@ -166,10 +236,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
   return (
     <div className={styles.photoStepWrapper}>
-      <div className={styles.poseTabWrapper}>
-        <div className={styles.poseTab}>
-          <p className={styles.poseTabText}>choose a pose!</p>
-        </div>
+      <div className={styles.poseBanner}>
+        <p className={styles.poseBannerText}>choose a pose!</p>
+        <p className={styles.poseBannerText}>*do not put hands over face*</p>
       </div>
 
       {/* Decorative hands */}
@@ -200,6 +269,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
           {!previewUrl && !isCameraReady && !cameraError && (
             <div className={styles.cameraLoadingOverlay}>starting camera...</div>
           )}
+          {!previewUrl && isCameraReady && !isGestureRecognizerReady && (
+            <div className={styles.cameraLoadingOverlay}>loading gesture detection...</div>
+          )}
 
           {/* Gesture status — small text, bottom-right of frame */}
           {previewUrl && (
@@ -221,32 +293,32 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
               type="button"
               className={styles.captureBtn}
               onClick={capturePhoto}
-              disabled={isBusy || !isCameraReady}
+              disabled={isBusy || !isCameraReady || !isGestureRecognizerReady}
               aria-label="Capture photo"
             />
           </div>
         ) : (
-          /* Photo taken — retake (left) | looks good (right) */
+          /* Photo taken — retake (left, pink) | looks good (right, lime) */
           <div className={styles.photoActionRow}>
-            {/* Retake */}
+            {/* Retake — pink back arrow */}
             <button
               type="button"
               className={styles.photoActionBtn}
               onClick={handleRetake}
               disabled={isBusy}
             >
-              <img src={thumbsUpImg} alt="" className={styles.retakeFinger} />
+              <img src={pinkBackArrowImg} alt="" className={styles.retakeFinger} />
               retake please!
             </button>
 
-            {/* Looks good */}
+            {/* Looks good — lime next arrow */}
             <button
               type="button"
               className={styles.photoActionBtn}
               onClick={handleLooksGood}
               disabled={isBusy || !detectedCategory}
             >
-              <img src={thumbsUpImg} alt="" className={styles.looksGoodFinger} />
+              <img src={nextButtonImg} alt="" className={styles.looksGoodFinger} />
               {isSubmitting ? '...' : 'looks good!'}
             </button>
           </div>
@@ -259,8 +331,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         className={styles.photoStepBackBtn}
         onClick={onBack}
         disabled={isBusy}
+        style={{ marginTop: '30px' }}
       >
-        <img src={backfingerImg} alt="" className={styles.photoStepBackFinger} />
+        <img src={pinkBackArrowImg} alt="" className={styles.photoStepBackFinger} />
         go back
       </button>
     </div>

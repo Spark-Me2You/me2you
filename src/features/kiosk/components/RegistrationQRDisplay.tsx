@@ -21,7 +21,6 @@ interface RegistrationQRDisplayProps {
 
 export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ className }) => {
   const [qrData, setQrData] = useState<{ url: string; expiresAt: number } | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -41,7 +40,6 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ cl
         url: response.url,
         expiresAt: response.expires_at,
       });
-      setTimeRemaining(response.expires_in_seconds || 300);
       setIsLoading(false);
     } catch (err) {
       console.error('[RegistrationQRDisplay] Failed to fetch QR code:', err);
@@ -56,24 +54,6 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ cl
     const interval = setInterval(fetchQrCode, 270000); // 4.5 minutes = 270,000ms
     return () => clearInterval(interval);
   }, []);
-
-  // Countdown timer
-  useEffect(() => {
-    if (timeRemaining <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => Math.max(0, prev - 1));
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeRemaining, qrData]);
-
-  // Format time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   if (isLoading && !qrData) {
     return (
@@ -114,17 +94,11 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ cl
       <div className={styles.qrWrapper}>
         <QRCodeSVG
           value={qrData.url}
-          size={150}
+          size={260}
           level="M"
           includeMargin={true}
           className={styles.qrCode}
         />
-      </div>
-      <div className={styles.qrInfo}>
-        <span className={styles.scanText}>scan to register</span>
-        {timeRemaining > 0 && (
-          <span className={styles.timer}>{formatTime(timeRemaining)}</span>
-        )}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+/* ===== Full-screen app shell ===== */
 .app {
   position: fixed;
   inset: 0;
@@ -6,135 +7,32 @@
   overflow: hidden;
 }
 
-.authMeta {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.buttonBase {
-  cursor: pointer;
-  color: #ffffff;
-  border: none;
-  font-family: "Jersey 10", sans-serif;
-  text-transform: lowercase;
-}
-
-.discoveryButton {
-  position: absolute;
-  top: 5rem;
-  left: 1rem;
-  height: 12rem;
-  width: 24rem;
-  padding: 20px 60px;
-  background: rgba(228, 72, 5, 0.93);
-  border-radius: 46px;
-  font-size: 62px;
-  letter-spacing: 10.5px;
-  box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  z-index: 2;
-}
-
-.profileButton {
-  background-color: #333;
-  border: 1px solid #555;
-}
-
-.hubButton {
-  position: absolute;
-  top: 21rem;
-  left: 8rem;
-  height: 12rem;
-  width: 24rem;
-  padding: 20px 60px;
-  background: rgba(20, 5, 228, 0.93);
-  border-radius: 46px;
-  font-size: 62px;
-  letter-spacing: 10.5px;
-  box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  z-index: 2;
-}
-
-.gamesButton {
-  position: absolute;
-  top: 7rem;
-  left: 48%;
-  transform: translateX(-20%);
-  height: 12rem;
-  width: 22rem;
-  padding: 20px 40px;
-  background: rgba(113, 5, 228, 0.93);
-  border-radius: 46px;
-  font-size: 62px;
-  letter-spacing: 10.5px;
-  box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  z-index: 2;
-}
-
-.adminLogoutButton {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 12px 32px;
-  background: #d32f2f;
-  border-radius: 24px;
-  font-size: 24px;
-  letter-spacing: 2px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  z-index: 10;
-}
-
-.kioskLogoutButton {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 12px 32px;
-  background: rgba(113, 5, 228, 0.93);
-  border-radius: 24px;
-  font-size: 24px;
-  letter-spacing: 2px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  z-index: 10;
-}
-
-/* Main glass container for IDLE state */
-.idleContainer {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -30%);
-  width: 1200px;
-  height: 800px;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 40px;
-  box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  z-index: 1;
-}
-
-.idleContentWrapper {
+/* ===== IDLE screen =====
+   Designed at 1920x1080. Scale to fit any viewport. */
+.idleScreen {
   position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 40px;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: top left;
+  /* scale to whichever axis is tighter */
+  /* scale: min(calc(100vw / 1920), calc(100vh / 1080)); */
+  transform: scale(min(calc(100vw / 1920), calc(100vh / 1080)));
 }
 
+
+
+.backgroundGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+}
+
+/* ===== Logo (Figma: left=87, top=-102, w~1134, rotated 4.26deg) ===== */
 .logo {
   position: absolute;
   top: 2rem;
-  left: 35%;
-  transform: translateX(-50%);
+  left: 25%;
+  transform: scale(0.93) translateX(-50%);
   width: 800px;
   max-width: 60vw;
   z-index: 5;
@@ -142,74 +40,165 @@
   user-select: none;
 }
 
-.createAccountPlaceholder {
+/* ===== Power icon (Figma: top-right, size 48) ===== */
+.powerButton {
   position: absolute;
-  top: 1rem;
-  right: -1rem;
-  height: 16rem;
-  width: 16rem;
-  padding: 16px 20px;
-  background: rgba(228, 5, 172, 0.93);
+  top: 3px;
+  left: 3px;
+  z-index: 10;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  transform: scale(0.79);
+}
+.powerButton:hover {
+  opacity: 1;
+}
+
+/* =============================================
+   MAIN GLASS CONTAINER (left side)
+   Figma: inset 26.2% 33.47% 3.01% -13.44%
+   = top:283 right:643 bottom:32.5 left:-258
+   Inner rotated -2.05deg
+   ============================================= */
+/* .mainContainerOuter {
+  position: absolute;
+  top: 26.2%;
+  right: 33.47%;
+  bottom: 3.01%;
+  left: -13.44%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+} */
+
+.mainContainerOuter {
+  position: absolute;
+  top: 10.50%;          /* move UP by lowering this number */
+  left: -18.77%;
+  
+  /* REMOVE bottom + right */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+
+.mainContainer {
+  position: relative;
+  width: 1511px;
+  height: 711px;
+  transform: scale(0.70) rotate(-2.05deg);
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  
+}
+
+/* ===== Menu buttons (shared) ===== */
+.menuButton {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  color: #fff;
   border-radius: 46px;
-  font-family: "Jersey 10", sans-serif;
-  color: #ffffff;
-  text-transform: lowercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  overflow: hidden;
+  gap: 4px;
 }
 
-.createAccountText {
-  font-size: 30px;
-  letter-spacing: 5.27px;
-  line-height: 1.2;
-  text-align: center;
-  white-space: nowrap;
+/* Figma: 78px Jersey 10, tracking 13.26px */
+.btnTitle {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 78px;
+  letter-spacing: 13.26px;
+  line-height: 1;
+  text-transform: lowercase;
 }
 
-.createAccountQr {
-  width: 190px;
-  height: 190px;
-  object-fit: contain;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 4px;
-  flex-shrink: 0;
+/* Figma: 35px Averia Libre Bold, tracking 5.95px */
+.btnSubtitle {
+  font-family: "Averia Libre", sans-serif;
+  font-weight: bold;
+  font-size: 35px;
+  letter-spacing: 5.95px;
+  line-height: 1;
+  text-transform: lowercase;
 }
 
-/* Otter mascot — overlapping speech bubble from above */
+/* Discover: inset 7.2% 12.96% 68.18% 50.97% (within container) → orange */
+.discoverBtn {
+  top: 7.2%;
+  right: 12.96%;
+  bottom: 68.18%;
+  left: 50.97%;
+  background: #e44805;
+}
+
+/* Games: inset 37.67% 2.45% 37.71% 61.48% → purple */
+.gamesBtn {
+  top: 37.67%;
+  right: 2.45%;
+  bottom: 37.71%;
+  left: 61.48%;
+  background: #7105e4;
+}
+
+/* Network: inset 66.56% 12.38% 8.82% 51.55% → blue */
+.networkBtn {
+  top: 66.56%;
+  right: 12.38%;
+  bottom: 8.82%;
+  left: 51.55%;
+  background: rgba(20, 5, 228, 0.93);
+}
+
+/* ===== Otter mascot (Figma: left=310, top=50, w=448, h=313 within container) ===== */
 .otterImage {
   position: absolute;
-  bottom: 17rem;
-  right: 12rem;
-  width: 320px;
+  left: 310px;
+  top: 50px;
+  width: 448px;
+  height: 313px;
+  object-fit: contain;
   z-index: 4;
   pointer-events: none;
   user-select: none;
 }
 
-/* Welcome speech bubble — bottom right of glass card */
-.otterSpeechBubble {
+/* ===== Speech bubble (Figma: inset 39.03% 42.08% 37.34% 10.01%) ===== */
+.speechBubble {
   position: absolute;
-  bottom: 12.9rem;
-  right: -1.5rem;
-  width: 36rem;
-  padding: 1.2rem 2rem;
-  background: rgba(211, 228, 5, 0.93);
+  top: 39.03%;
+  right: 42.08%;
+  bottom: 37.34%;
+  left: 10.01%;
+  background: #d3e405;
   border-radius: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  /* Figma: 35px Averia Libre, tracking 5.95px */
   font-family: "Averia Libre", sans-serif;
-  font-size: 32px;
-  letter-spacing: 5.44px;
+  font-size: 35px;
+  letter-spacing: 5.95px;
   color: #000;
   text-align: center;
   line-height: 1.4;
@@ -220,25 +209,693 @@
   z-index: 3;
 }
 
-.otterSpeechBubble p {
+.speechBubble p {
   margin: 0;
   line-height: 1.4;
 }
 
-.otterNameHighlight {
+.ozzyHighlight {
   color: #d12aa7;
   font-family: "Averia Libre", sans-serif;
   font-weight: bold;
 }
 
-.decorativePurpleRect {
+/* =============================================
+   CORK BOARD (right side)
+   Figma: corkboard image at left=1300, top=34
+   w=975, h=716, rotated 173.26deg
+   ============================================= */
+
+
+.corkBoard {
   position: absolute;
-  top: 400px;
-  right: 50px;
-  width: 200px;
-  height: 300px;
-  background: rgba(113, 5, 228, 0.93);
-  border-radius: 20px;
+  top: -4%;          
+  right: 7%;       
+
+  width: 910px;
+  height: 613px;
+
+  transform:scale(0.67) rotate(173.26deg);
+  transform-origin: center;
+
+  overflow: hidden;
+  border-radius: 8px;
+
   z-index: 2;
+}
+/* .corkBoardBg {
+  position: absolute;
+  inset: -1%;
+  width: 103%;
+  height: 103%;
+  object-fit: cover;
   pointer-events: none;
+} */
+
+.corkBoardBg {
+  inset: -1%;
+  width: 103%;
+  height: 103%;
+}
+
+/* NEW HERE? pill (Figma: 36px Jersey 10, tracking 6.12px)
+   Positioned within the rotated cork board — content reads upright
+   because the board is ~173deg rotated (≈ flipped) */
+.newHerePill {
+  position: absolute;
+  bottom: 10%;
+  left: 14.5%;
+  width: 306px;
+  height: 56px;
+  padding: 2px 24px;
+  background: #d3e405;
+  border-radius: 46px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 35px;
+  letter-spacing: 6.12px;
+  color: #000;
+  text-align: left;
+  transform: rotate(185deg);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  z-index: 3;
+}
+
+/* ===== Step number circle — left or right edge of label wrapper ===== */
+.stepNumberOnLabel {
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.stepNumberOnLabelRight {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.numberCircleSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.numberText {
+  position: relative;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 28px;
+  letter-spacing: 4.76px;
+  color: #000;
+  padding-left: 5px;
+  z-index: 1;
+}
+
+/* Step 1 label wrapper: SVG banner behind text */
+.step1LabelWrap {
+  position: absolute;
+  top: 81.5%;
+  left: 62%;
+  height: 58px;
+  width: 248.184px;
+  transform: rotate(187deg);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding-left: 38px;
+  overflow: visible;
+}
+
+/* Step 1 label: 19px, tracking 3.23px */
+.step1Label {
+  flex: 1;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 19px;
+  letter-spacing: 3.23px;
+  color: #000;
+  text-align: center;
+  margin: 0;
+  z-index: 1;
+}
+
+/* Polaroid 1 (hover hand) */
+.polaroid1 {
+  position: absolute;
+  top: 47%;
+  left: 73%;
+  width: 183.122px;
+  height: 184.091px;
+  transform: rotate(187deg);
+  overflow: visible;
+  z-index: 3;
+}
+
+.polaroidTape1 {
+  position: absolute;
+  top: -8px;
+  left: 20%;
+  transform: rotate(163.555deg);
+  width: 82px;
+  height: 20px;
+  background: #e405ac;
+  z-index: 5;
+}
+
+.polaroid1Img {
+  position: absolute;
+  top: 17px;
+  left: 45px;
+  width: 100px;
+  height: 155px;
+  object-fit: cover;
+  border-radius: 18px;
+  transform: scaleX(-1);
+}
+
+/* (hover) caption: 13px, tracking 2.21px */
+.hoverCaption {
+  position: absolute;
+  top: 50%;
+  left: 87%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 13px;
+  letter-spacing: 2.21px;
+  color: #000;
+  text-align: center;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* Step 2 label wrapper — number is on the RIGHT */
+.step2LabelWrap {
+  position: absolute;
+  top: 67%;
+  left: 30%;
+  height: 58px;
+  width: 321.757px;
+  transform: rotate(187deg);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding-right: 38px;
+  overflow: visible;
+}
+
+/* Step 2 label: 14px, tracking 2.38px */
+.step2Label {
+  position: relative;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 14px;
+  letter-spacing: 2.38px;
+  color: #000;
+  text-align: center;
+  margin: 0;
+  z-index: 1;
+}
+
+/* Polaroid 2 (click hand) */
+.polaroid2 {
+  position: absolute;
+  top: 35%;
+  left: 45%;
+  height: 184.091px;
+  width: 183.122px;
+  transform: rotate(187deg);
+  overflow: visible;
+  z-index: 3;
+}
+
+.polaroidTape2 {
+  position: absolute;
+  top: -8px;
+  left: 30%;
+  transform: rotate(-168.658deg);
+  width: 82px;
+  height: 20px;
+  background: #e405ac;
+  z-index: 5;
+}
+
+.polaroid2Img {
+  position: absolute;
+  top: 17px;
+  left: 57px;
+  width: 63px;
+  height: 152px;
+  object-fit: cover;
+  border-radius: 4px;
+  transform: scaleX(-1);
+}
+
+/* Arrow pointing to thumb (between step 2 image and hint) */
+.arrow1 {
+  position: absolute;
+  top: 52%;
+  left: 60%;
+  width: 32px;
+  height: 11px;
+  transform: rotate(187deg) rotate(-54.6deg);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* "curve your thumb in!" : 10px, tracking 1.7px */
+.clickThumbHint {
+  position: absolute;
+  top: 40%;
+  left: 58%;
+  width: 63px;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  color: #000;
+  text-align: center;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* (click) caption: 13px, tracking 2.21px */
+.clickCaption {
+  position: absolute;
+  top: 35%;
+  left: 47%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 13px;
+  letter-spacing: 2.21px;
+  color: #000;
+  text-align: center;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* Step 3 label wrapper */
+.step3LabelWrap {
+  position: absolute;
+  top: 26%;
+  left: 40%;
+  height: 58px;
+  width: 400.615px;
+  transform: rotate(187deg);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  padding-left: 38px;
+}
+
+/* Step 3 label: 19px, tracking 3.23px */
+.step3Label {
+  flex: 1;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 19px;
+  letter-spacing: 3.23px;
+  color: #000;
+  text-align: center;
+  margin: 0;
+  z-index: 1;
+}
+
+/* Arrow from step 3 to info button */
+.arrow2 {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+  width: 32px;
+  height: 11px;
+  transform: rotate(187deg) rotate(117deg);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Info button (Figma: 46px Jersey 10, tracking 7.82px, pink bg, yellow border 7px) */
+.infoButton {
+  position: absolute;
+  top: 10%;
+  right: 15%;
+  width: 259px;
+  height: 94px;
+  background: #e405ac;
+  border: 7px solid #d3e405;
+  border-radius: 46px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 46px;
+  letter-spacing: 7.82px;
+  color: #f5f5f5;
+  text-transform: lowercase;
+  cursor: pointer;
+  transform: rotate(187deg);
+  display: flex;                                                                                                    
+  align-items: center;                                                                                              
+  justify-content: center;  
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  z-index: 4;
+}
+
+/* =============================================
+   QR CODE SECTION (bottom right)
+   Figma pink box: inset 69.07% 13.27% -1.69% 67.6%
+   = ~367x352px, rotated -7.2deg, pink bg
+   ============================================= */
+.qrBox {
+  position: absolute;
+  top: 48.07%;
+  left: 50.6%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  transform: scale(0.65);
+  transform-origin: top left;
+}
+
+.qrInner {
+  transform: rotate(-7.2deg);
+  width: 277px;
+  height: 277px;
+  background: rgba(228, 5, 172, 0.93);
+  border-radius: 46px;
+  padding: 24px;
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+}
+
+/* Cropped otter hand — bottom-left of QR section */
+.otterHand {
+  position: absolute;
+  left: 960px;
+  top: 700px;
+  width: 120px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  transform: scale(1.2);
+  z-index: 6;
+}
+
+/* "scan here..." text (Figma: 32px Averia Libre, tracking 5.44px, rotated 5.04deg) */
+.qrText {
+  position: absolute;
+  left: 1190px;
+  top: 545px;
+  width: 270px;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 32px;
+  letter-spacing: 5.44px;
+  color: #000;
+  text-align: center;
+  line-height: 1.1;
+  margin: 0;
+  transform: rotate(5.04deg);
+  z-index: 4;
+}
+
+
+/* Arrow below qrText pointing toward QR box */
+.arrowQr {
+  position: absolute;
+  left: 1290px;
+  top: 700px;
+  width: 34px;
+  height: 16px;
+  transform: rotate(171.44deg);
+  z-index: 4;
+  pointer-events: none;
+}
+
+
+/* ===== Polaroid frame SVG (textured paper edges from Figma) ===== */
+.polaroidFrameSvg {
+  position: absolute;
+  inset: -2.5%;
+  width: 105%;
+  height: 105%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Label banner SVG (hand-drawn underline from Figma) ===== */
+.labelBannerSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Legacy / non-IDLE states ===== */
+.authMeta {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* =============================================
+   INFO OVERLAY
+   Figma node 997-1286 — full-screen overlay
+   ============================================= */
+
+.infoOverlay {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 22;
+  transform: scale(0.70);
+  transform-origin: top left;
+  overflow: hidden;
+}
+
+/* Dark bg: unscaled sibling, covers full 1920×1080 */
+.infoOverlayBg {
+  position: absolute;
+  inset: 0;
+  background: rgba(80, 100, 110, 0.78);
+  z-index: 20;
+}
+
+/* Cork board: unscaled sibling, full Figma size */
+.infoCorkBoard {
+  position: absolute;
+
+  /* control position */
+  top: 5%;     /* move up */
+  left: 10%;
+
+  /* control size relative to overlay */
+  width: 55%;
+  height: 60%;   /* keep aspect ratio */
+
+  object-fit: contain;
+
+  transform: rotate(179.9deg);
+  transform-origin: center;
+
+  z-index: 21;
+}
+/* "about" title */
+.infoAboutTitle {
+  position: absolute;
+  left: 420px;
+  top: 130px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 78px;
+  letter-spacing: 13.26px;
+  color: #fff;
+  margin: 0;
+  z-index: 3;
+}
+
+/* ---- Shared card styles ---- */
+.infoCardFrame {
+  position: absolute;
+  inset: -2%;
+  width: 104%;
+  height: 104%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.infoCardTape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 90px;
+  height: 22px;
+  background: #e405ac;
+  z-index: 2;
+}
+
+/* Card base */
+.infoCard1,
+.infoCard2,
+.infoCard3 {
+  position: absolute;
+  background: #ede8d0;
+  border-radius: 4px;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Card 1: me2you is — left: 424, top: 228, w: 599, h: 274 */
+.infoCard1 {
+  left: 424px;
+  top: 228px;
+  width: 599px;
+  height: 274px;
+  transform: rotate(-3.26deg);
+}
+
+.infoCard1Content {
+  position: absolute;
+  inset: 4% 9% 0 7%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+  color: #000;
+  line-height: 1.4;
+  z-index: 1;
+}
+
+.infoCard1Content strong {
+  font-weight: bold;
+}
+
+/* Card 2: you can — left: 1064, top: 205, w: 440, h: 590 */
+.infoCard2 {
+  left: 1094px;
+  top: 205px;
+  width: 440px;
+  height: 590px;
+  transform: rotate(8.71deg);
+}
+
+.infoCard2Content {
+  position: absolute;
+  inset: 3% 8% 5% 19%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  line-height: 1.5;
+  z-index: 1;
+}
+
+.infoCard2Content p {
+  margin: 0 0 8px;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+}
+
+.infoCard2Content strong {
+  font-weight: bold;
+}
+
+.infoCard2Content ul {
+  margin: 0;
+  padding-left: 28px;
+}
+
+.infoCard2Content li {
+  margin-bottom: 16px;
+}
+
+/* Card 3: privacy — left: 482, top: 532, w: 541, h: 376 */
+.infoCard3 {
+  left: 482px;
+  top: 532px;
+  width: 541px;
+  height: 376px;
+  transform: rotate(2.94deg);
+}
+
+.infoCard3Content {
+  position: absolute;
+  inset: 3% 13% 10% 8%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  line-height: 1.5;
+  z-index: 1;
+}
+
+.infoCard3Content p {
+  margin: 0 0 12px;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+}
+
+.infoCard3Content strong {
+  font-weight: bold;
+}
+
+.infoCard3Content ul {
+  margin: 0;
+  padding-left: 28px;
+}
+
+.infoCard3Content li {
+  margin-bottom: 12px;
+}
+
+/* Otter: left 1083, top 708, w 421, h 294 */
+.infoOtter {
+  position: absolute;
+  left: 1150px;
+  top: 750px;
+  width: 421px;
+  height: 294px;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* "have fun!" text */
+.infoHaveFun {
+  position: absolute;
+  left: 1300px;
+  top: 720px;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  margin: 0;
+  z-index: 3;
+}
+
+/* Close button: bottom-right of board */
+.infoCloseBtn {
+  position: absolute;
+  left: 1530px;
+  top: 850px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
 }

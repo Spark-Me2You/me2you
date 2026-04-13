@@ -31,3 +31,26 @@ export const gestureRecognizerConfig = {
   minHandPresenceConfidence: 0.5,
   minTrackingConfidence: 0.5,
 };
+
+export const imageSegmenterConfig = {
+  // selfie_multiclass model for hair + face segmentation
+  // Fetch directly from Google Cloud Storage CDN
+  modelAssetPath:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
+  runningMode: "IMAGE" as const,
+  outputCategoryMask: true,
+  outputConfidenceMasks: true, // For smoother hair edge blending
+};
+
+export const faceLandmarkerConfig = {
+  // FaceLandmarker for 468 facial landmarks
+  modelAssetPath:
+    "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+  runningMode: "IMAGE" as const,
+  numFaces: 1,
+  minFaceDetectionConfidence: 0.5,
+  minFacePresenceConfidence: 0.5,
+  minTrackingConfidence: 0.5,
+  outputFaceBlendshapes: false, // Not needed for landmarks only
+  outputFacialTransformationMatrixes: false,
+};

@@ -8,48 +8,87 @@ import React from 'react';
 import type { RandomImageData } from '../types/image';
 import me2youLogo from '@/assets/me2you.png';
 import registerQr from '@/assets/registerqr.png';
+import otterHandImage from '@/assets/hand.png';
+import arrow2 from '@/assets/arrow2.svg';
 
 const ORANGE = '#e44805';
-const PURPLE_GLASS = 'rgba(113, 5, 228, 0.93)';
-const GREEN_GLASS = 'rgba(211, 228, 5, 0.93)';
 const GLASS_INSET =
   'inset 0px 0px 4px 0px rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.2)';
 const BOX_INSET =
   'inset -1px -1px 4px 0px rgba(0,0,0,0.25), inset 0px 4px 4px 0px rgba(0,0,0,0.25)';
+const QR_BOX_SHADOW =
+  'inset 0 0 4px 0 rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.20), 0 4px 4px 0 rgba(0,0,0,0.25)';
+
+const TAPE_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  width: 42,
+  height: 10,
+  background: 'rgba(211, 228, 5, 0.68)',
+  transform: 'rotate(146.367deg)',
+  pointerEvents: 'none',
+  zIndex: 2,
+};
+
+const TEXT_STYLE: React.CSSProperties = {
+  color: '#000',
+  fontFamily: '"Andale Mono", monospace',
+  fontSize: 18,
+  fontStyle: 'normal',
+  fontWeight: 400,
+  lineHeight: 'normal',
+  letterSpacing: '-0.72px',
+  margin: 0,
+  textAlign: 'left',
+};
 
 interface ProfileCardViewProps {
   profileData: RandomImageData;
   onBack: () => void;
-  /** Label shown on the back side-tab. Defaults to "back to discovery" */
   backLabel?: string;
-  /** If provided, shows a "home" side-tab that calls this handler */
   onHome?: () => void;
 }
+
+const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ position: 'relative', width: '70%', minHeight: '90px' }}>
+    <div style={{ ...TAPE_STYLE, top: -5, left: -10 }} />
+    <div style={{ ...TAPE_STYLE, bottom: -5, right: -10 }} />
+
+    <svg
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <filter id="fractal-box" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.25 0.25" numOctaves={3} seed={805} />
+          <feDisplacementMap in="shape" scale={8} xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+          <feMerge>
+            <feMergeNode in="displacedImage" />
+          </feMerge>
+        </filter>
+      </defs>
+      <rect
+        x="0" y="0" width="100%" height="100%"
+        fill="rgba(255, 255, 255, 0.85)"
+        stroke="rgba(180, 180, 180, 0.93)"
+        filter="url(#fractal-box)"
+      />
+    </svg>
+    <div style={{ position: 'relative', zIndex: 1, padding: '10px 14px' }}>
+      {children}
+    </div>
+  </div>
+);
 
 export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
   profileData,
   onBack,
-  backLabel = 'back to discovery',
-  onHome,
 }) => {
   if (!profileData || !profileData.owner) {
     return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "'Averia Libre', sans-serif",
-            fontSize: '2rem',
-            color: '#fff',
-          }}
-        >
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: "'Averia Libre', sans-serif", fontSize: '2rem', color: '#fff' }}>
           Profile missing
         </p>
       </div>
@@ -61,459 +100,199 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
 
-      {/* ── Main frosted glass card ───────────────────────────────────────── */}
-      {/* Extends slightly off-screen to the left (-4.9%) to fill the visual space
-          before the right-side navigation tabs (which start at 94.43%) */}
+      {/* ── Exit button ── */}
+      <div
+        onClick={onBack}
+        style={{
+          position: 'absolute',
+          top: 16,
+          left: 16,
+          width: 183,
+          height: 81,
+          borderRadius: 13,
+          border: '1px solid #58E7F7',
+          background: '#F00',
+          boxShadow: '0 4px 4px 0 rgba(0,0,0,0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 10,
+        }}
+      >
+        <span style={{ fontFamily: "'Averia Libre', sans-serif", fontWeight: 700, fontSize: 28, color: '#fff', letterSpacing: '0.1em' }}>
+          exit
+        </span>
+      </div>
+
+      {/* ── Main frosted glass card ── */}
       <div
         style={{
           position: 'absolute',
-          top: '8.61%',
-          left: '-4.9%',
-          right: '16.28%',
-          bottom: '8.67%',
+          top: '14%',
+          left: '4%',
+          right: '26%',
+          bottom: '8%',
           backgroundColor: 'rgba(255, 255, 255, 0.13)',
           borderRadius: 46,
           boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
           overflow: 'hidden',
         }}
       >
-        {/* Two-column interior */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            gap: '3%',
-            padding: '5% 4% 5% 8%',
-          }}
-        >
-          {/* ── Left column: photo · name · pronouns · major ── */}
-          <div
-            style={{
-              flex: '0 0 32%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2.5%',
-              minHeight: 0,
-              overflow: 'hidden',
-            }}
-          >
-            {/* Photo frame — flex-basis drives height so it stays proportional to card */}
-            <div
-              style={{
-                flex: '0 0 57%',
-                width: '100%',
-                minHeight: 0,
-                backgroundColor: '#fff',
-                borderRadius: 74,
-                overflow: 'hidden',
-                boxShadow: BOX_INSET,
-              }}
-            >
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: '3%', padding: '5% 4% 5% 8%' }}>
+
+          {/* ── Left column ── */}
+          <div style={{ flex: '0 0 32%', display: 'flex', flexDirection: 'column', gap: '2.5%', minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ flex: '0 0 57%', width: '100%', minHeight: 0, backgroundColor: '#fff', borderRadius: 74, overflow: 'hidden', boxShadow: BOX_INSET }}>
               <img
                 src={imageUrl}
                 alt={`${owner.name}'s profile`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => {
-                  e.currentTarget.src = me2youLogo;
-                }}
+                onError={(e) => { e.currentTarget.src = me2youLogo; }}
               />
             </div>
 
-            {/* Name */}
-            <p
-              style={{
-                fontFamily: "'Jersey 10', sans-serif",
-                fontSize: 'clamp(24px, 4.5vw, 128px)',
-                letterSpacing: '0.17em',
-                color: '#000',
-                margin: 0,
-                lineHeight: 1,
-                flexShrink: 0,
-              }}
-            >
+            <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(24px, 4.5vw, 128px)', letterSpacing: '0.17em', color: '#000', margin: 0, lineHeight: 1, flexShrink: 0 }}>
               {owner.name}
             </p>
 
-            {/* Pronouns bar */}
             {owner.pronouns && (
-              <div
-                style={{
-                  alignSelf: 'flex-start',
-                  backgroundColor: ORANGE,
-                  padding: '6px 14px',
-                  paddingRight: '48px',
-                  flexShrink: 0,
-                  marginTop: '2%',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(12px, 1.8vw, 32px)',
-                    letterSpacing: '0.17em',
-                    color: '#000',
-                  }}
-                >
+              <div style={{ alignSelf: 'flex-start', backgroundColor: ORANGE, padding: '6px 14px', paddingRight: '48px', flexShrink: 0, marginTop: '2%' }}>
+                <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   {owner.pronouns}
                 </span>
               </div>
             )}
 
-            {/* Major / title bar */}
             {owner.major && (
-              <div
-                style={{
-                  alignSelf: 'flex-start',
-                  backgroundColor: ORANGE,
-                  padding: '6px 14px',
-                  paddingRight: '48px',
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(12px, 1.8vw, 32px)',
-                    letterSpacing: '0.17em',
-                    color: '#000',
-                  }}
-                >
+              <div style={{ alignSelf: 'flex-start', backgroundColor: ORANGE, padding: '6px 14px', paddingRight: '48px', flexShrink: 0 }}>
+                <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   {owner.major}
                 </span>
               </div>
             )}
           </div>
 
-          {/* ── Right column: status · interests ── */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '5%',
-              paddingTop: '0.5%',
-            }}
-          >
+          {/* ── Right column ── */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5%', paddingTop: '0.5%' }}>
+
             {/* Status */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-              <div
-                style={{
-                  backgroundColor: ORANGE,
-                  display: 'inline-block',
-                  padding: '6px 14px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(12px, 1.8vw, 32px)',
-                    letterSpacing: '0.17em',
-                    color: '#000',
-                  }}
-                >
+              <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
+                <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   status:
                 </span>
               </div>
-              <div
-                style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  boxShadow: BOX_INSET,
-                  width: '70%',
-                  minHeight: '90px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: 'monospace',
-                    fontSize: 'clamp(8px, 0.8vw, 13px)',
-                    letterSpacing: '-0.04em',
-                    color: '#000',
-                    margin: 0,
-                    lineHeight: 1.5,
-                  }}
-                >
+              <FractalBox>
+                <p style={{ ...TEXT_STYLE }}>
                   {owner.status || '—'}
                 </p>
-              </div>
+              </FractalBox>
             </div>
 
             {/* Interests */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-              <div
-                style={{
-                  backgroundColor: ORANGE,
-                  display: 'inline-block',
-                  padding: '6px 14px',
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 'clamp(12px, 1.8vw, 32px)',
-                    letterSpacing: '0.17em',
-                    color: '#000',
-                  }}
-                >
+              <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
+                <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   interests:
                 </span>
               </div>
-              <div
-                style={{
-                  backgroundColor: '#fff',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  boxShadow: BOX_INSET,
-                  width: '70%',
-                  minHeight: '90px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                }}
-              >
+              <FractalBox>
                 {Array.isArray(owner.interests) && owner.interests.length > 0 ? (
-                  <ul
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: 'clamp(8px, 0.8vw, 13px)',
-                      letterSpacing: '-0.04em',
-                      color: '#000',
-                      margin: 0,
-                      paddingLeft: '1.5em',
-                      lineHeight: 1.8,
-                    }}
-                  >
+                  <ul style={{ ...TEXT_STYLE, paddingLeft: '1.5em' }}>
                     {owner.interests.map((interest, i) => (
                       <li key={i}>{interest}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p
-                    style={{
-                      fontFamily: 'monospace',
-                      fontSize: 'clamp(8px, 0.8vw, 13px)',
-                      color: '#999',
-                      margin: 0,
-                      fontStyle: 'italic',
-                    }}
-                  >
+                  <p style={{ ...TEXT_STYLE, color: '#999', fontStyle: 'italic' }}>
                     nothing listed yet
                   </p>
                 )}
-              </div>
+              </FractalBox>
             </div>
+
           </div>
         </div>
 
-        {/* ── "want to add as a friend?" — purple glass card (inside main card) ── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '82.97%',
-            left: '60.17%',
-            right: '23.61%',
-            bottom: '4.72%',
-            backgroundColor: PURPLE_GLASS,
-            borderRadius: 10,
-            boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '4px 10px',
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "'Averia Libre', sans-serif",
-              fontSize: 'clamp(7px, 1vw, 16px)',
-              letterSpacing: '0.05em',
-              color: '#fff',
-              margin: 0,
-              lineHeight: 1.4,
-              whiteSpace: 'pre-line',
-              textAlign: 'center',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
-            {`want to add as a friend?\ncreate an account!`}
-          </p>
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'inherit',
-              pointerEvents: 'none',
-              boxShadow: GLASS_INSET,
-            }}
-          />
-        </div>
-
-        {/* ── "scan me!" — green glass card / QR (inside main card) ────────── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '59.78%',
-            left: '83.64%',
-            right: '4.84%',
-            bottom: '7%',
-            backgroundColor: GREEN_GLASS,
-            borderRadius: 10,
-            boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-            overflow: 'visible',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '6px 6% 6%',
-            gap: '6%',
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "'Averia Libre', sans-serif",
-              fontSize: 'clamp(12px, 1.8vw, 28px)',
-              letterSpacing: '0.08em',
-              color: '#fff',
-              margin: 0,
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-              flexShrink: 0,
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
-            scan me!
-          </p>
-          {/* QR code — absolutely positioned so it's independent of flex sizing */}
-          <img
-            src={registerQr}
-            alt="Register QR code"
-            style={{
-              position: 'absolute',
-              top: '25%',
-              left: '5%',
-              right: '5%',
-              bottom: '5%',
-              width: '90%',
-              height: '70%',
-              objectFit: 'contain',
-              display: 'block',
-              zIndex: 2,
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'inherit',
-              pointerEvents: 'none',
-              boxShadow: GLASS_INSET,
-            }}
-          />
-        </div>
-
-        {/* Card glass inset sheen — must stay last so it renders on top */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            pointerEvents: 'none',
-            boxShadow: GLASS_INSET,
-          }}
-        />
+        {/* Card glass inset sheen */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none', boxShadow: GLASS_INSET }} />
       </div>
 
-      {/* ── Back tab — orange pill, right edge (top half) ─────────────────── */}
+      {/* ── QR code ── */}
       <div
-        onClick={onBack}
         style={{
           position: 'absolute',
-          top: '8.06%',
-          left: '94.43%',
-          right: '-1.3%',
-          bottom: '46.48%',
-          backgroundColor: 'rgba(228, 72, 5, 0.93)',
+          top: '78%',
+          right: '5%',
+          transform: 'translateY(-50%) rotate(-7.207deg)',
           borderRadius: 46,
-          cursor: 'pointer',
+          background: 'rgba(228, 5, 172, 0.93)',
+          boxShadow: QR_BOX_SHADOW,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
-          boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
+          alignItems: 'center',
+          padding: '17.763px 26.955px 18.981px 26.984px',
+          boxSizing: 'border-box',
         }}
       >
-        <span
-          style={{
-            transform: 'rotate(-90deg)',
-            whiteSpace: 'nowrap',
-            fontFamily: "'Averia Libre', sans-serif",
-            fontWeight: 700,
-            fontSize: 'clamp(10px, 1.3vw, 20px)',
-            color: '#fff',
-            letterSpacing: '5.61px',
-          }}
-        >
-          {backLabel}
-        </span>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 'inherit',
-            pointerEvents: 'none',
-            boxShadow: GLASS_INSET,
-          }}
+        <img
+          src={registerQr}
+          alt="Register QR code"
+          style={{ width: '13vw', objectFit: 'contain', display: 'block' }}
         />
       </div>
 
-      {/* ── Home tab — purple pill, right edge (bottom half) ─────────────── */}
-      {onHome && (
-        <div
-          onClick={onHome}
-          style={{
-            position: 'absolute',
-            top: '57.69%',
-            left: '94.43%',
-            right: '-1.3%',
-            bottom: '8.7%',
-            backgroundColor: PURPLE_GLASS,
-            borderRadius: 46,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-          }}
-        >
-          <span
-            style={{
-              transform: 'rotate(-90deg)',
-              whiteSpace: 'nowrap',
-              fontFamily: "'Averia Libre', sans-serif",
-              fontSize: 'clamp(10px, 1.3vw, 20px)',
-              color: '#fff',
-              letterSpacing: '5.61px',
-            }}
-          >
-            home
-          </span>
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 'inherit',
-              pointerEvents: 'none',
-              boxShadow: GLASS_INSET,
-            }}
-          />
-        </div>
-      )}
+      {/* ── QR label text ── */}
+      <p style={{
+        position: 'absolute',
+        top: '45%',
+        right: '3%',
+        width: '14vw',
+        fontFamily: '"Averia Libre", sans-serif',
+        fontSize: 'clamp(12px, 1.6vw, 28px)',
+        letterSpacing: '5.44px',
+        color: '#000',
+        textAlign: 'center',
+        lineHeight: 1.1,
+        margin: 0,
+        transform: 'rotate(5.04deg)',
+        pointerEvents: 'none',
+        zIndex: 10,
+      }}>
+        scan here to create and edit your profile!
+      </p>
+
+      {/* ── QR arrow ── */}
+      <img
+        src={arrow2}
+        alt=""
+        style={{
+          position: 'absolute',
+          top: '58%',
+          right: '4%',
+          width: 34,
+          height: 16,
+          transform: 'rotate(101.44deg)',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      />
+
+      {/* ── Otter hand ── */}
+      <img
+        src={otterHandImage}
+        alt=""
+        style={{
+          position: 'absolute',
+          top: '84%',
+          right: '11%',
+          width: '16vw',
+          objectFit: 'contain',
+          pointerEvents: 'none',
+        }}
+      />
+
     </div>
   );
 };

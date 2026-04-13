@@ -1,12 +1,12 @@
 /**
- * ProfileStep Component — Figma "profile-creation-1 + 2" (single scrollable page)
+ * ProfileStep Component — Figma "profile-creation" screen
  */
 
 import React, { useState, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { GoBackWarning } from './GoBackWarning';
-import backfingerImg from '../../../assets/backfinger.png';
-import thumbsUpImg from '../../../assets/thumbsUP.png';
+import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
+import nextButtonImg from '../../../assets/next_button.svg';
 import type { RegistrationFormData } from '../services/registrationService';
 
 interface ProfileStepProps {
@@ -14,11 +14,9 @@ interface ProfileStepProps {
   onUpdateFormData: (data: Partial<RegistrationFormData>) => void;
   onSubmit: () => Promise<boolean>;
   onBack: () => void;
-  onGoToPhoto: () => void;
   isSubmitting: boolean;
   error: string | null;
   onClearError: () => void;
-  capturedPhoto?: Blob;
 }
 
 export const ProfileStep: React.FC<ProfileStepProps> = ({
@@ -26,11 +24,9 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   onUpdateFormData,
   onSubmit,
   onBack,
-  onGoToPhoto,
   isSubmitting,
   error,
   onClearError,
-  capturedPhoto,
 }) => {
   const [name, setName] = useState(formData.name || '');
   const [pronouns, setPronouns] = useState(formData.pronouns || '');
@@ -39,14 +35,6 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
   const [interests, setInterests] = useState(formData.interests?.join(', ') || '');
   const [localError, setLocalError] = useState<string | null>(null);
   const [showWarning, setShowWarning] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!capturedPhoto) return;
-    const url = URL.createObjectURL(capturedPhoto);
-    setPhotoUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [capturedPhoto]);
 
   useEffect(() => {
     onUpdateFormData({
@@ -79,23 +67,9 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
     await onSubmit();
   };
 
-  const handleGoBack = () => {
-    setShowWarning(true);
-  };
-
-  // Go forward to photo step so user can take/retake their photo
-  const handlePhotoAreaClick = () => {
-    onGoToPhoto();
-  };
-
-  const handleConfirmGoBack = () => {
-    setShowWarning(false);
-    onBack();
-  };
-
-  const handleCancelGoBack = () => {
-    setShowWarning(false);
-  };
+  const handleGoBack = () => setShowWarning(true);
+  const handleConfirmGoBack = () => { setShowWarning(false); onBack(); };
+  const handleCancelGoBack = () => setShowWarning(false);
 
   const displayError = localError || error;
 
@@ -112,35 +86,8 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               <div className={styles.errorBanner}>{displayError}</div>
             )}
 
-            {/* ── PART 1: photo placeholder + name / pronouns / major ── */}
-
-            <div
-              className={styles.photoPlaceholderWrapper}
-              onClick={handlePhotoAreaClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handlePhotoAreaClick()}
-            >
-              <div className={styles.photoPlaceholderBox}>
-                {photoUrl && (
-                  <img
-                    src={photoUrl}
-                    alt="Your photo"
-                    className={styles.photoPlaceholderImg}
-                  />
-                )}
-              </div>
-              {!photoUrl && (
-                <div className={styles.photoClickBanner}>
-                  click here to take your photo!
-                </div>
-              )}
-            </div>
-
-            <div className={styles.fieldGroupLeft}>
-              <div className={styles.fieldLabelLeftWrapper}>
-                <p className={styles.fieldLabelLeftText}>name:</p>
-              </div>
+            <div className={styles.profileFieldGroup}>
+              <label htmlFor="pf-name" className={styles.profileFieldLabel}>name:</label>
               <input
                 id="pf-name"
                 type="text"
@@ -153,10 +100,8 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               />
             </div>
 
-            <div className={styles.fieldGroupLeft}>
-              <div className={styles.fieldLabelLeftWrapper}>
-                <p className={styles.fieldLabelLeftText}>pronouns:</p>
-              </div>
+            <div className={styles.profileFieldGroup}>
+              <label htmlFor="pf-pronouns" className={styles.profileFieldLabel}>pronouns:</label>
               <input
                 id="pf-pronouns"
                 type="text"
@@ -168,10 +113,8 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               />
             </div>
 
-            <div className={styles.fieldGroupLeft}>
-              <div className={styles.fieldLabelLeftWrapper}>
-                <p className={styles.fieldLabelLeftText}>major/title:</p>
-              </div>
+            <div className={styles.profileFieldGroup}>
+              <label htmlFor="pf-major" className={styles.profileFieldLabel}>major/title:</label>
               <input
                 id="pf-major"
                 type="text"
@@ -183,14 +126,11 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               />
             </div>
 
-            {/* ── PART 2: status + interests + nav ── */}
-
-            <div className={styles.fieldGroupRight}>
-              <div className={styles.fieldLabelRightWrapper}>
-                <p className={styles.fieldLabelRightText}>status:</p>
-              </div>
+            {/* bio maps to status field */}
+            <div className={styles.profileFieldGroup}>
+              <label htmlFor="pf-bio" className={styles.profileFieldLabel}>bio:</label>
               <textarea
-                id="pf-status"
+                id="pf-bio"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className={styles.fieldTextarea}
@@ -200,10 +140,8 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
               />
             </div>
 
-            <div className={styles.fieldGroupRight}>
-              <div className={styles.fieldLabelRightWrapper}>
-                <p className={styles.fieldLabelRightText}>interests:</p>
-              </div>
+            <div className={styles.profileFieldGroup}>
+              <label htmlFor="pf-interests" className={styles.profileFieldLabel}>interests:</label>
               <textarea
                 id="pf-interests"
                 value={interests}
@@ -218,31 +156,20 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
             <div className={styles.profileNavRow}>
               <button
                 type="button"
-                className={styles.navBtnLeft}
+                className={styles.profileBackBtn}
                 onClick={handleGoBack}
                 disabled={isSubmitting}
+                aria-label="go back"
               >
-                <img
-                  src={backfingerImg}
-                  alt="go back"
-                  className={styles.navFingerLeft}
-                />
-                <span className={styles.navBtnLabel}>go back</span>
+                <img src={pinkBackArrowImg} alt="back" className={styles.nextBtnImg} />
               </button>
 
               <button
                 type="submit"
-                className={styles.navBtnRight}
+                className={styles.nextBtn}
                 disabled={isSubmitting}
               >
-                <img
-                  src={thumbsUpImg}
-                  alt="create me"
-                  className={styles.navFingerRight}
-                />
-                <span className={styles.navBtnLabel}>
-                  {isSubmitting ? '...' : 'create me!'}
-                </span>
+                <img src={nextButtonImg} alt="next" className={styles.nextBtnImg} />
               </button>
             </div>
           </form>

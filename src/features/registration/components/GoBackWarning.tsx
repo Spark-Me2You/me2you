@@ -5,7 +5,7 @@
 
 import React from 'react';
 import styles from './RegistrationSteps.module.css';
-import backfingerImg from '../../../assets/backfinger.png';
+import pinkBackArrow from '../../../assets/pink_back_arrow.svg';
 
 interface GoBackWarningProps {
   onConfirm: () => void;
@@ -23,13 +23,13 @@ export const GoBackWarning: React.FC<GoBackWarningProps> = ({ onConfirm, onCance
         </ul>
         <div className={styles.warningBtns}>
           <button className={styles.warningBtnYes} onClick={onConfirm}>
-            <img src={backfingerImg} alt="" className={styles.warningFingerLeft} />
+            <img src={pinkBackArrow} alt="" className={styles.warningFingerLeft} />
             <span className={styles.warningBtnText}>
               <u>YES</u>, go back please
             </span>
           </button>
           <button className={styles.warningBtnNo} onClick={onCancel}>
-            <img src={backfingerImg} alt="" className={styles.warningFingerRight} />
+            <img src={pinkBackArrow} alt="" className={styles.warningFingerRight} />
             <span className={styles.warningBtnText}>
               <u>nevermind, keep going!</u>
             </span>
