@@ -25,7 +25,7 @@ import handHoverImage from "@/assets/hand_hover.png";
 import handClickImage from "@/assets/hand_click.png";
 import arrow1 from "@/assets/arrow1.svg";
 import arrow2 from "@/assets/arrow2.svg";
-import arrow3 from "@/assets/arrow3.svg";
+import otterHandImage from "@/assets/hand.png";
 import polaroidFrame1 from "@/assets/polaroid_frame1.svg";
 import polaroidFrame2 from "@/assets/polaroid_frame2.svg";
 import numberCircle from "@/assets/number_circle.svg";
@@ -198,17 +198,20 @@ function AppContainerContent() {
             </div>
 
             {/* ===== QR code section (bottom right) ===== */}
-            <div className={styles.qrBox}>
-              <RegistrationQRDisplay className={styles.qrInner} />
-            </div>
-            <p className={styles.qrText}>
-              scan here to create and edit your profile!
-            </p>
-            <img src={arrow3} alt="" className={styles.arrow3} />
+            <div className={styles.qrSection}>
+              {/* Pink thin-outline box */}
+              <div className={styles.qrBox}>
+                <RegistrationQRDisplay className={styles.qrInner} />
+              </div>
 
-            {/* Small otter at bottom */}
-            <div className={styles.otterSmallWrap}>
-              <img src={otterImage} alt="" className={styles.otterSmall} />
+              {/* Otter hand */}
+              <img src={otterHandImage} alt="" className={styles.otterHand} />
+
+              {/* Text + arrow */}
+              <p className={styles.qrText}>
+                scan here to create and edit your profile!
+              </p>
+              <img src={arrow2} alt="" className={styles.arrowQr} />
             </div>
           </div>
         );

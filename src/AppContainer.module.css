@@ -224,26 +224,7 @@
    Figma: corkboard image at left=1300, top=34
    w=975, h=716, rotated 173.26deg
    ============================================= */
-/* .corkBoardOuter {
-  position: absolute;
-  left: 1300px;
-  top: 34px;
-  width: 975px;
-  height: 716px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
 
-.corkBoard {
-  position: relative;
-  width: 910px;
-  height: 613px;
-  transform: rotate(173.26deg);
-  overflow: hidden;
-  border-radius: 8px;
-} */
 
 .corkBoard {
   position: absolute;
@@ -253,7 +234,7 @@
   width: 910px;
   height: 613px;
 
-  transform:scale(0.70) rotate(173.26deg);
+  transform:scale(0.67) rotate(173.26deg);
   transform-origin: center;
 
   overflow: hidden;
@@ -282,7 +263,7 @@
 .newHerePill {
   position: absolute;
   bottom: 10%;
-  left: 18.5%;
+  left: 14.5%;
   width: 306px;
   height: 56px;
   padding: 2px 24px;
@@ -410,8 +391,8 @@
 /* (hover) caption: 13px, tracking 2.21px */
 .hoverCaption {
   position: absolute;
-  top: 38%;
-  left: 15%;
+  top: 50%;
+  left: 87%;
   font-family: "Averia Libre", sans-serif;
   font-size: 13px;
   letter-spacing: 2.21px;
@@ -474,7 +455,7 @@
 .polaroid2Img {
   position: absolute;
   top: 17px;
-  left: 45px;
+  left: 57px;
   width: 63px;
   height: 152px;
   object-fit: cover;
@@ -485,8 +466,8 @@
 /* Arrow pointing to thumb (between step 2 image and hint) */
 .arrow1 {
   position: absolute;
-  top: 37%;
-  left: 8%;
+  top: 52%;
+  left: 60%;
   width: 32px;
   height: 11px;
   transform: rotate(187deg) rotate(-54.6deg);
@@ -497,8 +478,8 @@
 /* "curve your thumb in!" : 10px, tracking 1.7px */
 .clickThumbHint {
   position: absolute;
-  top: 30%;
-  left: 12%;
+  top: 40%;
+  left: 58%;
   width: 63px;
   font-family: "Averia Libre", sans-serif;
   font-size: 10px;
@@ -512,8 +493,8 @@
 /* (click) caption: 13px, tracking 2.21px */
 .clickCaption {
   position: absolute;
-  top: 24%;
-  left: 2%;
+  top: 35%;
+  left: 47%;
   font-family: "Averia Libre", sans-serif;
   font-size: 13px;
   letter-spacing: 2.21px;
@@ -595,12 +576,14 @@
    ============================================= */
 .qrBox {
   position: absolute;
-  top: 50.07%;
+  top: 48.07%;
   left: 50.6%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 4;
+  transform: scale(0.65);
+  transform-origin: top left;
 }
 
 .qrInner {
@@ -616,11 +599,24 @@
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
 }
 
+/* Cropped otter hand — bottom-left of QR section */
+.otterHand {
+  position: absolute;
+  left: 960px;
+  top: 700px;
+  width: 120px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  transform: scale(1.2);
+  z-index: 6;
+}
+
 /* "scan here..." text (Figma: 32px Averia Libre, tracking 5.44px, rotated 5.04deg) */
 .qrText {
   position: absolute;
-  left: 1647px;
-  top: 791px;
+  left: 1190px;
+  top: 545px;
   width: 270px;
   font-family: "Averia Libre", sans-serif;
   font-size: 32px;
@@ -633,11 +629,12 @@
   z-index: 4;
 }
 
-/* Arrow from text to QR */
-.arrow3 {
+
+/* Arrow below qrText pointing toward QR box */
+.arrowQr {
   position: absolute;
-  left: 1745px;
-  top: 966px;
+  left: 1290px;
+  top: 700px;
   width: 34px;
   height: 16px;
   transform: rotate(171.44deg);
@@ -645,27 +642,6 @@
   pointer-events: none;
 }
 
-/* ===== Small otter (bottom center-right) ===== */
-.otterSmallWrap {
-  position: absolute;
-  left: 1231px;
-  top: calc(50% + 410px);
-  width: 244px;
-  height: 295px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-}
-
-.otterSmall {
-  width: 167px;
-  height: 253px;
-  object-fit: contain;
-  transform: scaleY(-1) rotate(-159.79deg);
-  pointer-events: none;
-  user-select: none;
-}
 
 /* ===== Polaroid frame SVG (textured paper edges from Figma) ===== */
 .polaroidFrameSvg {
