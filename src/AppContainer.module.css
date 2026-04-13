@@ -15,8 +15,11 @@
   height: 1080px;
   transform-origin: top left;
   /* scale to whichever axis is tighter */
-  scale: min(calc(100vw / 1920), calc(100vh / 1080));
+  /* scale: min(calc(100vw / 1920), calc(100vh / 1080)); */
+  transform: scale(min(calc(100vw / 1920), calc(100vh / 1080)));
 }
+
+
 
 .backgroundGradient {
   position: absolute;
@@ -27,13 +30,14 @@
 /* ===== Logo (Figma: left=87, top=-102, w~1134, rotated 4.26deg) ===== */
 .logo {
   position: absolute;
-  left: 87px;
-  top: -102px;
-  width: 1134px;
+  top: 2rem;
+  left: 25%;
+  transform: translateX(-50%);
+  width: 800px;
+  max-width: 60vw;
   z-index: 5;
   pointer-events: none;
   user-select: none;
-  transform: rotate(4.26deg);
 }
 
 /* ===== Power icon (Figma: top-right, size 48) ===== */
@@ -59,7 +63,7 @@
    = top:283 right:643 bottom:32.5 left:-258
    Inner rotated -2.05deg
    ============================================= */
-.mainContainerOuter {
+/* .mainContainerOuter {
   position: absolute;
   top: 26.2%;
   right: 33.47%;
@@ -69,20 +73,34 @@
   align-items: center;
   justify-content: center;
   z-index: 1;
+} */
+
+.mainContainerOuter {
+  position: absolute;
+  top: 10%;          /* move UP by lowering this number */
+  left: -20.44%;
+  
+  /* REMOVE bottom + right */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
 }
+
 
 .mainContainer {
   position: relative;
-  width: 98.5%;
-  height: 93%;
-  transform: rotate(-2.05deg);
-  border-radius: 46px;
+  width: 1511px;
+  height: 711px;
+  transform: scale(0.67) rotate(-2.05deg);
+  border-radius: 40px;
   background: rgba(255, 255, 255, 0.13);
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  overflow: visible;
+  
 }
 
 /* ===== Menu buttons (shared) ===== */
@@ -206,7 +224,7 @@
    Figma: corkboard image at left=1300, top=34
    w=975, h=716, rotated 173.26deg
    ============================================= */
-.corkBoardOuter {
+/* .corkBoardOuter {
   position: absolute;
   left: 1300px;
   top: 34px;
@@ -225,15 +243,37 @@
   transform: rotate(173.26deg);
   overflow: hidden;
   border-radius: 8px;
-}
+} */
 
-.corkBoardBg {
+.corkBoard {
+  position: absolute;
+  top: 0%;          /* 👈 MOVE UP HERE */
+  right: 0%;        /* 👈 move left/right easily */
+
+  width: 910px;
+  height: 613px;
+
+  transform: scale(0.80) rotate(173.26deg);
+  transform-origin: center;
+
+  overflow: hidden;
+  border-radius: 8px;
+
+  z-index: 2;
+}
+/* .corkBoardBg {
   position: absolute;
   inset: -1%;
   width: 103%;
   height: 103%;
   object-fit: cover;
   pointer-events: none;
+} */
+
+.corkBoardBg {
+  inset: -1%;
+  width: 103%;
+  height: 103%;
 }
 
 /* NEW HERE? pill (Figma: 36px Jersey 10, tracking 6.12px)
