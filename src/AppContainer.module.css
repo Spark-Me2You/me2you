@@ -282,7 +282,7 @@
 .newHerePill {
   position: absolute;
   bottom: 6%;
-  left: 6%;
+  left: 44%;
   padding: 6px 24px;
   background: #d3e405;
   border-radius: 46px;
@@ -290,8 +290,8 @@
   font-size: 36px;
   letter-spacing: 6.12px;
   color: #000;
-  text-align: center;
-  transform: rotate(187deg);
+  text-align: left;
+  transform: rotate(185deg);
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
@@ -322,15 +322,15 @@
 
 /* Step 1 circle: Figma viewport 1372,199 → within cork board */
 .step1Number {
-  bottom: 70%;
-  right: 55%;
+  top: 80%;
+  left: 90%;
 }
 
 /* Step 1 label: 19px, tracking 3.23px */
 .step1Label {
   position: absolute;
-  bottom: 73%;
-  right: 20%;
+  top: 79%;
+  left: 62%;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
@@ -345,9 +345,9 @@
 /* Polaroid 1 (hover hand) */
 .polaroid1 {
   position: absolute;
-  bottom: 35%;
-  right: 45%;
-  width: 120px;
+  top: 45%;
+  left: 75%;
+  width: 150px;
   height: 190px;
   background: #e8dfc8;
   border-radius: 6px;
@@ -370,8 +370,8 @@
 
 .polaroid1Img {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 17px;
+  left: 16px;
   width: 100px;
   height: 155px;
   object-fit: cover;
@@ -381,8 +381,8 @@
 /* (hover) caption: 13px, tracking 2.21px */
 .hoverCaption {
   position: absolute;
-  bottom: 32%;
-  right: 25%;
+  top: 38%;
+  left: 15%;
   font-family: "Averia Libre", sans-serif;
   font-size: 13px;
   letter-spacing: 2.21px;
@@ -394,14 +394,14 @@
 
 /* Step 2 circle */
 .step2Number {
-  bottom: 67%;
-  left: 5%;
+  top: 50%;
+  left: 70%;
 }
 
 /* Step 2 label: 14px, tracking 2.38px */
 .step2Label {
   position: absolute;
-  bottom: 72%;
+  top: 28%;
   left: 3%;
   width: 265px;
   font-family: "Averia Libre", sans-serif;
@@ -417,7 +417,7 @@
 /* Polaroid 2 (click hand) */
 .polaroid2 {
   position: absolute;
-  bottom: 36%;
+  top: 34%;
   left: 14%;
   width: 80px;
   height: 175px;
@@ -453,7 +453,7 @@
 /* Arrow pointing to thumb (between step 2 image and hint) */
 .arrow1 {
   position: absolute;
-  bottom: 37%;
+  top: 37%;
   left: 8%;
   width: 32px;
   height: 11px;
@@ -465,7 +465,7 @@
 /* "curve your thumb in!" : 10px, tracking 1.7px */
 .clickThumbHint {
   position: absolute;
-  bottom: 30%;
+  top: 30%;
   left: 12%;
   width: 63px;
   font-family: "Averia Libre", sans-serif;
@@ -480,7 +480,7 @@
 /* (click) caption: 13px, tracking 2.21px */
 .clickCaption {
   position: absolute;
-  bottom: 24%;
+  top: 24%;
   left: 2%;
   font-family: "Averia Libre", sans-serif;
   font-size: 13px;
@@ -493,15 +493,15 @@
 
 /* Step 3 circle */
 .step3Number {
-  bottom: 38%;
-  right: 50%;
+  top: 38%;
+  left: 50%;
 }
 
 /* Step 3 label: 19px, tracking 3.23px */
 .step3Label {
   position: absolute;
-  bottom: 27%;
-  right: 10%;
+  top: 27%;
+  left: 10%;
   width: 356px;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
@@ -516,7 +516,7 @@
 /* Arrow from step 3 to info button */
 .arrow2 {
   position: absolute;
-  bottom: 20%;
+  top: 20%;
   right: 15%;
   width: 32px;
   height: 11px;
@@ -528,7 +528,7 @@
 /* Info button (Figma: 46px Jersey 10, tracking 7.82px, pink bg, yellow border 7px) */
 .infoButton {
   position: absolute;
-  bottom: 10%;
+  top: 10%;
   right: 15%;
   width: 259px;
   height: 94px;
@@ -557,8 +557,6 @@
 .qrBox {
   position: absolute;
   top: 69.07%;
-  right: 13.27%;
-  bottom: -1.69%;
   left: 67.6%;
   display: flex;
   align-items: center;
