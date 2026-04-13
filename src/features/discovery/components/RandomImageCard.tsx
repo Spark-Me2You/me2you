@@ -4,7 +4,6 @@ import type { RandomImageData } from "../types/image";
 import { getGestureMapping } from "../config/gestureMapping";
 import { BorderProgress } from "./BorderProgress";
 import styles from "./RandomImageCard.module.css";
-import backfingerIcon from "@/assets/backfinger.png";
 
 /**
  * RandomImageCard Component Props
