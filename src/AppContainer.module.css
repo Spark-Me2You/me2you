@@ -32,7 +32,7 @@
   position: absolute;
   top: 2rem;
   left: 25%;
-  transform: translateX(-50%);
+  transform: scale(0.93) translateX(-50%);
   width: 800px;
   max-width: 60vw;
   z-index: 5;
@@ -253,7 +253,7 @@
   width: 910px;
   height: 613px;
 
-  transform: scale(0.64) rotate(173.26deg);
+  transform:scale(0.70) rotate(173.26deg);
   transform-origin: center;
 
   overflow: hidden;
@@ -281,8 +281,10 @@
    because the board is ~173deg rotated (≈ flipped) */
 .newHerePill {
   position: absolute;
-  bottom: 6%;
-  left: 44.5%;
+  bottom: 10%;
+  left: 18.5%;
+  width: 306px;
+  height: 56px;
   padding: 2px 24px;
   background: #d3e405;
   border-radius: 46px;
@@ -299,17 +301,17 @@
   z-index: 3;
 }
 
-/* ===== Step numbers — hand-drawn circle SVG (Figma: 28px Averia Libre, tracking 4.76px) ===== */
-.step1Number,
-.step2Number,
-.step3Number {
+/* ===== Step number circle — sits at left edge of label wrapper ===== */
+.stepNumberOnLabel {
   position: absolute;
+  left: 0%;
+  top: 50%;
+  transform: translateY(-50%);
   width: 34px;
   height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(187deg);
   z-index: 6;
 }
 
@@ -331,25 +333,19 @@
   z-index: 1;
 }
 
-/* Step 1 circle: Figma viewport 1372,199 → within cork board */
-.step1Number {
-  top: 85%;
-  left: 92%;
-}
-
 /* Step 1 label wrapper: SVG banner behind text */
 .step1LabelWrap {
   position: absolute;
   top: 81.5%;
-  left: 65%;
-  height: 40px;
-  width: 280px;
+  left: 62%;
+  height: 36.265px;
+  width: 248.184px;
   transform: rotate(187deg);
   z-index: 4;
-
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding-left: 38px;
+  overflow: visible;
 }
 
 /* Step 1 label: 19px, tracking 3.23px */
@@ -367,10 +363,10 @@
 /* Polaroid 1 (hover hand) */
 .polaroid1 {
   position: absolute;
-  top: 45%;
-  left: 75%;
-  width: 150px;
-  height: 190px;
+  top: 47%;
+  left: 73%;
+  width: 183.122px;
+  height: 184.091px;
   transform: rotate(187deg);
   overflow: visible;
   z-index: 3;
@@ -379,8 +375,8 @@
 .polaroidTape1 {
   position: absolute;
   top: -8px;
-  left: 50%;
-  transform: translateX(-50%) rotate(16deg);
+  left: 20%;
+  transform: rotate(163.555deg);
   width: 82px;
   height: 20px;
   background: #e405ac;
@@ -390,7 +386,7 @@
 .polaroid1Img {
   position: absolute;
   top: 17px;
-  left: 16px;
+  left: 45px;
   width: 100px;
   height: 155px;
   object-fit: cover;
@@ -411,20 +407,18 @@
   z-index: 4;
 }
 
-/* Step 2 circle */
-.step2Number {
-  top: 50%;
-  left: 70%;
-}
-
 /* Step 2 label wrapper */
 .step2LabelWrap {
   position: absolute;
-  top: 28%;
-  left: 3%;
-  width: 265px;
+  top: 68%;
+  left: 30%;
+  height: 41.382px;
+  width: 321.757px;
   transform: rotate(187deg);
   z-index: 4;
+  display: flex;
+  align-items: center;
+  padding-left: 38px;
 }
 
 /* Step 2 label: 14px, tracking 2.38px */
@@ -443,9 +437,9 @@
 .polaroid2 {
   position: absolute;
   top: 34%;
-  left: 14%;
-  width: 80px;
-  height: 175px;
+  left: 45%;
+  height: 184.091px;
+  width: 183.122px;
   transform: rotate(187deg);
   overflow: visible;
   z-index: 3;
@@ -464,8 +458,8 @@
 
 .polaroid2Img {
   position: absolute;
-  top: 10px;
-  left: 8px;
+  top: 17px;
+  left: 45px;
   width: 63px;
   height: 152px;
   object-fit: cover;
@@ -513,20 +507,18 @@
   z-index: 4;
 }
 
-/* Step 3 circle */
-.step3Number {
-  top: 38%;
-  left: 50%;
-}
-
 /* Step 3 label wrapper */
 .step3LabelWrap {
   position: absolute;
   top: 27%;
-  left: 10%;
-  width: 356px;
+  left: 45%;
+  height: 48.221px;
+  width: 355.615px;
   transform: rotate(187deg);
   z-index: 4;
+  display: flex;
+  align-items: center;
+  padding-left: 38px;
 }
 
 /* Step 3 label: 19px, tracking 3.23px */
