@@ -13,6 +13,7 @@ import { useRegistration } from '../hooks/useRegistration';
 import { SignUpStep } from './SignUpStep';
 import { ProfileStep } from './ProfileStep';
 import { PhotoStep } from './PhotoStep';
+import { BobbleheadPreviewStep } from './BobbleheadPreviewStep';
 import { SuccessStep } from './SuccessStep';
 import styles from './RegistrationPage.module.css';
 import me2youLogo from '../../../assets/me2you.png';
@@ -32,8 +33,11 @@ const RegistrationWizard: React.FC = () => {
     handleSignUp,
     handleProfileSubmit,
     handlePhotoSubmit,
+    handleBobbleheadSubmit,
     previousStep,
+    goToStep,
     registrationComplete,
+    croppedPhotoUrl,
   } = useRegistration();
 
   // Redirect to profile page when registration completes
@@ -78,6 +82,18 @@ const RegistrationWizard: React.FC = () => {
             onClearError={clearError}
           />
         );
+
+      case 'bobblehead':
+        return croppedPhotoUrl ? (
+          <BobbleheadPreviewStep
+            croppedPhotoUrl={croppedPhotoUrl}
+            onSubmit={handleBobbleheadSubmit}
+            onRetake={() => goToStep('photo')}
+            isSubmitting={isSubmitting}
+            error={error}
+            onClearError={clearError}
+          />
+        ) : null;
 
       case 'success':
         return <SuccessStep userName={formData.name} />;

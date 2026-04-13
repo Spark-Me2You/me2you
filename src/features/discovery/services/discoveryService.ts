@@ -70,6 +70,7 @@ export const discoveryService = {
           owner_id,
           org_id,
           storage_path,
+          cropped_path,
           category,
           is_public,
           created_at,
@@ -129,9 +130,9 @@ export const discoveryService = {
       }
 
       // Generate signed URL for the image from storage bucket
-      const imageUrl = await storageService.getPhotoUrl(
-        selectedImage.storage_path,
-      );
+      // Prefer cropped version if available, fall back to original
+      const imagePath = selectedImage.cropped_path ?? selectedImage.storage_path;
+      const imageUrl = await storageService.getPhotoUrl(imagePath);
 
       console.log(
         "[discoveryService] Random image selected:",
@@ -148,6 +149,7 @@ export const discoveryService = {
           owner_id: selectedImage.owner_id,
           org_id: selectedImage.org_id,
           storage_path: selectedImage.storage_path,
+          cropped_path: selectedImage.cropped_path ?? null,
           category: selectedImage.category,
           is_public: selectedImage.is_public,
           created_at: selectedImage.created_at,
@@ -285,6 +287,7 @@ export const discoveryService = {
           owner_id,
           org_id,
           storage_path,
+          cropped_path,
           category,
           is_public,
           created_at,
@@ -339,7 +342,9 @@ export const discoveryService = {
           }
 
           // Generate signed URL
-          const imageUrl = await storageService.getPhotoUrl(img.storage_path);
+          // Prefer cropped version if available, fall back to original
+          const imagePath = img.cropped_path ?? img.storage_path;
+          const imageUrl = await storageService.getPhotoUrl(imagePath);
 
           return {
             image: {
@@ -347,6 +352,7 @@ export const discoveryService = {
               owner_id: img.owner_id,
               org_id: img.org_id,
               storage_path: img.storage_path,
+              cropped_path: img.cropped_path ?? null,
               category: img.category,
               is_public: img.is_public,
               created_at: img.created_at,

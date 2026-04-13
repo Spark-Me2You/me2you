@@ -1,10 +1,14 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute, AdminOnlyRoute, UserProtectedRoute } from '@/core/auth';
-import { AdminLoginPage, OrgSelectorPage } from '@/features/admin';
-import { RegistrationPage } from '@/features/registration';
-import { UserLandingPage, UserProfileView } from '@/features/user';
-import AppContainer from './AppContainer';
-import './App.css';
+import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  ProtectedRoute,
+  AdminOnlyRoute,
+  UserProtectedRoute,
+} from "@/core/auth";
+import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
+import { RegistrationPage } from "@/features/registration";
+import { UserLandingPage, UserProfileView } from "@/features/user";
+import AppContainer from "./AppContainer";
+import "./App.css";
 
 /**
  * Main App Component

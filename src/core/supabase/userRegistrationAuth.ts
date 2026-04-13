@@ -6,6 +6,7 @@
 import { supabase } from "./client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { UserProfile } from "@/core/auth/AuthContext";
+import type { FaceLandmarks } from "@/features/registration/services/faceCropService";
 
 /**
  * Input for creating a user profile
@@ -374,6 +375,97 @@ export const userRegistrationAuthService = {
     }
 
     return data?.onboarding_complete ?? null;
+  },
+
+  /**
+   * Create a gesture_image record in the gesture_image table
+   * Replaces createImageRecord for gesture photos
+   *
+   * @param imageData - Gesture image record data
+   * @returns Promise with created gesture_image record
+   * @throws Error if gesture_image record creation fails
+   */
+  createGestureImageRecord: async (
+    imageData: CreateImageRecordInput,
+  ): Promise<{ id: string; storage_path: string }> => {
+    console.log("[userRegistrationAuth] Creating gesture_image record...");
+
+    const imageToInsert = {
+      owner_id: imageData.owner_id,
+      org_id: imageData.org_id,
+      storage_path: imageData.storage_path,
+      category: imageData.category || "wave",
+      is_public: imageData.is_public ?? true,
+    };
+
+    const { data, error } = await supabase
+      .from("gesture_image")
+      .insert(imageToInsert)
+      .select("id, storage_path")
+      .single();
+
+    if (error) {
+      console.error(
+        "[userRegistrationAuth] Gesture image record creation error:",
+        error,
+      );
+      throw new Error(`Failed to create gesture_image record: ${error.message}`);
+    }
+
+    console.log("[userRegistrationAuth] Gesture image record created successfully");
+
+    return data;
+  },
+
+  /**
+   * Create a cropped_image record with face landmarks
+   *
+   * @param data - Cropped image data with landmarks
+   * @returns Promise with created cropped_image record
+   * @throws Error if cropped_image record creation fails
+   */
+  createCroppedImageRecord: async (data: {
+    owner_id: string;
+    org_id: string;
+    storage_path: string;
+    landmarks: FaceLandmarks;
+    is_public: boolean;
+  }): Promise<{ id: string; storage_path: string }> => {
+    console.log("[userRegistrationAuth] Creating cropped_image record...");
+
+    const imageToInsert = {
+      owner_id: data.owner_id,
+      org_id: data.org_id,
+      storage_path: data.storage_path,
+      is_public: data.is_public,
+      // Map FaceLandmarks to PostgreSQL point columns
+      left_eye_point: `(${data.landmarks.leftEye.x},${data.landmarks.leftEye.y})`,
+      right_eye_point: `(${data.landmarks.rightEye.x},${data.landmarks.rightEye.y})`,
+      centroid_point: `(${data.landmarks.faceCenter.x},${data.landmarks.faceCenter.y})`,
+      nose_tip_point: `(${data.landmarks.noseTip.x},${data.landmarks.noseTip.y})`,
+      mouth_center_point: `(${data.landmarks.mouthCenter.x},${data.landmarks.mouthCenter.y})`,
+      chin_bottom_point: `(${data.landmarks.chinBottom.x},${data.landmarks.chinBottom.y})`,
+      forehead_top_point: `(${data.landmarks.foreheadTop.x},${data.landmarks.foreheadTop.y})`,
+      // Legacy fields remain null: chin_point, left_jaw_point, right_jaw_point
+    };
+
+    const { data: insertedData, error } = await supabase
+      .from("cropped_image")
+      .insert(imageToInsert)
+      .select("id, storage_path")
+      .single();
+
+    if (error) {
+      console.error(
+        "[userRegistrationAuth] Cropped image record creation error:",
+        error,
+      );
+      throw new Error(`Failed to create cropped_image record: ${error.message}`);
+    }
+
+    console.log("[userRegistrationAuth] Cropped image record created successfully");
+
+    return insertedData;
   },
 
   /**
