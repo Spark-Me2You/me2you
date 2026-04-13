@@ -166,10 +166,13 @@ const segmentHead = (
   imageWidth: number,
   imageHeight: number
 ): { mask: Uint8ClampedArray; bounds: HeadBounds | null } => {
-  const categoryMask = segmentationResult.categoryMask!.getAsUint8Array();
+  const mask = new Uint8ClampedArray(imageWidth * imageHeight);
+  const categoryMask = segmentationResult.categoryMask?.getAsUint8Array();
+  if (!categoryMask) {
+    return { mask, bounds: null };
+  }
 
   // Create binary mask: 255 for head pixels, 0 for background
-  const mask = new Uint8ClampedArray(imageWidth * imageHeight);
   let xMin = imageWidth,
     yMin = imageHeight,
     xMax = 0,
@@ -221,6 +224,11 @@ const extractLandmarks = (
   }
 
   const landmarks = landmarkerResult.faceLandmarks[0];
+  const requiredIndices = [1, 10, 13, 33, 152, 263];
+  const maxRequiredIndex = Math.max(...requiredIndices);
+  if (!landmarks || landmarks.length <= maxRequiredIndex) {
+    return null;
+  }
 
   // MediaPipe face mesh indices for key landmarks
   const leftEye = landmarks[33];
@@ -229,6 +237,10 @@ const extractLandmarks = (
   const mouthCenter = landmarks[13];
   const chinBottom = landmarks[152];
   const foreheadTop = landmarks[10];
+
+  if (!leftEye || !rightEye || !noseTip || !mouthCenter || !chinBottom || !foreheadTop) {
+    return null;
+  }
 
   return {
     leftEye: { x: leftEye.x, y: leftEye.y },
@@ -374,7 +386,7 @@ const cropFace = async (
       throw new FaceNotDetectedError('No head detected in segmentation');
     }
 
-    console.log('[faceCropService] Head detected:', bounds);
+    console.log('[faceCropService] Head detected');
 
     // Run landmark detection (if enabled)
     let landmarks: FaceLandmarks | null = null;
@@ -387,7 +399,7 @@ const cropFace = async (
       confidence = landmarks ? 0.95 : 0;
 
       if (landmarks) {
-        console.log('[faceCropService] Landmarks extracted:', landmarks);
+        console.log('[faceCropService] Landmarks extracted');
       } else {
         console.warn('[faceCropService] No landmarks detected');
       }

@@ -268,8 +268,6 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                   try {
                     // Generate public URL from storage_path
                     const faceUrl = await storageService.getPhotoUrl(row.storage_path);
-                    console.log('[PixiHub] centroid_point:', row.centroid_point); // add here
-                    console.log('[PixiHub] face url:', faceUrl);
 
                     // Load face texture
                     const faceTexture = await Assets.load(faceUrl);
