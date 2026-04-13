@@ -77,8 +77,8 @@
 
 .mainContainerOuter {
   position: absolute;
-  top: 10%;          /* move UP by lowering this number */
-  left: -20.44%;
+  top: 10.50%;          /* move UP by lowering this number */
+  left: -18.77%;
   
   /* REMOVE bottom + right */
   
@@ -93,7 +93,7 @@
   position: relative;
   width: 1511px;
   height: 711px;
-  transform: scale(0.67) rotate(-2.05deg);
+  transform: scale(0.70) rotate(-2.05deg);
   border-radius: 40px;
   background: rgba(255, 255, 255, 0.13);
   box-shadow:
@@ -247,13 +247,13 @@
 
 .corkBoard {
   position: absolute;
-  top: 0%;          /* 👈 MOVE UP HERE */
-  right: 0%;        /* 👈 move left/right easily */
+  top: -4%;          
+  right: 7%;       
 
   width: 910px;
   height: 613px;
 
-  transform: scale(0.80) rotate(173.26deg);
+  transform: scale(0.64) rotate(173.26deg);
   transform-origin: center;
 
   overflow: hidden;
@@ -282,12 +282,12 @@
 .newHerePill {
   position: absolute;
   bottom: 6%;
-  left: 44%;
-  padding: 6px 24px;
+  left: 44.5%;
+  padding: 2px 24px;
   background: #d3e405;
   border-radius: 46px;
   font-family: "Jersey 10", sans-serif;
-  font-size: 36px;
+  font-size: 35px;
   letter-spacing: 6.12px;
   color: #000;
   text-align: left;
@@ -310,7 +310,7 @@
   align-items: center;
   justify-content: center;
   transform: rotate(187deg);
-  z-index: 4;
+  z-index: 6;
 }
 
 .numberCircleSvg {
@@ -333,27 +333,32 @@
 
 /* Step 1 circle: Figma viewport 1372,199 → within cork board */
 .step1Number {
-  top: 80%;
-  left: 90%;
+  top: 85%;
+  left: 92%;
 }
 
 /* Step 1 label wrapper: SVG banner behind text */
 .step1LabelWrap {
   position: absolute;
-  top: 79%;
-  left: 62%;
+  top: 81.5%;
+  left: 65%;
+  height: 40px;
   width: 280px;
   transform: rotate(187deg);
   z-index: 4;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Step 1 label: 19px, tracking 3.23px */
 .step1Label {
-  position: relative;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
   color: #000;
+  justify-content: center;
   text-align: center;
   margin: 0;
   z-index: 1;
@@ -579,8 +584,8 @@
    ============================================= */
 .qrBox {
   position: absolute;
-  top: 69.07%;
-  left: 67.6%;
+  top: 50.07%;
+  left: 50.6%;
   display: flex;
   align-items: center;
   justify-content: center;
