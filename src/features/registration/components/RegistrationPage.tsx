@@ -83,10 +83,11 @@ const RegistrationWizard: React.FC = () => {
           />
         );
 
-      case 'bobblehead':
-        return croppedPhotoUrl ? (
+      case 'bobblehead': {
+        const previewUrl = croppedPhotoUrl;
+        return previewUrl ? (
           <BobbleheadPreviewStep
-            croppedPhotoUrl={croppedPhotoUrl}
+            croppedPhotoUrl={previewUrl}
             onSubmit={handleBobbleheadSubmit}
             onRetake={() => goToStep('photo')}
             isSubmitting={isSubmitting}
@@ -94,6 +95,7 @@ const RegistrationWizard: React.FC = () => {
             onClearError={clearError}
           />
         ) : null;
+      }
 
       case 'success':
         return <SuccessStep userName={formData.name} />;

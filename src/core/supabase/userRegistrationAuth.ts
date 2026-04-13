@@ -298,7 +298,7 @@ export const userRegistrationAuthService = {
       .from("user")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return null;
@@ -364,7 +364,7 @@ export const userRegistrationAuthService = {
       .from("user")
       .select("onboarding_complete")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(
