@@ -143,16 +143,6 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
             </div>
           </div>
 
-          {onViewProfile && (
-            <span className={styles.seeMoreBadge}>
-              <img
-                src={backfingerIcon}
-                alt="See more"
-                className={styles.handIcon}
-              />
-              <span className={styles.seeMoreText}>see more!</span>
-            </span>
-          )}
         </button>
       </div>
     );

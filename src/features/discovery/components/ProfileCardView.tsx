@@ -8,6 +8,8 @@ import React from 'react';
 import type { RandomImageData } from '../types/image';
 import me2youLogo from '@/assets/me2you.png';
 import registerQr from '@/assets/registerqr.png';
+import otterHandImage from '@/assets/hand.png';
+import arrow2 from '@/assets/arrow2.svg';
 
 const ORANGE = '#e44805';
 const GLASS_INSET =
@@ -30,12 +32,13 @@ const TAPE_STYLE: React.CSSProperties = {
 const TEXT_STYLE: React.CSSProperties = {
   color: '#000',
   fontFamily: '"Andale Mono", monospace',
-  fontSize: 36,
+  fontSize: 18,
   fontStyle: 'normal',
   fontWeight: 400,
   lineHeight: 'normal',
-  letterSpacing: '-1.44px',
+  letterSpacing: '-0.72px',
   margin: 0,
+  textAlign: 'left',
 };
 
 interface ProfileCardViewProps {
@@ -102,8 +105,8 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
         onClick={onBack}
         style={{
           position: 'absolute',
-          top: '2%',
-          left: '4%',
+          top: 16,
+          left: 16,
           width: 183,
           height: 81,
           borderRadius: 13,
@@ -239,6 +242,56 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           style={{ width: '13vw', objectFit: 'contain', display: 'block' }}
         />
       </div>
+
+      {/* ── QR label text ── */}
+      <p style={{
+        position: 'absolute',
+        top: '45%',
+        right: '3%',
+        width: '14vw',
+        fontFamily: '"Averia Libre", sans-serif',
+        fontSize: 'clamp(12px, 1.6vw, 28px)',
+        letterSpacing: '5.44px',
+        color: '#000',
+        textAlign: 'center',
+        lineHeight: 1.1,
+        margin: 0,
+        transform: 'rotate(5.04deg)',
+        pointerEvents: 'none',
+        zIndex: 10,
+      }}>
+        scan here to create and edit your profile!
+      </p>
+
+      {/* ── QR arrow ── */}
+      <img
+        src={arrow2}
+        alt=""
+        style={{
+          position: 'absolute',
+          top: '58%',
+          right: '4%',
+          width: 34,
+          height: 16,
+          transform: 'rotate(101.44deg)',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      />
+
+      {/* ── Otter hand ── */}
+      <img
+        src={otterHandImage}
+        alt=""
+        style={{
+          position: 'absolute',
+          top: '84%',
+          right: '11%',
+          width: '16vw',
+          objectFit: 'contain',
+          pointerEvents: 'none',
+        }}
+      />
 
     </div>
   );
