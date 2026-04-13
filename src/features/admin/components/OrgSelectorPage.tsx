@@ -6,7 +6,7 @@ import { supabase } from '@/core/supabase';
 import { GlassCard } from '@/shared/components/GlassCard';
 import { colors } from '@/shared/theme/colors';
 import styles from './OrgSelectorPage.module.css';
-import backfinger from '@/assets/backfinger.png';
+import pinkBackArrow from '@/assets/pink_back_arrow.svg';
 
 interface Organization {
   id: string;
@@ -111,7 +111,7 @@ export const OrgSelectorPage: React.FC = () => {
         className={styles.backContainer}
         onClick={async () => { await signOut(); navigate('/login', { replace: true }); }}
       >
-        <img src={backfinger} alt="" className={styles.backImage} />
+        <img src={pinkBackArrow} alt="" className={styles.backImage} />
         <span className={styles.backText}>back to admin<br />sign-in</span>
       </div>
 
