@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
-import { Application, Assets, Sprite, Texture } from 'pixi.js';
-import { useAppState } from '@/core/state-machine';
-import { AppState } from '@/core/state-machine/appStateMachine';
-import { croppedImageService } from '@/features/hub/services/croppedImageService';
-import { storageService } from '@/core/supabase/storage';
+import React, { useEffect, useRef } from "react";
+import { Application, Assets, Sprite, Texture } from "pixi.js";
+import { useAppState } from "@/core/state-machine";
+import { AppState } from "@/core/state-machine/appStateMachine";
+import { croppedImageService } from "@/features/hub/services/croppedImageService";
+import { storageService } from "@/core/supabase/storage";
 
 export interface CharacterClickData {
   owner_id: string;
@@ -11,9 +11,10 @@ export interface CharacterClickData {
   storage_path: string;
 }
 
-export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) => void }> = ({
-  onCharacterClick,
-}) => {
+export const PixiHub: React.FC<{
+  onCharacterClick?: (data: CharacterClickData) => void;
+  orgId: string;
+}> = ({ onCharacterClick, orgId }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const { transitionTo } = useAppState();
@@ -27,23 +28,32 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
       try {
         const app = new Application();
         await app.init({ resizeTo: window });
-        if (!isMounted) { app.destroy(); return; }
+        if (!isMounted) {
+          app.destroy();
+          return;
+        }
         canvasRef.current.appendChild(app.canvas);
         appRef.current = app;
 
         function loadFrames(prefix: string, names: string[]) {
           return Promise.all(
-            names.map(name =>
-              Assets.load(`/animations/${prefix}${name}.png`).catch(e => {
-                console.error(`Failed to load: /animations/${prefix}${name}.png`, e);
+            names.map((name) =>
+              Assets.load(`/animations/${prefix}${name}.png`).catch((e) => {
+                console.error(
+                  `Failed to load: /animations/${prefix}${name}.png`,
+                  e,
+                );
                 return Texture.WHITE;
-              })
-            )
+              }),
+            ),
           );
         }
 
-        const bgTexture = await Assets.load('/bg_v0.png');
-        if (!isMounted) { app.destroy(); return; }
+        const bgTexture = await Assets.load("/bg_v0.png");
+        if (!isMounted) {
+          app.destroy();
+          return;
+        }
 
         const bg = new Sprite(bgTexture);
         bg.width = app.screen.width;
@@ -52,10 +62,16 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
-        const HEAD_OFFSET_X = 0;
-        const HEAD_OFFSET_Y = -150;
+        const HEAD_OFFSET_X = 5;
+        const HEAD_OFFSET_Y = -145;
 
-        function buildFrameSets(def: Texture, def2: Texture, def3: Texture, right: Texture, left: Texture) {
+        function buildFrameSets(
+          def: Texture,
+          def2: Texture,
+          def3: Texture,
+          right: Texture,
+          left: Texture,
+        ) {
           return {
             idle: [def, def2, def3, def2],
             walkRight: [right, left, def],
@@ -74,7 +90,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           centroidPoint?: { x: number; y: number },
           ownerId?: string,
           croppedImageId?: string,
-          storagePath?: string
+          storagePath?: string,
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
@@ -84,12 +100,12 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           // Make walker clickable if we have owner data
           if (ownerId && onCharacterClick) {
             walker.interactive = true;
-            walker.cursor = 'pointer';
-            walker.on('pointerdown', () => {
+            walker.cursor = "pointer";
+            walker.on("pointerdown", () => {
               onCharacterClick({
                 owner_id: ownerId,
-                cropped_image_id: croppedImageId || '',
-                storage_path: storagePath || '',
+                cropped_image_id: croppedImageId || "",
+                storage_path: storagePath || "",
               });
             });
           }
@@ -97,10 +113,8 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           let faceSprite: Sprite | null = null;
           if (faceTexture && centroidPoint) {
             faceSprite = new Sprite(faceTexture);
-            faceSprite.anchor.set(
-              centroidPoint.x / faceTexture.width,
-              centroidPoint.y / faceTexture.height
-            );
+            // Use center anchor since centroid is relative to original image, not crop
+            faceSprite.anchor.set(0.5, 0.5);
             faceSprite.scale.set(0.35);
             app.stage.addChild(faceSprite);
           }
@@ -110,7 +124,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           let speed = 0;
           let angle = Math.random() * Math.PI * 2;
           let stateTimer = 0;
-          let state: 'idle' | 'walk' | 'jump' = 'idle';
+          let state: "idle" | "walk" | "jump" = "idle";
           let bobPhase = 0;
 
           let idleFrameIndex = 0;
@@ -124,21 +138,21 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           function pickState() {
             const r = Math.random();
             if (r < 0.55) {
-              state = 'idle';
+              state = "idle";
               speed = 0;
               stateTimer = 180 + Math.random() * 300;
               idleFrameIndex = 0;
               idleFrameTimer = 0;
               if (idleFrames) walker.texture = idleFrames[0];
             } else if (r < 0.75) {
-              state = 'jump';
+              state = "jump";
               speed = 0;
               jumpVY = -(3 + Math.random() * 2);
               jumpY = 0;
               stateTimer = 999;
               if (idleFrames) walker.texture = idleFrames[0];
             } else {
-              state = 'walk';
+              state = "walk";
               speed = 0.3 + Math.random() * 0.4;
               angle = Math.random() * Math.PI * 2;
               stateTimer = 60 + Math.random() * 90;
@@ -153,7 +167,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
             stateTimer -= dt;
             if (stateTimer <= 0) pickState();
 
-            if (state === 'walk') {
+            if (state === "walk") {
               angle += (Math.random() - 0.5) * 0.02 * dt;
               wx += Math.cos(angle) * speed * dt;
               wy += Math.sin(angle) * speed * dt;
@@ -161,13 +175,27 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
               const M = 40;
               const yMin = app.screen.height / 3;
 
-              if (wx < M) { wx = M; angle = Math.PI - angle; }
-              if (wx > app.screen.width - M) { wx = app.screen.width - M; angle = Math.PI - angle; }
-              if (wy < yMin) { wy = yMin; angle = -angle; }
-              if (wy > app.screen.height - M) { wy = app.screen.height - M; angle = -angle; }
+              if (wx < M) {
+                wx = M;
+                angle = Math.PI - angle;
+              }
+              if (wx > app.screen.width - M) {
+                wx = app.screen.width - M;
+                angle = Math.PI - angle;
+              }
+              if (wy < yMin) {
+                wy = yMin;
+                angle = -angle;
+              }
+              if (wy > app.screen.height - M) {
+                wy = app.screen.height - M;
+                angle = -angle;
+              }
 
               const movingRight = Math.cos(angle) >= 0;
-              const activeWalkFrames = movingRight ? walkFramesRight : walkFramesLeft;
+              const activeWalkFrames = movingRight
+                ? walkFramesRight
+                : walkFramesLeft;
 
               walker.scale.x = 0.4;
               bobPhase += 0.1 * dt;
@@ -177,11 +205,12 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                 walkFrameTimer += dt;
                 if (walkFrameTimer >= WALK_FRAME_DURATION) {
                   walkFrameTimer -= WALK_FRAME_DURATION;
-                  walkFrameIndex = (walkFrameIndex + 1) % activeWalkFrames.length;
+                  walkFrameIndex =
+                    (walkFrameIndex + 1) % activeWalkFrames.length;
                   walker.texture = activeWalkFrames[walkFrameIndex];
                 }
               }
-            } else if (state === 'jump') {
+            } else if (state === "jump") {
               jumpVY += 0.25 * dt;
               jumpY += jumpVY * dt;
               walker.y = wy + jumpY;
@@ -204,14 +233,14 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
             }
 
             walker.x = wx;
-            if (state === 'walk') {
+            if (state === "walk") {
               walker.rotation = Math.sin(bobPhase * 0.5) * 0.04;
             }
 
             if (faceSprite) {
               faceSprite.x = walker.x + HEAD_OFFSET_X;
               faceSprite.y = walker.y + HEAD_OFFSET_Y;
-              if (state === 'walk') {
+              if (state === "walk") {
                 faceSprite.rotation = Math.sin(bobPhase * 0.5) * 0.04;
               } else {
                 faceSprite.rotation = 0;
@@ -222,7 +251,13 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
 
         // Cache body frame textures (loaded once and reused across all walkers)
         const bodyFrames = await Promise.all([
-          loadFrames('', ['default', 'default2', 'default3', 'rightstep', 'leftstep']),
+          loadFrames("", [
+            "default",
+            "default2",
+            "default3",
+            "rightstep",
+            "leftstep",
+          ]),
         ]);
 
         const defaultBodyFrames = buildFrameSets(
@@ -230,10 +265,13 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
           bodyFrames[0][1],
           bodyFrames[0][2],
           bodyFrames[0][3],
-          bodyFrames[0][4]
+          bodyFrames[0][4],
         );
 
-        if (!isMounted) { app.destroy(); return; }
+        if (!isMounted) {
+          app.destroy();
+          return;
+        }
 
         const w = app.screen.width;
         const h = app.screen.height;
@@ -250,15 +288,15 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
         // Fetch and load characters in paginated batches
         const loadBatches = async () => {
           let offset = 0;
-          const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
 
           while (isMounted) {
             try {
-              const { rows, pagination } = await croppedImageService.getPaginatedCroppedImages(
-                orgId,
-                offset,
-                10
-              );
+              const { rows, pagination } =
+                await croppedImageService.getPaginatedCroppedImages(
+                  orgId,
+                  offset,
+                  10,
+                );
 
               if (rows.length === 0) break;
 
@@ -267,7 +305,9 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                 rows.map(async (row) => {
                   try {
                     // Generate public URL from storage_path
-                    const faceUrl = await storageService.getPhotoUrl(row.storage_path);
+                    const faceUrl = await storageService.getPhotoUrl(
+                      row.storage_path,
+                    );
 
                     // Load face texture
                     const faceTexture = await Assets.load(faceUrl);
@@ -287,7 +327,7 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                       row.centroid_point ?? undefined,
                       row.owner_id,
                       row.id,
-                      row.storage_path
+                      row.storage_path,
                     );
 
                     // Add ticker to array immediately
@@ -295,17 +335,17 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
                   } catch (error) {
                     console.error(
                       `[PixiHub] Failed to load character for ${row.id}:`,
-                      error
+                      error,
                     );
                   }
-                })
+                }),
               );
 
               // Check if there are more batches
               if (!pagination.hasMore) break;
               offset = pagination.offset;
             } catch (error) {
-              console.error('[PixiHub] Failed to fetch batch:', error);
+              console.error("[PixiHub] Failed to fetch batch:", error);
               break;
             }
           }
@@ -316,10 +356,10 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
 
         // Add ticker to update all walkers
         app.ticker.add((time) => {
-          tickers.forEach(tick => tick(time.deltaTime));
+          tickers.forEach((tick) => tick(time.deltaTime));
         });
       } catch (err) {
-        console.error('Failed to initialize Pixi app:', err);
+        console.error("Failed to initialize Pixi app:", err);
       }
     };
 
@@ -339,22 +379,22 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={canvasRef} style={{ width: '100%', height: '100%' }} />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div ref={canvasRef} style={{ width: "100%", height: "100%" }} />
       <button
         onClick={handleClick}
         style={{
-          position: 'fixed',
-          bottom: '3%',
-          right: '4%',
-          backgroundColor: '#7105e4',
-          color: '#fff',
-          border: 'none',
-          padding: '14px 28px',
+          position: "fixed",
+          bottom: "3%",
+          right: "4%",
+          backgroundColor: "#7105e4",
+          color: "#fff",
+          border: "none",
+          padding: "14px 28px",
           fontFamily: "'Jersey 10', sans-serif",
-          fontSize: 'clamp(16px, 1.8vw, 28px)',
-          letterSpacing: '5px',
-          cursor: 'pointer',
+          fontSize: "clamp(16px, 1.8vw, 28px)",
+          letterSpacing: "5px",
+          cursor: "pointer",
           borderRadius: 6,
           zIndex: 100,
         }}
@@ -364,5 +404,3 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
     </div>
   );
 };
-
-
