@@ -33,6 +33,12 @@ const MODELS = [
     url: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task",
     expectedSize: 20 * 1024 * 1024, // ~20MB
   },
+  {
+    name: "Image Segmenter (Selfie Multiclass)",
+    filename: "selfie_multiclass_256x256.tflite",
+    url: "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
+    expectedSize: 16 * 1024 * 1024, // ~16MB
+  },
 ];
 
 const MODELS_DIR = join(__dirname, "..", "public", "models");

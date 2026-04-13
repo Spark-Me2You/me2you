@@ -34,8 +34,9 @@ export const gestureRecognizerConfig = {
 
 export const imageSegmenterConfig = {
   // selfie_multiclass model for hair + face segmentation
-  // Must be served locally (CORS restrictions on Google Storage)
-  modelAssetPath: "/models/selfie_multiclass_256x256.tflite",
+  // Fetch directly from Google Cloud Storage CDN
+  modelAssetPath:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
   runningMode: "IMAGE" as const,
   outputCategoryMask: true,
   outputConfidenceMasks: true, // For smoother hair edge blending
