@@ -176,28 +176,11 @@ The model is cached after first load, so subsequent detections are fast.
 
 `registrationService.ts` orchestrates the complete registration flow including photo upload.
 
-### Dual Photo Upload
+### Current Upload Flow
 
-The service now supports uploading both original and cropped photos:
+The registration flow uses client-side face cropping and uploads:
 
-```typescript
-import { registrationService } from './services/registrationService';
+1. Original gesture photo to storage + `gesture_image` record
+2. Cropped face PNG to storage + `cropped_image` record with landmarks
 
-const result = await registrationService.uploadPhotosAndCreateRecord(
-  originalBlob,
-  croppedBlob,
-  userId,
-  gestureCategory
-);
-
-console.log('Original path:', result.storage_path);
-console.log('Cropped path:', result.cropped_path);
-```
-
-The image database record is updated with both paths immediately (no async edge function needed).
-
-## Smart Crop Service
-
-`smartCropService.ts` provides backward compatibility for triggering the server-side edge function (if needed as fallback).
-
-This is now primarily used for legacy images or as a backup if client-side cropping fails.
+No server-side cropping edge function is used in the active registration path.
