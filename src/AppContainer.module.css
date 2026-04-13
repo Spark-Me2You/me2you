@@ -301,10 +301,23 @@
   z-index: 3;
 }
 
-/* ===== Step number circle — sits at left edge of label wrapper ===== */
+/* ===== Step number circle — left or right edge of label wrapper ===== */
 .stepNumberOnLabel {
   position: absolute;
-  left: 0%;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.stepNumberOnLabelRight {
+  position: absolute;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   width: 34px;
@@ -338,7 +351,7 @@
   position: absolute;
   top: 81.5%;
   left: 62%;
-  height: 36.265px;
+  height: 58px;
   width: 248.184px;
   transform: rotate(187deg);
   z-index: 4;
@@ -350,11 +363,11 @@
 
 /* Step 1 label: 19px, tracking 3.23px */
 .step1Label {
+  flex: 1;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
   color: #000;
-  justify-content: center;
   text-align: center;
   margin: 0;
   z-index: 1;
@@ -391,6 +404,7 @@
   height: 155px;
   object-fit: cover;
   border-radius: 18px;
+  transform: scaleX(-1);
 }
 
 /* (hover) caption: 13px, tracking 2.21px */
@@ -407,18 +421,19 @@
   z-index: 4;
 }
 
-/* Step 2 label wrapper */
+/* Step 2 label wrapper — number is on the RIGHT */
 .step2LabelWrap {
   position: absolute;
-  top: 68%;
+  top: 65%;
   left: 30%;
-  height: 41.382px;
+  height: 58px;
   width: 321.757px;
   transform: rotate(187deg);
   z-index: 4;
   display: flex;
   align-items: center;
-  padding-left: 38px;
+  padding-right: 38px;
+  overflow: visible;
 }
 
 /* Step 2 label: 14px, tracking 2.38px */
@@ -464,6 +479,7 @@
   height: 152px;
   object-fit: cover;
   border-radius: 4px;
+  transform: scaleX(-1);
 }
 
 /* Arrow pointing to thumb (between step 2 image and hint) */
@@ -510,10 +526,10 @@
 /* Step 3 label wrapper */
 .step3LabelWrap {
   position: absolute;
-  top: 27%;
-  left: 45%;
-  height: 48.221px;
-  width: 355.615px;
+  top: 26%;
+  left: 40%;
+  height: 58px;
+  width: 400.615px;
   transform: rotate(187deg);
   z-index: 4;
   display: flex;
@@ -523,7 +539,7 @@
 
 /* Step 3 label: 19px, tracking 3.23px */
 .step3Label {
-  position: relative;
+  flex: 1;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
@@ -561,6 +577,9 @@
   color: #f5f5f5;
   text-transform: lowercase;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transform: rotate(187deg);
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),

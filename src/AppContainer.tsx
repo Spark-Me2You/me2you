@@ -30,7 +30,7 @@ import polaroidFrame1 from "@/assets/polaroid_frame1.svg";
 import polaroidFrame2 from "@/assets/polaroid_frame2.svg";
 import numberCircle from "@/assets/number_circle.svg";
 import labelBanner1 from "@/assets/label_banner1.svg";
-import labelBanner2 from "@/assets/label_banner2.svg";
+import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
 import styles from "./AppContainer.module.css";
 
@@ -166,11 +166,11 @@ function AppContainerContent() {
                 {/* Step 2 */}
                 <div className={styles.step2LabelWrap}>
                   <img src={labelBanner2} alt="" className={styles.labelBannerSvg} />
-                  <div className={styles.stepNumberOnLabel}>
+                  <p className={styles.step2Label}>see the cursor? now click by doing this!</p>
+                  <div className={styles.stepNumberOnLabelRight}>
                     <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
                     <span className={styles.numberText}>2</span>
                   </div>
-                  <p className={styles.step2Label}>see the cursor? now click by doing this!</p>
                 </div>
                 <div className={styles.polaroid2}>
                   <img src={polaroidFrame2} alt="" className={styles.polaroidFrameSvg} />
