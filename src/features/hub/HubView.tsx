@@ -10,6 +10,7 @@ import { AppState } from '@/core/state-machine/appStateMachine';
 import { PixiHub, type CharacterClickData } from './components/PixiHub';
 import { ProfileCardView } from '@/features/discovery/components/ProfileCardView';
 import { hubService } from './services/hubService';
+import { storageService } from '@/core/supabase/storage';
 import type { RandomImageData } from '@/features/discovery/types/image';
 
 export const HubView: React.FC = () => {
@@ -29,19 +30,31 @@ export const HubView: React.FC = () => {
           return;
         }
 
-        // Build RandomImageData for ProfileCardView using their profile image
+        // Fetch gesture_image (full photo) for profile display
+        const gestureImagePath = await hubService.getGestureImageByOwnerId(
+          data.owner_id,
+          kioskOrgId || ''
+        );
+
+        // Generate signed URL for the gesture image
+        let profileImageUrl = '';
+        if (gestureImagePath) {
+          profileImageUrl = await storageService.getPhotoUrl(gestureImagePath);
+        }
+
+        // Build RandomImageData for ProfileCardView using gesture_image
         const profileData: RandomImageData = {
           image: {
             id: data.cropped_image_id,
             owner_id: data.owner_id,
             org_id: '',
-            storage_path: data.storage_path,
+            storage_path: gestureImagePath || data.storage_path,
             category: 'profile',
             is_public: true,
             created_at: owner.user.created_at,
           },
           owner: owner.user,
-          imageUrl: owner.profileImageUrl || '',
+          imageUrl: profileImageUrl,
         };
 
         setSelectedProfile(profileData);
