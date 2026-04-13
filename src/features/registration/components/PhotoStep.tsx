@@ -8,10 +8,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
 import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
-import backfingerImg from '../../../assets/backfinger.png';
-import thumbsUpImg from '../../../assets/thumbsUP.png';
+// TODO: replace with pink_back_arrow.svg / next_button.svg when assets are available
+import pinkBackArrowImg from '../../../assets/arrow2.svg';
+import nextButtonImg from '../../../assets/arrow1.svg';
 import peaceImg from '../../../assets/peace.png';
 import waveImg from '../../../assets/wave.png';
+import thumbsUpImg from '../../../assets/thumbsUP.png';
 
 export type GestureCategory = 'wave' | 'peace_sign' | 'thumbs_up';
 
@@ -235,10 +237,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
 
   return (
     <div className={styles.photoStepWrapper}>
-      <div className={styles.poseTabWrapper}>
-        <div className={styles.poseTab}>
-          <p className={styles.poseTabText}>choose a pose!</p>
-        </div>
+      <div className={styles.poseBanner}>
+        <p className={styles.poseBannerText}>choose a pose!</p>
+        <p className={styles.poseBannerText}>*do not put hands over face*</p>
       </div>
 
       {/* Decorative hands */}
@@ -298,27 +299,27 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
             />
           </div>
         ) : (
-          /* Photo taken — retake (left) | looks good (right) */
+          /* Photo taken — retake (left, pink) | looks good (right, lime) */
           <div className={styles.photoActionRow}>
-            {/* Retake */}
+            {/* Retake — pink back arrow */}
             <button
               type="button"
               className={styles.photoActionBtn}
               onClick={handleRetake}
               disabled={isBusy}
             >
-              <img src={thumbsUpImg} alt="" className={styles.retakeFinger} />
+              <img src={pinkBackArrowImg} alt="" className={styles.retakeFinger} />
               retake please!
             </button>
 
-            {/* Looks good */}
+            {/* Looks good — lime next arrow */}
             <button
               type="button"
               className={styles.photoActionBtn}
               onClick={handleLooksGood}
               disabled={isBusy || !detectedCategory}
             >
-              <img src={thumbsUpImg} alt="" className={styles.looksGoodFinger} />
+              <img src={nextButtonImg} alt="" className={styles.looksGoodFinger} />
               {isSubmitting ? '...' : 'looks good!'}
             </button>
           </div>
@@ -331,8 +332,9 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         className={styles.photoStepBackBtn}
         onClick={onBack}
         disabled={isBusy}
+        style={{ marginTop: '30px' }}
       >
-        <img src={backfingerImg} alt="" className={styles.photoStepBackFinger} />
+        <img src={pinkBackArrowImg} alt="" className={styles.photoStepBackFinger} />
         go back
       </button>
     </div>

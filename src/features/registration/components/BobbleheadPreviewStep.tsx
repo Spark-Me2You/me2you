@@ -1,12 +1,14 @@
 /**
  * BobbleheadPreviewStep Component
- * Shows cropped head preview and asks user to opt-in to network
- * Step order: signup → profile → photo → bobblehead → success
+ * Shows cropped head preview and asks user to opt-in to network.
  */
 
 import React from 'react';
 import styles from './RegistrationSteps.module.css';
-import thumbsUpImg from '../../../assets/thumbsUP.png';
+// TODO: replace with next_button.svg / pink_back_arrow.svg / shanw.png when assets are available
+import nextButtonImg from '../../../assets/arrow1.svg';
+import pinkBackArrowImg from '../../../assets/arrow2.svg';
+import shanwImg from '../../../assets/otter.png';
 
 export interface BobbleheadPreviewStepProps {
   croppedPhotoUrl: string;
@@ -53,30 +55,36 @@ export const BobbleheadPreviewStep: React.FC<BobbleheadPreviewStepProps> = ({
           </div>
         </div>
 
-        {/* Question */}
-        <h2 className={styles.bobbleheadQuestion}>
-          would you like to be added to our network?
-        </h2>
+        {/* Shanw decorative character — absolute positioned */}
+        <img src={shanwImg} alt="" className={styles.bobbleheadShanw} />
 
-        {/* Action buttons */}
+        {/* Blue box question */}
+        <div className={styles.bobbleheadQuestionWrapper}>
+          <p className={styles.bobbleheadQuestion}>
+            would you like to be added to our network?
+          </p>
+        </div>
+
+        {/* Action buttons: pink (no thanks, left) + lime (yes, right) */}
         <div className={styles.bobbleheadActions}>
-          <button
-            type="button"
-            className={styles.bobbleheadBtnYes}
-            onClick={handleYes}
-            disabled={isSubmitting}
-          >
-            <img src={thumbsUpImg} alt="" className={styles.bobbleheadBtnIcon} />
-            YES!
-          </button>
-
           <button
             type="button"
             className={styles.bobbleheadBtnNo}
             onClick={handleNo}
             disabled={isSubmitting}
           >
-            no thanks
+            <img src={pinkBackArrowImg} alt="" className={styles.bobbleheadBtnIcon} />
+            <span className={styles.bobbleheadBtnLabel}>no thanks</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.bobbleheadBtnYes}
+            onClick={handleYes}
+            disabled={isSubmitting}
+          >
+            <img src={nextButtonImg} alt="" className={styles.bobbleheadBtnIcon} />
+            <span className={styles.bobbleheadBtnLabel}>YES!</span>
           </button>
         </div>
 

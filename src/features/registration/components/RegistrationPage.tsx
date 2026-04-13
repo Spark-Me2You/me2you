@@ -23,6 +23,7 @@ import me2youLogo from '../../../assets/me2you.png';
  */
 const RegistrationWizard: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     currentStep,
     formData,
@@ -46,6 +47,13 @@ const RegistrationWizard: React.FC = () => {
       navigate('/user/profile', { replace: true });
     }
   }, [registrationComplete, navigate]);
+
+  // Dev step-jump: ?step=profile etc.
+  useEffect(() => {
+    const step = searchParams.get('step');
+    if (step) goToStep(step as 'signup' | 'profile' | 'photo' | 'bobblehead' | 'success');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const renderStep = () => {
     switch (currentStep) {
@@ -83,10 +91,11 @@ const RegistrationWizard: React.FC = () => {
           />
         );
 
-      case 'bobblehead':
-        return croppedPhotoUrl ? (
+      case 'bobblehead': {
+        const previewUrl = croppedPhotoUrl ?? (searchParams.get('dev') === 'true' ? 'https://placehold.co/300x300' : null);
+        return previewUrl ? (
           <BobbleheadPreviewStep
-            croppedPhotoUrl={croppedPhotoUrl}
+            croppedPhotoUrl={previewUrl}
             onSubmit={handleBobbleheadSubmit}
             onRetake={() => goToStep('photo')}
             isSubmitting={isSubmitting}
@@ -94,6 +103,7 @@ const RegistrationWizard: React.FC = () => {
             onClearError={clearError}
           />
         ) : null;
+      }
 
       case 'success':
         return <SuccessStep userName={formData.name} />;
@@ -126,6 +136,13 @@ export const RegistrationPage: React.FC = () => {
 
   useEffect(() => {
     const validateToken = async () => {
+      // Dev bypass: ?dev=true skips QR token check
+      if (searchParams.get('dev') === 'true') {
+        setRegistrationContext({ org_id: '00000000-0000-0000-0000-000000000000', org_name: 'Dev Org' });
+        setIsValidating(false);
+        return;
+      }
+
       const token = searchParams.get('token');
 
       if (!token) {

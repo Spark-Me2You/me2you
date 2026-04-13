@@ -14,7 +14,7 @@
 
 .logo {
   position: absolute;
-  top: 7px;
+  top: 50px;
   left: 50%;
   width: 270px;
   transform: translateX(-50%) rotate(3.41deg);

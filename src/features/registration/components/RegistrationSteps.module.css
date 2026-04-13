@@ -61,74 +61,101 @@
    ============================ */
 
 .signupWrapper {
-  padding-top: 112px;
+  padding-top: 130px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 .signupCard {
-  background: rgba(255, 255, 255, 0.13);
-  border-radius: 46px;
+  background: rgba(113, 5, 228, 0.57);
   box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  /* Slightly wider than viewport to match Figma (card extends off left edge) */
+    0 0 4px 0 rgba(0, 0, 0, 0.25) inset,
+    1px 1px 49.9px 14px rgba(255, 255, 255, 0.2) inset,
+    0 4px 4px 0 rgba(0, 0, 0, 0.25);
   margin: 0 -10px;
-  padding: 0 26px 44px 30px;
+  padding: 24px 26px 44px 30px;
   flex: 1;
 }
 
 .createTab {
-  background: #d3e405;
-  padding: 14px 20px 14px 30px;
-  margin: 0 -30px 28px -30px; /* flush with card edges */
-  border-radius: 0;
+  background: #e405ac;
+  padding: 8px 18px;
+  margin: 0 0 20px 0;
+  display: inline-block;
 }
 
 .createTabText {
   font-family: 'Averia Libre', sans-serif;
   font-weight: 400;
-  font-size: 24px;
+  font-size: 18px;
   color: #fff;
-  letter-spacing: 4.08px;
+  letter-spacing: 3px;
   margin: 0;
 }
 
+.signupDescription {
+  font-family: 'Averia Libre', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1405e4;
+  letter-spacing: 2.5px;
+  text-align: center;
+  line-height: 1.45;
+  margin: 0 0 24px;
+  background: #58e7f7;
+  border: 9px solid #e405ac;
+  padding: 12px 14px;
+}
+
 .inputBlock {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.inputLabelCyan {
+  background: #58e7f7;
+  padding: 5px 12px 7px;
+  margin-bottom: 10px;
+  align-self: flex-start;
+}
+
+.inputLabelLime {
   background: #d3e405;
-  padding: 10px 12px 14px;
-  margin-bottom: 16px;
+  padding: 5px 12px 7px;
+  margin-bottom: 10px;
+  align-self: flex-start;
 }
 
 .inputBlockLabel {
   font-family: 'Averia Libre', sans-serif;
   font-weight: 400;
   font-size: 15px;
-  color: #fff;
+  color: #1405e4;
   letter-spacing: 2.55px;
-  margin: 0 0 6px;
-  display: block;
+  display: inline-block;
 }
 
 .nextBtnWrapper {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-top: 8px;
-  gap: 6px;
+  margin-top: 16px;
 }
 
 .nextBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  gap: 2px;
-  padding: 6px;
+  gap: 4px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .nextBtn:disabled {
@@ -136,27 +163,18 @@
   cursor: not-allowed;
 }
 
-.nextFinger {
-  width: 82px;
-  /* Flip horizontally so backfinger points RIGHT */
-  transform: scaleX(-1) rotate(-3deg);
+.nextBtnImg {
+  width: 55px;
+  height: 51px;
   display: block;
 }
 
-.nextLabel {
-  font-family: 'Averia Libre', sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  color: #000;
-  letter-spacing: 2.89px;
-}
-
 /* ============================
-   PROFILE STEP — profile-creation-1 + 2 (scrollable)
+   PROFILE STEP — profile-creation (scrollable)
    ============================ */
 
 .profileWrapper {
-  padding-top: 112px;
+  padding-top: 130px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -164,21 +182,18 @@
 }
 
 .profileTab {
-  background: #d3e405;
-  padding: 10px 20px;
+  background: #e405ac;
+  padding: 8px 18px;
+  margin: 0 0 8px 10px;
   display: inline-block;
-  align-self: center;
-  position: relative;
-  z-index: 5;
-  margin-bottom: 12px;
 }
 
 .profileTabText {
   font-family: 'Averia Libre', sans-serif;
   font-weight: 400;
-  font-size: 22px;
+  font-size: 18px;
   color: #fff;
-  letter-spacing: 3.74px;
+  letter-spacing: 3px;
   margin: 0;
 }
 
@@ -189,108 +204,28 @@
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  margin: 0 6px;
-  padding: 24px 20px 40px;
+  margin: 0 -10px;
+  padding: 24px 20px 40px 20px;
   flex: 1;
 }
 
-/* Photo placeholder — top of profile card */
-.photoPlaceholderWrapper {
-  position: relative;
+.profileFieldGroup {
+  margin-bottom: 28px;
   display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-  height: 220px;
-  cursor: pointer;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.photoPlaceholderBox {
-  width: 200px;
-  height: 200px;
-  background: #fff;
-  border-radius: 40px;
-  box-shadow:
-    inset -1px -1px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.photoPlaceholderImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photoClickBanner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* smaller box, bigger text */
-  transform: translate(-50%, -50%) rotate(-8.39deg);
-  background: #d3e405;
-  padding: 6px 20px;
-  white-space: nowrap;
+.profileFieldLabel {
   font-family: 'Jersey 10', sans-serif;
-  font-size: 19px;
-  color: #000;
-  letter-spacing: 0.5px;
-  pointer-events: none;
-  /* narrower than before so it's compact */
-  width: auto;
-  max-width: 220px;
-  text-align: center;
-}
-
-/* ---- Part 1 fields: label on the LEFT, exact mirror of right-side labels ---- */
-
-.fieldGroupLeft {
-  margin-bottom: 24px;
-}
-
-.fieldLabelLeftWrapper {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 16px;
-  margin-left: -20px;
-}
-
-.fieldLabelLeftText {
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 30px;
-  color: #000;
-  letter-spacing: 5.1px;
-  background: #d3e405;
-  padding: 2px 16px 2px 24px;
-  margin: 0;
+  font-size: 28px;
+  color: #fff;
+  letter-spacing: 5.44px;
+  background: #1405e4;
+  padding: 2px 10px;
+  margin: 0 0 8px;
   line-height: 1.1;
-}
-
-/* ---- Part 2 fields: label on the RIGHT extending to edge ---- */
-
-.fieldGroupRight {
-  margin-bottom: 24px;
-}
-
-.fieldLabelRightWrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-  /* extend lime bar to the right edge of the card/viewport */
-  margin-right: -20px;
-}
-
-.fieldLabelRightText {
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 30px;
-  color: #000;
-  letter-spacing: 5.1px;
-  background: #d3e405;
-  padding: 2px 24px 2px 16px;
-  margin: 0;
-  line-height: 1.1;
+  display: inline-block;
 }
 
 /* ---- Profile navigation row ---- */
@@ -298,9 +233,28 @@
 .profileNavRow {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-top: 16px;
-  padding: 0 4px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.profileBackBtn {
+  width: 52px;
+  height: 51px;
+  background: #e405ac;
+  border: 1px solid #000;
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.profileBackBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .navBtnLeft,
@@ -319,16 +273,6 @@
 .navBtnRight:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.navFingerLeft {
-  width: 95px;
-  transform: rotate(-4.71deg);
-}
-
-.navFingerRight {
-  width: 75px;
-  transform: rotate(5deg);
 }
 
 .navBtnLabel {
@@ -352,27 +296,28 @@
   position: relative;
 }
 
-/* Wrapper matches card's horizontal margins so centering is relative to the card */
-.poseTabWrapper {
-  margin: 0 6px;
-  display: flex;
-  justify-content: center;
+.poseBanner {
+  background: #e405ac;
+  padding: 12px 20px;
   margin-bottom: 12px;
+  text-align: center;
 }
 
-.poseTab {
-  background: #d3e405;
-  padding: 10px 20px;
-  display: inline-block;
-}
-
-.poseTabText {
+.poseBannerText {
   font-family: 'Averia Libre', sans-serif;
   font-weight: 400;
   font-size: 22px;
   color: #fff;
   letter-spacing: 3.74px;
   margin: 0;
+  line-height: 1.4;
+}
+
+.photoBackLabel {
+  font-family: 'Averia Libre', sans-serif;
+  font-size: 16px;
+  color: #fff;
+  letter-spacing: 2px;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -767,7 +712,7 @@
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
   margin: 0 -10px;
   padding: 30px 26px 44px 30px;
-  flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -805,15 +750,40 @@
   display: block;
 }
 
+.bobbleheadQuestionWrapper {
+  background: #1405e4;
+  padding: 14px 16px;
+  margin: 8px 0 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .bobbleheadQuestion {
   font-family: 'Averia Libre', sans-serif;
   font-weight: 400;
-  font-size: 24px;
-  color: #000;
+  font-size: 20px;
+  color: #fff;
   letter-spacing: 2.5px;
   text-align: center;
   line-height: 1.3;
-  margin: 0 0 28px;
+  margin: 0;
+}
+
+.bobbleheadShanw {
+  position: absolute;
+  width: 44px;
+  bottom: 160px;
+  right: -90px;
+  transform: scale(10);
+  transform-origin: bottom right;
+}
+
+.bobbleheadBtnLabel {
+  font-family: 'Averia Libre', sans-serif;
+  font-size: 16px;
+  color: #000;
+  letter-spacing: 2px;
+  text-align: center;
 }
 
 .bobbleheadActions {

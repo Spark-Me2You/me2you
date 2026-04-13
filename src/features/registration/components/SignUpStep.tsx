@@ -4,7 +4,8 @@
 
 import React, { useState } from 'react';
 import styles from './RegistrationSteps.module.css';
-import backfingerImg from '../../../assets/backfinger.png';
+// TODO: replace with next_button.svg when asset is available
+import nextButtonImg from '../../../assets/arrow1.svg';
 
 interface SignUpStepProps {
   onSubmit: (email: string, password: string) => Promise<boolean>;
@@ -61,10 +62,15 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
 
   return (
     <div className={styles.signupWrapper}>
+      {/* createTab is a sibling ABOVE the card, not inside it */}
+      <div className={styles.createTab}>
+        <p className={styles.createTabText}>create account</p>
+      </div>
+
       <div className={styles.signupCard}>
-        <div className={styles.createTab}>
-          <p className={styles.createTabText}>create account</p>
-        </div>
+        <p className={styles.signupDescription}>
+          Create a Me2You account to connect with people around you!
+        </p>
 
         <form onSubmit={handleSubmit} noValidate>
           {displayError && (
@@ -72,7 +78,10 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
           )}
 
           <div className={styles.inputBlock}>
-            <label htmlFor="su-email" className={styles.inputBlockLabel}>
+            <label
+              htmlFor="su-email"
+              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+            >
               email:
             </label>
             <input
@@ -81,7 +90,7 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={styles.inputBlockField}
-              placeholder="youremail@gmail.com"
+              placeholder="type here"
               disabled={isSubmitting}
               autoComplete="email"
               autoCapitalize="none"
@@ -89,7 +98,10 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
           </div>
 
           <div className={styles.inputBlock}>
-            <label htmlFor="su-password" className={styles.inputBlockLabel}>
+            <label
+              htmlFor="su-password"
+              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+            >
               password:
             </label>
             <input
@@ -98,14 +110,17 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={styles.inputBlockField}
-              placeholder="6+ characters please :)"
+              placeholder="type here"
               disabled={isSubmitting}
               autoComplete="new-password"
             />
           </div>
 
           <div className={styles.inputBlock}>
-            <label htmlFor="su-confirm" className={styles.inputBlockLabel}>
+            <label
+              htmlFor="su-confirm"
+              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+            >
               confirm password:
             </label>
             <input
@@ -114,7 +129,7 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className={styles.inputBlockField}
-              placeholder="re-enter your password"
+              placeholder="type here"
               disabled={isSubmitting}
               autoComplete="new-password"
             />
@@ -126,14 +141,7 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               className={styles.nextBtn}
               disabled={isSubmitting}
             >
-              <img
-                src={backfingerImg}
-                alt="next"
-                className={styles.nextFinger}
-              />
-              <span className={styles.nextLabel}>
-                {isSubmitting ? '...' : 'next!'}
-              </span>
+              <img src={nextButtonImg} alt="next" className={styles.nextBtnImg} />
             </button>
           </div>
         </form>
