@@ -26,6 +26,12 @@ import handClickImage from "@/assets/hand_click.png";
 import arrow1 from "@/assets/arrow1.svg";
 import arrow2 from "@/assets/arrow2.svg";
 import arrow3 from "@/assets/arrow3.svg";
+import polaroidFrame1 from "@/assets/polaroid_frame1.svg";
+import polaroidFrame2 from "@/assets/polaroid_frame2.svg";
+import numberCircle from "@/assets/number_circle.svg";
+import labelBanner1 from "@/assets/label_banner1.svg";
+import labelBanner2 from "@/assets/label_banner2.svg";
+import labelBanner3 from "@/assets/label_banner3.svg";
 import styles from "./AppContainer.module.css";
 
 /** Simple power icon SVG, white, 48px */
@@ -142,18 +148,32 @@ function AppContainerContent() {
                 </div>
 
                 {/* Step 1 */}
-                <div className={styles.step1Number}>1</div>
-                <p className={styles.step1Label}>make this pose!</p>
+                <div className={styles.step1Number}>
+                  <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
+                  <span className={styles.numberText}>1</span>
+                </div>
+                <div className={styles.step1LabelWrap}>
+                  <img src={labelBanner1} alt="" className={styles.labelBannerSvg} />
+                  <p className={styles.step1Label}>make this pose!</p>
+                </div>
                 <div className={styles.polaroid1}>
+                  <img src={polaroidFrame1} alt="" className={styles.polaroidFrameSvg} />
                   <div className={styles.polaroidTape1} />
                   <img src={handHoverImage} alt="Hover gesture" className={styles.polaroid1Img} />
                 </div>
                 <span className={styles.hoverCaption}>(hover)</span>
 
                 {/* Step 2 */}
-                <div className={styles.step2Number}>2</div>
-                <p className={styles.step2Label}>see the cursor? now click by doing this!</p>
+                <div className={styles.step2Number}>
+                  <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
+                  <span className={styles.numberText}>2</span>
+                </div>
+                <div className={styles.step2LabelWrap}>
+                  <img src={labelBanner2} alt="" className={styles.labelBannerSvg} />
+                  <p className={styles.step2Label}>see the cursor? now click by doing this!</p>
+                </div>
                 <div className={styles.polaroid2}>
+                  <img src={polaroidFrame2} alt="" className={styles.polaroidFrameSvg} />
                   <div className={styles.polaroidTape2} />
                   <img src={handClickImage} alt="Click gesture" className={styles.polaroid2Img} />
                 </div>
@@ -162,8 +182,14 @@ function AppContainerContent() {
                 <span className={styles.clickCaption}>(click)</span>
 
                 {/* Step 3 */}
-                <div className={styles.step3Number}>3</div>
-                <p className={styles.step3Label}>now click or hover over this!</p>
+                <div className={styles.step3Number}>
+                  <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
+                  <span className={styles.numberText}>3</span>
+                </div>
+                <div className={styles.step3LabelWrap}>
+                  <img src={labelBanner3} alt="" className={styles.labelBannerSvg} />
+                  <p className={styles.step3Label}>now click or hover over this!</p>
+                </div>
                 <img src={arrow2} alt="" className={styles.arrow2} />
 
                 {/* Info button */}

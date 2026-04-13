@@ -299,25 +299,36 @@
   z-index: 3;
 }
 
-/* ===== Step numbers — circled (Figma: 28px Averia Libre, tracking 4.76px) ===== */
+/* ===== Step numbers — hand-drawn circle SVG (Figma: 28px Averia Libre, tracking 4.76px) ===== */
 .step1Number,
 .step2Number,
 .step3Number {
   position: absolute;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
-  border: 2px solid #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+.numberCircleSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.numberText {
+  position: relative;
   font-family: "Averia Libre", sans-serif;
   font-size: 28px;
   letter-spacing: 4.76px;
   color: #000;
   padding-left: 5px;
-  transform: rotate(187deg);
-  z-index: 4;
+  z-index: 1;
 }
 
 /* Step 1 circle: Figma viewport 1372,199 → within cork board */
@@ -326,20 +337,26 @@
   left: 90%;
 }
 
-/* Step 1 label: 19px, tracking 3.23px */
-.step1Label {
+/* Step 1 label wrapper: SVG banner behind text */
+.step1LabelWrap {
   position: absolute;
   top: 79%;
   left: 62%;
+  width: 280px;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* Step 1 label: 19px, tracking 3.23px */
+.step1Label {
+  position: relative;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
   color: #000;
   text-align: center;
-  transform: rotate(187deg);
   margin: 0;
-  z-index: 4;
-  width: 280px;
+  z-index: 1;
 }
 
 /* Polaroid 1 (hover hand) */
@@ -349,9 +366,6 @@
   left: 75%;
   width: 150px;
   height: 190px;
-  background: #e8dfc8;
-  border-radius: 6px;
-  box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.3);
   transform: rotate(187deg);
   overflow: visible;
   z-index: 3;
@@ -398,20 +412,26 @@
   left: 70%;
 }
 
-/* Step 2 label: 14px, tracking 2.38px */
-.step2Label {
+/* Step 2 label wrapper */
+.step2LabelWrap {
   position: absolute;
   top: 28%;
   left: 3%;
   width: 265px;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* Step 2 label: 14px, tracking 2.38px */
+.step2Label {
+  position: relative;
   font-family: "Averia Libre", sans-serif;
   font-size: 14px;
   letter-spacing: 2.38px;
   color: #000;
   text-align: center;
-  transform: rotate(187deg);
   margin: 0;
-  z-index: 4;
+  z-index: 1;
 }
 
 /* Polaroid 2 (click hand) */
@@ -421,9 +441,6 @@
   left: 14%;
   width: 80px;
   height: 175px;
-  background: #e8dfc8;
-  border-radius: 6px;
-  box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.3);
   transform: rotate(187deg);
   overflow: visible;
   z-index: 3;
@@ -497,20 +514,26 @@
   left: 50%;
 }
 
-/* Step 3 label: 19px, tracking 3.23px */
-.step3Label {
+/* Step 3 label wrapper */
+.step3LabelWrap {
   position: absolute;
   top: 27%;
   left: 10%;
   width: 356px;
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+/* Step 3 label: 19px, tracking 3.23px */
+.step3Label {
+  position: relative;
   font-family: "Averia Libre", sans-serif;
   font-size: 19px;
   letter-spacing: 3.23px;
   color: #000;
   text-align: center;
-  transform: rotate(187deg);
   margin: 0;
-  z-index: 4;
+  z-index: 1;
 }
 
 /* Arrow from step 3 to info button */
@@ -626,6 +649,26 @@
   transform: scaleY(-1) rotate(-159.79deg);
   pointer-events: none;
   user-select: none;
+}
+
+/* ===== Polaroid frame SVG (textured paper edges from Figma) ===== */
+.polaroidFrameSvg {
+  position: absolute;
+  inset: -2.5%;
+  width: 105%;
+  height: 105%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Label banner SVG (hand-drawn underline from Figma) ===== */
+.labelBannerSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ===== Legacy / non-IDLE states ===== */
