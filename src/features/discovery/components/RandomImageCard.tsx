@@ -4,7 +4,6 @@ import type { RandomImageData } from "../types/image";
 import { getGestureMapping } from "../config/gestureMapping";
 import { BorderProgress } from "./BorderProgress";
 import styles from "./RandomImageCard.module.css";
-import backfingerIcon from "@/assets/backfinger.png";
 
 /**
  * RandomImageCard Component Props
@@ -143,16 +142,6 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
             </div>
           </div>
 
-          {onViewProfile && (
-            <span className={styles.seeMoreBadge}>
-              <img
-                src={backfingerIcon}
-                alt="See more"
-                className={styles.handIcon}
-              />
-              <span className={styles.seeMoreText}>see more!</span>
-            </span>
-          )}
         </button>
       </div>
     );

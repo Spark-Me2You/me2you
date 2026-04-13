@@ -33,6 +33,7 @@ import numberCircle from "@/assets/number_circle.svg";
 import labelBanner1 from "@/assets/label_banner1.svg";
 import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
+import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
 
 /** Simple power icon SVG, white, 48px */
@@ -271,7 +272,9 @@ function AppContainerContent() {
                 <p className={styles.infoHaveFun}>have fun!</p>
 
                 {/* Close / next arrow button */}
-                <button className={styles.infoCloseBtn} onClick={() => setShowInfo(false)}>→</button>
+                <button className={styles.infoCloseBtn} onClick={() => setShowInfo(false)}>
+                  <img src={pinkBackArrow} alt="next" style={{ width: '100px', transform: 'rotate(180deg)' }} />
+                </button>
               </div>
               </>
             )}
