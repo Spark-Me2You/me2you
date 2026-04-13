@@ -212,4 +212,44 @@ export const hubService = {
       throw error;
     }
   },
+
+  /**
+   * Get gesture_image storage path by owner_id
+   * Used to fetch the full photo for profile display
+   *
+   * @param ownerId - User ID
+   * @param orgId - Organization ID
+   * @returns Storage path or null if not found
+   */
+  getGestureImageByOwnerId: async (
+    ownerId: string,
+    orgId: string,
+  ): Promise<string | null> => {
+    if (!ownerId || !orgId) {
+      throw new Error("Owner ID and Organization ID are required");
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("gesture_image")
+        .select("storage_path")
+        .eq("owner_id", ownerId)
+        .eq("org_id", orgId)
+        .eq("is_public", true)
+        .single();
+
+      if (error) {
+        console.error(
+          "[hubService] Failed to fetch gesture_image:",
+          error,
+        );
+        return null;
+      }
+
+      return data?.storage_path || null;
+    } catch (error) {
+      console.error("[hubService] getGestureImageByOwnerId failed:", error);
+      return null;
+    }
+  },
 };

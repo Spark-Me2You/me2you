@@ -40,6 +40,49 @@ export const storageService = {
   },
 
   /**
+   * Upload cropped photo to storage
+   * Stores in path: {org_id}/{user_id}/{uuid}_cropped.{ext}
+   * Supports both PNG (for transparency) and JPEG
+   *
+   * @param file - File or Blob to upload (cropped version)
+   * @param userId - User ID for path organization
+   * @param orgId - Organization ID for path organization
+   * @param baseFileName - Base filename (without extension) for _cropped suffix
+   * @returns Promise with storage path
+   * @throws Error if upload fails
+   */
+  uploadCroppedPhoto: async (
+    file: File | Blob,
+    userId: string,
+    orgId: string,
+    baseFileName: string
+  ): Promise<string> => {
+    // Determine content type and extension from blob type
+    const isPng = file.type === 'image/png';
+    const ext = isPng ? 'png' : 'jpg';
+    const contentType = isPng ? 'image/png' : 'image/jpeg';
+
+    const path = `${orgId}/${userId}/${baseFileName}_cropped.${ext}`;
+
+    console.log('[storage] Uploading cropped photo to path:', path, `(${contentType})`);
+
+    const { error } = await supabase.storage
+      .from('images')
+      .upload(path, file, {
+        contentType,
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('[storage] Cropped upload failed:', error);
+      throw new Error(`Failed to upload cropped photo: ${error.message}`);
+    }
+
+    console.log('[storage] Cropped photo uploaded successfully');
+    return path;
+  },
+
+  /**
    * Get URL for photo from Supabase Storage
    * Uses signed URL for private buckets (60 minute expiry)
    *

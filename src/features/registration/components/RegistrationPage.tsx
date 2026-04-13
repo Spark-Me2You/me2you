@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { kioskQrService } from '@/core/supabase/kioskQrService';
 import { RegistrationProvider, type RegistrationContextType } from '../context/RegistrationContext';
 import { RegistrationError } from './RegistrationError';
@@ -13,6 +13,7 @@ import { useRegistration } from '../hooks/useRegistration';
 import { SignUpStep } from './SignUpStep';
 import { ProfileStep } from './ProfileStep';
 import { PhotoStep } from './PhotoStep';
+import { BobbleheadPreviewStep } from './BobbleheadPreviewStep';
 import { SuccessStep } from './SuccessStep';
 import styles from './RegistrationPage.module.css';
 import me2youLogo from '../../../assets/me2you.png';
@@ -21,6 +22,7 @@ import me2youLogo from '../../../assets/me2you.png';
  * Registration Wizard (inner component after token validation)
  */
 const RegistrationWizard: React.FC = () => {
+  const navigate = useNavigate();
   const {
     currentStep,
     formData,
@@ -31,9 +33,19 @@ const RegistrationWizard: React.FC = () => {
     handleSignUp,
     handleProfileSubmit,
     handlePhotoSubmit,
+    handleBobbleheadSubmit,
     previousStep,
-    nextStep,
+    goToStep,
+    registrationComplete,
+    croppedPhotoUrl,
   } = useRegistration();
+
+  // Redirect to profile page when registration completes
+  useEffect(() => {
+    if (registrationComplete) {
+      navigate('/user/profile', { replace: true });
+    }
+  }, [registrationComplete, navigate]);
 
   const renderStep = () => {
     switch (currentStep) {
@@ -54,11 +66,9 @@ const RegistrationWizard: React.FC = () => {
             onUpdateFormData={updateFormData}
             onSubmit={handleProfileSubmit}
             onBack={previousStep}
-            onGoToPhoto={nextStep}
             isSubmitting={isSubmitting}
             error={error}
             onClearError={clearError}
-            capturedPhoto={formData.photo as Blob | undefined}
           />
         );
 
@@ -72,6 +82,18 @@ const RegistrationWizard: React.FC = () => {
             onClearError={clearError}
           />
         );
+
+      case 'bobblehead':
+        return croppedPhotoUrl ? (
+          <BobbleheadPreviewStep
+            croppedPhotoUrl={croppedPhotoUrl}
+            onSubmit={handleBobbleheadSubmit}
+            onRetake={() => goToStep('photo')}
+            isSubmitting={isSubmitting}
+            error={error}
+            onClearError={clearError}
+          />
+        ) : null;
 
       case 'success':
         return <SuccessStep userName={formData.name} />;
