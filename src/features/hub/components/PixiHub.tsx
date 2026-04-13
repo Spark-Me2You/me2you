@@ -49,7 +49,7 @@ export const PixiHub: React.FC<{
           );
         }
 
-        const bgTexture = await Assets.load("/bg_v0.png");
+        const bgTexture = await Assets.load("/bg_draft1.png");
         if (!isMounted) {
           app.destroy();
           return;
