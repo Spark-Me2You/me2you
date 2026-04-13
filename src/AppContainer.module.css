@@ -668,3 +668,230 @@
   color: #666;
   font-size: 0.9rem;
 }
+
+/* =============================================
+   INFO OVERLAY
+   Figma node 997-1286 — full-screen overlay
+   ============================================= */
+
+.infoOverlay {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 22;
+  transform: scale(0.70);
+  transform-origin: top left;
+  overflow: hidden;
+}
+
+/* Dark bg: unscaled sibling, covers full 1920×1080 */
+.infoOverlayBg {
+  position: absolute;
+  inset: 0;
+  background: rgba(80, 100, 110, 0.78);
+  z-index: 20;
+}
+
+/* Cork board: unscaled sibling, full Figma size */
+.infoCorkBoard {
+  position: absolute;
+  left: 220px;
+  top: 60px;
+  width: 1480px;
+  height: 960px;
+  object-fit: cover;
+  transform: rotate(179.9deg);
+  z-index: 21;
+}
+
+/* "about" title */
+.infoAboutTitle {
+  position: absolute;
+  left: 260px;
+  top: 148px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 78px;
+  letter-spacing: 13.26px;
+  color: #fff;
+  margin: 0;
+  z-index: 3;
+}
+
+/* ---- Shared card styles ---- */
+.infoCardFrame {
+  position: absolute;
+  inset: -2%;
+  width: 104%;
+  height: 104%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.infoCardTape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  width: 90px;
+  height: 22px;
+  background: #e405ac;
+  z-index: 2;
+}
+
+/* Card base */
+.infoCard1,
+.infoCard2,
+.infoCard3 {
+  position: absolute;
+  background: #ede8d0;
+  border-radius: 4px;
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Card 1: me2you is — left: 424, top: 228, w: 599, h: 274 */
+.infoCard1 {
+  left: 424px;
+  top: 228px;
+  width: 599px;
+  height: 274px;
+  transform: rotate(-3.26deg);
+}
+
+.infoCard1Content {
+  position: absolute;
+  inset: 20% 9% 0 7%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+  color: #000;
+  line-height: 1.4;
+  z-index: 1;
+}
+
+.infoCard1Content strong {
+  font-weight: bold;
+}
+
+/* Card 2: you can — left: 1064, top: 205, w: 440, h: 590 */
+.infoCard2 {
+  left: 1064px;
+  top: 205px;
+  width: 440px;
+  height: 590px;
+  transform: rotate(8.71deg);
+}
+
+.infoCard2Content {
+  position: absolute;
+  inset: 9% 8% 5% 19%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  line-height: 1.5;
+  z-index: 1;
+}
+
+.infoCard2Content p {
+  margin: 0 0 8px;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+}
+
+.infoCard2Content strong {
+  font-weight: bold;
+}
+
+.infoCard2Content ul {
+  margin: 0;
+  padding-left: 28px;
+}
+
+.infoCard2Content li {
+  margin-bottom: 16px;
+}
+
+/* Card 3: privacy — left: 482, top: 532, w: 541, h: 376 */
+.infoCard3 {
+  left: 482px;
+  top: 532px;
+  width: 541px;
+  height: 376px;
+  transform: rotate(2.94deg);
+}
+
+.infoCard3Content {
+  position: absolute;
+  inset: 9% 13% 10% 8%;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  line-height: 1.5;
+  z-index: 1;
+}
+
+.infoCard3Content p {
+  margin: 0 0 12px;
+  font-size: 33px;
+  letter-spacing: 5.61px;
+}
+
+.infoCard3Content strong {
+  font-weight: bold;
+}
+
+.infoCard3Content ul {
+  margin: 0;
+  padding-left: 28px;
+}
+
+.infoCard3Content li {
+  margin-bottom: 12px;
+}
+
+/* Otter: left 1083, top 708, w 421, h 294 */
+.infoOtter {
+  position: absolute;
+  left: 1083px;
+  top: 708px;
+  width: 421px;
+  height: 294px;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* "have fun!" text */
+.infoHaveFun {
+  position: absolute;
+  left: 1230px;
+  top: 708px;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 25px;
+  letter-spacing: 4.25px;
+  color: #000;
+  margin: 0;
+  z-index: 3;
+}
+
+/* Pink arrow close button: bottom-right of board */
+.infoCloseBtn {
+  position: absolute;
+  left: 1441px;
+  top: 797px;
+  width: 108px;
+  height: 95px;
+  background: #e405ac;
+  border: none;
+  border-radius: 8px;
+  font-size: 52px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}

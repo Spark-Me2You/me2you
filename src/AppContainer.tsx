@@ -3,6 +3,7 @@
  * Contains the authenticated app with state machine
  */
 
+import { useState } from "react";
 import { StateProvider, useAppState } from "@/core/state-machine";
 import {
   CvCursorOverlay,
@@ -60,6 +61,7 @@ function PowerIcon() {
 function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
   const { signOut, authMode, exitKioskMode } = useAuth();
+  const [showInfo, setShowInfo] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -193,7 +195,7 @@ function AppContainerContent() {
                 <img src={arrow2} alt="" className={styles.arrow2} />
 
                 {/* Info button */}
-                <button className={styles.infoButton}>info!!</button>
+                <button className={styles.infoButton} onClick={() => setShowInfo(true)}>info!!</button>
               </div>
             </div>
 
@@ -213,6 +215,66 @@ function AppContainerContent() {
               </p>
               <img src={arrow2} alt="" className={styles.arrowQr} />
             </div>
+
+            {/* ===== Info overlay ===== */}
+            {showInfo && (
+              <>
+                {/* Dark background — unscaled, covers full screen */}
+                <div className={styles.infoOverlayBg} />
+
+                {/* Cork board — unscaled, full size */}
+                <img src={corkboardImage} alt="" className={styles.infoCorkBoard} />
+
+              <div className={styles.infoOverlay}>
+
+                {/* "about" title */}
+                <p className={styles.infoAboutTitle}>about</p>
+
+                {/* Card 1: me2you is... */}
+                <div className={styles.infoCard1}>
+                  <img src={polaroidFrame1} alt="" className={styles.infoCardFrame} />
+                  <div className={styles.infoCardTape} />
+                  <div className={styles.infoCard1Content}>
+                    <p><strong>me2you</strong> is...<br />a digital installation meant for light-hearted community interaction!</p>
+                  </div>
+                </div>
+
+                {/* Card 2: you can... */}
+                <div className={styles.infoCard2}>
+                  <img src={polaroidFrame1} alt="" className={styles.infoCardFrame} />
+                  <div className={styles.infoCardTape} />
+                  <div className={styles.infoCard2Content}>
+                    <p><strong>you can...</strong></p>
+                    <ul>
+                      <li>see who is in your community</li>
+                      <li>play games powered by computer vision</li>
+                      <li>create your own account and interact with others!</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Card 3: privacy */}
+                <div className={styles.infoCard3}>
+                  <img src={polaroidFrame1} alt="" className={styles.infoCardFrame} />
+                  <div className={styles.infoCardTape} />
+                  <div className={styles.infoCard3Content}>
+                    <p><strong>concerned about privacy?</strong></p>
+                    <ul>
+                      <li>me2you does not save any of your information, even if you interact with our features!</li>
+                      <li>we only save your info if you make an account!</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Otter */}
+                <img src={otterImage} alt="" className={styles.infoOtter} />
+                <p className={styles.infoHaveFun}>have fun!</p>
+
+                {/* Close / next arrow button */}
+                <button className={styles.infoCloseBtn} onClick={() => setShowInfo(false)}>→</button>
+              </div>
+              </>
+            )}
           </div>
         );
 
