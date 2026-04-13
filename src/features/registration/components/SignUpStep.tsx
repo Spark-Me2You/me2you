@@ -4,8 +4,7 @@
 
 import React, { useState } from 'react';
 import styles from './RegistrationSteps.module.css';
-// TODO: replace with next_button.svg when asset is available
-import nextButtonImg from '../../../assets/arrow1.svg';
+import nextButtonImg from '../../../assets/next_button.svg';
 
 interface SignUpStepProps {
   onSubmit: (email: string, password: string) => Promise<boolean>;

@@ -5,9 +5,8 @@
 import React, { useState, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { GoBackWarning } from './GoBackWarning';
-// TODO: replace with pink_back_arrow.svg / next_button.svg when assets are available
-import pinkBackArrowImg from '../../../assets/arrow2.svg';
-import nextButtonImg from '../../../assets/arrow1.svg';
+import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
+import nextButtonImg from '../../../assets/next_button.svg';
 import type { RegistrationFormData } from '../services/registrationService';
 
 interface ProfileStepProps {
@@ -162,7 +161,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
                 disabled={isSubmitting}
                 aria-label="go back"
               >
-                <img src={pinkBackArrowImg} alt="back" style={{ width: 28, height: 28 }} />
+                <img src={pinkBackArrowImg} alt="back" className={styles.nextBtnImg} />
               </button>
 
               <button

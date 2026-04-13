@@ -5,10 +5,9 @@
 
 import React from 'react';
 import styles from './RegistrationSteps.module.css';
-// TODO: replace with next_button.svg / pink_back_arrow.svg / shanw.png when assets are available
-import nextButtonImg from '../../../assets/arrow1.svg';
-import pinkBackArrowImg from '../../../assets/arrow2.svg';
-import shanwImg from '../../../assets/otter.png';
+import nextButtonImg from '../../../assets/next_button.svg';
+import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
+import shanwImg from '../../../assets/shanw.png';
 
 export interface BobbleheadPreviewStepProps {
   croppedPhotoUrl: string;

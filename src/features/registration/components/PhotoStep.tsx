@@ -8,9 +8,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styles from './RegistrationSteps.module.css';
 import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
 import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
-// TODO: replace with pink_back_arrow.svg / next_button.svg when assets are available
-import pinkBackArrowImg from '../../../assets/arrow2.svg';
-import nextButtonImg from '../../../assets/arrow1.svg';
+import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
+import nextButtonImg from '../../../assets/next_button.svg';
 import peaceImg from '../../../assets/peace.png';
 import waveImg from '../../../assets/wave.png';
 import thumbsUpImg from '../../../assets/thumbsUP.png';
