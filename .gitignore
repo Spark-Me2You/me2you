@@ -2,9 +2,6 @@
 .claude
 .env
 
-# Models
-/public/models/*
-
 # Supabase local development
 supabase/.temp/
 supabase/.internal/

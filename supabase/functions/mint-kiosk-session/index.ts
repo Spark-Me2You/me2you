@@ -149,38 +149,18 @@ serve(async (req) => {
       }
     );
 
-    // 6. Look up the global kiosk user account by email
+    // 6. Look up the global kiosk user account
     const KIOSK_EMAIL = 'kiosk@me2you.app';
     console.log('[mint-kiosk-session] Looking up kiosk user:', KIOSK_EMAIL);
 
-    // Search through all users with pagination to find kiosk user
-    let kioskUser = null;
-    let page = 1;
-    const perPage = 1000; // Max per page
-
-    while (!kioskUser) {
-      const { data, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-        page,
-        perPage,
-      });
-
-      if (listError) {
-        console.error('[mint-kiosk-session] Error listing users:', listError);
-        throw new Error('Failed to list users while looking up kiosk account.');
-      }
-
-      const users = data?.users ?? [];
-
-      // Search for kiosk user in this page
-      kioskUser = users.find((u) => u.email === KIOSK_EMAIL);
-
-      // If we found the user or there are no more pages, break
-      if (kioskUser || users.length < perPage) {
-        break;
-      }
-
-      page++;
+    const { data, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) {
+      console.error('[mint-kiosk-session] Error listing users:', listError);
+      throw new Error('Failed to list users while looking up kiosk account.');
     }
+
+    const users = data?.users ?? [];
+    const kioskUser = users.find((u) => u.email === KIOSK_EMAIL);
 
     if (!kioskUser) {
       console.error('[mint-kiosk-session] Kiosk user not found:', KIOSK_EMAIL);

@@ -22,6 +22,7 @@ export const UserProfileView: React.FC = () => {
       if (!userProfile) return;
 
       try {
+        // Get user's most recent image from image table
         const { data, error } = await supabase
           .from('image')
           .select('storage_path')
@@ -35,6 +36,7 @@ export const UserProfileView: React.FC = () => {
           return;
         }
 
+        // Get signed URL for the photo
         const url = await storageService.getPhotoUrl(data.storage_path);
         setPhotoUrl(url);
       } catch (err) {
@@ -62,16 +64,6 @@ export const UserProfileView: React.FC = () => {
 
   return (
     <div className={styles.page}>
-      {/* Hidden SVG filter for fractal texture */}
-      <svg width="0" height="0" style={{ position: 'absolute' }}>
-        <defs>
-          <filter id="fractalTexture" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
-            <feTurbulence type="fractalNoise" baseFrequency="0.25 0.25" numOctaves={3} seed={805} />
-            <feDisplacementMap in="SourceGraphic" scale={8} xChannelSelector="R" yChannelSelector="G" />
-          </filter>
-        </defs>
-      </svg>
-
       <img src={logo} alt="me2you" className={styles.logo} />
 
       <div className={styles.content}>
@@ -96,38 +88,30 @@ export const UserProfileView: React.FC = () => {
             <h1 className={styles.name}>{userProfile.name}</h1>
 
             {userProfile.pronouns && (
-              <div className={styles.fieldWrapper}>
-                <div className={styles.field}>
-                  <span className={styles.fieldLabel}>pronouns:</span>
-                  <span className={styles.fieldValue}>{userProfile.pronouns}</span>
-                </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>pronouns:</span>
+                <span className={styles.fieldValue}>{userProfile.pronouns}</span>
               </div>
             )}
 
             {userProfile.major && (
-              <div className={styles.fieldWrapper}>
-                <div className={styles.field}>
-                  <span className={styles.fieldLabel}>major:</span>
-                  <span className={styles.fieldValue}>{userProfile.major}</span>
-                </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>major:</span>
+                <span className={styles.fieldValue}>{userProfile.major}</span>
               </div>
             )}
 
             {userProfile.status && (
-              <div className={styles.fieldWrapper}>
-                <div className={styles.field}>
-                  <span className={styles.fieldLabel}>status:</span>
-                  <span className={styles.fieldValue}>{userProfile.status}</span>
-                </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>status:</span>
+                <span className={styles.fieldValue}>{userProfile.status}</span>
               </div>
             )}
 
             {userProfile.interests && userProfile.interests.length > 0 && (
-              <div className={styles.fieldWrapper}>
-                <div className={styles.field}>
-                  <span className={styles.fieldLabel}>interests:</span>
-                  <span className={styles.fieldValue}>{userProfile.interests.join(', ')}</span>
-                </div>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>interests:</span>
+                <span className={styles.fieldValue}>{userProfile.interests.join(', ')}</span>
               </div>
             )}
           </div>
