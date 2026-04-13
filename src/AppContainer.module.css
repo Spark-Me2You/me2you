@@ -769,7 +769,7 @@
 
 .infoCard1Content {
   position: absolute;
-  inset: 10% 9% 0 7%;
+  inset: 4% 9% 0 7%;
   font-family: "Averia Libre", sans-serif;
   font-size: 33px;
   letter-spacing: 5.61px;
@@ -793,7 +793,7 @@
 
 .infoCard2Content {
   position: absolute;
-  inset: 9% 8% 5% 19%;
+  inset: 3% 8% 5% 19%;
   font-family: "Averia Libre", sans-serif;
   font-size: 25px;
   letter-spacing: 4.25px;
@@ -832,7 +832,7 @@
 
 .infoCard3Content {
   position: absolute;
-  inset: 9% 13% 10% 8%;
+  inset: 3% 13% 10% 8%;
   font-family: "Averia Libre", sans-serif;
   font-size: 25px;
   letter-spacing: 4.25px;
@@ -876,7 +876,7 @@
 .infoHaveFun {
   position: absolute;
   left: 1300px;
-  top: 748px;
+  top: 720px;
   font-family: "Averia Libre", sans-serif;
   font-size: 25px;
   letter-spacing: 4.25px;
@@ -885,18 +885,14 @@
   z-index: 3;
 }
 
-/* Pink arrow close button: bottom-right of board */
+/* Close button: bottom-right of board */
 .infoCloseBtn {
   position: absolute;
   left: 1530px;
   top: 850px;
-  width: 108px;
-  height: 95px;
-  background: #e405ac;
+  background: none;
   border: none;
-  border-radius: 8px;
-  font-size: 52px;
-  color: #fff;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
