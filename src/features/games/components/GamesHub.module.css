@@ -12,7 +12,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80px 40px 120px;
+  justify-content: center;
+  padding: 40px 40px 80px;
 }
 
 .backgroundOverlay {
@@ -32,15 +33,15 @@
 
 .title {
   font-family: "Pixelify Sans", "Jersey 10", Arial, sans-serif;
-  font-size: clamp(150px, 20vw, 300px);
+  font-size: clamp(80px, 12vw, 150px);
   font-weight: 400;
   color: #ffffff;
-  margin: 0 0 60px 0;
+  margin: 0 0 40px 0;
   z-index: 10;
   position: relative;
   transform: rotate(3.41deg);
   text-shadow:
-    0px 14px 4px rgba(0, 0, 0, 0.31),
+    0px 8px 4px rgba(0, 0, 0, 0.31),
     0px 4px 0px rgba(211, 228, 5, 0.68),
     2px 0px 0px #e405ac;
   letter-spacing: 9px;
@@ -54,9 +55,9 @@
 .gamesContainer {
   display: flex;
   flex-direction: column;
-  gap: 60px;
+  gap: 40px;
   width: 100%;
-  max-width: 1600px;
+  max-width: 1400px;
   z-index: 10;
   position: relative;
 }
@@ -70,15 +71,17 @@
   cursor: pointer;
 
   /* Layout */
+  position: relative;
   width: 100%;
-  min-height: 600px;
-  padding: 80px 100px;
+  min-height: 400px;
+  padding: 60px 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 20px;
   box-sizing: border-box;
+  overflow: hidden;
 
   /* Glass effect */
   background: rgba(255, 255, 255, 0.13);
@@ -122,186 +125,193 @@
 
 .gameName {
   font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 150px;
+  font-size: clamp(60px, 8vw, 100px);
   font-weight: 400;
   color: #ffffff;
   margin: 0;
-  letter-spacing: 25.5px;
+  letter-spacing: 16px;
   text-shadow: 0px 4px 16px rgba(0, 0, 0, 0.4);
   line-height: 1;
+  z-index: 10;
+  position: relative;
 }
 
 .gameDescription {
   font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 48px;
+  font-size: clamp(24px, 3vw, 36px);
   font-weight: 400;
   color: #ffffff;
   margin: 0;
-  letter-spacing: 8.16px;
+  letter-spacing: 6px;
   text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.3);
   line-height: 1;
+  z-index: 10;
+  position: relative;
 }
 
 /* ========================================
    DECORATIVE ELEMENTS - GREEN BARS
+   (Inside game button)
    ======================================== */
 
 .decorativeBar {
   position: absolute;
-  width: 100px;
+  width: 80px;
   background-color: #47c52b;
-  z-index: 5;
+  z-index: 1;
   pointer-events: none;
 }
 
 /* Bar 1: Top left, extends upward */
 .decorativeBar1 {
   composes: decorativeBar;
-  height: 270px;
-  left: 142px;
-  top: -76px;
+  height: 180px;
+  left: 10%;
+  top: -50px;
 }
 
 /* Bar 2: Bottom left, extends downward */
 .decorativeBar2 {
   composes: decorativeBar;
-  height: 329px;
-  left: 142px;
-  top: 447px;
+  height: 200px;
+  left: 10%;
+  bottom: -50px;
 }
 
 /* Bar 3: Left side, short */
 .decorativeBar3 {
   composes: decorativeBar;
-  height: 107px;
-  left: 409px;
-  top: 678px;
+  height: 80px;
+  left: 25%;
+  bottom: -20px;
 }
 
-/* Bar 4: Top center */
+/* Bar 4: Top center-left */
 .decorativeBar4 {
   composes: decorativeBar;
-  height: 269px;
-  left: 537px;
-  top: -21px;
+  height: 150px;
+  left: 32%;
+  top: -40px;
 }
 
-/* Bar 5: Center */
+/* Bar 5: Bottom center */
 .decorativeBar5 {
   composes: decorativeBar;
-  height: 157px;
-  left: 744px;
-  top: 645px;
+  height: 100px;
+  left: 45%;
+  bottom: -30px;
 }
 
-/* Bar 6: Right of center, tall */
+/* Bar 6: Top center-right, tall */
 .decorativeBar6 {
   composes: decorativeBar;
-  height: 527px;
-  left: 1118px;
-  top: -42px;
+  height: 250px;
+  left: 60%;
+  top: -60px;
 }
 
-/* Bar 7: Right side, tall */
+/* Bar 7: Top right */
 .decorativeBar7 {
   composes: decorativeBar;
-  height: 387px;
-  left: 910px;
-  top: -166px;
+  height: 200px;
+  left: 52%;
+  top: -80px;
 }
 
 /* Bar 8: Bottom right */
 .decorativeBar8 {
   composes: decorativeBar;
-  height: 228px;
-  left: 1139px;
-  top: 645px;
+  height: 150px;
+  left: 70%;
+  bottom: -40px;
 }
 
 /* Bar 9: Far right, tall extending down */
 .decorativeBar9 {
   composes: decorativeBar;
-  height: 426px;
-  left: 1506px;
-  top: 447px;
+  height: 220px;
+  right: 5%;
+  bottom: -60px;
 }
 
 /* Bar 10: Far right, top */
 .decorativeBar10 {
   composes: decorativeBar;
-  height: 270px;
-  left: 1506px;
-  top: -84px;
+  height: 180px;
+  right: 5%;
+  top: -50px;
 }
 
 /* ========================================
    DECORATIVE ELEMENTS - CIRCULAR IMAGES
+   (Inside game button)
    ======================================== */
 
 .decorativeImage {
   position: absolute;
-  width: 105px;
-  height: 105px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  z-index: 5;
+  z-index: 2;
   pointer-events: none;
+  background-color: rgba(255, 215, 0, 0.8);
 }
 
 /* Image 1: Left side, middle */
 .decorativeImage1 {
   composes: decorativeImage;
-  left: 50px;
-  top: 281px;
+  left: 3%;
+  top: 35%;
 }
 
 /* Image 2: Left side, lower */
 .decorativeImage2 {
   composes: decorativeImage;
-  left: 279px;
-  top: 473px;
+  left: 18%;
+  top: 60%;
 }
 
 /* Image 3: Center left */
 .decorativeImage3 {
   composes: decorativeImage;
-  left: 509px;
-  top: 292px;
+  left: 30%;
+  top: 38%;
 }
 
 /* Image 4: Top center */
 .decorativeImage4 {
   composes: decorativeImage;
-  left: 702px;
-  top: 113px;
+  left: 42%;
+  top: 15%;
 }
 
 /* Image 5: Center */
 .decorativeImage5 {
   composes: decorativeImage;
-  left: 868px;
-  top: 281px;
+  left: 52%;
+  top: 35%;
 }
 
 /* Image 6: Right center, lower */
 .decorativeImage6 {
   composes: decorativeImage;
-  left: 1118px;
-  top: 513px;
+  left: 65%;
+  top: 65%;
 }
 
 /* Image 7: Right side, upper */
 .decorativeImage7 {
   composes: decorativeImage;
-  left: 1302px;
-  top: 421px;
+  left: 75%;
+  top: 52%;
 }
 
 /* Image 8: Far right */
 .decorativeImage8 {
   composes: decorativeImage;
-  left: 1457px;
-  top: 259px;
+  right: 5%;
+  top: 32%;
 }
 
 /* ========================================
@@ -310,8 +320,8 @@
 
 .exitButton {
   position: fixed;
-  bottom: 40px;
-  left: 40px;
+  bottom: 30px;
+  left: 30px;
   z-index: 100;
 
   /* Reset */
@@ -319,11 +329,11 @@
   cursor: pointer;
 
   /* Styling */
-  padding: 20px 50px;
+  padding: 16px 40px;
   font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 700;
-  letter-spacing: 6.8px;
+  letter-spacing: 5px;
   color: #ffffff;
   box-sizing: border-box;
   display: block;
