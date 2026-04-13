@@ -159,14 +159,10 @@ export const useRegistration = (): UseRegistrationReturn => {
         } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated after signup");
 
-        // Get org ID from environment
-        const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
-        if (!orgId) throw new Error("VITE_DEFAULT_ORG_ID not configured");
-
-        // Create minimal user record immediately
+        // Create minimal user record immediately with org_id from verified QR token
         await userRegistrationAuthService.createMinimalUserRecord(
           user.id,
-          orgId,
+          org_id,
         );
 
         // Store credentials in form data (needed for complete flow reference)
