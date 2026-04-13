@@ -11,8 +11,12 @@ export interface CharacterClickData {
   storage_path: string;
 }
 
-export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) => void }> = ({
+export const PixiHub: React.FC<{
+  onCharacterClick?: (data: CharacterClickData) => void;
+  orgId: string;
+}> = ({
   onCharacterClick,
+  orgId,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -247,7 +251,6 @@ export const PixiHub: React.FC<{ onCharacterClick?: (data: CharacterClickData) =
         // Fetch and load characters in paginated batches
         const loadBatches = async () => {
           let offset = 0;
-          const orgId = import.meta.env.VITE_DEFAULT_ORG_ID;
 
           while (isMounted) {
             try {

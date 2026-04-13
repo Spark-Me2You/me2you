@@ -67,5 +67,5 @@ export const HubView: React.FC = () => {
     );
   }
 
-  return <PixiHub onCharacterClick={handleCharacterClick} />;
+  return <PixiHub onCharacterClick={handleCharacterClick} orgId={kioskOrgId || ''} />;
 };
