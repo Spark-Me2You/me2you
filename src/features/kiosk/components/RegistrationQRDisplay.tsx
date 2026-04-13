@@ -114,17 +114,11 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({ cl
       <div className={styles.qrWrapper}>
         <QRCodeSVG
           value={qrData.url}
-          size={150}
+          size={260}
           level="M"
           includeMargin={true}
           className={styles.qrCode}
         />
-      </div>
-      <div className={styles.qrInfo}>
-        <span className={styles.scanText}>scan to register</span>
-        {timeRemaining > 0 && (
-          <span className={styles.timer}>{formatTime(timeRemaining)}</span>
-        )}
       </div>
     </div>
   );
