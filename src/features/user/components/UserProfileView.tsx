@@ -16,6 +16,7 @@ export const UserProfileView: React.FC = () => {
   const { userProfile, signOut } = useAuth();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(true);
+  const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfilePhoto = async () => {
@@ -44,7 +45,26 @@ export const UserProfileView: React.FC = () => {
       }
     };
 
+    const fetchBobblehead = async () => {
+      if (!userProfile) return;
+      try {
+        const { data } = await supabase
+          .from('cropped_image')
+          .select('storage_path')
+          .eq('owner_id', userProfile.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data?.storage_path) {
+          setBobbleheadUrl(await storageService.getPhotoUrl(data.storage_path));
+        }
+      } catch (err) {
+        console.warn('[UserProfileView] Error loading bobblehead:', err);
+      }
+    };
+
     fetchProfilePhoto();
+    fetchBobblehead();
   }, [userProfile]);
 
   const handleSignOut = async () => {
@@ -77,6 +97,7 @@ export const UserProfileView: React.FC = () => {
       <div className={styles.content}>
         <div className={styles.profileCard}>
           <div className={styles.photoSection}>
+            {/* Profile photo */}
             {isLoadingPhoto ? (
               <div className={styles.photoPlaceholder}>
                 <span className={styles.loadingText}>loading...</span>
@@ -89,6 +110,15 @@ export const UserProfileView: React.FC = () => {
                   {userProfile.name.charAt(0).toUpperCase()}
                 </span>
               </div>
+            )}
+
+            {/* Bobblehead */}
+            {bobbleheadUrl ? (
+              <div className={styles.bobbleheadContainer}>
+                <img src={bobbleheadUrl} alt="bobblehead" className={styles.bobblehead} />
+              </div>
+            ) : (
+              <div className={styles.bobbleheadPlaceholder}>no bobblehead</div>
             )}
           </div>
 

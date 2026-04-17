@@ -61,7 +61,7 @@ export const adminAuthService = {
       .from('admin')
       .select('*')
       .eq('id', authData.user.id)
-      .single();
+      .maybeSingle();
 
     console.log('Admin query result:', { adminData, adminError });
 
@@ -123,7 +123,7 @@ export const adminAuthService = {
         .from('admin')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       // Step 4: Return null if not an admin
       if (adminError) {
