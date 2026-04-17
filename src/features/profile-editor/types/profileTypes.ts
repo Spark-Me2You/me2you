@@ -15,4 +15,7 @@ export interface ProfileWithImage {
   imageUrl: string | null;
   imageStoragePath: string | null;
   imageId: string | null;
+  bobbleheadUrl: string | null;
+  bobbleheadStoragePath: string | null;
+  bobbleheadId: string | null;
 }

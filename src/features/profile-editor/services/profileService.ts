@@ -5,6 +5,8 @@
 
 import { supabase } from '@/core/supabase/client';
 import { storageService } from '@/core/supabase/storage';
+import { faceCropService, FaceNotDetectedError } from '@/features/registration/services/faceCropService';
+import { registrationService } from '@/features/registration/services/registrationService';
 import type { UserProfile } from '@/core/auth/AuthContext';
 import type { UpdateProfileInput, ProfileWithImage } from '../types/profileTypes';
 
@@ -46,11 +48,32 @@ export const profileService = {
       }
     }
 
+    // Fetch bobblehead (cropped_image) if exists
+    const { data: bobbleheadData } = await supabase
+      .from('cropped_image')
+      .select('id, storage_path')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    let bobbleheadUrl: string | null = null;
+    if (bobbleheadData?.storage_path) {
+      try {
+        bobbleheadUrl = await storageService.getPhotoUrl(bobbleheadData.storage_path);
+      } catch (e) {
+        console.warn('[profileService] Failed to get bobblehead URL:', e);
+      }
+    }
+
     return {
       profile: profile as UserProfile,
       imageUrl,
       imageStoragePath: imageData?.storage_path || null,
       imageId: imageData?.id || null,
+      bobbleheadUrl,
+      bobbleheadStoragePath: bobbleheadData?.storage_path || null,
+      bobbleheadId: bobbleheadData?.id || null,
     };
   },
 
@@ -81,15 +104,15 @@ export const profileService = {
   },
 
   /**
-   * Update/replace profile photo with gesture category
+   * Update/replace profile photo with gesture category and generate bobblehead
    * @param photo - Photo blob to upload
    * @param userId - User ID
    * @param orgId - Organization ID
    * @param category - Gesture category (wave, peace_sign, thumbs_up)
    * @param existingImageId - Optional existing image ID to delete
    * @param existingStoragePath - Optional existing storage path to delete
-   * @returns Promise with new image ID and storage path
-   * @throws Error if upload or deletion fails
+   * @returns Promise with new image ID, storage path, and optional bobblehead error
+   * @throws Error if photo upload fails (bobblehead errors are non-blocking)
    */
   updatePhoto: async (
     photo: Blob,
@@ -98,7 +121,7 @@ export const profileService = {
     category: string,
     existingImageId?: string | null,
     existingStoragePath?: string | null
-  ): Promise<{ id: string; storage_path: string }> => {
+  ): Promise<{ id: string; storage_path: string; bobbleheadError?: string }> => {
     // Delete existing photo if present
     if (existingImageId && existingStoragePath) {
       try {
@@ -129,7 +152,37 @@ export const profileService = {
       throw new Error(`Failed to create image record: ${error.message}`);
     }
 
-    return data;
+    // Try to generate bobblehead (non-blocking - don't throw on error)
+    let bobbleheadError: string | undefined;
+    try {
+      console.log('[profileService] Generating bobblehead from photo...');
+      const cropResult = await faceCropService.cropFace(photo);
+
+      if (cropResult.cropMetadata.landmarks) {
+        await registrationService.uploadCroppedPhotoWithLandmarks(
+          cropResult.croppedBlob,
+          userId,
+          orgId,
+          cropResult.cropMetadata.landmarks
+        );
+        console.log('[profileService] Bobblehead generated successfully');
+      } else {
+        bobbleheadError = 'No face landmarks detected';
+        console.warn('[profileService] Bobblehead generation failed:', bobbleheadError);
+      }
+    } catch (e) {
+      if (e instanceof FaceNotDetectedError) {
+        bobbleheadError = 'No face detected in photo';
+      } else {
+        bobbleheadError = e instanceof Error ? e.message : 'Bobblehead generation failed';
+      }
+      console.warn('[profileService] Bobblehead generation failed:', bobbleheadError);
+    }
+
+    return {
+      ...data,
+      bobbleheadError,
+    };
   },
 
   /**

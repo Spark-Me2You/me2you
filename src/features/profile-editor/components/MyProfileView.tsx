@@ -44,7 +44,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({ onBack }) => {
     setIsSaving(true);
     setSaveError(null);
     try {
-      await profileService.updatePhoto(
+      const result = await profileService.updatePhoto(
         photo,
         user.id,
         profileData.profile.org_id!,
@@ -52,6 +52,12 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({ onBack }) => {
         profileData.imageId,
         profileData.imageStoragePath
       );
+
+      // Check if bobblehead generation had non-blocking errors
+      if (result.bobbleheadError) {
+        setSaveError(`Photo updated, but bobblehead generation failed: ${result.bobbleheadError}`);
+      }
+
       await refetch();
       setIsPhotoModalOpen(false);
     } catch (e) {
@@ -128,6 +134,7 @@ export const MyProfileView: React.FC<MyProfileViewProps> = ({ onBack }) => {
     <ProfileDisplay
       profile={profileData.profile}
       imageUrl={profileData.imageUrl}
+      bobbleheadUrl={profileData.bobbleheadUrl}
       onEdit={() => setMode('edit')}
       onBack={onBack}
     />

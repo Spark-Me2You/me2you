@@ -76,13 +76,27 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
 
           {/* Photo Section */}
           <div style={styles.photoSection}>
-            <label style={styles.label}>Profile Photo</label>
-            <div style={styles.photoContainer}>
-              {initialData.imageUrl ? (
-                <img src={initialData.imageUrl} alt="Profile" style={styles.photo} />
-              ) : (
-                <div style={styles.photoPlaceholder}>No Photo</div>
-              )}
+            <label style={styles.label}>Profile Photo & Bobblehead</label>
+            <div style={styles.photosRow}>
+              {/* Profile Photo */}
+              <div>
+                {initialData.imageUrl ? (
+                  <img src={initialData.imageUrl} alt="Profile" style={styles.photo} />
+                ) : (
+                  <div style={styles.photoPlaceholder}>No Photo</div>
+                )}
+              </div>
+
+              {/* Bobblehead */}
+              <div>
+                {initialData.bobbleheadUrl ? (
+                  <div style={styles.bobbleheadContainer}>
+                    <img src={initialData.bobbleheadUrl} alt="Bobblehead" style={styles.bobblehead} />
+                  </div>
+                ) : (
+                  <div style={styles.bobbleheadPlaceholder}>No Bobblehead</div>
+                )}
+              </div>
             </div>
             <button
               type="button"
@@ -92,6 +106,7 @@ export const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
             >
               Change Photo
             </button>
+            <p style={styles.hint}>Changing your photo will automatically regenerate your bobblehead</p>
           </div>
 
           {/* Name (Required) */}
@@ -240,21 +255,60 @@ const styles: Record<string, React.CSSProperties> = {
     paddingBottom: '1rem',
     borderBottom: '1px solid #e8e8e8',
   },
-  photoContainer: {
-    width: '200px',
-    height: '200px',
-    borderRadius: '50%',
-    overflow: 'hidden',
-    border: '2px solid #e8e8e8',
+  photosRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '1.5rem',
+    justifyContent: 'center',
   },
   photo: {
-    width: '100%',
-    height: '100%',
+    width: '200px',
+    height: '200px',
+    borderRadius: '10px',
     objectFit: 'cover',
+    border: '1px solid #e8e8e8',
+    display: 'block',
   },
   photoPlaceholder: {
-    width: '100%',
-    height: '100%',
+    width: '200px',
+    height: '200px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f5f5f5',
+    color: '#999',
+    fontSize: '0.9rem',
+  },
+  bobbleheadContainer: {
+    width: '200px',
+    height: '200px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: `
+      linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%)
+    `,
+    backgroundSize: '20px 20px',
+    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+  },
+  bobblehead: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+    display: 'block',
+  },
+  bobbleheadPlaceholder: {
+    width: '200px',
+    height: '200px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

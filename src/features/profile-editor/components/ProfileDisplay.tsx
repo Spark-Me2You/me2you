@@ -4,6 +4,7 @@ import type { UserProfile } from '@/core/auth/AuthContext';
 interface ProfileDisplayProps {
   profile: UserProfile;
   imageUrl: string | null;
+  bobbleheadUrl?: string | null;
   onEdit: () => void;
   onBack: () => void;
 }
@@ -11,19 +12,34 @@ interface ProfileDisplayProps {
 export const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
   profile,
   imageUrl,
+  bobbleheadUrl,
   onEdit,
   onBack
 }) => {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        {/* Left — photo */}
+        {/* Left — photo + bobblehead */}
         <div style={styles.left}>
-          {imageUrl ? (
-            <img src={imageUrl} alt="Your profile" style={styles.photo} />
-          ) : (
-            <div style={styles.photoPlaceholder}>No Photo</div>
-          )}
+          {/* Profile Photo */}
+          <div>
+            {imageUrl ? (
+              <img src={imageUrl} alt="Your profile" style={styles.photo} />
+            ) : (
+              <div style={styles.photoPlaceholder}>No Photo</div>
+            )}
+          </div>
+
+          {/* Bobblehead */}
+          <div>
+            {bobbleheadUrl ? (
+              <div style={styles.bobbleheadContainer}>
+                <img src={bobbleheadUrl} alt="Your bobblehead" style={styles.bobblehead} />
+              </div>
+            ) : (
+              <div style={styles.bobbleheadPlaceholder}>No Bobblehead</div>
+            )}
+          </div>
         </div>
 
         {/* Right — info */}
@@ -89,6 +105,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   left: {
     flex: '0 0 auto',
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '1.5rem',
   },
   photo: {
     width: '280px',
@@ -99,6 +118,41 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'block',
   },
   photoPlaceholder: {
+    width: '280px',
+    height: '280px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f5f5f5',
+    color: '#999',
+    fontSize: '1rem',
+  },
+  bobbleheadContainer: {
+    width: '280px',
+    height: '280px',
+    borderRadius: '10px',
+    border: '1px solid #e8e8e8',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: `
+      linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%)
+    `,
+    backgroundSize: '20px 20px',
+    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+  },
+  bobblehead: {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
+    display: 'block',
+  },
+  bobbleheadPlaceholder: {
     width: '280px',
     height: '280px',
     borderRadius: '10px',
