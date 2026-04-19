@@ -1,0 +1,50 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+.title {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 160px;
+  color: white;
+  letter-spacing: 8px;
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
+  margin: 0;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+
+.primary,
+.secondary {
+  font-family: "Jersey 10", Arial, sans-serif;
+  padding: 20px 60px;
+  font-size: 42px;
+  letter-spacing: 4px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.primary {
+  background: #ffffff;
+  color: #008080;
+  border: 4px solid #ffffff;
+}
+
+.secondary {
+  background: transparent;
+  color: white;
+  border: 4px solid white;
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: scale(1.05);
+}

@@ -1,0 +1,20 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.number {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 320px;
+  color: #ffff00;
+  text-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  letter-spacing: 8px;
+  animation: pop 700ms ease-out;
+}
+
+@keyframes pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  30%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}

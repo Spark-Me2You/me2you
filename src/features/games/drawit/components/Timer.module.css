@@ -1,0 +1,38 @@
+.timer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 52px;
+  letter-spacing: 4px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  z-index: 9999;
+}
+
+.normal {
+  color: white;
+}
+
+.pulse {
+  color: #ff4444;
+  animation: pulse 2s infinite;
+}
+
+.flash {
+  color: #ff0000;
+  animation: flash 0.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1);    background: rgba(0, 0, 0, 0.6); }
+  50%      { transform: scale(1.08); background: rgba(120, 0, 0, 0.7); }
+}
+
+@keyframes flash {
+  0%, 100% { background: rgba(0, 0, 0, 0.6); }
+  50%      { background: rgba(255, 0, 0, 0.8); }
+}
