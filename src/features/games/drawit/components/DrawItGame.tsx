@@ -32,10 +32,6 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
 
   return (
     <div className={styles.container}>
-      <button className={styles.exitButton} onClick={onExit}>
-        exit
-      </button>
-
       {screen === "MENU" && (
         <DrawItMenu
           onStart={() => setScreen("PROMPT")}
@@ -51,7 +47,7 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
       {screen === "COUNTDOWN" && <Countdown onDone={() => setScreen("DRAWING")} />}
 
       {screen === "DRAWING" && (
-        <DrawingCanvas word={word} onSubmit={handleCanvasSubmit} />
+        <DrawingCanvas word={word} onSubmit={handleCanvasSubmit} onQuit={toMenu} />
       )}
 
       {screen === "REVIEW" && (

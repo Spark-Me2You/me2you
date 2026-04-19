@@ -11,17 +11,19 @@ import styles from "./DrawingCanvas.module.css";
 interface Props {
   word: string;
   onSubmit: (dataUrl: string) => void;
+  onQuit: () => void;
 }
 
 const CANVAS_W = 1280;
 const CANVAS_H = 800;
 
-export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit }) => {
+export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tool, setTool] = useState<Tool>("brush");
   const [color, setColor] = useState<string>("#000000");
   const [brushSize, setBrushSize] = useState<BrushSize>("medium");
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [confirmingQuit, setConfirmingQuit] = useState(false);
   const { setCursorVariant } = useCvCursorEnabled();
 
   // Swap the global CV cursor visual for a paintbrush while drawing.
@@ -55,6 +57,13 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit }) => {
 
   return (
     <div className={styles.wrapper}>
+      <button
+        type="button"
+        className={styles.exit}
+        onClick={() => setConfirmingQuit(true)}
+      >
+        Exit
+      </button>
       <div className={styles.wordBanner}>Draw: {word}</div>
       <Timer onExpire={handleSubmit} />
 
@@ -88,6 +97,14 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit }) => {
             setConfirmingClear(false);
           }}
           onNo={() => setConfirmingClear(false)}
+        />
+      )}
+
+      {confirmingQuit && (
+        <ConfirmModal
+          message="Stop drawing?"
+          onYes={onQuit}
+          onNo={() => setConfirmingQuit(false)}
         />
       )}
     </div>
