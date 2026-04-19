@@ -5,22 +5,17 @@ import styles from "./ReviewScreen.module.css";
 interface Props {
   imageDataUrl: string;
   word: string;
-  submitting: boolean;
-  error: string | null;
-  onSubmit: () => void;
-  onDiscard: () => void;
   onClaim: () => void;
+  onDiscard: () => void;
 }
 
-// TODO(drawit): integrate nsfwjs here once scope expands.
+// TODO(drawit): wire the QR claim flow to actually push the drawing to the
+// gallery once the account linking endpoint is built.
 export const ReviewScreen: React.FC<Props> = ({
   imageDataUrl,
   word,
-  submitting,
-  error,
-  onSubmit,
-  onDiscard,
   onClaim,
+  onDiscard,
 }) => {
   const [showQr, setShowQr] = useState(false);
 
@@ -29,31 +24,33 @@ export const ReviewScreen: React.FC<Props> = ({
       <h2 className={styles.heading}>Your drawing of "{word}"</h2>
       <img src={imageDataUrl} alt={`Drawing of ${word}`} className={styles.preview} />
 
-      {error && <p className={styles.error}>{error}</p>}
-
-      <div className={styles.buttons}>
-        <button className={styles.primary} onClick={onSubmit} disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit to Gallery"}
-        </button>
-        <button className={styles.secondary} onClick={onDiscard} disabled={submitting}>
-          Discard
-        </button>
-        <button
-          className={styles.secondary}
-          onClick={() => {
-            setShowQr(true);
-            onClaim();
-          }}
-          disabled={submitting}
-        >
-          Claim to Account
-        </button>
-      </div>
+      {!showQr && (
+        <div className={styles.buttons}>
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={() => {
+              setShowQr(true);
+              onClaim();
+            }}
+          >
+            Claim & Send to Gallery
+          </button>
+          <button type="button" className={styles.secondary} onClick={onDiscard}>
+            Discard
+          </button>
+        </div>
+      )}
 
       {showQr && (
         <div className={styles.qrPanel}>
-          <p className={styles.qrLabel}>Scan to claim</p>
-          <QRCode value={`me2you://drawit/claim?word=${encodeURIComponent(word)}`} size={180} />
+          <p className={styles.qrLabel}>
+            Scan to claim — your drawing will appear in the gallery after you link it to your account.
+          </p>
+          <QRCode value={`me2you://drawit/claim?word=${encodeURIComponent(word)}`} size={200} />
+          <button type="button" className={styles.secondary} onClick={onDiscard}>
+            Done
+          </button>
         </div>
       )}
     </div>
