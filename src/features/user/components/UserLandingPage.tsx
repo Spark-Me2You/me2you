@@ -3,27 +3,26 @@
  * Mobile sign-in + create account entry point
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/core/auth';
-import { CreateAccountPrompt } from './CreateAccountPrompt';
-import logo from '@/assets/me2you.png';
-import styles from './UserLandingPage.module.css';
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "@/core/auth";
+import { CreateAccountPrompt } from "./CreateAccountPrompt";
+import logo from "@/assets/me2you.png";
+import styles from "./UserLandingPage.module.css";
 
 export const UserLandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { signInUser, authMode } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   // Redirect if already signed in as user
-  if (authMode === 'user') {
-    navigate('/user/profile', { replace: true });
-    return null;
+  if (authMode === "user") {
+    return <Navigate to="/user/profile" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,9 +33,9 @@ export const UserLandingPage: React.FC = () => {
     try {
       await signInUser(email, password);
       // Navigate to profile on success
-      navigate('/user/profile');
+      navigate("/user/profile");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed');
+      setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -48,7 +47,7 @@ export const UserLandingPage: React.FC = () => {
 
       {/* Admin button - top right */}
       <button
-        onClick={() => navigate('/login')}
+        onClick={() => navigate("/login")}
         className={styles.adminButton}
         type="button"
       >
@@ -94,8 +93,12 @@ export const UserLandingPage: React.FC = () => {
 
             {error && <div className={styles.error}>{error}</div>}
 
-            <button type="submit" className={styles.signInButton} disabled={isSubmitting}>
-              {isSubmitting ? 'signing in...' : 'sign in'}
+            <button
+              type="submit"
+              className={styles.signInButton}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "signing in..." : "sign in"}
             </button>
           </form>
 
@@ -113,7 +116,9 @@ export const UserLandingPage: React.FC = () => {
         </div>
       </div>
 
-      {showCreatePrompt && <CreateAccountPrompt onClose={() => setShowCreatePrompt(false)} />}
+      {showCreatePrompt && (
+        <CreateAccountPrompt onClose={() => setShowCreatePrompt(false)} />
+      )}
     </div>
   );
 };

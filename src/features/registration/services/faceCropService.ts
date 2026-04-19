@@ -9,22 +9,22 @@ import {
   createFaceLandmarker,
   imageSegmenterConfig,
   faceLandmarkerConfig,
-} from '@/core/cv';
+} from "@/core/cv";
 import type {
   ImageSegmenter,
   ImageSegmenterResult,
   FaceLandmarker,
   FaceLandmarkerResult,
-} from '@/core/cv';
+} from "@/core/cv";
 
 /**
  * Custom error for when no face is detected
  * Allows UI to differentiate between "no face" vs other processing errors
  */
 export class FaceNotDetectedError extends Error {
-  constructor(message = 'No face detected in photo') {
+  constructor(message = "No face detected in photo") {
     super(message);
-    this.name = 'FaceNotDetectedError';
+    this.name = "FaceNotDetectedError";
   }
 }
 
@@ -102,6 +102,31 @@ const CATEGORY_HAIR = 1;
 const CATEGORY_FACE_SKIN = 3;
 const HEAD_CATEGORIES = [CATEGORY_HAIR, CATEGORY_FACE_SKIN];
 
+const MODEL_INIT_TIMEOUT_MS = 30000;
+const CANVAS_TO_BLOB_TIMEOUT_MS = 5000;
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 // Singleton instances (lazy loaded)
 let imageSegmenterInstance: ImageSegmenter | null = null;
 let faceLandmarkerInstance: FaceLandmarker | null = null;
@@ -124,21 +149,27 @@ const initialize = async (): Promise<void> => {
   isInitializing = true;
   initializationPromise = (async () => {
     try {
-      console.log('[faceCropService] Initializing ImageSegmenter and FaceLandmarker...');
+      console.log(
+        "[faceCropService] Initializing ImageSegmenter and FaceLandmarker...",
+      );
 
       // Load both models in parallel
-      const [segmenter, landmarker] = await Promise.all([
-        createImageSegmenter(imageSegmenterConfig),
-        createFaceLandmarker(faceLandmarkerConfig),
-      ]);
+      const [segmenter, landmarker] = await withTimeout(
+        Promise.all([
+          createImageSegmenter(imageSegmenterConfig),
+          createFaceLandmarker(faceLandmarkerConfig),
+        ]),
+        MODEL_INIT_TIMEOUT_MS,
+        "Face crop model initialization",
+      );
 
       imageSegmenterInstance = segmenter;
       faceLandmarkerInstance = landmarker;
 
-      console.log('[faceCropService] Models initialized successfully');
+      console.log("[faceCropService] Models initialized successfully");
     } catch (error) {
-      console.error('[faceCropService] Failed to initialize models:', error);
-      throw new Error('Failed to load head isolation models');
+      console.error("[faceCropService] Failed to initialize models:", error);
+      throw new Error("Failed to load head isolation models");
     } finally {
       isInitializing = false;
     }
@@ -164,7 +195,7 @@ const isReady = (): boolean => {
 const segmentHead = (
   segmentationResult: ImageSegmenterResult,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): { mask: Uint8ClampedArray; bounds: HeadBounds | null } => {
   const mask = new Uint8ClampedArray(imageWidth * imageHeight);
   const categoryMask = segmentationResult.categoryMask?.getAsUint8Array();
@@ -217,7 +248,7 @@ const segmentHead = (
  * @returns Face landmarks or null if no face detected
  */
 const extractLandmarks = (
-  landmarkerResult: FaceLandmarkerResult
+  landmarkerResult: FaceLandmarkerResult,
 ): FaceLandmarks | null => {
   if (!landmarkerResult.faceLandmarks?.length) {
     return null;
@@ -238,7 +269,14 @@ const extractLandmarks = (
   const chinBottom = landmarks[152];
   const foreheadTop = landmarks[10];
 
-  if (!leftEye || !rightEye || !noseTip || !mouthCenter || !chinBottom || !foreheadTop) {
+  if (
+    !leftEye ||
+    !rightEye ||
+    !noseTip ||
+    !mouthCenter ||
+    !chinBottom ||
+    !foreheadTop
+  ) {
     return null;
   }
 
@@ -262,7 +300,7 @@ const extractLandmarks = (
 const boundsToNormalizedBox = (
   bounds: HeadBounds,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): FaceBoundingBox => {
   return {
     x: bounds.xMin / imageWidth,
@@ -284,7 +322,7 @@ const applyMaskToCanvas = (
   sourceCanvas: HTMLCanvasElement,
   mask: Uint8ClampedArray,
   bounds: HeadBounds,
-  padding: number
+  padding: number,
 ): HTMLCanvasElement => {
   // Calculate padded bounds
   const padX = Math.round(bounds.width * padding);
@@ -295,10 +333,10 @@ const applyMaskToCanvas = (
   const cropH = Math.min(sourceCanvas.height - cropY, bounds.height + 2 * padY);
 
   // Create output canvas at cropped dimensions
-  const outputCanvas = document.createElement('canvas');
+  const outputCanvas = document.createElement("canvas");
   outputCanvas.width = cropW;
   outputCanvas.height = cropH;
-  const ctx = outputCanvas.getContext('2d')!;
+  const ctx = outputCanvas.getContext("2d")!;
 
   // Draw cropped region from source
   ctx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
@@ -333,7 +371,7 @@ const loadImage = async (blob: Blob): Promise<HTMLImageElement> => {
   try {
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
+      img.onerror = () => reject(new Error("Failed to load image"));
       img.src = imageUrl;
     });
   } finally {
@@ -353,91 +391,91 @@ const loadImage = async (blob: Blob): Promise<HTMLImageElement> => {
  */
 const cropFace = async (
   imageBlob: Blob,
-  options: CropOptions = {}
+  options: CropOptions = {},
 ): Promise<CropResult> => {
   const startTime = performance.now();
-  const {
-    padding = 0.08,
-    includeLandmarks = true,
-  } = options;
+  const { padding = 0.08, includeLandmarks = true } = options;
 
   // Ensure models are initialized
-  await initialize();
+  await withTimeout(
+    initialize(),
+    MODEL_INIT_TIMEOUT_MS,
+    "Face crop service initialization",
+  );
   if (!imageSegmenterInstance || !faceLandmarkerInstance) {
-    throw new Error('Models not initialized');
+    throw new Error("Models not initialized");
   }
 
   try {
     // Load image
-    console.log('[faceCropService] Loading image...');
+    console.log("[faceCropService] Loading image...");
     const img = await loadImage(imageBlob);
 
     // Run segmentation
-    console.log('[faceCropService] Running segmentation...');
+    console.log("[faceCropService] Running segmentation...");
     const segmentationResult = imageSegmenterInstance.segment(img);
     const { mask, bounds } = segmentHead(
       segmentationResult,
       img.width,
-      img.height
+      img.height,
     );
 
     if (!bounds) {
-      console.warn('[faceCropService] No head detected in segmentation');
-      throw new FaceNotDetectedError('No head detected in segmentation');
+      console.warn("[faceCropService] No head detected in segmentation");
+      throw new FaceNotDetectedError("No head detected in segmentation");
     }
 
-    console.log('[faceCropService] Head detected');
+    console.log("[faceCropService] Head detected");
 
     // Run landmark detection (if enabled)
     let landmarks: FaceLandmarks | null = null;
     let confidence = 0;
 
     if (includeLandmarks) {
-      console.log('[faceCropService] Extracting landmarks...');
+      console.log("[faceCropService] Extracting landmarks...");
       const landmarkResult = faceLandmarkerInstance.detect(img);
       landmarks = extractLandmarks(landmarkResult);
       confidence = landmarks ? 0.95 : 0;
 
       if (landmarks) {
-        console.log('[faceCropService] Landmarks extracted');
+        console.log("[faceCropService] Landmarks extracted");
       } else {
-        console.warn('[faceCropService] No landmarks detected');
+        console.warn("[faceCropService] No landmarks detected");
       }
     }
 
     // Create source canvas from image
-    const sourceCanvas = document.createElement('canvas');
+    const sourceCanvas = document.createElement("canvas");
     sourceCanvas.width = img.width;
     sourceCanvas.height = img.height;
-    const sourceCtx = sourceCanvas.getContext('2d')!;
+    const sourceCtx = sourceCanvas.getContext("2d")!;
     sourceCtx.drawImage(img, 0, 0);
 
     // Apply mask and crop
-    console.log('[faceCropService] Applying mask and cropping...');
-    const outputCanvas = applyMaskToCanvas(
-      sourceCanvas,
-      mask,
-      bounds,
-      padding
-    );
+    console.log("[faceCropService] Applying mask and cropping...");
+    const outputCanvas = applyMaskToCanvas(sourceCanvas, mask, bounds, padding);
 
     // Convert to PNG blob (for transparency)
-    const croppedBlob = await new Promise<Blob>((resolve, reject) => {
-      outputCanvas.toBlob(
-        (blob) =>
-          blob
-            ? resolve(blob)
-            : reject(new Error('Failed to create PNG blob')),
-        'image/png'
-      );
-    });
+    const croppedBlob = await withTimeout(
+      new Promise<Blob>((resolve, reject) => {
+        outputCanvas.toBlob(
+          (blob) =>
+            blob
+              ? resolve(blob)
+              : reject(new Error("Failed to create PNG blob")),
+          "image/png",
+        );
+      }),
+      CANVAS_TO_BLOB_TIMEOUT_MS,
+      "Canvas PNG conversion",
+    );
 
     const processingTime = performance.now() - startTime;
 
-    console.log('[faceCropService] Head isolation complete:', {
+    console.log("[faceCropService] Head isolation complete:", {
       processingTimeMs: Math.round(processingTime),
       outputSize: { width: outputCanvas.width, height: outputCanvas.height },
-      landmarks: landmarks ? 'detected' : 'not detected',
+      landmarks: landmarks ? "detected" : "not detected",
     });
 
     return {
@@ -464,8 +502,8 @@ const cropFace = async (
       throw error;
     }
 
-    console.error('[faceCropService] Processing error:', error);
-    throw new Error('Failed to process photo');
+    console.error("[faceCropService] Processing error:", error);
+    throw new Error("Failed to process photo");
   }
 };
 
@@ -475,13 +513,13 @@ const cropFace = async (
  */
 const dispose = (): void => {
   if (imageSegmenterInstance) {
-    console.log('[faceCropService] Disposing ImageSegmenter');
+    console.log("[faceCropService] Disposing ImageSegmenter");
     imageSegmenterInstance.close();
     imageSegmenterInstance = null;
   }
 
   if (faceLandmarkerInstance) {
-    console.log('[faceCropService] Disposing FaceLandmarker');
+    console.log("[faceCropService] Disposing FaceLandmarker");
     faceLandmarkerInstance.close();
     faceLandmarkerInstance = null;
   }

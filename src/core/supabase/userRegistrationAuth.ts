@@ -8,6 +8,36 @@ import type { User, Session } from "@supabase/supabase-js";
 import type { UserProfile } from "@/core/auth/AuthContext";
 import type { FaceLandmarks } from "@/features/registration/services/faceCropService";
 
+const SESSION_REFRESH_LEEWAY_MS = 120000;
+
+const isNearSessionExpiry = (expiresAtSeconds?: number | null): boolean => {
+  if (!expiresAtSeconds) {
+    return true;
+  }
+
+  return expiresAtSeconds * 1000 - Date.now() <= SESSION_REFRESH_LEEWAY_MS;
+};
+
+const ensureFreshSession = async (): Promise<void> => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(`Authentication check failed: ${sessionError.message}`);
+  }
+
+  if (!session || isNearSessionExpiry(session.expires_at)) {
+    const { data: refreshData, error: refreshError } =
+      await supabase.auth.refreshSession();
+
+    if (refreshError || !refreshData.session) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+  }
+};
+
 /**
  * Input for creating a user profile
  */
@@ -59,7 +89,9 @@ export const userRegistrationAuthService = {
     if (error) {
       console.error("[userRegistrationAuth] Signup error:", error);
       // Preserve error code for better error handling
-      const errorWithCode = new Error(`Signup failed: ${error.message}`) as Error & { code?: string };
+      const errorWithCode = new Error(
+        `Signup failed: ${error.message}`,
+      ) as Error & { code?: string };
       errorWithCode.code = error.code;
       throw errorWithCode;
     }
@@ -263,6 +295,8 @@ export const userRegistrationAuthService = {
       visibility: "public", // Make profile public when onboarding completes
     };
 
+    await ensureFreshSession();
+
     const { data, error } = await supabase
       .from("user")
       .update(updateData)
@@ -286,6 +320,8 @@ export const userRegistrationAuthService = {
    * @returns Promise with user profile or null
    */
   getCurrentUserProfile: async (): Promise<UserProfile | null> => {
+    await ensureFreshSession();
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -409,10 +445,14 @@ export const userRegistrationAuthService = {
         "[userRegistrationAuth] Gesture image record creation error:",
         error,
       );
-      throw new Error(`Failed to create gesture_image record: ${error.message}`);
+      throw new Error(
+        `Failed to create gesture_image record: ${error.message}`,
+      );
     }
 
-    console.log("[userRegistrationAuth] Gesture image record created successfully");
+    console.log(
+      "[userRegistrationAuth] Gesture image record created successfully",
+    );
 
     return data;
   },
@@ -460,10 +500,14 @@ export const userRegistrationAuthService = {
         "[userRegistrationAuth] Cropped image record creation error:",
         error,
       );
-      throw new Error(`Failed to create cropped_image record: ${error.message}`);
+      throw new Error(
+        `Failed to create cropped_image record: ${error.message}`,
+      );
     }
 
-    console.log("[userRegistrationAuth] Cropped image record created successfully");
+    console.log(
+      "[userRegistrationAuth] Cropped image record created successfully",
+    );
 
     return insertedData;
   },

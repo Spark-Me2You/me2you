@@ -14,7 +14,6 @@ import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
-import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
 import { RegistrationQRDisplay } from "@/features/kiosk";
 import { useAuth } from "@/core/auth";
@@ -297,21 +296,11 @@ function AppContainerContent() {
           </div>
         );
 
-      case AppState.PROFILE_EDITOR:
-        return (
-          <div>
-            <h1>Profile Editor</h1>
-          </div>
-        );
-
       case AppState.HUB:
         return <HubView />;
 
       case AppState.DISCOVERY:
         return <DiscoveryView />;
-
-      case AppState.MY_PROFILE:
-        return <MyProfileView onBack={() => transitionTo(AppState.IDLE)} />;
 
       case AppState.GAMES:
         return <GamesView />;

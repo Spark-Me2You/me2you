@@ -21,6 +21,31 @@ import type {
 let mediapipeVisionModule: typeof import("@mediapipe/tasks-vision") | null =
   null;
 
+const VISION_WASM_TIMEOUT_MS = 30000;
+const TASK_CREATE_TIMEOUT_MS = 30000;
+
+const withTimeout = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 /**
  * Lazily load MediaPipe vision tasks module
  * @returns Promise resolving to the MediaPipe vision module
@@ -55,22 +80,30 @@ export const createGestureRecognizer = async (config: {
    * When upgrading @mediapipe/tasks-vision, update this URL version
    * Current package version: 0.10.32
    */
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  const vision = await withTimeout(
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+    ),
+    VISION_WASM_TIMEOUT_MS,
+    "Load GestureRecognizer vision fileset",
   );
 
   // Create GestureRecognizer instance with configuration
-  const gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: config.modelAssetPath,
-      delegate: "GPU", // Use GPU acceleration if available
-    },
-    runningMode: config.runningMode,
-    numHands: config.numHands,
-    minHandDetectionConfidence: config.minHandDetectionConfidence,
-    minHandPresenceConfidence: config.minHandPresenceConfidence,
-    minTrackingConfidence: config.minTrackingConfidence,
-  });
+  const gestureRecognizer = await withTimeout(
+    GestureRecognizer.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: config.modelAssetPath,
+        delegate: "GPU", // Use GPU acceleration if available
+      },
+      runningMode: config.runningMode,
+      numHands: config.numHands,
+      minHandDetectionConfidence: config.minHandDetectionConfidence,
+      minHandPresenceConfidence: config.minHandPresenceConfidence,
+      minTrackingConfidence: config.minTrackingConfidence,
+    }),
+    TASK_CREATE_TIMEOUT_MS,
+    "Create GestureRecognizer task",
+  );
 
   return gestureRecognizer;
 };
@@ -92,19 +125,27 @@ export const createFaceDetector = async (config: {
    * When upgrading @mediapipe/tasks-vision, update this URL version
    * Current package version: 0.10.32
    */
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  const vision = await withTimeout(
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+    ),
+    VISION_WASM_TIMEOUT_MS,
+    "Load FaceDetector vision fileset",
   );
 
   // Create FaceDetector instance with configuration
-  const faceDetector = await FaceDetector.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: config.modelAssetPath,
-      delegate: "GPU", // Use GPU acceleration if available
-    },
-    runningMode: config.runningMode,
-    minDetectionConfidence: config.minDetectionConfidence,
-  });
+  const faceDetector = await withTimeout(
+    FaceDetector.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: config.modelAssetPath,
+        delegate: "GPU", // Use GPU acceleration if available
+      },
+      runningMode: config.runningMode,
+      minDetectionConfidence: config.minDetectionConfidence,
+    }),
+    TASK_CREATE_TIMEOUT_MS,
+    "Create FaceDetector task",
+  );
 
   return faceDetector;
 };
@@ -127,20 +168,28 @@ export const createImageSegmenter = async (config: {
    * When upgrading @mediapipe/tasks-vision, update this URL version
    * Current package version: 0.10.32
    */
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  const vision = await withTimeout(
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+    ),
+    VISION_WASM_TIMEOUT_MS,
+    "Load ImageSegmenter vision fileset",
   );
 
   // Create ImageSegmenter instance with configuration
-  const imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: config.modelAssetPath,
-      delegate: "GPU", // Use GPU acceleration if available
-    },
-    runningMode: config.runningMode,
-    outputCategoryMask: config.outputCategoryMask,
-    outputConfidenceMasks: config.outputConfidenceMasks,
-  });
+  const imageSegmenter = await withTimeout(
+    ImageSegmenter.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: config.modelAssetPath,
+        delegate: "GPU", // Use GPU acceleration if available
+      },
+      runningMode: config.runningMode,
+      outputCategoryMask: config.outputCategoryMask,
+      outputConfidenceMasks: config.outputConfidenceMasks,
+    }),
+    TASK_CREATE_TIMEOUT_MS,
+    "Create ImageSegmenter task",
+  );
 
   return imageSegmenter;
 };
@@ -167,24 +216,33 @@ export const createFaceLandmarker = async (config: {
    * When upgrading @mediapipe/tasks-vision, update this URL version
    * Current package version: 0.10.32
    */
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  const vision = await withTimeout(
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+    ),
+    VISION_WASM_TIMEOUT_MS,
+    "Load FaceLandmarker vision fileset",
   );
 
   // Create FaceLandmarker instance with configuration
-  const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: config.modelAssetPath,
-      delegate: "GPU", // Use GPU acceleration if available
-    },
-    runningMode: config.runningMode,
-    numFaces: config.numFaces,
-    minFaceDetectionConfidence: config.minFaceDetectionConfidence,
-    minFacePresenceConfidence: config.minFacePresenceConfidence,
-    minTrackingConfidence: config.minTrackingConfidence,
-    outputFaceBlendshapes: config.outputFaceBlendshapes,
-    outputFacialTransformationMatrixes: config.outputFacialTransformationMatrixes,
-  });
+  const faceLandmarker = await withTimeout(
+    FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: config.modelAssetPath,
+        delegate: "GPU", // Use GPU acceleration if available
+      },
+      runningMode: config.runningMode,
+      numFaces: config.numFaces,
+      minFaceDetectionConfidence: config.minFaceDetectionConfidence,
+      minFacePresenceConfidence: config.minFacePresenceConfidence,
+      minTrackingConfidence: config.minTrackingConfidence,
+      outputFaceBlendshapes: config.outputFaceBlendshapes,
+      outputFacialTransformationMatrixes:
+        config.outputFacialTransformationMatrixes,
+    }),
+    TASK_CREATE_TIMEOUT_MS,
+    "Create FaceLandmarker task",
+  );
 
   return faceLandmarker;
 };
@@ -209,22 +267,30 @@ export const createPoseLandmarker = async (config: {
    * When upgrading @mediapipe/tasks-vision, update this URL version
    * Current package version: 0.10.32
    */
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+  const vision = await withTimeout(
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm",
+    ),
+    VISION_WASM_TIMEOUT_MS,
+    "Load PoseLandmarker vision fileset",
   );
 
   // Create PoseLandmarker instance with configuration
-  const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: config.modelAssetPath,
-      delegate: "GPU", // Use GPU acceleration if available
-    },
-    runningMode: config.runningMode,
-    numPoses: config.numPoses,
-    minPoseDetectionConfidence: config.minPoseDetectionConfidence,
-    minPosePresenceConfidence: config.minPosePresenceConfidence,
-    minTrackingConfidence: config.minTrackingConfidence,
-  });
+  const poseLandmarker = await withTimeout(
+    PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: config.modelAssetPath,
+        delegate: "GPU", // Use GPU acceleration if available
+      },
+      runningMode: config.runningMode,
+      numPoses: config.numPoses,
+      minPoseDetectionConfidence: config.minPoseDetectionConfidence,
+      minPosePresenceConfidence: config.minPosePresenceConfidence,
+      minTrackingConfidence: config.minTrackingConfidence,
+    }),
+    TASK_CREATE_TIMEOUT_MS,
+    "Create PoseLandmarker task",
+  );
 
   return poseLandmarker;
 };
