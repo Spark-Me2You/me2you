@@ -1,6 +1,6 @@
 # Admin Authentication System
 
-This directory contains the core authentication system for **admin users** in the me2you application. Admin authentication is separate from user authentication (card swipe) and uses email/password login.
+This directory contains the core authentication system for the me2you application. Admin authentication remains separate from user authentication and uses email/password login.
 
 ## Table of Contents
 
@@ -31,6 +31,7 @@ React Router (Top Level)
 ```
 
 **Why this approach?**
+
 - Admin auth uses standard page routing (React Router)
 - Main app uses state machine routing (for CV-heavy interactions)
 - Clean separation of concerns
@@ -38,17 +39,18 @@ React Router (Top Level)
 
 ### Admin vs User Auth Separation
 
-| Feature | Admin Auth | User Auth |
-|---------|------------|-----------|
-| **Location** | `src/core/auth/` | `src/features/user-session/` |
-| **Method** | Email/password | Card swipe (TODO) |
-| **Service** | `adminAuthService` in `core/supabase/adminAuth.ts` | `userAuthService` in `core/supabase/userAuth.ts` |
-| **Table** | `admin` table | `user` table |
-| **Provider** | `AuthProvider` (React Context) | Not yet implemented |
-| **Purpose** | Installation management | Student interaction |
+| Feature      | Admin Auth                                         | User Auth                                                                |
+| ------------ | -------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Location** | `src/core/auth/`                                   | `src/features/user/`, `src/features/registration/`                       |
+| **Method**   | Email/password                                     | Email/password (registration + login)                                    |
+| **Service**  | `adminAuthService` in `core/supabase/adminAuth.ts` | `userRegistrationAuthService` in `core/supabase/userRegistrationAuth.ts` |
+| **Table**    | `admin` table                                      | `user` table                                                             |
+| **Provider** | `AuthProvider` (React Context)                     | Not yet implemented                                                      |
+| **Purpose**  | Installation management                            | Student interaction                                                      |
 
 **Why separate?**
-- Different authentication methods (email vs card swipe)
+
+- Different authentication concerns (admin management vs user onboarding)
 - Different use cases (management vs usage)
 - Prevents confusion in codebase
 - Allows independent development
@@ -62,12 +64,14 @@ React Router (Top Level)
 **Decision:** Use React Context (`AuthProvider`) to manage admin authentication state globally.
 
 **Reasons:**
+
 - Auth state needs to be accessible throughout the app
 - Avoids prop drilling
 - Provides centralized state management
 - Easy to access via `useAuth()` hook
 
 **Alternatives considered:**
+
 - Redux/Zustand: Too heavy for just auth state
 - Props: Would require passing through many components
 - Local state: Can't be shared across components
@@ -77,11 +81,13 @@ React Router (Top Level)
 **Decision:** Two-step verification - authenticate with Supabase, then verify `admin` table.
 
 **Reasons:**
+
 - Security: Not all authenticated users are admins
 - Prevents unauthorized access if someone gets valid credentials
 - Follows principle of least privilege
 
 **Flow:**
+
 ```typescript
 1. User enters email/password
 2. Supabase authenticates (checks auth.users table)
@@ -131,6 +137,7 @@ Use an `isInitializing` flag to prevent duplicate work:
 **Why we can't just use onAuthStateChange alone:**
 
 The immediate event from `onAuthStateChange` is **synchronous**, but we need to do **asynchronous** work (query database). If we try to handle everything in the event handler:
+
 - We still make multiple async calls
 - Race conditions still occur
 - Code becomes harder to reason about
@@ -144,12 +151,14 @@ The immediate event from `onAuthStateChange` is **synchronous**, but we need to 
 **Decision:** Wrap `/app` route in a `ProtectedRoute` component.
 
 **Reasons:**
+
 - Security: Prevents unauthenticated access
 - User experience: Redirects to login automatically
 - Centralized auth check
 - Easy to extend with role-based access later
 
 **How it works:**
+
 ```typescript
 <Route
   path="/app"
@@ -162,6 +171,7 @@ The immediate event from `onAuthStateChange` is **synchronous**, but we need to 
 ```
 
 The `ProtectedRoute` component:
+
 1. Checks `isAuthenticated` from auth context
 2. Shows loading spinner while checking
 3. Redirects to `/login` if not authenticated
@@ -181,7 +191,7 @@ src/core/auth/
 
 src/core/supabase/
 ├── adminAuth.ts               # Admin authentication service (email/password)
-├── userAuth.ts                # User authentication service (card swipe - TODO)
+├── userRegistrationAuth.ts    # User registration/login service
 └── client.ts                  # Supabase client initialization
 
 src/features/admin/
@@ -192,17 +202,8 @@ src/features/admin/
 │   └── useAdminLogin.ts       # Optional login hook
 └── index.ts                   # Feature exports
 
-src/features/user-session/     # User session (card swipe - TODO)
-├── components/
-│   ├── CardSwipePrompt.tsx
-│   ├── LogoutButton.tsx
-│   └── SessionTimeoutWarning.tsx
-├── hooks/
-│   ├── useCardReader.ts
-│   ├── useSession.ts
-│   └── useInactivityTimer.ts
-└── services/
-    └── sessionService.ts
+src/features/user/             # User profile and account views
+src/features/registration/     # User registration flow
 ```
 
 ---
@@ -297,16 +298,19 @@ Redirect to /login
 ### Session Management
 
 **Persistence:**
+
 - Supabase automatically persists sessions in `localStorage`
 - Sessions auto-refresh before expiry
 - No manual session management needed
 
 **Security:**
+
 - JWT tokens stored securely by Supabase
 - Tokens auto-refresh
 - Expired sessions automatically cleared
 
 **State:**
+
 ```typescript
 {
   user: User | null,           // Supabase auth.users data
@@ -459,6 +463,7 @@ See: `ADMIN_SETUP_GUIDE.md` for detailed setup instructions.
 **Cause:** Supabase session not being stored or RLS blocking query.
 
 **Checks:**
+
 1. Verify `localStorage` has Supabase auth token
 2. Check `getCurrentAdmin()` returns session on reload
 3. Ensure RLS policies allow admin to view own record
@@ -473,19 +478,21 @@ See: `ADMIN_SETUP_GUIDE.md` for detailed setup instructions.
 Hook to access authentication context.
 
 **Returns:**
+
 ```typescript
 {
-  user: User | null;              // Supabase user object
-  admin: AdminUser | null;        // Admin table data
-  session: Session | null;        // Supabase session
-  isLoading: boolean;             // True during initialization
-  isAuthenticated: boolean;       // True if logged in as admin
+  user: User | null; // Supabase user object
+  admin: AdminUser | null; // Admin table data
+  session: Session | null; // Supabase session
+  isLoading: boolean; // True during initialization
+  isAuthenticated: boolean; // True if logged in as admin
   signIn: (email, password) => Promise<void>;
   signOut: () => Promise<void>;
 }
 ```
 
 **Example:**
+
 ```typescript
 const { admin, isAuthenticated, signOut } = useAuth();
 ```
@@ -503,6 +510,7 @@ Service for admin authentication operations.
 Authenticate admin with email/password.
 
 **Steps:**
+
 1. Authenticate with Supabase
 2. Verify user is in `admin` table
 3. If not admin, sign out and throw error
@@ -511,10 +519,11 @@ Authenticate admin with email/password.
 **Throws:** Error if authentication fails or user is not an admin
 
 **Example:**
+
 ```typescript
 const { user, admin, session } = await adminAuthService.signInWithEmail(
-  'admin@example.com',
-  'password123'
+  "admin@example.com",
+  "password123",
 );
 ```
 
@@ -525,6 +534,7 @@ const { user, admin, session } = await adminAuthService.signInWithEmail(
 Get current admin session (if any).
 
 **Steps:**
+
 1. Get session from Supabase (checks localStorage)
 2. If no session, return null
 3. Verify user is in `admin` table
@@ -533,10 +543,11 @@ Get current admin session (if any).
 **Returns:** `Promise<{ user, admin, session } | null>`
 
 **Example:**
+
 ```typescript
 const adminSession = await adminAuthService.getCurrentAdmin();
 if (adminSession) {
-  console.log('Logged in as:', adminSession.admin.email);
+  console.log("Logged in as:", adminSession.admin.email);
 }
 ```
 
@@ -549,6 +560,7 @@ Sign out current admin.
 **Throws:** Error if sign out fails
 
 **Example:**
+
 ```typescript
 await adminAuthService.signOut();
 ```
@@ -560,6 +572,7 @@ await adminAuthService.signOut();
 Subscribe to authentication state changes.
 
 **Events:**
+
 - `SIGNED_IN` - User signed in
 - `SIGNED_OUT` - User signed out
 - `TOKEN_REFRESHED` - Session token refreshed
@@ -568,12 +581,13 @@ Subscribe to authentication state changes.
 **Returns:** Subscription object with `unsubscribe()` method
 
 **Example:**
+
 ```typescript
-const { data: { subscription } } = adminAuthService.onAuthStateChange(
-  (event, session) => {
-    console.log('Auth event:', event);
-  }
-);
+const {
+  data: { subscription },
+} = adminAuthService.onAuthStateChange((event, session) => {
+  console.log("Auth event:", event);
+});
 
 // Cleanup
 subscription.unsubscribe();
@@ -586,18 +600,21 @@ subscription.unsubscribe();
 Component that protects routes from unauthorized access.
 
 **Props:**
+
 ```typescript
 {
-  children: React.ReactNode;  // Content to render if authenticated
+  children: React.ReactNode; // Content to render if authenticated
 }
 ```
 
 **Behavior:**
+
 - Shows loading spinner while checking auth
 - Redirects to `/login` if not authenticated
 - Renders children if authenticated
 
 **Example:**
+
 ```typescript
 <Route
   path="/admin"
@@ -655,6 +672,7 @@ Component that protects routes from unauthorized access.
 ### Console Logs to Check
 
 On successful page reload:
+
 ```
 [AuthProvider] Initializing auth...
 [adminAuth] Getting current session...
