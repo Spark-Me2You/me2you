@@ -15,6 +15,30 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+const SIGN_OUT_TIMEOUT_MS = 5000;
+
+const withTimeout = async <T,>(
+  promise: PromiseLike<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    Promise.resolve(promise)
+      .then((value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 /**
  * Auth Provider Component
  * Wraps the app and provides authentication state and methods
@@ -235,31 +259,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Sign out current user (admin or kiosk)
    */
   const signOut = async () => {
+    const modeAtSignOut = authMode;
+    console.log('[AuthProvider] Signing out from mode:', modeAtSignOut);
+
     try {
-      console.log('[AuthProvider] Signing out from mode:', authMode);
-
-      if (authMode === 'admin') {
-        await adminAuthService.signOut();
-        console.log('[AuthProvider] Admin signed out');
-      } else if (authMode === 'kiosk') {
-        await kioskAuthService.exitKioskMode();
-        console.log('[AuthProvider] Kiosk session ended');
-      } else if (authMode === 'user') {
-        await userRegistrationAuthService.signOut();
-        console.log('[AuthProvider] User signed out');
+      if (modeAtSignOut === 'admin') {
+        await withTimeout(adminAuthService.signOut(), SIGN_OUT_TIMEOUT_MS, 'Admin sign out');
+      } else if (modeAtSignOut === 'kiosk') {
+        await withTimeout(kioskAuthService.exitKioskMode(), SIGN_OUT_TIMEOUT_MS, 'Kiosk sign out');
+      } else if (modeAtSignOut === 'user') {
+        await withTimeout(userRegistrationAuthService.signOut(), SIGN_OUT_TIMEOUT_MS, 'User sign out');
       }
-
-      // Clear local auth state
+    } catch (error) {
+      console.warn('[AuthProvider] Remote sign out did not complete cleanly:', error);
+    } finally {
+      // Always clear local auth state so logout UX doesn't depend on network/storage latency.
       setUser(null);
       setAdmin(null);
       setUserProfileState(null);
       setSession(null);
       setAuthMode('unauthenticated');
       setKioskOrgId(null);
-    } catch (error) {
-      console.error('Sign out failed:', error);
-      // Re-throw error to be handled by the UI
-      throw error;
     }
   };
 
