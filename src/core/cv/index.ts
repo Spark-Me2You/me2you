@@ -5,6 +5,3 @@ export * from "./mediapipe-config";
 export * from "./mediapipe-loader";
 export * from "./face-detector-config";
 export * from "./cameraManager";
-export * from "./cvBridge";
-export * from "./gestureEncoder";
-// Note: opencv-worker.ts is imported as a Worker, not exported
