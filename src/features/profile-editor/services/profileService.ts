@@ -131,6 +131,13 @@ export const profileService = {
       }
     }
 
+    // Purge old gesture + cropped images before uploading new ones
+    try {
+      await profileService.deleteAllImages();
+    } catch (e) {
+      console.warn('[profileService] Failed to clear old gesture/cropped images, continuing anyway:', e);
+    }
+
     // Upload new photo
     const storagePath = await storageService.uploadPhoto(photo, userId, orgId);
 
