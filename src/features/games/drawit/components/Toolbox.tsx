@@ -11,6 +11,7 @@ interface Props {
   onColor: (c: string) => void;
   onBrush: (b: BrushSize) => void;
   onClear: () => void;
+  clearActive?: boolean;
 }
 
 export const Toolbox: React.FC<Props> = ({
@@ -21,12 +22,14 @@ export const Toolbox: React.FC<Props> = ({
   onColor,
   onBrush,
   onClear,
+  clearActive = false,
 }) => (
   <div className={styles.toolbox}>
-    <div className={styles.row}>
+    <div className={styles.palette}>
       {PALETTE.map((hex) => (
         <button
           key={hex}
+          type="button"
           aria-label={`color ${hex}`}
           className={`${styles.swatch} ${color === hex && tool !== "eraser" ? styles.active : ""}`}
           style={{ background: hex }}
@@ -37,10 +40,14 @@ export const Toolbox: React.FC<Props> = ({
         />
       ))}
     </div>
-    <div className={styles.row}>
+
+    <div className={styles.divider} />
+
+    <div className={styles.brushRow}>
       {(Object.keys(BRUSH_PX) as BrushSize[]).map((b) => (
         <button
           key={b}
+          type="button"
           className={`${styles.brush} ${brushSize === b ? styles.active : ""}`}
           onClick={() => onBrush(b)}
           aria-label={`brush ${b}`}
@@ -51,19 +58,30 @@ export const Toolbox: React.FC<Props> = ({
           />
         </button>
       ))}
+    </div>
+
+    <div className={styles.divider} />
+
+    <div className={styles.toolsGroup}>
       <button
+        type="button"
         className={`${styles.tool} ${tool === "eraser" ? styles.active : ""}`}
         onClick={() => onTool("eraser")}
       >
         Eraser
       </button>
       <button
+        type="button"
         className={`${styles.tool} ${tool === "bucket" ? styles.active : ""}`}
         onClick={() => onTool(tool === "bucket" ? "brush" : "bucket")}
       >
         Fill
       </button>
-      <button className={styles.tool} onClick={onClear}>
+      <button
+        type="button"
+        className={`${styles.tool} ${clearActive ? styles.active : ""}`}
+        onClick={onClear}
+      >
         Clear
       </button>
     </div>

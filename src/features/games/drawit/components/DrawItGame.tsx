@@ -63,7 +63,7 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
       {screen === "COUNTDOWN" && <Countdown onDone={() => setScreen("DRAWING")} />}
 
       {screen === "DRAWING" && (
-        <DrawingCanvas word={word} onSubmit={handleCanvasSubmit} onBack={toMenu} />
+        <DrawingCanvas word={word} onSubmit={handleCanvasSubmit} />
       )}
 
       {screen === "REVIEW" && (

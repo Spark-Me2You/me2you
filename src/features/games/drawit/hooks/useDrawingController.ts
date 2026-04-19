@@ -1,5 +1,5 @@
-import { useEffect, useRef, type RefObject } from "react";
-import { useCvCursor } from "@/core/cv/cursor/useCvCursor";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { floodFill } from "../utils/floodFill";
 import { BRUSH_PX, CANVAS_BG } from "../config/drawitConfig";
 import type { BrushSize, Tool } from "../types/drawit";
@@ -40,23 +40,26 @@ export function useDrawingController({
   brushSize,
   enabled,
 }: Params): DrawingController {
-  const cursor = useCvCursor(enabled);
+  // Read the shared cursor state populated by the global CvCursorOverlay —
+  // don't start a second useCvCursor instance (that would collide on the
+  // singleton HandLandmarker and freeze the global cursor).
+  const { cursorStateRef } = useCvCursorEnabled();
 
-  // Live refs so the animation loop doesn't need to be re-created per render.
   const toolRef = useRef(tool);
   const colorRef = useRef(color);
   const brushRef = useRef(brushSize);
-  const cursorRef = useRef(cursor);
   const enabledRef = useRef(enabled);
 
   toolRef.current = tool;
   colorRef.current = color;
   brushRef.current = brushSize;
-  cursorRef.current = cursor;
   enabledRef.current = enabled;
 
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const wasPinchedRef = useRef(false);
+  // Timestamp (ms) before which drawing is ignored. Used after clear() so the
+  // pinch that confirmed the modal doesn't immediately paint a stray stroke.
+  const suspendUntilRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,7 +70,7 @@ export function useDrawingController({
     let raf = 0;
 
     const tick = () => {
-      const c = cursorRef.current;
+      const c = cursorStateRef.current;
       const t = toolRef.current;
       const col = colorRef.current;
       const size = BRUSH_PX[brushRef.current];
@@ -75,6 +78,13 @@ export function useDrawingController({
       if (!enabledRef.current || !c.visible) {
         lastPointRef.current = null;
         wasPinchedRef.current = false;
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      if (Date.now() < suspendUntilRef.current) {
+        lastPointRef.current = null;
+        wasPinchedRef.current = c.isPinched;
         raf = requestAnimationFrame(tick);
         return;
       }
@@ -100,7 +110,6 @@ export function useDrawingController({
             ctx.lineTo(pt.x, pt.y);
             ctx.stroke();
           } else {
-            // Pen-down dot so single-tap is visible.
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, size / 2, 0, Math.PI * 2);
             ctx.fillStyle = strokeColor;
@@ -118,21 +127,24 @@ export function useDrawingController({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+  }, [canvasRef, cursorStateRef]);
+
+  const clear = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = CANVAS_BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    lastPointRef.current = null;
+    suspendUntilRef.current = Date.now() + 1000;
   }, [canvasRef]);
 
-  return {
-    clear: () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.fillStyle = CANVAS_BG;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    },
-    toDataURL: () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return "";
-      return canvas.toDataURL("image/png");
-    },
-  };
+  const toDataURL = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return "";
+    return canvas.toDataURL("image/png");
+  }, [canvasRef]);
+
+  return { clear, toDataURL };
 }

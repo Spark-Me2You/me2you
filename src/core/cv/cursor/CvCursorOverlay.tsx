@@ -13,8 +13,8 @@ interface CvCursorOverlayProps {
 }
 
 export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
-  const { x, y, visible, clicking, videoRef } = useCvCursor(enabled);
-  const { notifyCursorVisible } = useCvCursorEnabled();
+  const { x, y, visible, clicking, isPinched, videoRef } = useCvCursor(enabled);
+  const { notifyCursorVisible, updateCursorState, cursorVariant } = useCvCursorEnabled();
   const prevTargetRef = useRef<Element | null>(null);
   const prevClickingRef = useRef(false);
 
@@ -22,6 +22,13 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
   useEffect(() => {
     notifyCursorVisible(visible);
   }, [visible, notifyCursorVisible]);
+
+  // Broadcast the latest cursor state to shared ref so game-level consumers
+  // (e.g. DrawIt's drawing controller) can read it without spinning up a
+  // second HandLandmarker instance.
+  useEffect(() => {
+    updateCursorState({ x, y, visible, isPinched });
+  }, [x, y, visible, isPinched, updateCursorState]);
 
   // Dispatch synthetic mouse events
   useEffect(() => {
@@ -130,23 +137,42 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
       />
 
       {/* Visual cursor */}
-      {visible && (
-        <div
-          style={{
-            position: "absolute",
-            left: x,
-            top: y,
-            transform: "translate(-50%, -50%)",
-            width: clicking ? 16 : 24,
-            height: clicking ? 16 : 24,
-            borderRadius: "50%",
-            backgroundColor: clicking ? "#ffffff" : "#e040fb",
-            border: clicking ? "3px solid #e040fb" : "3px solid #ffffff",
-            boxShadow: "0 0 12px rgba(224, 64, 251, 0.5)",
-            opacity: 0.85,
-            transition: "width 0.1s ease-out, height 0.1s ease-out, background-color 0.1s ease-out, border 0.1s ease-out",
-          }}
-        />
+      {visible && cursorVariant !== "hidden" && (
+        cursorVariant === "brush" ? (
+          <div
+            style={{
+              position: "absolute",
+              left: x,
+              top: y,
+              transform: "translate(-90%, -10%) rotate(-35deg)",
+              fontSize: clicking || isPinched ? 56 : 48,
+              lineHeight: 1,
+              filter: "drop-shadow(0 0 6px rgba(0,0,0,0.5))",
+              transition: "font-size 80ms ease-out",
+              userSelect: "none",
+            }}
+            aria-hidden="true"
+          >
+            🖌️
+          </div>
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              left: x,
+              top: y,
+              transform: "translate(-50%, -50%)",
+              width: clicking ? 16 : 24,
+              height: clicking ? 16 : 24,
+              borderRadius: "50%",
+              backgroundColor: clicking ? "#ffffff" : "#e040fb",
+              border: clicking ? "3px solid #e040fb" : "3px solid #ffffff",
+              boxShadow: "0 0 12px rgba(224, 64, 251, 0.5)",
+              opacity: 0.85,
+              transition: "width 0.1s ease-out, height 0.1s ease-out, background-color 0.1s ease-out, border 0.1s ease-out",
+            }}
+          />
+        )
       )}
     </div>
   );
