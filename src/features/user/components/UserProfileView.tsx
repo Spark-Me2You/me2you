@@ -22,6 +22,9 @@ export const UserProfileView: React.FC = () => {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadProfile = async () => {
     setIsLoading(true);
@@ -86,6 +89,25 @@ export const UserProfileView: React.FC = () => {
       navigate('/user');
     } catch (error) {
       console.error('[UserProfileView] Sign out failed:', error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!isConfirmingDelete) {
+      setIsConfirmingDelete(true);
+      setDeleteError(null);
+      return;
+    }
+    try {
+      setIsDeleting(true);
+      await profileService.deleteAccount();
+      await signOut();
+      navigate('/user');
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'failed to delete account');
+      setIsConfirmingDelete(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -228,6 +250,33 @@ export const UserProfileView: React.FC = () => {
                 sign out
               </button>
             </div>
+
+            {isConfirmingDelete ? (
+              <div className={styles.confirmRow}>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className={styles.confirmDeleteButton}
+                >
+                  {isDeleting ? 'deleting...' : 'tap again to confirm'}
+                </button>
+                <button
+                  onClick={() => { setIsConfirmingDelete(false); setDeleteError(null); }}
+                  disabled={isDeleting}
+                  className={styles.cancelDeleteButton}
+                >
+                  cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleDeleteAccount} className={styles.deleteButton}>
+                delete account
+              </button>
+            )}
+
+            {deleteError && (
+              <p className={styles.deleteError}>{deleteError}</p>
+            )}
           </div>
         </div>
       </div>

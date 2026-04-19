@@ -19,3 +19,20 @@ export interface ProfileWithImage {
   bobbleheadStoragePath: string | null;
   bobbleheadId: string | null;
 }
+
+export interface DeleteImagesResponse {
+  success: boolean;
+  gesture_rows_deleted: number;
+  cropped_rows_deleted: number;
+  storage_objects_deleted: number;
+  error?: string;
+  error_code?: string;
+}
+
+export interface DeleteAccountResponse {
+  success: boolean;
+  storage_objects_deleted: number;
+  auth_user_deleted: boolean;
+  error?: string;
+  error_code?: string;
+}

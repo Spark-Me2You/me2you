@@ -8,7 +8,7 @@ import { storageService } from '@/core/supabase/storage';
 import { faceCropService, FaceNotDetectedError } from '@/features/registration/services/faceCropService';
 import { registrationService } from '@/features/registration/services/registrationService';
 import type { UserProfile } from '@/core/auth/AuthContext';
-import type { UpdateProfileInput, ProfileWithImage } from '../types/profileTypes';
+import type { UpdateProfileInput, ProfileWithImage, DeleteImagesResponse, DeleteAccountResponse } from '../types/profileTypes';
 
 export const profileService = {
   /**
@@ -208,6 +208,42 @@ export const profileService = {
     if (dbError) {
       console.error('[profileService] Failed to delete image record:', dbError);
       throw new Error(`Failed to delete image record: ${dbError.message}`);
+    }
+  },
+
+  /**
+   * Delete all gesture and cropped images for the current user via edge function.
+   * Leaves the user account and profile photo (image table) intact.
+   */
+  deleteAllImages: async (): Promise<{ gesture_rows_deleted: number; cropped_rows_deleted: number; storage_objects_deleted: number }> => {
+    const { data, error } = await supabase.functions.invoke<DeleteImagesResponse>('delete-user-images', { body: {} });
+    if (error) {
+      console.error('[profileService] Failed to delete images:', error);
+      throw new Error(error.message || 'Failed to delete images');
+    }
+    if (!data?.success) {
+      throw new Error(data?.error || 'Failed to delete images');
+    }
+    return {
+      gesture_rows_deleted: data.gesture_rows_deleted,
+      cropped_rows_deleted: data.cropped_rows_deleted,
+      storage_objects_deleted: data.storage_objects_deleted,
+    };
+  },
+
+  /**
+   * Permanently delete the current user's account, all images, and all storage objects.
+   * Uses the delete-user-account edge function. After this call the user's session
+   * is invalid — the caller must sign out immediately.
+   */
+  deleteAccount: async (): Promise<void> => {
+    const { data, error } = await supabase.functions.invoke<DeleteAccountResponse>('delete-user-account', { body: {} });
+    if (error) {
+      console.error('[profileService] Failed to delete account:', error);
+      throw new Error(error.message || 'Failed to delete account');
+    }
+    if (!data?.success) {
+      throw new Error(data?.error || 'Failed to delete account');
     }
   },
 };

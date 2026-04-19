@@ -272,3 +272,99 @@
 .signOutButton:active {
   transform: scale(0.98);
 }
+
+.deleteButton {
+  width: 100%;
+  margin-top: 10px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #b71c1c;
+  background: rgba(183, 28, 28, 0.05);
+  border: 2px solid #b71c1c;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.deleteButton:hover {
+  background: rgba(183, 28, 28, 0.12);
+}
+
+.deleteButton:active {
+  transform: scale(0.98);
+}
+
+.confirmRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.confirmDeleteButton {
+  flex: 2;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #ffffff;
+  background: #b71c1c;
+  border: none;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.confirmDeleteButton:hover {
+  background: #8b0000;
+}
+
+.confirmDeleteButton:active {
+  transform: scale(0.98);
+}
+
+.confirmDeleteButton:disabled {
+  background: #c8a0a0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancelDeleteButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #666;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid #ccc;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cancelDeleteButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.cancelDeleteButton:active {
+  transform: scale(0.98);
+}
+
+.cancelDeleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.deleteError {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 15px;
+  color: #b71c1c;
+  text-align: center;
+  margin: 8px 0 0 0;
+}

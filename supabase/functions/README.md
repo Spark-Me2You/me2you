@@ -23,6 +23,99 @@ Generates a signed JWT token for QR-code based registration. The token is displa
 }
 ```
 
+### `delete-user-images`
+
+Deletes all gesture and cropped image records (DB rows + storage objects) for the calling user. The user's account, profile, and profile photo (`image` table) remain intact. Intended as a "clear my photos / start fresh" operation.
+
+**Authentication Required:** Regular user session JWT
+
+**Request:** `POST` (no body — identity derived entirely from JWT)
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "gesture_rows_deleted": 3,
+  "cropped_rows_deleted": 3,
+  "storage_objects_deleted": 6
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "User profile not found",
+  "error_code": "USER_NOT_FOUND"
+}
+```
+
+**Error Codes:**
+- `MISSING_AUTH` (401) — No `Authorization` header provided
+- `INVALID_TOKEN` (401) — JWT is invalid, expired, or malformed
+- `USER_NOT_FOUND` (404) — No `public.user` row for the authenticated user
+- `ORG_NOT_RESOLVED` (400) — User row has no `org_id`
+- `DB_ERROR` (500) — Failed to query or delete `gesture_image` / `cropped_image` rows
+- `STORAGE_ERROR` (500) — Failed to remove objects from the `images` bucket
+- `SERVER_ERROR` (500) — Unexpected internal error
+
+**Security:**
+- `user_id` is extracted from the verified JWT only — never trusted from request body.
+- `org_id` is fetched from `public.user` under the caller's own JWT (RLS enforced); callers cannot target another user's data.
+- Service role client is only created after the JWT + ownership check passes.
+- Only paths sourced from `gesture_image` and `cropped_image` are deleted — profile photos in the `image` table are untouched.
+
+---
+
+### `delete-user-account`
+
+Permanently deletes the calling user's account: removes all storage objects, then deletes the `auth.users` row. Cascades via FK constraints from migration `013_add_cascade_deletes.sql` automatically clean up `public.user`, `public.admin`, `public.image`, `public.gesture_image`, and `public.cropped_image`.
+
+**Authentication Required:** Regular user session JWT
+
+**Request:** `POST` (no body — identity derived entirely from JWT)
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "storage_objects_deleted": 4,
+  "auth_user_deleted": true
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Account images removed but account deletion failed. Please contact support to complete removal.",
+  "error_code": "AUTH_DELETE_FAILED"
+}
+```
+
+**Error Codes:**
+- `MISSING_AUTH` (401) — No `Authorization` header provided
+- `INVALID_TOKEN` (401) — JWT is invalid, expired, or malformed
+- `USER_NOT_FOUND` (404) — No `public.user` row for the authenticated user
+- `ORG_NOT_RESOLVED` (400) — User row has no `org_id`
+- `STORAGE_ERROR` (500) — Failed to list or remove objects from the `images` bucket
+- `AUTH_DELETE_FAILED` (500) — Storage deleted but `auth.admin.deleteUser()` failed (orphan state — see note below)
+- `SERVER_ERROR` (500) — Unexpected internal error
+
+**Ordering and Failure Handling:**
+Storage is deleted **before** the auth user row. If `auth.admin.deleteUser()` fails, the user's images are gone but the account remains intact — the user can retry. The reverse ordering would leave orphaned storage objects with no identifiable owner for cleanup. An `AUTH_DELETE_FAILED` response is logged with the `user_id` and `org_id` for admin investigation.
+
+**Cascade chain (no manual DB cleanup needed):**
+`auth.users` → `public.user`, `public.admin`, `public.image`, `public.gesture_image`, `public.cropped_image` (all ON DELETE CASCADE, migration `013_add_cascade_deletes.sql`)
+
+**Security:**
+- `user_id` is extracted from the verified JWT only — never trusted from request body.
+- `org_id` is fetched from `public.user` under the caller's own JWT (RLS enforced).
+- Service role client is only created after the JWT + ownership check passes.
+- A caller can only delete their own account. Admin-initiated deletion of other users is out of scope for this function.
+
+---
+
 ### `verify-registration-token`
 Verifies a registration token and returns organization information.
 
@@ -123,12 +216,16 @@ supabase functions deploy
 ```bash
 supabase functions deploy generate-registration-qr
 supabase functions deploy verify-registration-token
+supabase functions deploy delete-user-images --no-verify-jwt
+supabase functions deploy delete-user-account --no-verify-jwt
 ```
 
 ### View function logs:
 ```bash
 supabase functions logs generate-registration-qr
 supabase functions logs verify-registration-token
+supabase functions logs delete-user-images
+supabase functions logs delete-user-account
 ```
 
 ---
@@ -155,6 +252,22 @@ curl -X POST http://localhost:54321/functions/v1/verify-registration-token \
   -H "Content-Type: application/json" \
   -d '{"token": "YOUR_JWT_TOKEN"}'
 ```
+
+**Delete user images (requires user JWT):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/delete-user-images \
+  -H "Authorization: Bearer YOUR_USER_JWT" \
+  -H "Content-Type: application/json"
+```
+
+**Delete user account (requires user JWT — irreversible):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/delete-user-account \
+  -H "Authorization: Bearer YOUR_USER_JWT" \
+  -H "Content-Type: application/json"
+```
+
+> **Note:** Both `delete-user-images` and `delete-user-account` must be deployed with `--no-verify-jwt` (consistent with all other functions in this project). JWT verification is handled inside each function via `supabase.auth.getUser()`, which returns structured JSON error codes instead of a raw gateway 401.
 
 ---
 
