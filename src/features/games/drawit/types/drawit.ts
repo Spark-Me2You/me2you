@@ -4,6 +4,7 @@ export type ScreenState =
   | "COUNTDOWN"
   | "DRAWING"
   | "REVIEW"
+  | "THANKS"
   | "GALLERY";
 
 export type Tool = "brush" | "eraser" | "bucket";

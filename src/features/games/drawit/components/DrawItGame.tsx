@@ -6,6 +6,7 @@ import { DailyPromptScreen } from "./DailyPromptScreen";
 import { Countdown } from "./Countdown";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { ReviewScreen } from "./ReviewScreen";
+import { ThanksScreen } from "./ThanksScreen";
 import { Gallery } from "./Gallery";
 import styles from "./DrawItGame.module.css";
 
@@ -35,7 +36,13 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
         exit
       </button>
 
-      {screen === "MENU" && <DrawItMenu onStart={() => setScreen("PROMPT")} onBack={onExit} />}
+      {screen === "MENU" && (
+        <DrawItMenu
+          onStart={() => setScreen("PROMPT")}
+          onGallery={() => setScreen("GALLERY")}
+          onBack={onExit}
+        />
+      )}
 
       {screen === "PROMPT" && (
         <DailyPromptScreen onProceed={handleProceed} onBack={toMenu} />
@@ -58,8 +65,11 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
             // after the user completes the claim flow on their device.
           }}
           onDiscard={toMenu}
+          onContinue={() => setScreen("THANKS")}
         />
       )}
+
+      {screen === "THANKS" && <ThanksScreen onDone={toMenu} />}
 
       {screen === "GALLERY" && <Gallery onBack={toMenu} />}
     </div>

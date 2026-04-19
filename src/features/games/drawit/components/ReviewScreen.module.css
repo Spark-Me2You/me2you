@@ -24,13 +24,6 @@
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
 }
 
-.error {
-  font-family: "Jersey 10", Arial, sans-serif;
-  color: #ff8080;
-  font-size: 24px;
-  letter-spacing: 2px;
-}
-
 .buttons {
   display: flex;
   gap: 20px;
@@ -60,26 +53,99 @@
   border: 4px solid white;
 }
 
-.primary:disabled,
-.secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* ---- QR modal ---- */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11000;
+  animation: fadeIn 160ms ease-out;
 }
 
-.qrPanel {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
+.modalCard {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 48px 72px 110px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 18px;
+  min-width: 500px;
+  max-width: 680px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: popIn 180ms ease-out;
+  font-family: "Jersey 10", Arial, sans-serif;
 }
 
-.qrLabel {
-  font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 22px;
-  letter-spacing: 3px;
+/* "Next" button in the bottom-right of the modal, using next_button.svg. */
+.nextArrow {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease;
+}
+
+.nextArrow img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.nextArrow:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.nextArrow:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.modalTitle {
   margin: 0;
+  font-size: 46px;
+  letter-spacing: 6px;
   color: #008080;
+  text-align: center;
+}
+
+.modalSubtitle {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #333333;
+  text-align: center;
+  max-width: 360px;
+  line-height: 1.2;
+}
+
+.qrWrap {
+  background: white;
+  padding: 14px;
+  border: 3px solid #008080;
+  border-radius: 12px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1);    }
 }
