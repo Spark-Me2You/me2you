@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { usePhotoCapture } from '@/features/profile-editor/hooks/usePhotoCapture';
-import type { GestureCategory } from '@/features/profile-editor/types/profileTypes';
-import styles from './UserPhotoCaptureModal.module.css';
+import React, { useEffect, useState } from "react";
+import { usePhotoCapture } from "@/features/profile-editor/hooks/usePhotoCapture";
+import type { GestureCategory } from "@/features/profile-editor/types/profileTypes";
+import styles from "./UserPhotoCaptureModal.module.css";
 
 interface UserPhotoCaptureModalProps {
   isOpen: boolean;
@@ -16,6 +16,8 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
   onCapture,
   isSubmitting,
 }) => {
+  const [localError, setLocalError] = useState<string | null>(null);
+
   const {
     videoRef,
     canvasRef,
@@ -34,6 +36,7 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      setLocalError(null);
       startCamera();
     } else {
       stopCamera();
@@ -43,14 +46,22 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
 
   const handleSave = async () => {
     if (!photo || !detectedCategory) return;
-    await onCapture(photo, detectedCategory);
+
+    setLocalError(null);
+    try {
+      await onCapture(photo, detectedCategory);
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : "failed to save photo",
+      );
+    }
   };
 
   if (!isOpen) return null;
 
   const gestureLabel = detectedGestureName
-    ? `✓ ${detectedGestureName.replace(/_/g, ' ')}`
-    : 'detecting...';
+    ? `✓ ${detectedGestureName.replace(/_/g, " ")}`
+    : "detecting...";
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -84,6 +95,8 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
             <div className={styles.errorBanner}>{cameraError}</div>
           )}
 
+          {localError && <div className={styles.errorBanner}>{localError}</div>}
+
           <div className={styles.cameraContainer}>
             {previewUrl ? (
               <img src={previewUrl} alt="captured" className={styles.preview} />
@@ -109,14 +122,14 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
 
             {isCameraReady && isGestureReady && (
               <div
-                className={`${styles.gestureStatus} ${detectedGestureName ? styles.gestureDetected : ''}`}
+                className={`${styles.gestureStatus} ${detectedGestureName ? styles.gestureDetected : ""}`}
               >
                 {gestureLabel}
               </div>
             )}
           </div>
 
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <canvas ref={canvasRef} style={{ display: "none" }} />
 
           <div className={styles.actions}>
             {!photo ? (
@@ -144,7 +157,7 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
                   disabled={!detectedCategory || isSubmitting}
                   className={styles.saveBtn}
                 >
-                  {isSubmitting ? 'saving...' : 'looks good!'}
+                  {isSubmitting ? "saving..." : "looks good!"}
                 </button>
               </>
             )}
