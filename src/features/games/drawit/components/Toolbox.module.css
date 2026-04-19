@@ -1,0 +1,70 @@
+.toolbox {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #c0c0c0;
+  border: 3px solid #ffffff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  box-shadow: 2px 2px 0 #000;
+  z-index: 9999;
+  font-family: "Jersey 10", Arial, sans-serif;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(5, 40px);
+  gap: 6px;
+  justify-content: center;
+}
+
+.swatch {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #404040;
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch.active {
+  outline: 3px solid #ffff00;
+}
+
+.brush,
+.tool {
+  background: #dcdcdc;
+  border: 2px solid #ffffff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  padding: 0 10px;
+  min-height: 40px;
+}
+
+.brush {
+  width: 40px;
+  padding: 0;
+}
+
+.brush.active,
+.tool.active {
+  background: #ffffff;
+  outline: 2px solid #ffff00;
+}
+
+.brushDot {
+  background: black;
+  border-radius: 50%;
+  display: block;
+}

@@ -1,0 +1,85 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.heading {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 48px;
+  color: white;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.preview {
+  max-width: 60vw;
+  max-height: 60vh;
+  background: white;
+  border: 4px solid #404040;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.error {
+  font-family: "Jersey 10", Arial, sans-serif;
+  color: #ff8080;
+  font-size: 24px;
+  letter-spacing: 2px;
+}
+
+.buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.primary,
+.secondary {
+  font-family: "Jersey 10", Arial, sans-serif;
+  padding: 16px 36px;
+  font-size: 30px;
+  letter-spacing: 4px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #00c000;
+  color: white;
+  border: 4px solid #ffffff;
+}
+
+.secondary {
+  background: transparent;
+  color: white;
+  border: 4px solid white;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qrPanel {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.qrLabel {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  margin: 0;
+  color: #008080;
+}

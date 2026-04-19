@@ -14,6 +14,9 @@ export interface CvCursorState {
   y: number;
   visible: boolean;
   clicking: boolean;
+  // Continuous raw pinch state (no cooldown). Use for drag/paint interactions
+  // where `clicking` (one-shot) would only fire once per 300ms.
+  isPinched: boolean;
   isReady: boolean;
   error: string | null;
 }
@@ -69,6 +72,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     y: 0,
     visible: false,
     clicking: false,
+    isPinched: false,
     isReady: false,
     error: null,
   });
@@ -93,7 +97,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
 
     if (!results.landmarks || results.landmarks.length === 0) {
       setState((prev) =>
-        prev.visible ? { ...prev, visible: false, clicking: false } : prev,
+        prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
       );
       rafRef.current = requestAnimationFrame(processFrame);
       return;
@@ -103,7 +107,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
 
     if (!isPointingPose(landmarks)) {
       setState((prev) =>
-        prev.visible ? { ...prev, visible: false, clicking: false } : prev,
+        prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
       );
       rafRef.current = requestAnimationFrame(processFrame);
       return;
@@ -136,7 +140,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     }
     wasClickingRef.current = isClicking;
 
-    setState({ x, y, visible: true, clicking, isReady: true, error: null });
+    setState({ x, y, visible: true, clicking, isPinched: isClicking, isReady: true, error: null });
 
     rafRef.current = requestAnimationFrame(processFrame);
   }, []);
