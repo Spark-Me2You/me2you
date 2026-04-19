@@ -3,6 +3,9 @@ import { useGestureRecognition } from "@/features/discovery/hooks/useGestureReco
 import { getCategoryFromGesture } from "@/features/discovery/config/gestureMapping";
 import type { GestureCategory } from "../types/profileTypes";
 
+const VIDEO_REF_WAIT_TIMEOUT_MS = 3000;
+const CAMERA_READY_TIMEOUT_MS = 8000;
+
 interface UsePhotoCaptureResult {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -33,6 +36,7 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const startRequestIdRef = useRef(0);
 
   const {
     detectedGesture,
@@ -52,6 +56,8 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
   }, [detectedGesture]);
 
   const startCamera = useCallback(async () => {
+    const requestId = ++startRequestIdRef.current;
+
     setCameraError(null);
     setIsCameraReady(false);
 
@@ -71,47 +77,71 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
         audio: false,
       });
 
-      // Check if component is still mounted
-      if (!videoRef.current) {
+      if (requestId !== startRequestIdRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      const waitForVideoElement = async (): Promise<HTMLVideoElement> => {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < VIDEO_REF_WAIT_TIMEOUT_MS) {
+          if (requestId !== startRequestIdRef.current) {
+            throw new Error("Camera initialization cancelled");
+          }
+
+          if (videoRef.current) {
+            return videoRef.current;
+          }
+
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 50);
+          });
+        }
+
+        throw new Error("Camera view not ready");
+      };
+
+      const video = await waitForVideoElement();
+
+      if (requestId !== startRequestIdRef.current) {
         stream.getTracks().forEach((t) => t.stop());
         return;
       }
 
       streamRef.current = stream;
-      videoRef.current.srcObject = stream;
+      video.srcObject = stream;
 
       // Explicitly play the video
       try {
-        await videoRef.current.play();
+        await video.play();
       } catch (playError) {
         console.warn("[usePhotoCapture] Video play() failed:", playError);
       }
 
       // Wait for video to be ready with timeout
       await new Promise<void>((resolve, reject) => {
-        const video = videoRef.current;
-        if (!video) {
-          reject(new Error("Video element not found"));
-          return;
-        }
-
         let settled = false;
+
+        const cleanup = () => {
+          video.removeEventListener("loadeddata", onLoadedData);
+          video.removeEventListener("canplay", onCanPlay);
+          video.removeEventListener("error", onError);
+        };
+
         const timeoutId = window.setTimeout(() => {
           if (settled) {
             return;
           }
 
           settled = true;
-          video.removeEventListener("loadeddata", onLoadedData);
-          video.removeEventListener("error", onError);
+          cleanup();
 
           if (video.readyState >= 2) {
-            setIsCameraReady(true);
             resolve();
           } else {
             reject(new Error("Camera initialization timeout"));
           }
-        }, 5000);
+        }, CAMERA_READY_TIMEOUT_MS);
 
         const onLoadedData = () => {
           if (settled) {
@@ -120,9 +150,18 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
 
           settled = true;
           window.clearTimeout(timeoutId);
-          video.removeEventListener("loadeddata", onLoadedData);
-          video.removeEventListener("error", onError);
-          setIsCameraReady(true);
+          cleanup();
+          resolve();
+        };
+
+        const onCanPlay = () => {
+          if (settled) {
+            return;
+          }
+
+          settled = true;
+          window.clearTimeout(timeoutId);
+          cleanup();
           resolve();
         };
 
@@ -133,15 +172,34 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
 
           settled = true;
           window.clearTimeout(timeoutId);
-          video.removeEventListener("loadeddata", onLoadedData);
-          video.removeEventListener("error", onError);
+          cleanup();
           reject(new Error("Video failed to load"));
         };
 
+        if (video.readyState >= 2) {
+          settled = true;
+          window.clearTimeout(timeoutId);
+          cleanup();
+          resolve();
+          return;
+        }
+
         video.addEventListener("loadeddata", onLoadedData);
+        video.addEventListener("canplay", onCanPlay);
         video.addEventListener("error", onError);
       });
+
+      if (requestId !== startRequestIdRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      setIsCameraReady(true);
     } catch (err) {
+      if (requestId !== startRequestIdRef.current) {
+        return;
+      }
+
       if (err instanceof Error) {
         if (err.name === "NotAllowedError") {
           setCameraError(
@@ -151,6 +209,9 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
           setCameraError(
             "no camera found — please connect a camera and try again",
           );
+        } else if (err.message.includes("cancelled")) {
+          // Ignore cancellations from StrictMode cleanup or rapid close/reopen.
+          return;
         } else if (err.message.includes("timeout")) {
           setCameraError("camera initialization timeout — please try again");
         } else {
@@ -163,9 +224,20 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
   }, []);
 
   const stopCamera = useCallback(() => {
+    startRequestIdRef.current += 1;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
+    setPreviewUrl((previous) => {
+      if (previous) {
+        URL.revokeObjectURL(previous);
+      }
+      return null;
+    });
+    setPhoto(null);
+    setDetectedCategory(null);
+    setDetectedGestureName(null);
+    setCameraError(null);
     setIsCameraReady(false);
   }, []);
 
@@ -215,7 +287,26 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
     setPreviewUrl(null);
     setDetectedCategory(null);
     setDetectedGestureName(null);
-  }, [previewUrl]);
+    setCameraError(null);
+
+    const hasLiveTrack =
+      streamRef.current
+        ?.getVideoTracks()
+        .some((track) => track.readyState === "live") ?? false;
+    const video = videoRef.current;
+    const isAttached = !!video && video.srcObject === streamRef.current;
+
+    if (!hasLiveTrack || !isAttached) {
+      void startCamera();
+      return;
+    }
+
+    if (video && video.paused) {
+      void video.play().catch(() => {
+        // Ignore autoplay recovery errors; user interaction will retry capture.
+      });
+    }
+  }, [previewUrl, startCamera]);
 
   return {
     videoRef,

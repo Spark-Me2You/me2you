@@ -37,7 +37,7 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setLocalError(null);
-      startCamera();
+      void startCamera();
     } else {
       stopCamera();
     }
@@ -98,17 +98,18 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
           {localError && <div className={styles.errorBanner}>{localError}</div>}
 
           <div className={styles.cameraContainer}>
-            {previewUrl ? (
+            {previewUrl && (
               <img src={previewUrl} alt="captured" className={styles.preview} />
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={styles.video}
-              />
             )}
+
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={styles.video}
+              style={{ display: previewUrl ? "none" : undefined }}
+            />
 
             {!previewUrl && !isCameraReady && !cameraError && (
               <div className={styles.loadingOverlay}>starting camera...</div>
