@@ -544,12 +544,25 @@
 }
 
 /* Info button (Figma: 46px Jersey 10, tracking 7.82px, pink bg, yellow border 7px) */
-.infoButton {
+.infoButtonWrap {
   position: absolute;
   top: 10%;
   right: 15%;
-  width: 259px;
-  height: 94px;
+  width: 273px;   /* 259 content + 7*2 border */
+  height: 108px;  /* 94 content + 7*2 border */
+  transform: rotate(187deg);
+  z-index: 4;
+}
+
+.infoButton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  width: 273px;
+  height: 108px;
   background: #e405ac;
   border: 7px solid #d3e405;
   border-radius: 46px;
@@ -559,15 +572,49 @@
   color: #f5f5f5;
   text-transform: lowercase;
   cursor: pointer;
-  transform: rotate(187deg);
-  display: flex;                                                                                                    
-  align-items: center;                                                                                              
-  justify-content: center;  
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow:
     0px 4px 4px 0px rgba(0, 0, 0, 0.25),
     inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
     inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
-  z-index: 4;
+  z-index: 1;
+}
+
+/* Dwell-to-open ring: traces around the info button while the cursor hovers.
+   Rect stroke sits exactly over the 7px yellow border (centerline at 3.5px inset). */
+.infoTrace {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 273px;
+  height: 108px;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 2;
+}
+
+.infoTrace rect {
+  fill: none;
+  stroke: #7c5cff;
+  stroke-width: 8;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 6px rgba(124, 92, 255, 0.65));
+  opacity: 0;
+}
+
+.infoTraceActive rect {
+  opacity: 1;
+  animation: infoTrace 1400ms linear forwards;
+}
+
+@keyframes infoTrace {
+  from { stroke-dashoffset: 100; }
+  to   { stroke-dashoffset: 0; }
 }
 
 /* =============================================
