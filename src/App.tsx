@@ -7,6 +7,7 @@ import {
 import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
 import { RegistrationPage } from "@/features/registration";
 import { UserLandingPage, UserProfileView } from "@/features/user";
+import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import AppContainer from "./AppContainer";
 import "./App.css";
 
@@ -62,6 +63,11 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Public routes: claim flow (ClaimPage handles its own auth redirect) */}
+      <Route path="/claim/:tokenId" element={<ClaimPage />} />
+      <Route path="/claim/success" element={<ClaimSuccessPage />} />
+      <Route path="/claim/error" element={<ClaimErrorPage />} />
 
       {/* Default redirect to user landing page */}
       <Route path="/" element={<Navigate to="/user" replace />} />

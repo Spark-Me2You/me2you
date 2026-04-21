@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { CreateAccountPrompt } from "./CreateAccountPrompt";
 import logo from "@/assets/me2you.png";
@@ -12,6 +12,7 @@ import styles from "./UserLandingPage.module.css";
 
 export const UserLandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signInUser, authMode } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -20,9 +21,11 @@ export const UserLandingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
-  // Redirect if already signed in as user
+  // Redirect if already signed in as user, honoring any ?next= destination
+  const next = searchParams.get("next");
   if (authMode === "user") {
-    return <Navigate to="/user/profile" replace />;
+    const destination = next && next.startsWith("/claim/") ? next : "/user/profile";
+    return <Navigate to={destination} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,8 +35,8 @@ export const UserLandingPage: React.FC = () => {
 
     try {
       await signInUser(email, password);
-      // Navigate to profile on success
-      navigate("/user/profile");
+      const destination = next && next.startsWith("/claim/") ? next : "/user/profile";
+      navigate(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
