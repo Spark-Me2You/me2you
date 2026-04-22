@@ -43,9 +43,31 @@
   backdrop-filter: blur(10px);
 }
 
+.claimButton {
+  margin-top: 8px;
+  padding: 16px 48px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 36px;
+  letter-spacing: 4px;
+  background: rgba(255, 215, 0, 0.12);
+  border: 3px solid rgba(255, 215, 0, 0.55);
+  border-radius: 16px;
+  color: #fff7cf;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
 .playAgainButton:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.claimButton:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.8);
+  color: #ffffff;
   transform: scale(1.05);
 }
 
