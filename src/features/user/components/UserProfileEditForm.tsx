@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import logo from '@/assets/me2you.png';
+import miiBody from '@/assets/mii_body.png';
 import type {
   ProfileWithImage,
   UpdateProfileInput,
@@ -8,6 +9,7 @@ import styles from './UserProfileEditForm.module.css';
 
 interface UserProfileEditFormProps {
   initialData: ProfileWithImage;
+  gestureImageUrl?: string | null;
   onSave: (data: UpdateProfileInput) => Promise<void>;
   onCancel: () => void;
   onChangePhoto: () => void;
@@ -17,12 +19,14 @@ interface UserProfileEditFormProps {
 
 export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
   initialData,
+  gestureImageUrl = null,
   onSave,
   onCancel,
   onChangePhoto,
   isSubmitting,
   error,
 }) => {
+  const [activeTab, setActiveTab] = useState<'picture' | 'mii'>('picture');
   const [name, setName] = useState(initialData.profile.name || '');
   const [status, setStatus] = useState(initialData.profile.status || '');
   const [pronouns, setPronouns] = useState(initialData.profile.pronouns || '');
@@ -79,28 +83,49 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
         <div className={styles.card}>
           <h2 className={styles.title}>edit profile</h2>
 
-          <div className={styles.photoSection}>
-            {initialData.imageUrl ? (
-              <img
-                src={initialData.imageUrl}
-                alt="profile"
-                className={styles.profilePhoto}
-              />
-            ) : (
-              <div className={styles.photoPlaceholder}>no photo</div>
-            )}
-
-            {initialData.bobbleheadUrl ? (
-              <div className={styles.bobbleheadContainer}>
-                <img
-                  src={initialData.bobbleheadUrl}
-                  alt="bobblehead"
-                  className={styles.bobblehead}
-                />
-              </div>
-            ) : (
-              <div className={styles.bobbleheadPlaceholder}>no bobblehead</div>
-            )}
+          <div className={styles.avatarCard}>
+            <div className={styles.tabBar}>
+              <button
+                type="button"
+                className={`${styles.tab} ${activeTab === 'picture' ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab('picture')}
+              >
+                my picture
+              </button>
+              <button
+                type="button"
+                className={`${styles.tab} ${activeTab === 'mii' ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab('mii')}
+              >
+                my mii
+              </button>
+            </div>
+            <div className={styles.avatarStage}>
+              {activeTab === 'picture' ? (
+                gestureImageUrl || initialData.imageUrl ? (
+                  <img
+                    src={gestureImageUrl ?? initialData.imageUrl ?? ''}
+                    alt="profile"
+                    className={styles.picture}
+                  />
+                ) : (
+                  <div className={styles.pictureFallback}>no photo</div>
+                )
+              ) : (
+                <div className={styles.miiComposite}>
+                  <img src={miiBody} alt="" className={styles.miiBody} />
+                  {initialData.bobbleheadUrl ? (
+                    <img
+                      src={initialData.bobbleheadUrl}
+                      alt=""
+                      className={styles.miiFace}
+                    />
+                  ) : (
+                    <div className={styles.miiFaceMissing}>no face yet</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <button

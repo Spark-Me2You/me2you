@@ -2,12 +2,18 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { profileService } from "@/features/profile-editor/services/profileService";
+import { hubService } from "@/features/hub/services/hubService";
+import { storageService } from "@/core/supabase";
 import type {
   ProfileWithImage,
   UpdateProfileInput,
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
+import miiBody from "@/assets/mii_body.png";
+import labelBanner1 from "@/assets/label_banner1.svg";
+import labelBanner2 from "@/assets/label_banner2b.svg";
+import labelBanner3 from "@/assets/label_banner3.svg";
 import { UserProfileEditForm } from "./UserProfileEditForm";
 import { UserPhotoCaptureModal } from "./UserPhotoCaptureModal";
 import { ClaimScanner } from "@/features/claim";
@@ -19,6 +25,7 @@ export const UserProfileView: React.FC = () => {
   const currentUserId = session?.user.id ?? null;
 
   const [profileData, setProfileData] = useState<ProfileWithImage | null>(null);
+  const [gestureImageUrl, setGestureImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -28,6 +35,7 @@ export const UserProfileView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"picture" | "mii">("picture");
 
   const mountedRef = useRef(true);
   const loadRequestIdRef = useRef(0);
@@ -52,6 +60,35 @@ export const UserProfileView: React.FC = () => {
         }
 
         setProfileData(data);
+
+        if (data?.profile.org_id && data.profile.id) {
+          try {
+            const path = await hubService.getGestureImageByOwnerId(
+              data.profile.id,
+              data.profile.org_id,
+            );
+            if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+              return;
+            }
+            if (path) {
+              const url = await storageService.getPhotoUrl(path);
+              if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+                return;
+              }
+              setGestureImageUrl(url);
+            } else {
+              setGestureImageUrl(null);
+            }
+          } catch (gestureErr) {
+            console.warn(
+              "[UserProfileView] Failed to fetch gesture image:",
+              gestureErr,
+            );
+            if (mountedRef.current && requestId === loadRequestIdRef.current) {
+              setGestureImageUrl(null);
+            }
+          }
+        }
       } catch (err) {
         if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
           return;
@@ -237,6 +274,7 @@ export const UserProfileView: React.FC = () => {
       <>
         <UserProfileEditForm
           initialData={profileData}
+          gestureImageUrl={gestureImageUrl}
           onSave={handleSaveProfile}
           onCancel={() => {
             setMode("view");
@@ -298,36 +336,53 @@ export const UserProfileView: React.FC = () => {
 
         <div className={styles.content}>
           <div className={styles.profileCard}>
-            <div className={styles.photoSection}>
-              {/* Profile photo */}
-              {profileData.imageUrl ? (
-                <img
-                  src={profileData.imageUrl}
-                  alt={profile.name}
-                  className={styles.profilePhoto}
-                />
-              ) : (
-                <div className={styles.photoPlaceholder}>
-                  <span className={styles.initials}>
-                    {profile.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-
-              {/* Bobblehead */}
-              {profileData.bobbleheadUrl ? (
-                <div className={styles.bobbleheadContainer}>
-                  <img
-                    src={profileData.bobbleheadUrl}
-                    alt="bobblehead"
-                    className={styles.bobblehead}
-                  />
-                </div>
-              ) : (
-                <div className={styles.bobbleheadPlaceholder}>
-                  no bobblehead
-                </div>
-              )}
+            <div className={styles.avatarCard}>
+              <div className={styles.tabBar}>
+                <button
+                  type="button"
+                  className={`${styles.tab} ${activeTab === "picture" ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab("picture")}
+                >
+                  my picture
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.tab} ${activeTab === "mii" ? styles.tabActive : ""}`}
+                  onClick={() => setActiveTab("mii")}
+                >
+                  my mii
+                </button>
+              </div>
+              <div className={styles.avatarStage}>
+                {activeTab === "picture" ? (
+                  gestureImageUrl || profileData.imageUrl ? (
+                    <img
+                      src={gestureImageUrl ?? profileData.imageUrl ?? ""}
+                      alt={profile.name}
+                      className={styles.picture}
+                    />
+                  ) : (
+                    <div className={styles.pictureFallback}>
+                      <span className={styles.initials}>
+                        {profile.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )
+                ) : (
+                  <div className={styles.miiComposite}>
+                    <img src={miiBody} alt="" className={styles.miiBody} />
+                    {profileData.bobbleheadUrl ? (
+                      <img
+                        src={profileData.bobbleheadUrl}
+                        alt=""
+                        className={styles.miiFace}
+                      />
+                    ) : (
+                      <div className={styles.miiFaceMissing}>no face yet</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.profileInfo}>
@@ -335,6 +390,11 @@ export const UserProfileView: React.FC = () => {
 
               {profile.pronouns && (
                 <div className={styles.fieldWrapper}>
+                  <img
+                    src={labelBanner1}
+                    alt=""
+                    className={styles.fieldBanner}
+                  />
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>pronouns:</span>
                     <span className={styles.fieldValue}>
@@ -346,6 +406,11 @@ export const UserProfileView: React.FC = () => {
 
               {profile.major && (
                 <div className={styles.fieldWrapper}>
+                  <img
+                    src={labelBanner2}
+                    alt=""
+                    className={styles.fieldBanner}
+                  />
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>major:</span>
                     <span className={styles.fieldValue}>{profile.major}</span>
@@ -355,6 +420,11 @@ export const UserProfileView: React.FC = () => {
 
               {profile.status && (
                 <div className={styles.fieldWrapper}>
+                  <img
+                    src={labelBanner3}
+                    alt=""
+                    className={styles.fieldBanner}
+                  />
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>status:</span>
                     <span className={styles.fieldValue}>{profile.status}</span>
@@ -364,6 +434,11 @@ export const UserProfileView: React.FC = () => {
 
               {profile.interests && profile.interests.length > 0 && (
                 <div className={styles.fieldWrapper}>
+                  <img
+                    src={labelBanner1}
+                    alt=""
+                    className={styles.fieldBanner}
+                  />
                   <div className={styles.field}>
                     <span className={styles.fieldLabel}>interests:</span>
                     <span className={styles.fieldValue}>
@@ -376,37 +451,39 @@ export const UserProfileView: React.FC = () => {
 
             {saveError && <p className={styles.saveError}>{saveError}</p>}
 
-            <div className={styles.buttonRow}>
+            <div className={styles.buttonRowTop}>
+              <button
+                type="button"
+                className={styles.scanButton}
+                onClick={() => setIsScannerOpen(true)}
+              >
+                scan a code
+              </button>
+              <button
+                onClick={() => navigate("/user/game-scores")}
+                className={styles.gameScoresButton}
+              >
+                game scores
+              </button>
+              <button
+                onClick={() => navigate("/user/gallery")}
+                className={styles.drawingsButton}
+              >
+                my drawings
+              </button>
+            </div>
+
+            <div className={styles.buttonRowMid}>
               <button
                 onClick={() => setMode("edit")}
                 className={styles.editButton}
               >
                 edit profile
               </button>
-              <button
-                onClick={() => navigate("/user/game-scores")}
-                className={styles.editButton}
-              >
-                game scores
-              </button>
-              <button
-                onClick={() => navigate("/user/gallery")}
-                className={styles.editButton}
-              >
-                my drawings
-              </button>
               <button onClick={handleSignOut} className={styles.signOutButton}>
                 sign out
               </button>
             </div>
-
-            <button
-              type="button"
-              className={styles.scanButton}
-              onClick={() => setIsScannerOpen(true)}
-            >
-              scan a code
-            </button>
 
             {isConfirmingDelete ? (
               <div className={styles.confirmRow}>
