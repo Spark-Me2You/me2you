@@ -114,9 +114,21 @@ export const storageService = {
 
   /**
    * Delete photo from storage
-   * TODO: Implement photo deletion
+   * @param path - Storage path to delete
+   * @throws Error if deletion fails
    */
-  deletePhoto: async (_path: string) => {
-    // TODO: Implement photo deletion
+  deletePhoto: async (path: string): Promise<void> => {
+    console.log('[storage] Deleting photo at path:', path);
+
+    const { error } = await supabase.storage
+      .from('images')
+      .remove([path]);
+
+    if (error) {
+      console.error('[storage] Delete failed:', error);
+      throw new Error(`Failed to delete photo: ${error.message}`);
+    }
+
+    console.log('[storage] Photo deleted successfully');
   },
 };

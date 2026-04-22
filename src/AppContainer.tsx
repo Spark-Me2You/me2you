@@ -3,7 +3,7 @@
  * Contains the authenticated app with state machine
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StateProvider, useAppState } from "@/core/state-machine";
 import {
   CvCursorOverlay,
@@ -14,7 +14,6 @@ import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
-import { MyProfileView } from "@/features/profile-editor";
 import { HubView } from "@/features/hub";
 import { RegistrationQRDisplay } from "@/features/kiosk";
 import { useAuth } from "@/core/auth";
@@ -35,6 +34,7 @@ import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
+
 
 /** Simple power icon SVG, white, 48px */
 function PowerIcon() {
@@ -63,6 +63,47 @@ function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
   const { signOut, authMode, exitKioskMode } = useAuth();
   const [showInfo, setShowInfo] = useState(false);
+  const [infoArming, setInfoArming] = useState(false);
+  const infoButtonRef = useRef<HTMLButtonElement>(null);
+  const infoDwellTimerRef = useRef<number | null>(null);
+
+  const INFO_DWELL_MS = 1400;
+
+  const clearInfoTimer = () => {
+    if (infoDwellTimerRef.current) {
+      clearTimeout(infoDwellTimerRef.current);
+      infoDwellTimerRef.current = null;
+    }
+  };
+
+  // Dwell-to-open: traces a ring around the info button while the cursor hovers;
+  // when the trace completes the info overlay opens.
+  useEffect(() => {
+    const btn = infoButtonRef.current;
+    if (!btn) return;
+
+    const onEnter = () => {
+      if (showInfo) return;
+      clearInfoTimer();
+      setInfoArming(true);
+      infoDwellTimerRef.current = window.setTimeout(() => {
+        setInfoArming(false);
+        setShowInfo(true);
+      }, INFO_DWELL_MS);
+    };
+    const onLeave = () => {
+      clearInfoTimer();
+      setInfoArming(false);
+    };
+
+    btn.addEventListener("mouseenter", onEnter);
+    btn.addEventListener("mouseleave", onLeave);
+    return () => {
+      btn.removeEventListener("mouseenter", onEnter);
+      btn.removeEventListener("mouseleave", onLeave);
+      clearInfoTimer();
+    };
+  }, [showInfo]);
 
   const handleLogout = async () => {
     try {
@@ -195,8 +236,32 @@ function AppContainerContent() {
                 </div>
                 <img src={arrow2} alt="" className={styles.arrow2} />
 
-                {/* Info button */}
-                <button className={styles.infoButton} onClick={() => setShowInfo(true)}>info!!</button>
+                {/* Info button with dwell-to-open trace animation */}
+                <div className={styles.infoButtonWrap}>
+                  <button
+                    ref={infoButtonRef}
+                    className={styles.infoButton}
+                    onClick={() => setShowInfo(true)}
+                  >
+                    info!!
+                  </button>
+                  <svg
+                    className={`${styles.infoTrace} ${infoArming ? styles.infoTraceActive : ""}`}
+                    viewBox="0 0 273 108"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                  >
+                    <rect
+                      x="3.5"
+                      y="3.5"
+                      width="266"
+                      height="101"
+                      rx="42.5"
+                      ry="42.5"
+                      pathLength={100}
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
 
@@ -297,21 +362,11 @@ function AppContainerContent() {
           </div>
         );
 
-      case AppState.PROFILE_EDITOR:
-        return (
-          <div>
-            <h1>Profile Editor</h1>
-          </div>
-        );
-
       case AppState.HUB:
         return <HubView />;
 
       case AppState.DISCOVERY:
         return <DiscoveryView />;
-
-      case AppState.MY_PROFILE:
-        return <MyProfileView onBack={() => transitionTo(AppState.IDLE)} />;
 
       case AppState.GAMES:
         return <GamesView />;

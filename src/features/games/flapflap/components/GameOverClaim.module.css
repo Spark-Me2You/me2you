@@ -1,0 +1,99 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: rgba(10, 10, 20, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+}
+
+.scoreText {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 72px;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.instruction {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.overlayLeaderboard {
+  width: min(92%, 540px);
+  max-width: 540px;
+}
+
+.playAgainButton {
+  margin-top: 8px;
+  padding: 16px 48px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 36px;
+  letter-spacing: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.claimButton {
+  margin-top: 8px;
+  padding: 16px 48px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 36px;
+  letter-spacing: 4px;
+  background: rgba(255, 215, 0, 0.12);
+  border: 3px solid rgba(255, 215, 0, 0.55);
+  border-radius: 16px;
+  color: #fff7cf;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.playAgainButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.claimButton:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.8);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Claimed / success state */
+.confirmedState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.trophy {
+  font-size: 96px;
+  line-height: 1;
+}
+
+.confirmedText {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 64px;
+  color: #ffd700;
+  margin: 0;
+  letter-spacing: 3px;
+  text-shadow: 0 0 24px rgba(255, 215, 0, 0.5);
+}

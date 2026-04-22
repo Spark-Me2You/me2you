@@ -1,0 +1,127 @@
+.toolbox {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 10px;
+  background: #c0c0c0;
+  border: 3px solid #ffffff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  box-shadow: 3px 3px 0 #000;
+  /* Sit above the back/submit buttons (z-index 10000) so clicks on Clear
+     don't fall through to the Back button when the toolbox overlaps it
+     vertically on shorter viewports. */
+  z-index: 10001;
+  font-family: "Jersey 10", Arial, sans-serif;
+  width: 170px;
+  box-sizing: border-box;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: 48px 48px;
+  column-gap: 8px;
+  row-gap: 6px;
+  justify-content: center;
+}
+
+.swatch {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #404040;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 80ms ease;
+}
+
+.swatch:hover {
+  transform: scale(1.08);
+}
+
+.swatch.active {
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+}
+
+.divider {
+  height: 2px;
+  background: #808080;
+  border-top: 1px solid #404040;
+  border-bottom: 1px solid #ffffff;
+  margin: 2px 0;
+}
+
+.brushRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.brush {
+  background: #dcdcdc;
+  border: 3px solid #ffffff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 42px;
+  padding: 0;
+}
+
+.brush.active {
+  background: #ffffff;
+  outline: 3px solid #ffff00;
+  outline-offset: 1px;
+}
+
+.brushDot {
+  background: black;
+  border-radius: 50%;
+  display: block;
+}
+
+.toolsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool {
+  background: #dcdcdc;
+  border: 3px solid #ffffff;
+  border-right-color: #404040;
+  border-bottom-color: #404040;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  padding: 0;
+  width: 100%;
+  height: 50px;
+  color: #101010;
+  transition: transform 80ms ease, background 80ms ease;
+}
+
+.tool:hover {
+  transform: scale(1.03);
+  background: #e8e8e8;
+}
+
+.tool.active {
+  background: #ffffff;
+  outline: 3px solid #ffff00;
+  outline-offset: 1px;
+}

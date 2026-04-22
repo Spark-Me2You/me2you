@@ -9,7 +9,7 @@ import type { RandomImageData, UserProfile } from "../types/image";
 
 type DiscoveryUserData = Pick<
   UserProfile,
-  "id" | "name" | "status" | "pronouns" | "major" | "interests"
+  "id" | "name" | "status" | "pronouns" | "major" | "interests" | "created_at"
 >;
 
 export const discoveryService = {
@@ -22,29 +22,6 @@ export const discoveryService = {
     return null;
   },
 
-  /**
-   * Fetch a random public image from the organization, optionally filtered by category
-   *
-   * This function:
-   * 1. Queries images joined with users
-   * 2. Filters by org_id and is_public = true
-   * 3. Optionally filters by category (e.g., "peace_sign", "wave", "thumbs_up")
-   * 4. Randomly selects one image
-   * 5. Generates public URL for the image
-   * 6. Returns image data with owner info
-   *
-   * @param orgId - Organization ID from kiosk session
-   * @param category - Optional image category filter ("peace_sign", "wave", "thumbs_up")
-   * @returns Random image with owner name and status, or null if no images found
-   * @throws Error if database query fails
-   *
-   * @example
-   * // Fetch any random image
-   * const anyImage = await discoveryService.fetchRandomImage('org-uuid-123');
-   *
-   * // Fetch image matching peace sign gesture
-   * const peaceImage = await discoveryService.fetchRandomImage('org-uuid-123', 'peace_sign');
-   */
   fetchRandomImage: async (
     orgId: string,
     category?: string,
@@ -54,23 +31,14 @@ export const discoveryService = {
     }
 
     try {
-      // Query images joined with user data
-      // SQL equivalent: SELECT image.*, user.name, user.status
-      //                 FROM image JOIN user ON image.owner_id = user.id
-      //                 WHERE image.org_id = orgId AND image.is_public = true
-      //                 [AND image.category = category if provided]
-      //
-      // Note: Requires foreign key relationship from image.owner_id to user.id
-      // (see migration 006_add_image_user_foreign_key.sql)
       let query = supabase
-        .from("image")
+        .from("gesture_image")                      // changed
         .select(
           `
           id,
           owner_id,
           org_id,
           storage_path,
-          cropped_path,
           category,
           is_public,
           created_at,
@@ -80,14 +48,14 @@ export const discoveryService = {
             status,
             pronouns,
             major,
-            interests
+            interests,
+            created_at
           )
         `,
         )
         .eq("org_id", orgId)
         .eq("is_public", true);
 
-      // Add category filter if provided
       if (category) {
         query = query.eq("category", category);
       }
@@ -99,7 +67,6 @@ export const discoveryService = {
         throw new Error(`Failed to fetch images: ${error.message}`);
       }
 
-      // No public images found in this organization
       if (!data || data.length === 0) {
         console.log(
           "[discoveryService] No public images found for org:",
@@ -109,12 +76,9 @@ export const discoveryService = {
         return null;
       }
 
-      // Randomly select one image from the results
       const randomIndex = Math.floor(Math.random() * data.length);
       const selectedImage = data[randomIndex];
 
-      // Validate joined user data exists
-      // Note: Supabase returns joined data as an array, even for single relationships
       const rawUserData = Array.isArray(selectedImage.user)
         ? selectedImage.user[0]
         : selectedImage.user;
@@ -129,10 +93,7 @@ export const discoveryService = {
         throw new Error("Image owner data is missing");
       }
 
-      // Generate signed URL for the image from storage bucket
-      // Prefer cropped version if available, fall back to original
-      const imagePath = selectedImage.cropped_path ?? selectedImage.storage_path;
-      const imageUrl = await storageService.getPhotoUrl(imagePath);
+      const imageUrl = await storageService.getPhotoUrl(selectedImage.storage_path); // removed cropped_path fallback
 
       console.log(
         "[discoveryService] Random image selected:",
@@ -142,53 +103,35 @@ export const discoveryService = {
         "available images",
       );
 
-      // Construct return object with image data and owner info
       return {
         image: {
           id: selectedImage.id,
           owner_id: selectedImage.owner_id,
           org_id: selectedImage.org_id,
           storage_path: selectedImage.storage_path,
-          cropped_path: selectedImage.cropped_path ?? null,
+          cropped_path: null,                       // removed, hardcoded to null
           category: selectedImage.category,
           is_public: selectedImage.is_public,
           created_at: selectedImage.created_at,
         },
         owner: {
           id: userData.id,
+          org_id: selectedImage.org_id,
           name: userData.name,
           status: userData.status,
           pronouns: userData.pronouns ?? null,
           major: userData.major ?? null,
           interests: userData.interests ?? null,
+          created_at: userData.created_at,
         },
         imageUrl,
       };
     } catch (error) {
-      // Log and re-throw for upper layers to handle
       console.error("[discoveryService] fetchRandomImage failed:", error);
       throw error;
     }
   },
 
-  /**
-   * Get the total count of public images for a category
-   *
-   * This function is used for chamber initialization to determine:
-   * - If a category has 0 images (error state)
-   * - If a category has 1 image (never refill)
-   * - If a category has fewer images than batch size
-   *
-   * @param orgId - Organization ID from kiosk session
-   * @param category - Image category ("peace_sign", "wave", "thumbs_up")
-   * @returns Total count of public images in category
-   * @throws Error if database query fails
-   *
-   * @example
-   * const count = await discoveryService.getImageCount('org-uuid-123', 'peace_sign');
-   * if (count === 0) console.log('No images available');
-   * if (count === 1) console.log('Single image - never refill');
-   */
   getImageCount: async (orgId: string, category: string): Promise<number> => {
     if (!orgId || !category) {
       throw new Error("Organization ID and category are required");
@@ -196,7 +139,7 @@ export const discoveryService = {
 
     try {
       const { count, error } = await supabase
-        .from("image")
+        .from("gesture_image")                      // changed
         .select("*", { count: "exact", head: true })
         .eq("org_id", orgId)
         .eq("category", category)
@@ -219,28 +162,6 @@ export const discoveryService = {
     }
   },
 
-  /**
-   * Fetch a batch of random public images for a category
-   *
-   * This function is used for chamber pre-loading and refilling:
-   * 1. Fetches up to `limit` images for a category
-   * 2. Client-side shuffle for randomness (DB random is expensive for multiple rows)
-   * 3. Generates signed URLs for all images
-   * 4. Returns array of RandomImageData
-   *
-   * If fewer than `limit` images are returned, the caller knows the total count
-   * is limited and can avoid future refills.
-   *
-   * @param orgId - Organization ID from kiosk session
-   * @param category - Image category ("peace_sign", "wave", "thumbs_up")
-   * @param limit - Maximum number of images to fetch
-   * @returns Array of random images with owner data and URLs
-   * @throws Error if database query fails
-   *
-   * @example
-   * const images = await discoveryService.fetchRandomImageBatch('org-uuid-123', 'wave', 5);
-   * // Returns 0-5 images depending on availability
-   */
   fetchRandomImageBatch: async (
     orgId: string,
     category: string,
@@ -255,11 +176,8 @@ export const discoveryService = {
     }
 
     try {
-      // Query images joined with user data
-      // Use a random offset to get different images each time
-      // This ensures all images in the category can appear over multiple fetches
       const { count } = await supabase
-        .from("image")
+        .from("gesture_image")                      // changed
         .select("*", { count: "exact", head: true })
         .eq("org_id", orgId)
         .eq("category", category)
@@ -274,20 +192,17 @@ export const discoveryService = {
         return [];
       }
 
-      // Calculate a random offset to start fetching from
-      // This ensures different images are selected on each call
       const maxOffset = Math.max(0, totalCount - limit);
       const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
 
       const { data, error } = await supabase
-        .from("image")
+        .from("gesture_image")                      // changed
         .select(
           `
           id,
           owner_id,
           org_id,
           storage_path,
-          cropped_path,
           category,
           is_public,
           created_at,
@@ -297,7 +212,8 @@ export const discoveryService = {
             status,
             pronouns,
             major,
-            interests
+            interests,
+            created_at
           )
         `,
         )
@@ -319,17 +235,14 @@ export const discoveryService = {
         return [];
       }
 
-      // Client-side shuffle using Fisher-Yates algorithm
       const shuffled = [...data];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // Process each image and generate signed URLs
       const processedImages: RandomImageData[] = await Promise.all(
         shuffled.map(async (img) => {
-          // Validate user data
           const rawUserData = Array.isArray(img.user) ? img.user[0] : img.user;
           const userData = rawUserData as DiscoveryUserData | null;
 
@@ -341,10 +254,7 @@ export const discoveryService = {
             throw new Error(`Image ${img.id} has no owner data`);
           }
 
-          // Generate signed URL
-          // Prefer cropped version if available, fall back to original
-          const imagePath = img.cropped_path ?? img.storage_path;
-          const imageUrl = await storageService.getPhotoUrl(imagePath);
+          const imageUrl = await storageService.getPhotoUrl(img.storage_path); // removed cropped_path fallback
 
           return {
             image: {
@@ -352,18 +262,20 @@ export const discoveryService = {
               owner_id: img.owner_id,
               org_id: img.org_id,
               storage_path: img.storage_path,
-              cropped_path: img.cropped_path ?? null,
+              cropped_path: null,                   // removed, hardcoded to null
               category: img.category,
               is_public: img.is_public,
               created_at: img.created_at,
             },
             owner: {
               id: userData.id,
+              org_id: img.org_id,
               name: userData.name,
               status: userData.status,
               pronouns: userData.pronouns ?? null,
               major: userData.major ?? null,
               interests: userData.interests ?? null,
+              created_at: userData.created_at,
             },
             imageUrl,
           };

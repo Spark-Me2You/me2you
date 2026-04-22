@@ -6,7 +6,13 @@ import {
 } from "@/core/auth";
 import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
 import { RegistrationPage } from "@/features/registration";
-import { UserLandingPage, UserProfileView } from "@/features/user";
+import {
+  UserLandingPage,
+  UserProfileView,
+  UserGalleryPage,
+  UserGameScoresPage,
+} from "@/features/user";
+import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import AppContainer from "./AppContainer";
 import "./App.css";
 
@@ -43,6 +49,26 @@ function App() {
         }
       />
 
+      {/* User-only route: Personal drawings gallery */}
+      <Route
+        path="/user/gallery"
+        element={
+          <UserProtectedRoute>
+            <UserGalleryPage />
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* User-only route: Personal game scores */}
+      <Route
+        path="/user/game-scores"
+        element={
+          <UserProtectedRoute>
+            <UserGameScoresPage />
+          </UserProtectedRoute>
+        }
+      />
+
       {/* Admin-only route: Organization selector */}
       <Route
         path="/select-org"
@@ -62,6 +88,11 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Public routes: claim flow (ClaimPage handles its own auth redirect) */}
+      <Route path="/claim/:tokenId" element={<ClaimPage />} />
+      <Route path="/claim/success" element={<ClaimSuccessPage />} />
+      <Route path="/claim/error" element={<ClaimErrorPage />} />
 
       {/* Default redirect to user landing page */}
       <Route path="/" element={<Navigate to="/user" replace />} />

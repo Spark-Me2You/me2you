@@ -1,0 +1,381 @@
+.page {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  max-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.logo {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 270px;
+  transform: translateX(-50%) rotate(3.41deg);
+  transform-origin: center top;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px 30px 40px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+.card {
+  background-color: rgba(255, 255, 255, 0.13);
+  backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  -webkit-backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  border-radius: 24px;
+  padding: 30px 24px;
+  box-shadow:
+    0px 4px 4px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 350px;
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 36px;
+  color: #e44805;
+  margin: 0 0 24px 0;
+  text-align: center;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+}
+
+.avatarCard {
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto 16px;
+  aspect-ratio: 1 / 1;
+  border: 3px solid #e44805;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabBar {
+  display: flex;
+  width: 100%;
+  border-bottom: 2px solid #e44805;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 16px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.08);
+  border: none;
+  border-right: 2px solid #e44805;
+  padding: 8px 4px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab:last-child {
+  border-right: none;
+}
+
+.tab:hover {
+  background: rgba(228, 72, 5, 0.15);
+}
+
+.tabActive {
+  background: #e44805;
+  color: #ffffff;
+}
+
+.tabActive:hover {
+  background: #e44805;
+}
+
+.avatarStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, #eee 25%, transparent 25%),
+    linear-gradient(-45deg, #eee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eee 75%),
+    linear-gradient(-45deg, transparent 75%, #eee 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+
+.picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pictureFallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #e44805, #d3e405);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  text-transform: lowercase;
+}
+
+.miiComposite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #fefffb;
+}
+
+.miiBody {
+  max-width: 90%;
+  max-height: 80%;
+  object-fit: contain;
+  display: block;
+  transform: scale(0.6);
+}
+
+.miiFace {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45%;
+  height: auto;
+  object-fit: contain;
+}
+
+.miiFaceMissing {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Jersey 10", sans-serif;
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+}
+
+.changePhotoBtn {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.1);
+  border: 2px solid #e44805;
+  border-radius: 12px;
+  padding: 10px 20px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+  margin: 0 auto 8px;
+  display: block;
+}
+
+.changePhotoBtn:hover:not(:disabled) {
+  background: rgba(228, 72, 5, 0.2);
+}
+
+.changePhotoBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.changePhotoBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photoHint {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 14px;
+  color: #777;
+  text-align: center;
+  margin: 0 0 20px 0;
+  font-style: italic;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #333;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+}
+
+.required {
+  color: #d32f2f;
+}
+
+.input {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  padding: 10px 14px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #e44805;
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.textarea {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  padding: 10px 14px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 70px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #e44805;
+}
+
+.charCount {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 14px;
+  color: #888;
+  text-align: right;
+}
+
+.hint {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+}
+
+.errorBanner {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 16px;
+  color: #d32f2f;
+  padding: 10px 14px;
+  background: rgba(211, 47, 47, 0.1);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cancelBtn {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #666;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.cancelBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.cancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveBtn {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #ffffff;
+  background: #e44805;
+  border: none;
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: #cc4004;
+}
+
+.saveBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

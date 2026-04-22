@@ -23,6 +23,188 @@ Generates a signed JWT token for QR-code based registration. The token is displa
 }
 ```
 
+### `delete-user-images`
+
+Deletes all gesture and cropped image records (DB rows + storage objects) for the calling user. The user's account, profile, and profile photo (`image` table) remain intact. Intended as a "clear my photos / start fresh" operation.
+
+**Authentication Required:** Regular user session JWT
+
+**Request:** `POST` (no body — identity derived entirely from JWT)
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "gesture_rows_deleted": 3,
+  "cropped_rows_deleted": 3,
+  "storage_objects_deleted": 6
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "User profile not found",
+  "error_code": "USER_NOT_FOUND"
+}
+```
+
+**Error Codes:**
+- `MISSING_AUTH` (401) — No `Authorization` header provided
+- `INVALID_TOKEN` (401) — JWT is invalid, expired, or malformed
+- `USER_NOT_FOUND` (404) — No `public.user` row for the authenticated user
+- `ORG_NOT_RESOLVED` (400) — User row has no `org_id`
+- `DB_ERROR` (500) — Failed to query or delete `gesture_image` / `cropped_image` rows
+- `STORAGE_ERROR` (500) — Failed to remove objects from the `images` bucket
+- `SERVER_ERROR` (500) — Unexpected internal error
+
+**Security:**
+- `user_id` is extracted from the verified JWT only — never trusted from request body.
+- `org_id` is fetched from `public.user` under the caller's own JWT (RLS enforced); callers cannot target another user's data.
+- Service role client is only created after the JWT + ownership check passes.
+- Only paths sourced from `gesture_image` and `cropped_image` are deleted — profile photos in the `image` table are untouched.
+
+---
+
+### `delete-user-account`
+
+Permanently deletes the calling user's account: removes all storage objects, then deletes the `auth.users` row. Cascades via FK constraints from migration `013_add_cascade_deletes.sql` automatically clean up `public.user`, `public.admin`, `public.image`, `public.gesture_image`, and `public.cropped_image`.
+
+**Authentication Required:** Regular user session JWT
+
+**Request:** `POST` (no body — identity derived entirely from JWT)
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "storage_objects_deleted": 4,
+  "auth_user_deleted": true
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Account images removed but account deletion failed. Please contact support to complete removal.",
+  "error_code": "AUTH_DELETE_FAILED"
+}
+```
+
+**Error Codes:**
+- `MISSING_AUTH` (401) — No `Authorization` header provided
+- `INVALID_TOKEN` (401) — JWT is invalid, expired, or malformed
+- `USER_NOT_FOUND` (404) — No `public.user` row for the authenticated user
+- `ORG_NOT_RESOLVED` (400) — User row has no `org_id`
+- `STORAGE_ERROR` (500) — Failed to list or remove objects from the `images` bucket
+- `AUTH_DELETE_FAILED` (500) — Storage deleted but `auth.admin.deleteUser()` failed (orphan state — see note below)
+- `SERVER_ERROR` (500) — Unexpected internal error
+
+**Ordering and Failure Handling:**
+Storage is deleted **before** the auth user row. If `auth.admin.deleteUser()` fails, the user's images are gone but the account remains intact — the user can retry. The reverse ordering would leave orphaned storage objects with no identifiable owner for cleanup. An `AUTH_DELETE_FAILED` response is logged with the `user_id` and `org_id` for admin investigation.
+
+**Cascade chain (no manual DB cleanup needed):**
+`auth.users` → `public.user`, `public.admin`, `public.image`, `public.gesture_image`, `public.cropped_image` (all ON DELETE CASCADE, migration `013_add_cascade_deletes.sql`)
+
+**Security:**
+- `user_id` is extracted from the verified JWT only — never trusted from request body.
+- `org_id` is fetched from `public.user` under the caller's own JWT (RLS enforced).
+- Service role client is only created after the JWT + ownership check passes.
+- A caller can only delete their own account. Admin-initiated deletion of other users is out of scope for this function.
+
+---
+
+### `generate-claim-token`
+Creates a one-time claim token for a kiosk feature (game score, badge, art piece, etc.). Returns a claim URL and expiry — the kiosk renders the QR code client-side. The claim URL encodes a UUID row ID, not any payload data.
+
+**Authentication Required:** Kiosk session (checks `app_metadata.is_kiosk`)
+
+**Request:**
+```json
+{
+  "payload": {
+    "version": "1.0",
+    "type": "high_score",
+    "display": {
+      "title": "New High Score!",
+      "description": "You scored 500 points.",
+      "icon": "trophy"
+    },
+    "data": {
+      "game_id": "retro_racer_v1",
+      "score": 500
+    }
+  }
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "token_id": "uuid",
+  "claim_url": "https://me2you.app/claim/uuid",
+  "expires_at": "2024-01-01T00:05:00Z"
+}
+```
+
+**Error Codes:**
+- `401` — Missing or invalid Authorization header
+- `403` — Caller is not a kiosk account (`app_metadata.is_kiosk` not true)
+- `400` — Kiosk has no `org_id` in `app_metadata`, or payload fails envelope validation
+- `500` — Database insert failed
+
+**Security:**
+- `org_id` is always read from the kiosk's JWT `app_metadata` — never from the request body.
+- The RLS INSERT policy on `claim_tokens` independently enforces this: insert is only allowed when `app_metadata.is_kiosk = true` and the supplied `org_id` matches the JWT.
+- The claim URL is a UUID — the payload is never embedded in the URL.
+
+---
+
+### `execute-claim`
+Atomically claims a token on behalf of an authenticated user. Returns the token's payload so the client can render a type-specific success screen. The claim system itself is payload-agnostic — no per-type dispatch happens here. Features react to the claim via the Supabase Realtime subscription on the kiosk side.
+
+**Authentication Required:** Regular user session JWT (kiosks and admins are rejected — they have no row in `public.user`)
+
+**Request:**
+```json
+{
+  "token_id": "uuid"
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "token_id": "uuid",
+  "payload": {
+    "version": "1.0",
+    "type": "high_score",
+    "display": { "title": "New High Score!", "description": "...", "icon": "trophy" },
+    "data": { "game_id": "retro_racer_v1", "score": 500 }
+  }
+}
+```
+
+**Error Codes:**
+- `401` — Missing or invalid Authorization header
+- `403` — Caller has no `public.user` row (kiosk/admin), or `org_id` does not match token's `org_id`
+- `404` — Token not found
+- `409` — Token already claimed (or lost an atomic race)
+- `410` — Token expired (`expires_at < now()`)
+- `500` — Internal error
+
+**Security:**
+- User identity and `org_id` come from the verified JWT + `public.user` table query — never from the request body.
+- Token read and the atomic `UPDATE ... WHERE status = 'pending'` both use the service role client (bypasses RLS). No UPDATE RLS policy exists on `claim_tokens` for regular users.
+- Org isolation: `token.org_id` must equal the user's `org_id` or the request is rejected with 403.
+- Double-claim protection: the `WHERE status = 'pending'` guard on the UPDATE is atomic — whichever concurrent request wins gets 0 rows back and returns 409.
+
+---
+
 ### `verify-registration-token`
 Verifies a registration token and returns organization information.
 
@@ -93,7 +275,7 @@ supabase secrets set QR_TOKEN_SECRET="your-generated-secret-here"
 - Rotate this secret periodically (monthly recommended)
 
 ### `APP_BASE_URL`
-**Required for:** `generate-registration-qr`
+**Required for:** `generate-registration-qr`, `generate-claim-token`
 
 **Purpose:** Base URL for registration links embedded in QR codes
 
@@ -123,12 +305,20 @@ supabase functions deploy
 ```bash
 supabase functions deploy generate-registration-qr
 supabase functions deploy verify-registration-token
+supabase functions deploy generate-claim-token --no-verify-jwt
+supabase functions deploy execute-claim --no-verify-jwt
+supabase functions deploy delete-user-images --no-verify-jwt
+supabase functions deploy delete-user-account --no-verify-jwt
 ```
 
 ### View function logs:
 ```bash
 supabase functions logs generate-registration-qr
 supabase functions logs verify-registration-token
+supabase functions logs generate-claim-token
+supabase functions logs execute-claim
+supabase functions logs delete-user-images
+supabase functions logs delete-user-account
 ```
 
 ---
@@ -155,6 +345,45 @@ curl -X POST http://localhost:54321/functions/v1/verify-registration-token \
   -H "Content-Type: application/json" \
   -d '{"token": "YOUR_JWT_TOKEN"}'
 ```
+
+**Generate claim token (requires kiosk JWT):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/generate-claim-token \
+  -H "Authorization: Bearer YOUR_KIOSK_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "payload": {
+      "version": "1.0",
+      "type": "test",
+      "display": { "title": "Test Claim", "description": "A test claim." },
+      "data": {}
+    }
+  }'
+```
+
+**Execute claim (requires user JWT):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/execute-claim \
+  -H "Authorization: Bearer YOUR_USER_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"token_id": "YOUR_TOKEN_UUID"}'
+```
+
+**Delete user images (requires user JWT):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/delete-user-images \
+  -H "Authorization: Bearer YOUR_USER_JWT" \
+  -H "Content-Type: application/json"
+```
+
+**Delete user account (requires user JWT — irreversible):**
+```bash
+curl -X POST http://localhost:54321/functions/v1/delete-user-account \
+  -H "Authorization: Bearer YOUR_USER_JWT" \
+  -H "Content-Type: application/json"
+```
+
+> **Note:** All functions in this project must be deployed with `--no-verify-jwt`. JWT verification is handled inside each function via `supabase.auth.getUser()`, which returns structured JSON error codes instead of a raw gateway 401. This applies to `generate-claim-token`, `execute-claim`, `delete-user-images`, and `delete-user-account`.
 
 ---
 

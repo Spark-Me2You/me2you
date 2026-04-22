@@ -2,7 +2,7 @@
 
 ## Overview
 
-Me2You is a public installation for the SPARK space where students use body gestures to explore and connect with one another. The system combines real‑time computer vision, a browsable profile hub, and playful interactive elements to foster community.
+Me2You is a public installation for the SPARK space where students use hand gestures to explore and connect with one another. The system combines real‑time computer vision, a browsable profile hub, and playful interactive elements to foster community.
 
 ---
 
@@ -35,6 +35,7 @@ Me2You is a public installation for the SPARK space where students use body gest
 - **React** with **Vite** for fast development and building.
 - **Computer vision** powered by OpenCV.js and MediaPipe for pose/face detection and gesture encoding.
 - UI components designed for readability from 4–6 feet.
+- **State management** uses React Context for authentication and app state machine orchestration.
 
 ### Backend & Services
 

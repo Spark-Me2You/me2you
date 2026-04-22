@@ -19,7 +19,7 @@
   width: 270px;
   transform: translateX(-50%) rotate(3.41deg);
   transform-origin: center top;
-  z-index: 20;
+  z-index: 100;
   pointer-events: none;
   user-select: none;
 }
@@ -44,50 +44,154 @@
 }
 
 .profileCard {
-  background: rgba(255, 255, 255, 0.95);
+  background-color: rgba(255, 255, 255, 0.13);
+  backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  -webkit-backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
   border-radius: 24px;
   padding: 40px 30px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0px 4px 4px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
   width: 100%;
   max-width: 350px;
   flex-shrink: 0;
 }
 
-.photoSection {
+.avatarCard {
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto 24px;
+  aspect-ratio: 1 / 1;
+  border: 3px solid #e44805;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
   display: flex;
+  flex-direction: column;
+}
+
+.tabBar {
+  display: flex;
+  width: 100%;
+  border-bottom: 2px solid #e44805;
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 16px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.08);
+  border: none;
+  border-right: 2px solid #e44805;
+  padding: 8px 4px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tab:last-child {
+  border-right: none;
+}
+
+.tab:hover {
+  background: rgba(228, 72, 5, 0.15);
+}
+
+.tabActive {
+  background: #e44805;
+  color: #ffffff;
+}
+
+.tabActive:hover {
+  background: #e44805;
+}
+
+.avatarStage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, #eee 25%, transparent 25%),
+    linear-gradient(-45deg, #eee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eee 75%),
+    linear-gradient(-45deg, transparent 75%, #eee 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
 }
 
-.profilePhoto {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
+.picture {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border: 4px solid #e44805;
+  display: block;
 }
 
-.photoPlaceholder {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
+.pictureFallback {
+  width: 100%;
+  height: 100%;
   background: linear-gradient(135deg, #e44805, #d3e405);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4px solid #e44805;
+}
+
+.miiComposite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #fefffb;
+}
+
+.miiBody {
+  max-width: 90%;
+  max-height: 80%;
+  object-fit: contain;
+  display: block;
+  transform: scale(0.6);
+}
+
+.miiFace {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45%;
+  height: auto;
+  object-fit: contain;
+}
+
+.miiFaceMissing {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Jersey 10", sans-serif;
+  font-size: 14px;
+  color: #999;
+  text-align: center;
 }
 
 .initials {
   font-family: "Jersey 10", sans-serif;
-  font-size: 64px;
+  font-size: 72px;
   color: #ffffff;
   text-transform: uppercase;
 }
 
 .loadingText {
   font-family: "Jersey 10", sans-serif;
-  font-size: 20px;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.9);
   text-transform: lowercase;
 }
@@ -114,6 +218,16 @@
   padding: 6px 0;
 }
 
+.fieldBanner {
+  position: absolute;
+  inset: 6px 0;
+  width: 100%;
+  height: calc(100% - 12px);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
 .fieldWrapper::before,
 .fieldWrapper::after {
   content: '';
@@ -126,23 +240,15 @@
 }
 
 .fieldWrapper::before {
-  top: 0px;
-  left: 10px;
-  transform: rotate(-3deg);
+  top: 10px;
+  left: -6px;
+  transform: rotate(-25deg);
 }
 
 .fieldWrapper::after {
-  bottom: 0px;
-  right: 10px;
-  transform: rotate(2deg);
-}
-
-.fieldBg {
-  position: absolute;
-  inset: 6px 0;
-  width: 100%;
-  height: calc(100% - 12px);
-  z-index: 0;
+  bottom: 10px;
+  right: -6px;
+  transform: rotate(-18deg);
 }
 
 .field {
@@ -150,16 +256,16 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
   padding: 12px 16px;
-  background: transparent;
-  border-radius: 4px;
+  text-align: center;
 }
 
 .fieldLabel {
   font-family: "Jersey 10", sans-serif;
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.85);
+  color: #444;
   text-transform: lowercase;
   letter-spacing: 1px;
 }
@@ -167,23 +273,112 @@
 .fieldValue {
   font-family: "Jersey 10", sans-serif;
   font-size: 22px;
-  color: #ffffff;
+  color: #111;
   line-height: 1.4;
 }
 
-.signOutButton {
+.buttonRowTop {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.buttonRowMid {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.editButton {
+  flex: 2;
   font-family: "Jersey 10", sans-serif;
-  font-size: 24px;
+  font-size: 22px;
+  color: #ffffff;
+  background: #e44805;
+  border: 2px solid #e44805;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.editButton:hover {
+  background: #c53d04;
+}
+
+.editButton:active {
+  transform: scale(0.98);
+}
+
+.gameScoresButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #1e88e5;
+  background: rgba(30, 136, 229, 0.1);
+  border: 2px solid #1e88e5;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.gameScoresButton:hover {
+  background: rgba(30, 136, 229, 0.2);
+}
+
+.gameScoresButton:active {
+  transform: scale(0.98);
+}
+
+.drawingsButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #e91e63;
+  background: rgba(233, 30, 99, 0.1);
+  border: 2px solid #e91e63;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.drawingsButton:hover {
+  background: rgba(233, 30, 99, 0.2);
+}
+
+.drawingsButton:active {
+  transform: scale(0.98);
+}
+
+.saveError {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 15px;
+  color: #d32f2f;
+  text-align: center;
+  margin: 0 0 12px 0;
+}
+
+.signOutButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
   color: #ffffff;
   background: #d32f2f;
   border: none;
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 20px 14px;
   cursor: pointer;
   text-transform: lowercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   transition: background 0.2s, transform 0.1s;
-  width: 100%;
 }
 
 .signOutButton:hover {
@@ -192,4 +387,130 @@
 
 .signOutButton:active {
   transform: scale(0.98);
+}
+
+.scanButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.1);
+  border: 2px solid #2e7d32;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.scanButton:hover {
+  background: rgba(46, 125, 50, 0.2);
+}
+
+.scanButton:active {
+  transform: scale(0.98);
+}
+
+.deleteButton {
+  width: 100%;
+  margin-top: 0;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #b71c1c;
+  background-color: rgba(183, 28, 28, 0.05);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(183, 28, 28, 0.25) 0px,
+    rgba(183, 28, 28, 0.25) 2px,
+    transparent 2px,
+    transparent 12px
+  );
+  border: 2px solid #b71c1c;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.deleteButton:hover {
+  background-color: rgba(183, 28, 28, 0.18);
+}
+
+.deleteButton:active {
+  transform: scale(0.98);
+}
+
+.confirmRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.confirmDeleteButton {
+  flex: 2;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #ffffff;
+  background: #b71c1c;
+  border: none;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.confirmDeleteButton:hover {
+  background: #8b0000;
+}
+
+.confirmDeleteButton:active {
+  transform: scale(0.98);
+}
+
+.confirmDeleteButton:disabled {
+  background: #c8a0a0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancelDeleteButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #666;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid #ccc;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cancelDeleteButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.cancelDeleteButton:active {
+  transform: scale(0.98);
+}
+
+.cancelDeleteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.deleteError {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 15px;
+  color: #b71c1c;
+  text-align: center;
+  margin: 8px 0 0 0;
 }
