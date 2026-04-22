@@ -1,0 +1,86 @@
+.page {
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #e6f2ff 0%, #c4dff5 100%);
+  font-family: "Jersey 10", Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 36px;
+  color: #003366;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.back {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  background: white;
+  border: 2px solid #a7d1f5;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #003366;
+}
+
+.status,
+.error {
+  font-size: 18px;
+  color: #003366;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.error {
+  color: #aa0000;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #a7d1f5;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 14px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.gameName {
+  color: #003366;
+  font-size: 22px;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+.scoreLabel {
+  color: #5a7a99;
+  font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+.scoreValue {
+  color: #003366;
+  font-size: 24px;
+  letter-spacing: 1px;
+}

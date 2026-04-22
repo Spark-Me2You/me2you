@@ -105,7 +105,10 @@ export const UserProfileView: React.FC = () => {
           return;
         }
 
-        console.warn("[UserProfileView] Failed to load FlapFlap high score:", error);
+        console.warn(
+          "[UserProfileView] Failed to load FlapFlap high score:",
+          error,
+        );
         setHighestFlapFlapScore(null);
       }
     },
@@ -403,15 +406,6 @@ export const UserProfileView: React.FC = () => {
                 </div>
               )}
 
-              <div className={styles.fieldWrapper}>
-                <div className={styles.field}>
-                  <span className={styles.fieldLabel}>flapflap:</span>
-                  <span className={styles.fieldValue}>
-                    {highestFlapFlapScore ?? "-"}
-                  </span>
-                </div>
-              </div>
-
               {profile.status && (
                 <div className={styles.fieldWrapper}>
                   <div className={styles.field}>
@@ -441,6 +435,12 @@ export const UserProfileView: React.FC = () => {
                 className={styles.editButton}
               >
                 edit profile
+              </button>
+              <button
+                onClick={() => navigate("/user/game-scores")}
+                className={styles.editButton}
+              >
+                game scores
               </button>
               <button
                 onClick={() => navigate("/user/gallery")}
