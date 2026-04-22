@@ -111,6 +111,7 @@ export const FlapFlapLeaderboard: React.FC<FlapFlapLeaderboardProps> = ({
     () => buildDisplayRows(entries, currentScore),
     [entries, currentScore],
   );
+  const hasRows = rows.length > 0;
 
   const cardClassName = className ? `${styles.card} ${className}` : styles.card;
 
@@ -118,11 +119,11 @@ export const FlapFlapLeaderboard: React.FC<FlapFlapLeaderboardProps> = ({
     <section className={cardClassName}>
       <h2 className={styles.title}>{title}</h2>
 
-      {isLoading ? (
+      {!hasRows && isLoading ? (
         <p className={styles.message}>loading leaderboard...</p>
-      ) : error ? (
+      ) : !hasRows && error ? (
         <p className={styles.message}>leaderboard unavailable</p>
-      ) : rows.length === 0 ? (
+      ) : !hasRows ? (
         <p className={styles.message}>be the first to claim a score</p>
       ) : (
         <>
