@@ -47,13 +47,16 @@ export const HubView: React.FC = () => {
           image: {
             id: data.cropped_image_id,
             owner_id: data.owner_id,
-            org_id: '',
+            org_id: kioskOrgId || '',
             storage_path: gestureImagePath || data.storage_path,
             category: 'profile',
             is_public: true,
             created_at: owner.user.created_at,
           },
-          owner: owner.user,
+          owner: {
+            ...owner.user,
+            org_id: kioskOrgId || '',
+          },
           imageUrl: profileImageUrl,
         };
 

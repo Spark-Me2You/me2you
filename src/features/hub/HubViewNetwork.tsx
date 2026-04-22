@@ -19,12 +19,12 @@ import me2youLogo from '@/assets/me2you.png';
 /** Minimum visible card slots (5 cols × 2 rows) — fill the rest with anon cards */
 const MIN_SLOTS = 10;
 
-function toRandomImageData(hubUser: HubUserData): RandomImageData {
+function toRandomImageData(hubUser: HubUserData, orgId: string): RandomImageData {
   return {
     image: {
       id: '',
       owner_id: hubUser.user.id,
-      org_id: '',
+      org_id: orgId,
       storage_path: '',
       category: 'profile',
       is_public: true,
@@ -37,6 +37,8 @@ function toRandomImageData(hubUser: HubUserData): RandomImageData {
       pronouns: hubUser.user.pronouns,
       major: hubUser.user.major,
       interests: hubUser.user.interests,
+      org_id: orgId,
+      created_at: hubUser.user.created_at,
     },
     imageUrl: hubUser.profileImageUrl || '',
   };
@@ -88,7 +90,7 @@ export const HubViewNetwork: React.FC = () => {
   if (selectedUser) {
     return (
       <ProfileCardView
-        profileData={toRandomImageData(selectedUser)}
+        profileData={toRandomImageData(selectedUser, kioskOrgId || '')}
         onBack={() => setSelectedUser(null)}
         backLabel="back to network"
         onHome={handleBack}
@@ -168,7 +170,6 @@ const styles = {
     position: 'fixed' as const,
     inset: 0,
     overflow: 'hidden',
-    // background gradient is already on body in index.css
   },
 
   logo: {
@@ -214,7 +215,6 @@ const styles = {
       'inset 0px 0px 4px 0px rgba(0,0,0,0.25), inset 1px 1px 49.9px 14px rgba(255,255,255,0.2)',
   },
 
-  /** Scrollable purple glass card — the "Network" container from Figma */
   scrollContainer: {
     position: 'absolute' as const,
     top: '24%',

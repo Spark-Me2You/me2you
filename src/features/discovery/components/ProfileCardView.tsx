@@ -6,6 +6,7 @@
 
 import React from 'react';
 import type { RandomImageData } from '../types/image';
+import { BadgeDisplay } from '@/shared/components/BadgeDisplay';
 import me2youLogo from '@/assets/me2you.png';
 import registerQr from '@/assets/registerqr.png';
 import otterHandImage from '@/assets/hand.png';
@@ -210,6 +211,15 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                   </p>
                 )}
               </FractalBox>
+            </div>
+
+            {/* Badges */}
+            <div style={{ marginTop: '2%' }}>
+              <BadgeDisplay
+                userId={owner.id}
+                userCreatedAt={owner.created_at}
+                orgId={owner.org_id}
+              />
             </div>
 
           </div>
