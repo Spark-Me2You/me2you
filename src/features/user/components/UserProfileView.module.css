@@ -19,7 +19,7 @@
   width: 270px;
   transform: translateX(-50%) rotate(3.41deg);
   transform-origin: center top;
-  z-index: 20;
+  z-index: 100;
   pointer-events: none;
   user-select: none;
 }
@@ -293,8 +293,8 @@
   flex: 2;
   font-family: "Jersey 10", sans-serif;
   font-size: 22px;
-  color: #e44805;
-  background: rgba(228, 72, 5, 0.1);
+  color: #ffffff;
+  background: #e44805;
   border: 2px solid #e44805;
   border-radius: 14px;
   padding: 20px 14px;
@@ -305,7 +305,7 @@
 }
 
 .editButton:hover {
-  background: rgba(228, 72, 5, 0.2);
+  background: #c53d04;
 }
 
 .editButton:active {
@@ -418,18 +418,25 @@
   font-family: "Jersey 10", sans-serif;
   font-size: 20px;
   color: #b71c1c;
-  background: rgba(183, 28, 28, 0.05);
+  background-color: rgba(183, 28, 28, 0.05);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(183, 28, 28, 0.25) 0px,
+    rgba(183, 28, 28, 0.25) 2px,
+    transparent 2px,
+    transparent 12px
+  );
   border: 2px solid #b71c1c;
   border-radius: 14px;
   padding: 10px;
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
 .deleteButton:hover {
-  background: rgba(183, 28, 28, 0.12);
+  background-color: rgba(183, 28, 28, 0.18);
 }
 
 .deleteButton:active {
