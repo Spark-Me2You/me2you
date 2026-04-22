@@ -9,6 +9,7 @@ import { useCvCursor } from "./useCvCursor";
 import { useCvCursorEnabled } from "./CvCursorEnabledContext";
 import hoverCursorSrc from "../../../assets/cursor hover.svg";
 import clickCursorSrc from "../../../assets/cursor-click.svg";
+import paintbrushCursorSrc from "../../../assets/paintbrush.svg";
 
 // Hotspot offsets as percentage of the cursor image size.
 // Hover: arrow tip is at (13/302, 31/499) ≈ (4.3%, 6.2%) from top-left.
@@ -17,6 +18,8 @@ const HOVER_OFFSET_X = "4.3%";
 const HOVER_OFFSET_Y = "6.2%";
 const CLICK_OFFSET_X = "49%";
 const CLICK_OFFSET_Y = "27%";
+const BRUSH_OFFSET_X = "6%";
+const BRUSH_OFFSET_Y = "92%";
 
 const INTERACTIVE_TAGS = new Set(["button", "a", "input", "select", "textarea"]);
 const INTERACTIVE_ROLES = new Set(["button", "link", "checkbox", "radio", "tab", "menuitem"]);
@@ -186,22 +189,22 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
 
       {visible && cursorVariant !== "hidden" && (
         cursorVariant === "brush" ? (
-          <div
+          <img
+            src={paintbrushCursorSrc}
+            alt=""
+            aria-hidden="true"
             style={{
               position: "absolute",
               left: x,
               top: y,
-              transform: "translate(-90%, -10%) rotate(-35deg)",
-              fontSize: isClick ? 56 : 48,
-              lineHeight: 1,
+              width: 72,
+              height: "auto",
+              transform: `translate(-${BRUSH_OFFSET_X}, -${BRUSH_OFFSET_Y})`,
               filter: "drop-shadow(0 0 6px rgba(0,0,0,0.5))",
-              transition: "font-size 80ms ease-out",
+              transition: "width 80ms ease-out",
               userSelect: "none",
             }}
-            aria-hidden="true"
-          >
-            🖌️
-          </div>
+          />
         ) : (
           <img
             key={`${isClick ? "click" : "hover"}-${clickAnimKey}`}
