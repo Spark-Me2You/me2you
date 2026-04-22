@@ -151,21 +151,36 @@ export const profileService = {
    * Get current user's profile with profile image
    * @returns Promise with profile data and image URL, or null if not found
    */
-  getCurrentProfile: async (): Promise<ProfileWithImage | null> => {
-    const {
-      data: { user },
-    } = await withTimeout(
-      supabase.auth.getUser(),
-      PROFILE_QUERY_TIMEOUT_MS,
-      "Get current user",
-    );
+  getCurrentProfile: async (options?: {
+    userId?: string | null;
+  }): Promise<ProfileWithImage | null> => {
+    let userId = options?.userId ?? null;
 
-    if (!user) return null;
+    if (!userId) {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await withTimeout(
+        supabase.auth.getSession(),
+        PROFILE_QUERY_TIMEOUT_MS,
+        "Get current session",
+      );
+
+      if (sessionError) {
+        throw new Error(
+          `Failed to get current session: ${sessionError.message}`,
+        );
+      }
+
+      userId = session?.user?.id ?? null;
+    }
+
+    if (!userId) return null;
 
     const [profileResponse, imageResponse, bobbleheadResponse] =
       await Promise.all([
         withTimeout(
-          supabase.from("user").select("*").eq("id", user.id).single(),
+          supabase.from("user").select("*").eq("id", userId).single(),
           PROFILE_QUERY_TIMEOUT_MS,
           "Fetch profile",
         ),
@@ -173,7 +188,7 @@ export const profileService = {
           supabase
             .from("image")
             .select("id, storage_path")
-            .eq("owner_id", user.id)
+            .eq("owner_id", userId)
             .limit(1)
             .maybeSingle(),
           PROFILE_QUERY_TIMEOUT_MS,
@@ -183,7 +198,7 @@ export const profileService = {
           supabase
             .from("cropped_image")
             .select("id, storage_path")
-            .eq("owner_id", user.id)
+            .eq("owner_id", userId)
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle(),

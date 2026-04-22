@@ -14,10 +14,9 @@ import { ClaimScanner } from "@/features/claim";
 import styles from "./UserProfileView.module.css";
 
 export const UserProfileView: React.FC = () => {
-  const PROFILE_LOAD_TIMEOUT_MS = 12000;
-
   const navigate = useNavigate();
   const { signOut, setUserProfile, session } = useAuth();
+  const currentUserId = session?.user.id ?? null;
 
   const [profileData, setProfileData] = useState<ProfileWithImage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,27 +33,6 @@ export const UserProfileView: React.FC = () => {
   const loadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
 
-  const withTimeout = useCallback(
-    <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
-      return new Promise<T>((resolve, reject) => {
-        const timeoutId = window.setTimeout(() => {
-          reject(new Error(`${label} timed out after ${timeoutMs}ms`));
-        }, timeoutMs);
-
-        promise
-          .then((value) => {
-            window.clearTimeout(timeoutId);
-            resolve(value);
-          })
-          .catch((error) => {
-            window.clearTimeout(timeoutId);
-            reject(error);
-          });
-      });
-    },
-    [],
-  );
-
   const loadProfile = useCallback(
     async (options?: { setLoading?: boolean }) => {
       const setLoading = options?.setLoading ?? true;
@@ -65,11 +43,9 @@ export const UserProfileView: React.FC = () => {
       }
 
       try {
-        const data = await withTimeout(
-          profileService.getCurrentProfile(),
-          PROFILE_LOAD_TIMEOUT_MS,
-          "Profile reload",
-        );
+        const data = await profileService.getCurrentProfile({
+          userId: currentUserId,
+        });
 
         if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
           return;
@@ -92,7 +68,7 @@ export const UserProfileView: React.FC = () => {
         }
       }
     },
-    [withTimeout],
+    [currentUserId],
   );
 
   useEffect(() => {
