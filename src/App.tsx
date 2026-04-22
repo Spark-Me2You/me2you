@@ -6,7 +6,12 @@ import {
 } from "@/core/auth";
 import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
 import { RegistrationPage } from "@/features/registration";
-import { UserLandingPage, UserProfileView, UserGalleryPage } from "@/features/user";
+import {
+  UserLandingPage,
+  UserProfileView,
+  UserGalleryPage,
+  UserGameScoresPage,
+} from "@/features/user";
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import AppContainer from "./AppContainer";
 import "./App.css";
@@ -50,6 +55,16 @@ function App() {
         element={
           <UserProtectedRoute>
             <UserGalleryPage />
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* User-only route: Personal game scores */}
+      <Route
+        path="/user/game-scores"
+        element={
+          <UserProtectedRoute>
+            <UserGameScoresPage />
           </UserProtectedRoute>
         }
       />
