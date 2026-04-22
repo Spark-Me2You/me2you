@@ -6,40 +6,20 @@ import {
   fetchMyDrawings,
   type DrawingEntry,
 } from "@/core/supabase/drawingsGallery";
-import { supabase } from "@/core/supabase/client";
 import styles from "./UserGalleryPage.module.css";
-
-interface EntryWithPath extends DrawingEntry {
-  imagePath: string;
-}
 
 export const UserGalleryPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [items, setItems] = useState<EntryWithPath[] | null>(null);
+  const [items, setItems] = useState<DrawingEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
     try {
-      // Re-fetch image_path separately so we can pass it to the delete helper
-      // without changing the shared DrawingEntry shape.
-      const [entries, { data: rows }] = await Promise.all([
-        fetchMyDrawings(user.id),
-        supabase
-          .from("drawings")
-          .select("id, image_path")
-          .eq("owner_id", user.id),
-      ]);
-
-      const pathById = new Map<string, string>(
-        (rows ?? []).map((r) => [r.id as string, r.image_path as string]),
-      );
-
-      setItems(
-        entries.map((e) => ({ ...e, imagePath: pathById.get(e.id) ?? "" })),
-      );
+      const entries = await fetchMyDrawings(user.id);
+      setItems(entries);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load drawings");
     }
@@ -49,7 +29,7 @@ export const UserGalleryPage: React.FC = () => {
     load();
   }, [load]);
 
-  const handleDelete = async (entry: EntryWithPath) => {
+  const handleDelete = async (entry: DrawingEntry) => {
     if (!confirm(`Delete this drawing${entry.prompt ? ` of "${entry.prompt}"` : ""}?`)) return;
     setDeletingId(entry.id);
     try {
@@ -92,6 +72,13 @@ export const UserGalleryPage: React.FC = () => {
               </button>
               <img src={it.imageUrl} alt={it.prompt ?? "drawing"} className={styles.thumb} />
               <p className={styles.caption}>{it.prompt ?? "untitled"}</p>
+              <p className={styles.date}>
+                {new Date(it.createdAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
             </div>
           ))}
         </div>

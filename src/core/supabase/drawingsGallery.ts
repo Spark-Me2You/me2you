@@ -4,6 +4,7 @@ export interface DrawingEntry {
   id: string;
   prompt: string | null;
   imageUrl: string;
+  imagePath: string;
   createdAt: string;
   ownerId: string;
   ownerName: string | null;
@@ -28,6 +29,7 @@ async function signDrawings(rows: DrawingRow[]): Promise<DrawingEntry[]> {
         id: row.id,
         prompt: row.prompt,
         imageUrl: s?.signedUrl ?? '',
+        imagePath: row.image_path,
         createdAt: row.created_at,
         ownerId: row.owner_id,
         ownerName: row.owner?.name ?? null,
@@ -79,7 +81,7 @@ export async function fetchMyDrawings(userId: string): Promise<DrawingEntry[]> {
  * fails we still attempt the row delete — a DB row without a file is less bad
  * than a row pointing to a deleted file being orphaned in storage on retry.
  */
-export async function deleteMyDrawing(drawing: Pick<DrawingEntry, 'id'> & { imagePath: string }): Promise<void> {
+export async function deleteMyDrawing(drawing: Pick<DrawingEntry, 'id' | 'imagePath'>): Promise<void> {
   const { error: storageError } = await supabase.storage
     .from('drawings')
     .remove([drawing.imagePath]);
