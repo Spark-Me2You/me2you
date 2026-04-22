@@ -236,7 +236,7 @@ export const userRegistrationAuthService = {
     };
 
     const { data, error } = await supabase
-      .from("image")
+      .from("gesture_image")
       .insert(imageToInsert)
       .select("id, storage_path")
       .single();

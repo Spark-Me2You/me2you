@@ -57,7 +57,7 @@ export const hubService = {
       // Step 1: Query images with joined user data (following discoveryService pattern)
       // This gets all users who HAVE profile images
       const { data: imagesData, error: imagesError } = await supabase
-        .from("image")
+        .from("gesture_image")
         .select(
           `
           id,
