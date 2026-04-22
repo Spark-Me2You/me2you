@@ -33,6 +33,8 @@ export interface ImageRecord {
 export interface UserProfile {
   /** User ID (references auth.users) */
   id: string;
+  /** Organization ID */
+  org_id: string;
   /** User's name shown to other users */
   name: string;
   /** User's status/description (optional) */
@@ -43,6 +45,8 @@ export interface UserProfile {
   major: string | null;
   /** User's interests (optional array) */
   interests: string[] | null;
+  /** Account creation timestamp */
+  created_at: string;
 }
 
 /**
