@@ -326,8 +326,8 @@
 .exitButton {
   all: unset;
   position: fixed;
-  bottom: 0;
-  left: 0;
+  top: 16px;
+  left: 16px;
   z-index: 2000;
   cursor: pointer;
 
@@ -340,12 +340,12 @@
   color: #ffffff;
   box-sizing: border-box;
   display: block;
-  transform-origin: left bottom;
+  transform-origin: center;
 
   /* Colors from Figma */
   background-color: #ff0000;
   border: 1px solid #58e7f7;
-  border-radius: 0 13px 0 0;
+  border-radius: 13px;
   opacity: 1;
   visibility: visible;
 
