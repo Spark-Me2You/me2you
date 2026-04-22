@@ -23,6 +23,7 @@ export class FlapFlapEngine {
   private score: number = 0;
   private highScore: number = 0;
   private gameTime: number = 0;
+  private restartLocked: boolean = false;
 
   private readonly config = FLAPFLAP_CONFIG;
   private onStateChange?: (state: FlapFlapState) => void;
@@ -146,8 +147,25 @@ export class FlapFlapEngine {
     } else if (this.state === "PLAYING") {
       this.bird.flap();
     } else if (this.state === "GAME_OVER") {
-      this.reset();
+      if (!this.restartLocked) this.reset();
     }
+  }
+
+  public getScore(): number {
+    return this.score;
+  }
+
+  public setRestartLocked(locked: boolean): void {
+    this.restartLocked = locked;
+  }
+
+  public setMessageVisible(visible: boolean): void {
+    this.messageText.visible = visible;
+  }
+
+  public restart(): void {
+    this.restartLocked = false;
+    this.reset();
   }
 
   private startGame(): void {

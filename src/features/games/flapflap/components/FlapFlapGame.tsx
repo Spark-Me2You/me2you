@@ -3,7 +3,7 @@
  * Integrates PixiJS game engine with pose detection and React
  */
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import {
   usePoseDetection,
@@ -16,6 +16,7 @@ import type { FlapFlapState } from "../game/FlapFlapEngine";
 import { FLAPFLAP_CONFIG } from "../config/flapflapConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
 import type { GameProps } from "../../types/game";
+import { GameOverClaim } from "./GameOverClaim";
 import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
@@ -23,6 +24,9 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   onScoreChange,
 }) => {
   const { setEnabled: setCvCursorEnabled, cursorVisibleRef } = useCvCursorEnabled();
+
+  const [gameState, setGameState] = useState<FlapFlapState>("READY");
+  const [finalScore, setFinalScore] = useState(0);
 
   const { app, containerRef, isReady } = usePixiApp({
     width: FLAPFLAP_CONFIG.GAME_WIDTH,
@@ -43,13 +47,32 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   } = usePoseDetection();
   const handleGameStateChange = useCallback(
     (state: FlapFlapState) => {
-      // Defer the React state update out of the PixiJS RAF callback context.
+      // Pixi-side mutations are safe to call synchronously from the RAF context.
+      if (state === "GAME_OVER") {
+        engineRef.current?.setRestartLocked(true);
+        engineRef.current?.setMessageVisible(false);
+      }
+      // Defer React state updates out of the PixiJS RAF callback context.
       // Calling setState directly inside a RAF (via ticker → engine → onStateChange)
       // can corrupt React's fiber linked list in some batching edge cases.
-      setTimeout(() => setCvCursorEnabled(state !== "PLAYING"), 0);
+      setTimeout(() => {
+        setCvCursorEnabled(state !== "PLAYING");
+        if (state === "GAME_OVER") {
+          setFinalScore(engineRef.current?.getScore() ?? 0);
+          setGameState("GAME_OVER");
+        } else {
+          setGameState(state);
+        }
+      }, 0);
     },
     [setCvCursorEnabled],
   );
+
+  const handlePlayAgain = useCallback(() => {
+    engineRef.current?.restart();
+    setGameState("READY");
+    setFinalScore(0);
+  }, []);
 
   const handleFlap = useCallback(() => {
     engineRef.current?.flap();
@@ -159,7 +182,11 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
   return (
     <div className={styles.container}>
-      <div ref={containerRef} className={styles.gameCanvas} />
+      <div ref={containerRef} className={styles.gameCanvas}>
+        {gameState === "GAME_OVER" && (
+          <GameOverClaim score={finalScore} onPlayAgain={handlePlayAgain} />
+        )}
+      </div>
 
       <CameraOverlay onVideoReady={handleVideoReady} />
 
