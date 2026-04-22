@@ -54,12 +54,7 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
         <ReviewScreen
           word={word}
           imageDataUrl={imageDataUrl}
-          onClaim={() => {
-            // TODO(drawit): once the QR claim backend is ready, the scan will
-            // trigger the upload to the gallery bucket + insert. For now the
-            // QR is a placeholder and the drawing only reaches the gallery
-            // after the user completes the claim flow on their device.
-          }}
+          onClaimed={() => setScreen("THANKS")}
           onDiscard={toMenu}
           onContinue={() => setScreen("THANKS")}
         />
