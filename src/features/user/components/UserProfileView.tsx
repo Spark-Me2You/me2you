@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { profileService } from "@/features/profile-editor/services/profileService";
-import { gameScoreService } from "@/features/games/services/gameScoreService";
 import type {
   ProfileWithImage,
   UpdateProfileInput,
@@ -29,14 +28,10 @@ export const UserProfileView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [highestFlapFlapScore, setHighestFlapFlapScore] = useState<
-    number | null
-  >(null);
 
   const mountedRef = useRef(true);
   const loadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
-  const scoreRequestIdRef = useRef(0);
 
   const loadProfile = useCallback(
     async (options?: { setLoading?: boolean }) => {
@@ -84,54 +79,6 @@ export const UserProfileView: React.FC = () => {
       mountedRef.current = false;
     };
   }, [loadProfile]);
-
-  const loadHighestFlapFlapScore = useCallback(
-    async (userId: string, orgId: string) => {
-      const requestId = ++scoreRequestIdRef.current;
-
-      try {
-        const score = await gameScoreService.getUserHighestFlapFlapScore(
-          userId,
-          orgId,
-        );
-
-        if (!mountedRef.current || requestId !== scoreRequestIdRef.current) {
-          return;
-        }
-
-        setHighestFlapFlapScore(score);
-      } catch (error) {
-        if (!mountedRef.current || requestId !== scoreRequestIdRef.current) {
-          return;
-        }
-
-        console.warn(
-          "[UserProfileView] Failed to load FlapFlap high score:",
-          error,
-        );
-        setHighestFlapFlapScore(null);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    const profileUserId = profileData?.profile.id ?? null;
-    const profileOrgId = profileData?.profile.org_id ?? null;
-
-    if (!profileUserId || !profileOrgId) {
-      scoreRequestIdRef.current += 1;
-      setHighestFlapFlapScore(null);
-      return;
-    }
-
-    setHighestFlapFlapScore(null);
-    void loadHighestFlapFlapScore(profileUserId, profileOrgId);
-  }, [
-    loadHighestFlapFlapScore,
-    profileData?.profile.id,
-    profileData?.profile.org_id,
-  ]);
 
   const nextSaveToken = useCallback(() => {
     return ++saveRequestIdRef.current;
