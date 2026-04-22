@@ -15,18 +15,32 @@ import { FlapFlapEngine } from "../game/FlapFlapEngine";
 import type { FlapFlapState } from "../game/FlapFlapEngine";
 import { FLAPFLAP_CONFIG } from "../config/flapflapConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
+import { useAuth } from "@/core/auth";
 import type { GameProps } from "../../types/game";
 import { GameOverClaim } from "./GameOverClaim";
+import { FlapFlapLeaderboard } from "./FlapFlapLeaderboard";
+import {
+  gameScoreService,
+  type FlapFlapLeaderboardEntry,
+} from "@/features/games/services/gameScoreService";
 import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
   onExit,
   onScoreChange,
 }) => {
-  const { setEnabled: setCvCursorEnabled, cursorVisibleRef } = useCvCursorEnabled();
+  const { kioskOrgId, userProfile } = useAuth();
+  const { setEnabled: setCvCursorEnabled, cursorVisibleRef } =
+    useCvCursorEnabled();
+  const activeOrgId = kioskOrgId ?? userProfile?.org_id ?? null;
 
   const [gameState, setGameState] = useState<FlapFlapState>("READY");
   const [finalScore, setFinalScore] = useState(0);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<
+    FlapFlapLeaderboardEntry[]
+  >([]);
+  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
   const { app, containerRef, isReady } = usePixiApp({
     width: FLAPFLAP_CONFIG.GAME_WIDTH,
@@ -77,6 +91,32 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   const handleFlap = useCallback(() => {
     engineRef.current?.flap();
   }, []);
+
+  const refreshLeaderboard = useCallback(async () => {
+    if (!activeOrgId) {
+      setLeaderboardEntries([]);
+      setLeaderboardError(null);
+      setIsLeaderboardLoading(false);
+      return;
+    }
+
+    setIsLeaderboardLoading(true);
+    setLeaderboardError(null);
+
+    try {
+      const topPlayers = await gameScoreService.getFlapFlapTopPlayers(
+        activeOrgId,
+        5,
+      );
+      setLeaderboardEntries(topPlayers);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "failed to load leaderboard";
+      setLeaderboardError(message);
+    } finally {
+      setIsLeaderboardLoading(false);
+    }
+  }, [activeOrgId]);
 
   const { processLandmarks } = useArmFlap({
     velocityThreshold: 0.014,
@@ -149,7 +189,15 @@ export const FlapFlapGame: React.FC<GameProps> = ({
       engine.destroy();
       engineRef.current = null;
     };
-  }, [app, isReady, onScoreChange, landmarksRef, frameSequenceRef, handleGameStateChange, cursorVisibleRef]);
+  }, [
+    app,
+    isReady,
+    onScoreChange,
+    landmarksRef,
+    frameSequenceRef,
+    handleGameStateChange,
+    cursorVisibleRef,
+  ]);
 
   // Run CV inference in a separate cadence from render/physics ticker.
   useEffect(() => {
@@ -180,12 +228,56 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    void refreshLeaderboard();
+  }, [refreshLeaderboard]);
+
+  useEffect(() => {
+    if (!activeOrgId) return;
+
+    const intervalId = window.setInterval(() => {
+      void refreshLeaderboard();
+    }, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeOrgId, refreshLeaderboard]);
+
+  useEffect(() => {
+    if (gameState === "GAME_OVER") {
+      void refreshLeaderboard();
+    }
+  }, [gameState, refreshLeaderboard]);
+
+  const handleScoreClaimed = useCallback(() => {
+    void refreshLeaderboard();
+  }, [refreshLeaderboard]);
+
   return (
     <div className={styles.container}>
-      <div ref={containerRef} className={styles.gameCanvas}>
-        {gameState === "GAME_OVER" && (
-          <GameOverClaim score={finalScore} onPlayAgain={handlePlayAgain} />
-        )}
+      <div className={styles.gameLayout}>
+        <div ref={containerRef} className={styles.gameCanvas}>
+          {gameState === "GAME_OVER" && (
+            <GameOverClaim
+              score={finalScore}
+              onPlayAgain={handlePlayAgain}
+              leaderboardEntries={leaderboardEntries}
+              isLeaderboardLoading={isLeaderboardLoading}
+              leaderboardError={leaderboardError}
+              onScoreClaimed={handleScoreClaimed}
+            />
+          )}
+        </div>
+
+        <div className={styles.leaderboardPanel}>
+          <FlapFlapLeaderboard
+            entries={leaderboardEntries}
+            isLoading={isLeaderboardLoading}
+            error={leaderboardError}
+            title="top flappers"
+          />
+        </div>
       </div>
 
       <CameraOverlay onVideoReady={handleVideoReady} />

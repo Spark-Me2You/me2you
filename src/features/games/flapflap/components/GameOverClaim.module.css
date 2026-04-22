@@ -28,6 +28,11 @@
   letter-spacing: 2px;
 }
 
+.overlayLeaderboard {
+  width: min(92%, 540px);
+  max-width: 540px;
+}
+
 .playAgainButton {
   margin-top: 8px;
   padding: 16px 48px;

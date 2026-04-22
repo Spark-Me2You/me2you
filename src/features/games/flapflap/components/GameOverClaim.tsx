@@ -1,11 +1,17 @@
 import { useState, useCallback, useMemo } from "react";
 import { ClaimQR, useClaimQR } from "@/features/claim";
 import type { ClaimPayload } from "@/features/claim";
+import type { FlapFlapLeaderboardEntry } from "@/features/games/services/gameScoreService";
+import { FlapFlapLeaderboard } from "./FlapFlapLeaderboard";
 import styles from "./GameOverClaim.module.css";
 
 interface GameOverClaimProps {
   score: number;
   onPlayAgain: () => void;
+  leaderboardEntries: FlapFlapLeaderboardEntry[];
+  isLeaderboardLoading: boolean;
+  leaderboardError: string | null;
+  onScoreClaimed?: () => void;
 }
 
 interface ClaimSectionProps {
@@ -28,7 +34,14 @@ function ClaimSection({ payload, onClaimed }: ClaimSectionProps) {
   );
 }
 
-export function GameOverClaim({ score, onPlayAgain }: GameOverClaimProps) {
+export function GameOverClaim({
+  score,
+  onPlayAgain,
+  leaderboardEntries,
+  isLeaderboardLoading,
+  leaderboardError,
+  onScoreClaimed,
+}: GameOverClaimProps) {
   const [claimed, setClaimed] = useState(false);
   const [isClaimRequested, setIsClaimRequested] = useState(false);
 
@@ -52,7 +65,8 @@ export function GameOverClaim({ score, onPlayAgain }: GameOverClaimProps) {
 
   const handleClaimed = useCallback(() => {
     setClaimed(true);
-  }, []);
+    onScoreClaimed?.();
+  }, [onScoreClaimed]);
 
   const handleClaimRequested = useCallback(() => {
     setIsClaimRequested(true);
@@ -64,6 +78,14 @@ export function GameOverClaim({ score, onPlayAgain }: GameOverClaimProps) {
         <div className={styles.confirmedState}>
           <span className={styles.trophy}>🏆</span>
           <p className={styles.confirmedText}>Score saved!</p>
+          <FlapFlapLeaderboard
+            className={styles.overlayLeaderboard}
+            entries={leaderboardEntries}
+            isLoading={isLeaderboardLoading}
+            error={leaderboardError}
+            currentScore={score}
+            title="this run vs top scores"
+          />
           <button className={styles.playAgainButton} onClick={onPlayAgain}>
             play again
           </button>
@@ -71,6 +93,14 @@ export function GameOverClaim({ score, onPlayAgain }: GameOverClaimProps) {
       ) : (
         <>
           <p className={styles.scoreText}>{score} pipes</p>
+          <FlapFlapLeaderboard
+            className={styles.overlayLeaderboard}
+            entries={leaderboardEntries}
+            isLoading={isLeaderboardLoading}
+            error={leaderboardError}
+            currentScore={score}
+            title="this run vs top scores"
+          />
           <p className={styles.instruction}>
             {isClaimRequested
               ? "scan to save your score"

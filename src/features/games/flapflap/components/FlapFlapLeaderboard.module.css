@@ -1,0 +1,91 @@
+.card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(7, 15, 30, 0.72);
+  border: 3px solid rgba(255, 255, 255, 0.24);
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  padding: 20px 18px;
+  backdrop-filter: blur(10px);
+}
+
+.title {
+  margin: 0 0 14px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 44px;
+  letter-spacing: 2px;
+  color: #ffe79d;
+  text-transform: lowercase;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.45);
+}
+
+.message {
+  margin: 0;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 30px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.76);
+  text-transform: lowercase;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.row,
+.currentRunRow,
+.youOutsideRow {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 34px;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.currentRunRow {
+  color: #ffe79d;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+}
+
+.rank {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.youOutsideWrap {
+  margin-top: 2px;
+}
+
+.ellipsis {
+  margin: 0;
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 30px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.youOutsideRow {
+  color: #ffe79d;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+}
+
+.youLabel {
+  grid-column: 1 / 3;
+}
