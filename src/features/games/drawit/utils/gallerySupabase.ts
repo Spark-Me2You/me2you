@@ -41,6 +41,57 @@ export async function uploadDrawing(dataUrl: string, word: string): Promise<Draw
   };
 }
 
+/**
+ * Stage a drawing for user pickup via QR claim.
+ *
+ * Uploads the PNG to the private `temp-drawings` bucket under the kiosk's org
+ * folder, then mints a claim token whose payload points at that temp path.
+ * The returned `claim_url` is what the kiosk renders as a QR code; once a user
+ * scans and completes the claim-drawing flow, the file is moved into the
+ * permanent `drawings` bucket under the user's folder.
+ *
+ * Expects the Supabase session to be a kiosk (app_metadata.is_kiosk=true,
+ * org_id populated) — enforced by storage RLS and generate-claim-token.
+ */
+export async function stageDrawingForClaim(
+  dataUrl: string,
+  orgId: string,
+  prompt: string,
+): Promise<{ claim_url: string; expires_at: string; token_id: string }> {
+  const blob = dataUrlToBlob(dataUrl);
+  const drawingId = crypto.randomUUID();
+  const tempPath = `${orgId}/${drawingId}.png`;
+
+  const { error: upErr } = await supabase.storage
+    .from("temp-drawings")
+    .upload(tempPath, blob, { contentType: "image/png", upsert: false });
+  if (upErr) throw new Error(`Temp drawing upload failed: ${upErr.message}`);
+
+  const { data, error } = await supabase.functions.invoke<{
+    success: boolean;
+    token_id?: string;
+    claim_url?: string;
+    expires_at?: string;
+    error?: string;
+  }>("generate-claim-token", {
+    body: {
+      payload: {
+        version: "1.0",
+        type: "drawing",
+        display: { title: "Claim your drawing", description: prompt },
+        data: { image_path: tempPath, prompt },
+      },
+    },
+  });
+
+  if (error || !data?.success || !data.token_id || !data.claim_url || !data.expires_at) {
+    await supabase.storage.from("temp-drawings").remove([tempPath]).catch(() => undefined);
+    throw new Error(error?.message || data?.error || "Failed to generate claim token");
+  }
+
+  return { claim_url: data.claim_url, expires_at: data.expires_at, token_id: data.token_id };
+}
+
 export async function fetchTodaysDrawings(): Promise<DrawingSubmission[]> {
   const start = new Date();
   start.setHours(0, 0, 0, 0);

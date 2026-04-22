@@ -407,6 +407,12 @@ export const UserProfileView: React.FC = () => {
               >
                 edit profile
               </button>
+              <button
+                onClick={() => navigate("/user/gallery")}
+                className={styles.editButton}
+              >
+                my drawings
+              </button>
               <button onClick={handleSignOut} className={styles.signOutButton}>
                 sign out
               </button>

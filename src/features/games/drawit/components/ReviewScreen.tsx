@@ -1,26 +1,72 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import QRCode from "react-qr-code";
+import { useAuth } from "@/core/auth";
+import { claimService } from "@/core/supabase/claimService";
+import { stageDrawingForClaim } from "../utils/gallerySupabase";
 import nextButton from "../../../../assets/next_button.svg";
 import styles from "./ReviewScreen.module.css";
 
 interface Props {
   imageDataUrl: string;
   word: string;
-  onClaim: () => void;
+  onClaimed: () => void;
   onDiscard: () => void;
   onContinue: () => void;
 }
 
-// TODO(drawit): wire the QR claim flow to actually push the drawing to the
-// gallery once the account linking endpoint is built.
+type StageState =
+  | { kind: "idle" }
+  | { kind: "staging" }
+  | { kind: "ready"; claimUrl: string; tokenId: string; expiresAt: string }
+  | { kind: "error"; message: string };
+
 export const ReviewScreen: React.FC<Props> = ({
   imageDataUrl,
   word,
-  onClaim,
+  onClaimed,
   onDiscard,
   onContinue,
 }) => {
-  const [showQr, setShowQr] = useState(false);
+  const { kioskOrgId } = useAuth();
+  const [stage, setStage] = useState<StageState>({ kind: "idle" });
+  const hasStagedRef = useRef(false);
+
+  // Subscribe to the token so we know when the user completes the claim on
+  // their phone — the kiosk can then auto-advance to the thanks screen.
+  useEffect(() => {
+    if (stage.kind !== "ready") return;
+    const unsubscribe = claimService.subscribeToClaim(stage.tokenId, () => {
+      onClaimed();
+    });
+    return unsubscribe;
+  }, [stage, onClaimed]);
+
+  const handleClaim = async () => {
+    if (hasStagedRef.current) return;
+    hasStagedRef.current = true;
+
+    if (!kioskOrgId) {
+      setStage({ kind: "error", message: "Kiosk session is missing an org — sign in again." });
+      return;
+    }
+
+    setStage({ kind: "staging" });
+    try {
+      const { claim_url, token_id, expires_at } = await stageDrawingForClaim(
+        imageDataUrl,
+        kioskOrgId,
+        word,
+      );
+      setStage({ kind: "ready", claimUrl: claim_url, tokenId: token_id, expiresAt: expires_at });
+    } catch (err) {
+      hasStagedRef.current = false;
+      const message = err instanceof Error ? err.message : "Failed to generate claim QR";
+      console.error("[drawit:review] staging failed:", err);
+      setStage({ kind: "error", message });
+    }
+  };
+
+  const showModal = stage.kind !== "idle";
 
   return (
     <div className={styles.container}>
@@ -31,10 +77,8 @@ export const ReviewScreen: React.FC<Props> = ({
         <button
           type="button"
           className={styles.primary}
-          onClick={() => {
-            setShowQr(true);
-            onClaim();
-          }}
+          onClick={handleClaim}
+          disabled={stage.kind === "staging" || stage.kind === "ready"}
         >
           Claim & Send to Gallery
         </button>
@@ -43,19 +87,30 @@ export const ReviewScreen: React.FC<Props> = ({
         </button>
       </div>
 
-      {showQr && (
+      {showModal && (
         <div className={styles.modalBackdrop}>
           <div className={styles.modalCard}>
             <h3 className={styles.modalTitle}>Scan to Claim</h3>
-            <p className={styles.modalSubtitle}>
-              Your drawing will appear in the gallery after you link it to your account.
-            </p>
-            <div className={styles.qrWrap}>
-              <QRCode
-                value={`me2you://drawit/claim?word=${encodeURIComponent(word)}`}
-                size={220}
-              />
-            </div>
+
+            {stage.kind === "staging" && (
+              <p className={styles.modalSubtitle}>Preparing your QR code…</p>
+            )}
+
+            {stage.kind === "ready" && (
+              <>
+                <p className={styles.modalSubtitle}>
+                  Scan with your phone to save this drawing to your gallery.
+                </p>
+                <div className={styles.qrWrap}>
+                  <QRCode value={stage.claimUrl} size={220} />
+                </div>
+              </>
+            )}
+
+            {stage.kind === "error" && (
+              <p className={styles.modalSubtitle}>{stage.message}</p>
+            )}
+
             <button
               type="button"
               className={styles.nextArrow}

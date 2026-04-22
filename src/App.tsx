@@ -6,7 +6,7 @@ import {
 } from "@/core/auth";
 import { AdminLoginPage, OrgSelectorPage } from "@/features/admin";
 import { RegistrationPage } from "@/features/registration";
-import { UserLandingPage, UserProfileView } from "@/features/user";
+import { UserLandingPage, UserProfileView, UserGalleryPage } from "@/features/user";
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import AppContainer from "./AppContainer";
 import "./App.css";
@@ -40,6 +40,16 @@ function App() {
         element={
           <UserProtectedRoute>
             <UserProfileView />
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* User-only route: Personal drawings gallery */}
+      <Route
+        path="/user/gallery"
+        element={
+          <UserProtectedRoute>
+            <UserGalleryPage />
           </UserProtectedRoute>
         }
       />

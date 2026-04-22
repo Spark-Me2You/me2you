@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
+import { supabase } from '@/core/supabase/client';
 import { claimService } from '@/core/supabase/claimService';
 import styles from './ClaimPage.module.css';
 
@@ -30,12 +31,32 @@ export function ClaimPage() {
     if (hasExecutedRef.current) return;
     hasExecutedRef.current = true;
 
-    claimService.executeClaim(tokenId).then((result) => {
-      navigate('/claim/success', { state: { payload: result.payload }, replace: true });
-    }).catch((err) => {
-      const reason = encodeURIComponent(err instanceof Error ? err.message : 'Claim failed');
-      navigate(`/claim/error?reason=${reason}`, { replace: true });
-    });
+    // Peek at the pending token's payload to decide which edge function to call.
+    // Drawing claims need a dedicated function because moving the PNG between
+    // buckets is a storage op that can't live in a Postgres trigger.
+    (async () => {
+      try {
+        const { data: token } = await supabase
+          .from('claim_tokens')
+          .select('payload')
+          .eq('id', tokenId)
+          .single();
+
+        const payloadType = (token?.payload as { type?: string } | null)?.type;
+
+        if (payloadType === 'drawing') {
+          await claimService.executeDrawingClaim(tokenId);
+          navigate('/user/gallery', { replace: true });
+          return;
+        }
+
+        const result = await claimService.executeClaim(tokenId);
+        navigate('/claim/success', { state: { payload: result.payload }, replace: true });
+      } catch (err) {
+        const reason = encodeURIComponent(err instanceof Error ? err.message : 'Claim failed');
+        navigate(`/claim/error?reason=${reason}`, { replace: true });
+      }
+    })();
   }, [authMode, isLoading, tokenId, navigate]);
 
   return (

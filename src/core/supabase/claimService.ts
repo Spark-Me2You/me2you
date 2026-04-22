@@ -16,6 +16,21 @@ interface ExecuteClaimResponse {
   error?: string;
 }
 
+interface ClaimDrawingResponse {
+  success: boolean;
+  token_id?: string;
+  drawing_id?: string;
+  image_path?: string;
+  error?: string;
+}
+
+export interface DrawingClaimResult {
+  success: true;
+  token_id: string;
+  drawing_id: string;
+  image_path: string;
+}
+
 export const claimService = {
   generateClaimToken: async (payload: ClaimPayload): Promise<GeneratedClaim> => {
     const { data, error } = await supabase.functions.invoke<GenerateClaimResponse>(
@@ -60,6 +75,30 @@ export const claimService = {
       success: true,
       token_id: data.token_id,
       payload: data.payload,
+    };
+  },
+
+  executeDrawingClaim: async (tokenId: string): Promise<DrawingClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ClaimDrawingResponse>(
+      'claim-drawing',
+      { body: { token_id: tokenId } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-drawing error:', error);
+      throw new Error(error.message || 'Failed to claim drawing');
+    }
+
+    if (!data?.success || !data.token_id || !data.drawing_id || !data.image_path) {
+      console.error('[claimService] claim-drawing returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to claim drawing');
+    }
+
+    return {
+      success: true,
+      token_id: data.token_id,
+      drawing_id: data.drawing_id,
+      image_path: data.image_path,
     };
   },
 
