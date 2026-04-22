@@ -45,18 +45,8 @@ export function ClaimPage() {
         const payloadType = (token?.payload as { type?: string } | null)?.type;
 
         if (payloadType === 'drawing') {
-          const drawing = await claimService.executeDrawingClaim(tokenId);
-          navigate('/claim/success', {
-            state: {
-              payload: {
-                version: '1.0',
-                type: 'drawing',
-                display: { title: 'Drawing claimed', description: 'Your drawing has been added to your gallery.' },
-                data: { drawing_id: drawing.drawing_id, image_path: drawing.image_path },
-              },
-            },
-            replace: true,
-          });
+          await claimService.executeDrawingClaim(tokenId);
+          navigate('/user/gallery', { replace: true });
           return;
         }
 

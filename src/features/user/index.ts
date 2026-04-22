@@ -5,4 +5,5 @@
 
 export { UserLandingPage } from './components/UserLandingPage';
 export { UserProfileView } from './components/UserProfileView';
+export { UserGalleryPage } from './components/UserGalleryPage';
 export { CreateAccountPrompt } from './components/CreateAccountPrompt';

@@ -1,0 +1,102 @@
+.page {
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #e6f2ff 0%, #c4dff5 100%);
+  font-family: "Jersey 10", Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 36px;
+  color: #003366;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.back {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  background: white;
+  border: 2px solid #A7D1F5;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #003366;
+}
+
+.status,
+.error {
+  font-size: 18px;
+  color: #003366;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.error {
+  color: #aa0000;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #A7D1F5;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 1px solid #A7D1F5;
+  background: white;
+  display: block;
+}
+
+.caption {
+  font-size: 16px;
+  color: #003366;
+  letter-spacing: 1px;
+  margin: 6px 0 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(170, 0, 0, 0.85);
+  color: white;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
