@@ -16,7 +16,16 @@ interface DrawingRow {
   image_path: string;
   prompt: string | null;
   created_at: string;
-  owner: { name: string | null } | null;
+  // PostgREST may infer this as an array when multiple FKs exist between the
+  // two tables, even though our FK hint resolves to exactly one row. Accept
+  // both shapes and normalize.
+  owner: { name: string | null } | { name: string | null }[] | null;
+}
+
+function ownerName(row: DrawingRow): string | null {
+  if (!row.owner) return null;
+  if (Array.isArray(row.owner)) return row.owner[0]?.name ?? null;
+  return row.owner.name;
 }
 
 async function signDrawings(rows: DrawingRow[]): Promise<DrawingEntry[]> {
@@ -32,7 +41,7 @@ async function signDrawings(rows: DrawingRow[]): Promise<DrawingEntry[]> {
         imagePath: row.image_path,
         createdAt: row.created_at,
         ownerId: row.owner_id,
-        ownerName: row.owner?.name ?? null,
+        ownerName: ownerName(row),
       };
     }),
   );
