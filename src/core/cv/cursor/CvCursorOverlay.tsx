@@ -43,7 +43,6 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
   const { notifyCursorVisible, updateCursorState, cursorVariant } = useCvCursorEnabled();
   const prevTargetRef = useRef<Element | null>(null);
   const prevClickingRef = useRef(false);
-  const [isOverInteractive, setIsOverInteractive] = useState(false);
   const [clickAnimKey, setClickAnimKey] = useState(0);
 
   // Trigger click burst animation on each new click
@@ -82,14 +81,13 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
         );
         prevTargetRef.current = null;
       }
-      setIsOverInteractive(false);
       return;
     }
 
     const target = document.elementFromPoint(x, y);
     if (!target) return;
 
-    setIsOverInteractive(isInteractiveElement(target));
+    isInteractiveElement(target);
 
     const common = {
       clientX: x,
