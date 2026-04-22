@@ -5,7 +5,7 @@
 
 /**
  * Image record from database
- * Represents a row from the 'image' table
+ * Represents a row from the 'gesture_image' table
  */
 export interface ImageRecord {
   /** Unique identifier for the image */
@@ -16,7 +16,7 @@ export interface ImageRecord {
   org_id: string;
   /** Storage path in Supabase storage bucket */
   storage_path: string;
-  /** Cropped image storage path (populated after smart crop) */
+  /** Cropped image storage path (not used in gesture_image table, kept for type compatibility) */
   cropped_path?: string | null;
   /** Category of the image (e.g., 'profile', 'uncategorized') */
   category: string;

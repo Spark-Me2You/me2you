@@ -186,7 +186,7 @@ export const profileService = {
         ),
         withTimeout(
           supabase
-            .from("image")
+            .from("gesture_image")
             .select("id, storage_path")
             .eq("owner_id", userId)
             .limit(1)
@@ -358,7 +358,7 @@ export const profileService = {
       async () =>
         withTimeout(
           supabase
-            .from("image")
+            .from("gesture_image")
             .insert({
               owner_id: userId,
               org_id: orgId,
@@ -443,7 +443,7 @@ export const profileService = {
 
     // Delete from database
     const { error: dbError } = await supabase
-      .from("image")
+      .from("gesture_image")
       .delete()
       .eq("id", imageId);
 
@@ -455,7 +455,7 @@ export const profileService = {
 
   /**
    * Delete all gesture and cropped images for the current user via edge function.
-   * Leaves the user account and profile photo (image table) intact.
+   * Leaves the user account and profile photo (gesture_image table) intact.
    */
   deleteAllImages: async (): Promise<{
     gesture_rows_deleted: number;
