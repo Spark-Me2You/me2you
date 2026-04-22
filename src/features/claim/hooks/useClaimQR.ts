@@ -50,9 +50,12 @@ export function useClaimQR(payload: ClaimPayload, options: UseClaimQROptions = {
     }
   }, []);
 
-  // Generate on mount
+  // Generate on mount (guarded against StrictMode double-invocation)
   const payloadRef = useRef(payload);
+  const hasGeneratedRef = useRef(false);
   useEffect(() => {
+    if (hasGeneratedRef.current) return;
+    hasGeneratedRef.current = true;
     payloadRef.current = payload;
     generate(payload);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

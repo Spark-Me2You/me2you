@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { claimService } from '@/core/supabase/claimService';
@@ -8,6 +8,7 @@ export function ClaimPage() {
   const { tokenId } = useParams<{ tokenId: string }>();
   const navigate = useNavigate();
   const { authMode, isLoading } = useAuth();
+  const hasExecutedRef = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -22,6 +23,12 @@ export function ClaimPage() {
       navigate('/claim/error?reason=Missing+token+ID', { replace: true });
       return;
     }
+
+    // Guard against StrictMode double-invocation — only execute the claim once.
+    // The redirect branches above are intentionally unguarded: authMode can
+    // legitimately flip null→'user' after the initial render.
+    if (hasExecutedRef.current) return;
+    hasExecutedRef.current = true;
 
     claimService.executeClaim(tokenId).then((result) => {
       navigate('/claim/success', { state: { payload: result.payload }, replace: true });

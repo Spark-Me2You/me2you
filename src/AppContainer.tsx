@@ -16,6 +16,8 @@ import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { HubView } from "@/features/hub";
 import { RegistrationQRDisplay } from "@/features/kiosk";
+import { useClaimQR, ClaimQR } from "@/features/claim";
+import type { ClaimPayload } from "@/features/claim";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import { GamesView } from "@/features/games";
@@ -34,6 +36,71 @@ import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
+
+// TODO: remove — temporary claim QR test harness
+const TEST_PAYLOAD: ClaimPayload = {
+  version: '1.0',
+  type: 'test',
+  display: { title: 'test claim!', description: 'the qr claim system is working.', icon: 'trophy' },
+  data: { test: true },
+};
+
+function ClaimQRTest({ onClose }: { onClose: () => void }) {
+  const [claimedBy, setClaimedBy] = useState<string | null>(null);
+
+  const qr = useClaimQR(TEST_PAYLOAD, {
+    onClaimed: (payload, userId) => {
+      console.log('[ClaimQRTest] claimed!', { payload, userId });
+      setClaimedBy(userId);
+    },
+    onExpire: () => console.log('[ClaimQRTest] expired'),
+  });
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+      zIndex: 9999, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 20,
+    }}>
+      <div style={{
+        background: '#fefffb', borderRadius: 24, padding: '32px 28px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+        fontFamily: '"Jersey 10", sans-serif',
+      }}>
+        <p style={{ margin: 0, fontSize: 28, color: '#e44805', letterSpacing: 2 }}>
+          claim qr test
+        </p>
+
+        {claimedBy ? (
+          <>
+            <div style={{ fontSize: 56 }}>✅</div>
+            <p style={{ margin: 0, fontSize: 22, color: '#333' }}>claimed!</p>
+            <p style={{ margin: 0, fontSize: 16, color: '#888', wordBreak: 'break-all', maxWidth: 280 }}>
+              by: {claimedBy}
+            </p>
+          </>
+        ) : (
+          <ClaimQR
+            claim={qr.claim}
+            isGenerating={qr.isGenerating}
+            error={qr.error}
+            secondsRemaining={qr.secondsRemaining}
+            onRegenerate={qr.regenerate}
+          />
+        )}
+
+        <button onClick={onClose} style={{
+          fontFamily: '"Jersey 10", sans-serif', fontSize: 22,
+          color: '#fff', background: '#555', border: 'none',
+          borderRadius: 12, padding: '10px 24px', cursor: 'pointer',
+        }}>
+          close
+        </button>
+      </div>
+    </div>
+  );
+}
+// end TODO
 
 /** Simple power icon SVG, white, 48px */
 function PowerIcon() {
@@ -62,6 +129,7 @@ function AppContainerContent() {
   const { currentState, transitionTo } = useAppState();
   const { signOut, authMode, exitKioskMode } = useAuth();
   const [showInfo, setShowInfo] = useState(false);
+  const [showClaimTest, setShowClaimTest] = useState(false); // TODO: remove
 
   const handleLogout = async () => {
     try {
@@ -215,6 +283,22 @@ function AppContainerContent() {
               </p>
               <img src={arrow2} alt="" className={styles.arrowQr} />
             </div>
+
+            {/* TODO: remove — test claim QR button */}
+            <button
+              onClick={() => setShowClaimTest(true)}
+              style={{
+                position: 'absolute', bottom: 20, left: 20, zIndex: 50,
+                fontFamily: '"Jersey 10", sans-serif', fontSize: 18,
+                color: '#fff', background: 'rgba(88,231,247,0.85)',
+                border: '2px solid #58e7f7', borderRadius: 12,
+                padding: '8px 16px', cursor: 'pointer', letterSpacing: 1,
+              }}
+            >
+              test claim qr
+            </button>
+            {showClaimTest && <ClaimQRTest onClose={() => setShowClaimTest(false)} />}
+            {/* end TODO */}
 
             {/* ===== Info overlay ===== */}
             {showInfo && (
