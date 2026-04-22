@@ -61,51 +61,83 @@
    ============================ */
 
 .signupWrapper {
-  padding-top: 130px;
+  padding: 130px 24px 40px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .signupCard {
-  background: rgba(113, 5, 228, 0.57);
+  width: 100%;
+  max-width: 350px;
+  background-color: rgba(255, 255, 255, 0.13);
+  backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  -webkit-backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  border-radius: 24px;
+  padding: 30px 26px 36px;
   box-shadow:
-    0 0 4px 0 rgba(0, 0, 0, 0.25) inset,
-    1px 1px 49.9px 14px rgba(255, 255, 255, 0.2) inset,
-    0 4px 4px 0 rgba(0, 0, 0, 0.25);
-  margin: 0 -10px;
-  padding: 24px 26px 44px 30px;
-  flex: 1;
+    0px 4px 4px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
 }
 
 .createTab {
-  background: #e405ac;
-  padding: 8px 18px;
-  margin: 0 0 20px 0;
-  display: inline-block;
+  background: #e44805;
+  padding: 14px 32px;
+  border-radius: 14px;
+  margin: 0 auto 18px;
+  display: block;
+  width: fit-content;
 }
 
 .createTabText {
-  font-family: 'Averia Libre', sans-serif;
-  font-weight: 400;
-  font-size: 18px;
-  color: #fff;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 36px;
+  color: #ffffff;
   letter-spacing: 3px;
+  text-transform: lowercase;
   margin: 0;
+  line-height: 1;
+}
+
+.signupDescriptionWrap {
+  position: relative;
+  margin: 0 0 28px;
 }
 
 .signupDescription {
-  font-family: 'Averia Libre', sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  color: #1405e4;
-  letter-spacing: 2.5px;
+  background: rgba(88, 231, 247, 0.25);
+  border: 2px solid #58e7f7;
+  border-radius: 12px;
+  padding: 26px 18px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signupDescriptionText {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 25px;
+  color: #111;
+  letter-spacing: 1px;
   text-align: center;
-  line-height: 1.45;
-  margin: 0 0 24px;
-  background: #58e7f7;
-  border: 9px solid #e405ac;
-  padding: 12px 14px;
+  line-height: 1.35;
+  margin: 0;
+  width: 100%;
+}
+
+.signupDescriptionMascot {
+  position: absolute;
+  bottom: -90px;
+  right: -120px;
+  width: 400px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+  transform: rotate(8deg);
 }
 
 .inputBlock {
@@ -136,6 +168,70 @@
   color: #1405e4;
   letter-spacing: 2.55px;
   display: inline-block;
+}
+
+.signupCard .inputBlock {
+  margin-bottom: 18px;
+}
+
+.signupCard .inputLabelLime {
+  background: transparent;
+  padding: 6px 14px;
+  margin-bottom: 8px;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+}
+
+.signupCard .inputBlock:nth-of-type(1) .inputLabelLime {
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.1);
+}
+
+.signupCard .inputBlock:nth-of-type(2) .inputLabelLime {
+  color: #1e88e5;
+  background: rgba(30, 136, 229, 0.1);
+}
+
+.signupCard .inputBlock:nth-of-type(3) .inputLabelLime {
+  color: #e91e63;
+  background: rgba(233, 30, 99, 0.1);
+}
+
+.signupCard .inputBlockLabel {
+  font-family: 'Jersey 10', sans-serif;
+  font-weight: normal;
+  font-size: 20px;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+.signupCard .inputBlockField {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: none;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  min-height: 44px;
+}
+
+.signupCard .inputBlockField:focus {
+  outline: none;
+  border-color: #e44805;
+}
+
+.signupCard .errorBanner {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+  color: #b71c1c;
+  background: rgba(183, 28, 28, 0.1);
+  border: 2px solid rgba(183, 28, 28, 0.5);
+  border-radius: 12px;
 }
 
 .nextBtnWrapper {
