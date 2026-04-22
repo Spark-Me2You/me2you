@@ -115,4 +115,26 @@ export const gameScoreService = {
       createdAt: row.created_at,
     }));
   },
+
+  async getUserHighestFlapFlapScore(
+    userId: string,
+    orgId: string,
+  ): Promise<number | null> {
+    const { data, error } = await supabase
+      .from("game_score")
+      .select("score")
+      .eq("owner_id", userId)
+      .eq("org_id", orgId)
+      .eq("game_id", FLAPFLAP_GAME_ID)
+      .order("score", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      throw new Error(`Failed to fetch user high score: ${error.message}`);
+    }
+
+    const topRow = (data ?? []) as Array<{ score: number }>;
+    return topRow[0]?.score ?? null;
+  },
 };
