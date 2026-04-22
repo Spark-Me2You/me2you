@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import styles from './RegistrationSteps.module.css';
 import nextButtonImg from '../../../assets/next_button.svg';
+import shanwImg from '../../../assets/shanw.png';
 
 interface SignUpStepProps {
   onSubmit: (email: string, password: string) => Promise<boolean>;
@@ -61,15 +62,19 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
 
   return (
     <div className={styles.signupWrapper}>
-      {/* createTab is a sibling ABOVE the card, not inside it */}
-      <div className={styles.createTab}>
-        <p className={styles.createTabText}>create account</p>
-      </div>
-
       <div className={styles.signupCard}>
-        <p className={styles.signupDescription}>
-          Create a Me2You account to connect with people around you!
-        </p>
+        <div className={styles.createTab}>
+          <p className={styles.createTabText}>create account</p>
+        </div>
+
+        <div className={styles.signupDescriptionWrap}>
+          <div className={styles.signupDescription}>
+            <p className={styles.signupDescriptionText}>
+              Create a Me2You account to connect with people around you!
+            </p>
+          </div>
+          <img src={shanwImg} alt="" className={styles.signupDescriptionMascot} />
+        </div>
 
         <form onSubmit={handleSubmit} noValidate>
           {displayError && (

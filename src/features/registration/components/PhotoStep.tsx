@@ -266,6 +266,16 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
             className={styles.cameraFeed}
             style={{ display: previewUrl ? 'none' : undefined }}
           />
+          {!previewUrl && isCameraReady && (
+            <div className={styles.poseGuide} aria-hidden="true">
+              <div className={styles.poseHeadGuide}>
+                <span className={styles.poseGuideLabel}>head</span>
+              </div>
+              <div className={styles.poseHandGuide}>
+                <span className={styles.poseGuideLabel}>hand</span>
+              </div>
+            </div>
+          )}
           {!previewUrl && !isCameraReady && !cameraError && (
             <div className={styles.cameraLoadingOverlay}>starting camera...</div>
           )}

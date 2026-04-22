@@ -29,6 +29,7 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
         {GAMES_REGISTRY.map((game) => (
           <button
             key={game.id}
+            data-game-id={game.id}
             className={styles.gameButton}
             onClick={() => onSelectGame(game.id)}
           >
