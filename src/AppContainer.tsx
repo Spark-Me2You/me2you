@@ -35,6 +35,7 @@ import labelBanner3 from "@/assets/label_banner3.svg";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
 
+
 /** Simple power icon SVG, white, 48px */
 function PowerIcon() {
   return (

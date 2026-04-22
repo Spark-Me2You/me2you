@@ -273,6 +273,30 @@
   transform: scale(0.98);
 }
 
+.scanButton {
+  width: 100%;
+  margin-top: 6px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #58e7f7;
+  background: rgba(88, 231, 247, 0.1);
+  border: 2px solid #58e7f7;
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.scanButton:hover {
+  background: rgba(88, 231, 247, 0.2);
+}
+
+.scanButton:active {
+  transform: scale(0.98);
+}
+
 .deleteButton {
   width: 100%;
   margin-top: 10px;

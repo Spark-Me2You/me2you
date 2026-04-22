@@ -1,0 +1,89 @@
+.page {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 270px;
+  transform: translateX(-50%) rotate(3.41deg);
+  transform-origin: center top;
+  z-index: 20;
+  pointer-events: none;
+  user-select: none;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 30px 40px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.title {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 40px;
+  color: #d32f2f;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.reason {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #555;
+  text-align: center;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.backButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #ffffff;
+  background: #e44805;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 24px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 8px;
+}
+
+.backButton:hover {
+  background: #cc4004;
+}
+
+.backButton:active {
+  transform: scale(0.98);
+}

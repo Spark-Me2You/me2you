@@ -5,3 +5,4 @@ export * from "./client";
 export * from "./adminAuth";
 export * from "./kioskAuth";
 export * from "./storage";
+export * from "./claimService";

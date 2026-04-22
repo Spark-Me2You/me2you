@@ -1,0 +1,71 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.qrWrapper {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.placeholder {
+  width: 252px;
+  height: 252px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.loadingText,
+.expiredText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 24px;
+  color: #666;
+  text-transform: lowercase;
+}
+
+.errorText {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #d32f2f;
+  text-align: center;
+  padding: 0 16px;
+}
+
+.countdown {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 28px;
+  color: #555;
+  letter-spacing: 2px;
+  transition: color 0.3s;
+}
+
+.countdownWarning {
+  color: #e44805;
+}
+
+.retryButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.1);
+  border: 2px solid #e44805;
+  border-radius: 12px;
+  padding: 8px 20px;
+  cursor: pointer;
+  text-transform: lowercase;
+  transition: background 0.2s;
+}
+
+.retryButton:hover {
+  background: rgba(228, 72, 5, 0.2);
+}

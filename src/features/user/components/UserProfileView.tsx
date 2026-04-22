@@ -10,6 +10,7 @@ import type {
 import logo from "@/assets/me2you.png";
 import { UserProfileEditForm } from "./UserProfileEditForm";
 import { UserPhotoCaptureModal } from "./UserPhotoCaptureModal";
+import { ClaimScanner } from "@/features/claim";
 import styles from "./UserProfileView.module.css";
 
 export const UserProfileView: React.FC = () => {
@@ -27,6 +28,7 @@ export const UserProfileView: React.FC = () => {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const mountedRef = useRef(true);
   const loadRequestIdRef = useRef(0);
@@ -285,6 +287,9 @@ export const UserProfileView: React.FC = () => {
 
   return (
     <>
+      {isScannerOpen && (
+        <ClaimScanner onClose={() => setIsScannerOpen(false)} />
+      )}
       <div className={styles.page}>
         {/* Hidden SVG filter for fractal texture */}
         <svg width="0" height="0" style={{ position: "absolute" }}>
@@ -406,6 +411,14 @@ export const UserProfileView: React.FC = () => {
                 sign out
               </button>
             </div>
+
+            <button
+              type="button"
+              className={styles.scanButton}
+              onClick={() => setIsScannerOpen(true)}
+            >
+              scan a code
+            </button>
 
             {isConfirmingDelete ? (
               <div className={styles.confirmRow}>
