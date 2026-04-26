@@ -1,0 +1,241 @@
+.page {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.logo {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 270px;
+  transform: translateX(-50%) rotate(3.41deg);
+  transform-origin: center top;
+  z-index: 100;
+  pointer-events: none;
+  user-select: none;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120px 30px 40px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+.card {
+  background-color: rgba(255, 255, 255, 0.13);
+  backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  -webkit-backdrop-filter: brightness(98%) saturate(105%) hue-rotate(10deg);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow:
+    0px 4px 4px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.title {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 36px;
+  color: #e44805;
+  margin: 0;
+  text-transform: lowercase;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+/* Avatar preview stage */
+.previewStage {
+  width: 220px;
+  height: 220px;
+  border: 3px solid #e44805;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fefffb;
+}
+
+.miiComposite {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #fefffb;
+}
+
+.miiBody {
+  max-width: 90%;
+  max-height: 80%;
+  object-fit: contain;
+  display: block;
+  transform: scale(0.6);
+}
+
+.miiFace {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Accessory overlay positions — approximate visual placement.
+   Exact landmark-based placement happens in PixiHub at runtime. */
+.accessorySunglasses {
+  position: absolute;
+  top: 37%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: auto;
+  pointer-events: none;
+}
+
+.accessoryHat {
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38%;
+  height: auto;
+  pointer-events: none;
+}
+
+.accessoryBalloon {
+  position: absolute;
+  top: 1%;
+  right: 4%;
+  width: 26%;
+  height: auto;
+  pointer-events: none;
+}
+
+/* Accessory chip selector */
+.chipRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+.chip {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 18px;
+  color: #e44805;
+  background: rgba(228, 72, 5, 0.08);
+  border: 2px solid #e44805;
+  border-radius: 20px;
+  padding: 10px 16px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.chip:hover {
+  background: rgba(228, 72, 5, 0.16);
+}
+
+.chip:active {
+  transform: scale(0.96);
+}
+
+.chipActive {
+  background: #e44805;
+  color: #ffffff;
+}
+
+.chipActive:hover {
+  background: #c53d04;
+}
+
+.error {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 15px;
+  color: #d32f2f;
+  text-align: center;
+  margin: 0;
+}
+
+/* Save / Cancel buttons */
+.buttonRow {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.cancelButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #666;
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid #ccc;
+  border-radius: 14px;
+  padding: 18px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.cancelButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.cancelButton:active {
+  transform: scale(0.98);
+}
+
+.saveButton {
+  flex: 2;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  color: #ffffff;
+  background: #e44805;
+  border: 2px solid #e44805;
+  border-radius: 14px;
+  padding: 18px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.saveButton:hover {
+  background: #c53d04;
+}
+
+.saveButton:active {
+  transform: scale(0.98);
+}
+
+.saveButton:disabled {
+  background: #c8a090;
+  border-color: #c8a090;
+  cursor: not-allowed;
+  transform: none;
+}

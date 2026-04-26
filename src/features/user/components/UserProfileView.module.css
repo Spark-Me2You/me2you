@@ -514,3 +514,26 @@
   text-align: center;
   margin: 8px 0 0 0;
 }
+
+.customizeButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #7105e4;
+  background: rgba(113, 5, 228, 0.08);
+  border: 2px solid #7105e4;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.customizeButton:hover {
+  background: rgba(113, 5, 228, 0.16);
+}
+
+.customizeButton:active {
+  transform: scale(0.98);
+}

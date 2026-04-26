@@ -473,6 +473,15 @@ export const UserProfileView: React.FC = () => {
               </button>
             </div>
 
+            <div className={styles.buttonRowTop}>
+              <button
+                onClick={() => navigate("/user/customize")}
+                className={styles.customizeButton}
+              >
+                customize avatar
+              </button>
+            </div>
+
             <div className={styles.buttonRowMid}>
               <button
                 onClick={() => setMode("edit")}

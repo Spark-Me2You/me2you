@@ -47,6 +47,8 @@ export interface UserProfile {
   interests: string[] | null;
   /** Account creation timestamp */
   created_at: string;
+  /** Equipped avatar accessory */
+  accessory: 'sunglasses' | 'hat' | 'balloon' | null;
 }
 
 /**

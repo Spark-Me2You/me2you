@@ -1,4 +1,4 @@
-import type { UserProfile } from '@/core/auth/AuthContext';
+import type { UserProfile, Accessory } from '@/core/auth/AuthContext';
 
 export type GestureCategory = 'wave' | 'peace_sign' | 'thumbs_up';
 
@@ -8,6 +8,7 @@ export interface UpdateProfileInput {
   pronouns?: string | null;
   major?: string | null;
   interests?: string[] | null;
+  accessory?: Accessory | null;
 }
 
 export interface ProfileWithImage {

@@ -11,6 +11,7 @@ import {
   UserProfileView,
   UserGalleryPage,
   UserGameScoresPage,
+  CustomizeAvatarView,
 } from "@/features/user";
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import AppContainer from "./AppContainer";
@@ -65,6 +66,16 @@ function App() {
         element={
           <UserProtectedRoute>
             <UserGameScoresPage />
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* User-only route: Avatar accessory customization */}
+      <Route
+        path="/user/customize"
+        element={
+          <UserProtectedRoute>
+            <CustomizeAvatarView />
           </UserProtectedRoute>
         }
       />
