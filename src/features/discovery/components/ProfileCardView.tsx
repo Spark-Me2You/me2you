@@ -7,6 +7,7 @@
 import React from 'react';
 import type { RandomImageData } from '../types/image';
 import { BadgeDisplay } from '@/shared/components/BadgeDisplay';
+import { SendMessageButton } from '@/features/messages';
 import me2youLogo from '@/assets/me2you.png';
 import registerQr from '@/assets/registerqr.png';
 import otterHandImage from '@/assets/hand.png';
@@ -221,6 +222,9 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                 orgId={owner.org_id}
               />
             </div>
+
+            {/* Send Message */}
+            <SendMessageButton recipientId={owner.id} recipientName={owner.name} />
 
           </div>
         </div>

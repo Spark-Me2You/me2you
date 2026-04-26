@@ -24,6 +24,19 @@ interface ClaimDrawingResponse {
   error?: string;
 }
 
+interface ClaimMessageResponse {
+  success: boolean;
+  token_id?: string;
+  message_id?: string;
+  error?: string;
+}
+
+export interface MessageClaimResult {
+  success: true;
+  token_id: string;
+  message_id: string;
+}
+
 export interface DrawingClaimResult {
   success: true;
   token_id: string;
@@ -99,6 +112,29 @@ export const claimService = {
       token_id: data.token_id,
       drawing_id: data.drawing_id,
       image_path: data.image_path,
+    };
+  },
+
+  executeMessageClaim: async (tokenId: string, body: string): Promise<MessageClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ClaimMessageResponse>(
+      'claim-message',
+      { body: { token_id: tokenId, body } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-message error:', error);
+      throw new Error(error.message || 'Failed to send message');
+    }
+
+    if (!data?.success || !data.token_id || !data.message_id) {
+      console.error('[claimService] claim-message returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to send message');
+    }
+
+    return {
+      success: true,
+      token_id: data.token_id,
+      message_id: data.message_id,
     };
   },
 

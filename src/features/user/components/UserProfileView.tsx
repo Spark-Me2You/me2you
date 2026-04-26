@@ -512,6 +512,12 @@ export const UserProfileView: React.FC = () => {
               >
                 my drawings
               </button>
+              <button
+                onClick={() => navigate("/user/messages")}
+                className={styles.messagesButton}
+              >
+                messages
+              </button>
             </div>
 
             <div className={styles.buttonRowTop}>
