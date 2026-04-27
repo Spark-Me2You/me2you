@@ -24,6 +24,7 @@ import corkboardImage from "@/assets/corkboard.png";
 import arrow2 from "@/assets/arrow2.svg";
 import otterHandImage from "@/assets/hand.png";
 import cvMouseGif from "@/assets/cvmousegif.gif";
+import polaroidFrame1 from "@/assets/polaroid_frame1.svg";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
 
