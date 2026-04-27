@@ -39,6 +39,7 @@ interface WalkerHandle {
   ownerId: string;
   tick: (dt: number) => void;
   replaceAccessory: (options?: AccessoryOptions) => void;
+  replaceFace: (storagePath: string) => Promise<void>;
 }
 
 export const PixiHub: React.FC<{
@@ -49,6 +50,7 @@ export const PixiHub: React.FC<{
   const appRef = useRef<Application | null>(null);
   const addWalkerRef = useRef<((row: CroppedImageRow) => Promise<void>) | null>(null);
   const updateAccRef = useRef<((ownerId: string, settings: AccessorySettings) => void) | null>(null);
+  const replaceFaceRef = useRef<((ownerId: string, storagePath: string) => Promise<void>) | null>(null);
   const { transitionTo } = useAppState();
 
   useEffect(() => {
@@ -376,10 +378,23 @@ export const PixiHub: React.FC<{
             }
           }
 
+          async function replaceFace(storagePath: string) {
+            try {
+              const faceUrl = await storageService.getPhotoUrl(storagePath);
+              const newTexture = await Assets.load(faceUrl);
+              if (faceSprite) {
+                faceSprite.texture = newTexture;
+              }
+            } catch (err) {
+              console.error("[PixiHub] Failed to replace face texture:", err);
+            }
+          }
+
           return {
             ownerId: ownerId ?? "",
             tick,
             replaceAccessory: applyAccessoryOptions,
+            replaceFace,
           };
         }
 
@@ -447,7 +462,11 @@ export const PixiHub: React.FC<{
         const walkersMap = new Map<string, WalkerHandle>();
 
         async function spawnWalker(row: CroppedImageRow) {
-          if (walkersMap.has(row.owner_id)) return;
+          const existing = walkersMap.get(row.owner_id);
+          if (existing) {
+            await existing.replaceFace(row.storage_path);
+            return;
+          }
 
           try {
             const faceUrl = await storageService.getPhotoUrl(row.storage_path);
@@ -531,6 +550,12 @@ export const PixiHub: React.FC<{
         // Expose imperative API to realtime subscription effect
         addWalkerRef.current = spawnWalker;
 
+        replaceFaceRef.current = async (ownerId: string, storagePath: string) => {
+          const handle = walkersMap.get(ownerId);
+          if (!handle) return;
+          await handle.replaceFace(storagePath);
+        };
+
         updateAccRef.current = (ownerId: string, settings: AccessorySettings) => {
           const handle = walkersMap.get(ownerId);
           if (!handle) return;
@@ -560,6 +585,7 @@ export const PixiHub: React.FC<{
       isMounted = false;
       addWalkerRef.current = null;
       updateAccRef.current = null;
+      replaceFaceRef.current = null;
       if (appRef.current) {
         appRef.current.destroy();
         appRef.current = null;
@@ -584,9 +610,17 @@ export const PixiHub: React.FC<{
       },
     );
 
+    const unsubFaceUpdates = hubRealtimeService.subscribeToProfilePictureUpdates(
+      orgId,
+      (ownerId, storagePath) => {
+        replaceFaceRef.current?.(ownerId, storagePath);
+      },
+    );
+
     return () => {
       unsubImages();
       unsubAcc();
+      unsubFaceUpdates();
     };
   }, [orgId]);
 

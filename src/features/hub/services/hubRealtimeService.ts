@@ -22,9 +22,41 @@ export const hubRealtimeService = {
         { event: 'INSERT', schema: 'public', table: 'cropped_image' },
         async (event) => {
           const raw = event.new as { id: string; org_id: string };
-          if (raw.org_id !== orgId) return;
+          if (removed || raw.org_id !== orgId) return;
           const row = await croppedImageService.getCroppedImageById(raw.id, orgId);
-          if (row) onInsert(row);
+          if (removed || !row) return;
+          onInsert(row);
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) console.error(`[realtime] ${channelName} error:`, err);
+        else console.log(`[realtime] ${channelName} ${status}`);
+      });
+
+    return remove;
+  },
+
+  subscribeToProfilePictureUpdates: (
+    orgId: string,
+    onUpdate: (ownerId: string, storagePath: string) => void,
+  ): (() => void) => {
+    const channelName = `hub-cropped-image-update-${orgId}`;
+    let removed = false;
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      supabase.removeChannel(channel);
+    };
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'cropped_image' },
+        (event) => {
+          const raw = event.new as { org_id: string; owner_id: string; storage_path: string };
+          if (removed || raw.org_id !== orgId) return;
+          onUpdate(raw.owner_id, raw.storage_path);
         },
       )
       .subscribe((status, err) => {
