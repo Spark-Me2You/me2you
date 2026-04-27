@@ -254,7 +254,9 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
 
   return (
     <div className={`${styles.root} ${className ?? ""}`}>
-      <div ref={containerRef} className={styles.canvasHost} />
+      <div className={styles.frame}>
+        <div ref={containerRef} className={styles.canvasHost} />
+      </div>
 
       {!bobbleheadUrl && (
         <div className={styles.overlayText}>no face yet</div>

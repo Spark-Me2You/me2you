@@ -37,11 +37,20 @@ export const UserProfileView: React.FC = () => {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"picture" | "mii">("picture");
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
   const profileLoadRequestIdRef = useRef(0);
   const accessoryLoadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
+  const profileLoadTimeoutRef = useRef<number | null>(null);
+
+  const clearProfileLoadTimeout = useCallback(() => {
+    if (profileLoadTimeoutRef.current !== null) {
+      window.clearTimeout(profileLoadTimeoutRef.current);
+      profileLoadTimeoutRef.current = null;
+    }
+  }, []);
 
   const loadCoreProfile = useCallback(
     async (options?: { setLoading?: boolean }) => {
@@ -50,6 +59,18 @@ export const UserProfileView: React.FC = () => {
 
       if (setLoading) {
         setIsLoading(true);
+        setProfileLoadError(null);
+        clearProfileLoadTimeout();
+        profileLoadTimeoutRef.current = window.setTimeout(() => {
+          if (
+            mountedRef.current &&
+            requestId === profileLoadRequestIdRef.current
+          ) {
+            console.warn("[UserProfileView] Profile load timed out");
+            setIsLoading(false);
+            setProfileLoadError("profile is taking too long to load. try again.");
+          }
+        }, 12000);
       }
 
       try {
@@ -67,6 +88,7 @@ export const UserProfileView: React.FC = () => {
 
         console.error("[UserProfileView] Failed to load profile:", err);
       } finally {
+        clearProfileLoadTimeout();
         if (
           setLoading &&
           mountedRef.current &&
@@ -76,7 +98,7 @@ export const UserProfileView: React.FC = () => {
         }
       }
     },
-    [currentUserId],
+    [clearProfileLoadTimeout, currentUserId],
   );
 
   const loadAccessorySettings = useCallback(async () => {
@@ -112,8 +134,9 @@ export const UserProfileView: React.FC = () => {
 
     return () => {
       mountedRef.current = false;
+      clearProfileLoadTimeout();
     };
-  }, [loadCoreProfile, loadAccessorySettings]);
+  }, [clearProfileLoadTimeout, loadCoreProfile, loadAccessorySettings]);
 
   const nextSaveToken = useCallback(() => {
     return ++saveRequestIdRef.current;
@@ -264,6 +287,32 @@ export const UserProfileView: React.FC = () => {
   }
 
   if (!profileData) {
+    if (profileLoadError) {
+      return (
+        <div className={styles.page}>
+          <img src={logo} alt="me2you" className={styles.logo} />
+          <div className={styles.content}>
+            <div className={styles.profileCard}>
+              <div className={styles.photoPlaceholder}>
+                <span className={styles.loadingText}>{profileLoadError}</span>
+                <button
+                  type="button"
+                  className={styles.customizeButton}
+                  onClick={() => {
+                    setProfileLoadError(null);
+                    void loadCoreProfile();
+                    void loadAccessorySettings();
+                  }}
+                >
+                  retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   }
 
