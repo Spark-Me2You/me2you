@@ -52,7 +52,10 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
   const bodyRef = useRef<Sprite | null>(null);
   const faceRef = useRef<Sprite | null>(null);
   const accessoryRef = useRef<Sprite | null>(null);
+  const applyLayoutRef = useRef<() => void>(() => {});
+  const hasLoadedOnce = useRef(false);
   const [isReady, setIsReady] = useState(false);
+  const [isSceneLoading, setIsSceneLoading] = useState(true);
   const [renderError, setRenderError] = useState<string | null>(null);
 
   const selectedAccessory = accessorySettings.selected_accessory;
@@ -178,6 +181,7 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
     return () => {
       disposed = true;
       setIsReady(false);
+      hasLoadedOnce.current = false;
       bodyRef.current = null;
       faceRef.current = null;
       accessoryRef.current = null;
@@ -192,6 +196,10 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
     if (!isReady || !appRef.current) return;
 
     let cancelled = false;
+
+    if (!hasLoadedOnce.current) {
+      setIsSceneLoading(true);
+    }
 
     const loadScene = async () => {
       const app = appRef.current;
@@ -227,11 +235,14 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
         }
         accessoryRef.current = accessorySprite;
 
-        applyLayout();
+        applyLayoutRef.current();
         setRenderError(null);
+        hasLoadedOnce.current = true;
+        setIsSceneLoading(false);
       } catch (error) {
         console.error("[UserMiiPixiPreview] Failed to render scene:", error);
         setRenderError("preview unavailable");
+        setIsSceneLoading(false);
       }
     };
 
@@ -241,12 +252,15 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
       cancelled = true;
     };
   }, [
-    applyLayout,
     bobbleheadUrl,
     isReady,
     selectedAccessory,
     shouldRenderAccessory,
   ]);
+
+  useEffect(() => {
+    applyLayoutRef.current = applyLayout;
+  });
 
   useEffect(() => {
     applyLayout();
@@ -255,14 +269,21 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
   return (
     <div className={`${styles.root} ${className ?? ""}`}>
       <div className={styles.frame}>
-        <div ref={containerRef} className={styles.canvasHost} />
+        <div
+          ref={containerRef}
+          className={styles.canvasHost}
+          style={isSceneLoading ? { visibility: "hidden" } : undefined}
+        />
+        {isSceneLoading && (
+          <div className={styles.loadingText}>loading</div>
+        )}
       </div>
 
-      {!bobbleheadUrl && (
+      {!bobbleheadUrl && !isSceneLoading && (
         <div className={styles.overlayText}>no face yet</div>
       )}
 
-      {selectedAccessory && !hasAccessoryLandmarks && bobbleheadUrl && (
+      {selectedAccessory && !hasAccessoryLandmarks && bobbleheadUrl && !isSceneLoading && (
         <div className={styles.overlayHint}>
           accessory preview appears after landmarks are generated
         </div>

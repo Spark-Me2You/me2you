@@ -25,6 +25,17 @@
   display: block;
 }
 
+.loadingText {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 16px;
+  color: #999;
+}
+
 .overlayText {
   position: absolute;
   top: 12%;

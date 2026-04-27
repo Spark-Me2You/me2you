@@ -34,6 +34,7 @@ export const CustomizeAvatarView: React.FC = () => {
   const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(null);
   const [bobbleheadLandmarks, setBobbleheadLandmarks] =
     useState<AvatarLandmarkPoints | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +53,9 @@ export const CustomizeAvatarView: React.FC = () => {
       setSettings(accSettings);
     }).catch((err) =>
       console.warn("[CustomizeAvatarView] Failed to load preview:", err),
-    );
+    ).finally(() => {
+      setIsDataLoading(false);
+    });
   }, [user?.id]);
 
   // --- Drag handlers ---
@@ -186,12 +189,16 @@ export const CustomizeAvatarView: React.FC = () => {
               onMouseDown={hasAccessory ? handleMouseDown : undefined}
               onTouchStart={hasAccessory ? handleTouchStart : undefined}
             >
-              <UserMiiPixiPreview
-                className={styles.miiComposite}
-                bobbleheadUrl={bobbleheadUrl}
-                accessorySettings={settings}
-                landmarks={bobbleheadLandmarks}
-              />
+              {isDataLoading ? (
+                <div className={styles.previewLoading}>loading</div>
+              ) : (
+                <UserMiiPixiPreview
+                  className={styles.miiComposite}
+                  bobbleheadUrl={bobbleheadUrl}
+                  accessorySettings={settings}
+                  landmarks={bobbleheadLandmarks}
+                />
+              )}
             </div>
 
             {/* Vertical scale slider */}
