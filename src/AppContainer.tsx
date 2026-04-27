@@ -23,9 +23,6 @@ import otterImage from "@/assets/otter_default_rough_draft.png";
 import corkboardImage from "@/assets/corkboard.png";
 import arrow2 from "@/assets/arrow2.svg";
 import otterHandImage from "@/assets/hand.png";
-import numberCircle from "@/assets/number_circle.svg";
-import labelBanner1 from "@/assets/label_banner1.svg";
-import labelBanner3 from "@/assets/label_banner3.svg";
 import cvMouseGif from "@/assets/cvmousegif.gif";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 import styles from "./AppContainer.module.css";
@@ -181,35 +178,29 @@ function AppContainerContent() {
               <div className={styles.corkBoard}>
                 <img src={corkboardImage} alt="" className={styles.corkBoardBg} />
 
-                {/* NEW HERE? pill */}
-                <div className={styles.newHerePill}>
-                  <span>NEW HERE?</span>
+                {/* Corner title (top-left of corkboard) */}
+                <div className={styles.cornerTitle}>NEW HERE?</div>
+
+                {/* Gesture demo gif (with pink tape on top) */}
+                <div className={styles.gifWrap}>
+                  <img
+                    src={cvMouseGif}
+                    alt="Hover and click gesture demo"
+                    className={styles.gifImg}
+                  />
+                  <div className={styles.gifTape} />
                 </div>
 
-                {/* Step 1 */}
-                <div className={styles.step1LabelWrap}>
-                  <img src={labelBanner1} alt="" className={styles.labelBannerSvg} />
-                  <div className={styles.stepNumberOnLabel}>
-                    <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
-                    <span className={styles.numberText}>1</span>
-                  </div>
-                  <p className={styles.step1Label}>make this pose!</p>
+                {/* Pink-tape label below gif */}
+                <div className={styles.tapeLabelWrap}>
+                  <div className={styles.tapeLabelTape} />
+                  <ul className={styles.tapeLabelText}>
+                    <li>use your pointer finger to move the mouse!</li>
+                    <li>curve your thumb in like this to click!</li>
+                    <li>now practice by clicking this button!</li>
+                  </ul>
                 </div>
-                <img
-                  src={cvMouseGif}
-                  alt="Hover and click gesture demo"
-                  className={styles.cvMouseGif}
-                />
 
-                {/* Step 3 */}
-                <div className={styles.step3LabelWrap}>
-                  <img src={labelBanner3} alt="" className={styles.labelBannerSvg} />
-                  <div className={styles.stepNumberOnLabel}>
-                    <img src={numberCircle} alt="" className={styles.numberCircleSvg} />
-                    <span className={styles.numberText}>3</span>
-                  </div>
-                  <p className={styles.step3Label}>now click or hover over this!</p>
-                </div>
                 <img src={arrow2} alt="" className={styles.arrow2} />
 
                 {/* Info button with dwell-to-open trace animation */}

@@ -258,29 +258,26 @@
   height: 103%;
 }
 
-/* NEW HERE? pill (Figma: 36px Jersey 10, tracking 6.12px)
-   Positioned within the rotated cork board — content reads upright
-   because the board is ~173deg rotated (≈ flipped) */
-.newHerePill {
+/* Top-left corner title (replaces NEW HERE? pill).
+   Corkboard is rotated ~173deg, so visual top-left = unrotated bottom-right.
+   Child rotation 180.59deg yields a visual angle of ~-6.149deg per Figma. */
+.cornerTitle {
   position: absolute;
-  bottom: 10%;
-  left: 14.5%;
-  width: 306px;
-  height: 56px;
-  padding: 2px 24px;
-  background: #d3e405;
-  border-radius: 46px;
+  bottom: 5%;
+  right: -5%;
+  width: 376px;
+  transform: rotate(180.591deg);
+  transform-origin: center;
+  color: #fff;
+  text-align: center;
   font-family: "Jersey 10", sans-serif;
-  font-size: 35px;
-  letter-spacing: 6.12px;
-  color: #000;
-  text-align: left;
-  transform: rotate(185deg);
-  box-shadow:
-    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+  font-size: 41px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: 6.97px;
   z-index: 3;
+  pointer-events: none;
 }
 
 /* ===== Step number circle — left or right edge of label wrapper ===== */
@@ -328,80 +325,102 @@
   z-index: 1;
 }
 
-/* Step 1 label wrapper: SVG banner behind text */
-.step1LabelWrap {
+/* CV mouse demo gif wrapper — rotated to sit upright on the (rotated) corkboard.
+   Tape lives inside this wrapper so it sticks to the gif's visual top. */
+.gifWrap {
   position: absolute;
-  top: 81.5%;
-  left: 62%;
-  height: 58px;
-  width: 248.184px;
-  transform: rotate(187deg);
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  padding-left: 38px;
-  overflow: visible;
-}
-
-/* Step 1 label: 19px, tracking 3.23px */
-.step1Label {
-  flex: 1;
-  font-family: "Averia Libre", sans-serif;
-  font-size: 19px;
-  letter-spacing: 3.23px;
-  color: #000;
-  text-align: center;
-  margin: 0;
-  z-index: 1;
-}
-
-/* CV mouse demo gif — fills the area where the two polaroids used to live */
-.cvMouseGif {
-  position: absolute;
-  top: 30%;
-  left: 28%;
-  width: 60%;
-  height: 50%;
-  object-fit: contain;
-  transform: rotate(180deg);
-  z-index: 3;
+  bottom: 15%;
+  right: 4%;
+  width: 40%;
+  height: 35%;
+  transform: rotate(175deg);
+  z-index: 5;
   pointer-events: none;
 }
 
-/* Step 3 label wrapper */
-.step3LabelWrap {
+.gifImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Pink tape on the visual top of the gif. The wrapper is rotated ~175deg
+   (close to 180), so the wrapper's local BOTTOM becomes the visual TOP. */
+.gifTape {
   position: absolute;
-  top: 26%;
-  left: 40%;
-  height: 58px;
-  width: 400.615px;
-  transform: rotate(187deg);
+  top: -10px;
+  left: 50%;
+  width: 110px;
+  height: 24px;
+  background: #e405ac;
+  transform: translateX(-50%) rotate(-3deg);
+  box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.2);
+  z-index: 6;
+}
+
+/* Pink-taped label wrap below the gif (text added by the user later). */
+.tapeLabelWrap {
+  position: absolute;
+  bottom: 15%;
+  right: 42%;
+  width: 200px;
+  height: 400px;
+  background: #fff;
+  border-radius: 6px;
+  transform: rotate(184deg);
+  box-shadow:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.15);
   z-index: 4;
   display: flex;
-  align-items: center;
-  padding-left: 38px;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 22px 24px 24px 24px;
+  overflow: visible;
 }
 
-/* Step 3 label: 19px, tracking 3.23px */
-.step3Label {
-  flex: 1;
-  font-family: "Averia Libre", sans-serif;
-  font-size: 19px;
-  letter-spacing: 3.23px;
-  color: #000;
-  text-align: center;
+.tapeLabelTape {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 90px;
+  height: 22px;
+  background: #e405ac;
+  transform: translateX(-50%) rotate(-4deg);
+  z-index: 5;
+}
+
+.tapeLabelText {
+  list-style: disc;
+  padding: 0 0 0 1.2em;
   margin: 0;
-  z-index: 1;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #000;
+  text-align: left;
 }
 
-/* Arrow from step 3 to info button */
+.tapeLabelText li {
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.tapeLabelText li:last-child {
+  margin-bottom: 0;
+}
+
+/* Black arrow pointing at the info button (sits to the side of it).
+   InfoButtonWrap sits at top:10% right:5%; this arrow lives just to the
+   visual right of the info button in the rotated cork-board space. */
 .arrow2 {
   position: absolute;
-  top: 20%;
-  right: 15%;
-  width: 32px;
-  height: 11px;
-  transform: rotate(187deg) rotate(117deg);
+  top: 28%;
+  right: 50%;
+  width: 44px;
+  height: 16px;
+  transform: rotate(-10deg);
   z-index: 4;
   pointer-events: none;
 }
@@ -409,8 +428,8 @@
 /* Info button (Figma: 46px Jersey 10, tracking 7.82px, pink bg, yellow border 7px) */
 .infoButtonWrap {
   position: absolute;
-  top: 10%;
-  right: 15%;
+  top: 22%;
+  right: 8%;
   width: 273px;   /* 259 content + 7*2 border */
   height: 108px;  /* 94 content + 7*2 border */
   transform: rotate(187deg);
