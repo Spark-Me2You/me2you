@@ -84,11 +84,10 @@
 }
 
 .miiBody {
-  max-width: 90%;
-  max-height: 80%;
+  max-height: 45%;
+  width: auto;
   object-fit: contain;
   display: block;
-  transform: scale(0.6);
 }
 
 .miiFace {

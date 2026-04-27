@@ -133,50 +133,34 @@ export const PixiHub: React.FC<{
           let accRelativeToFace = true;
 
           if (accessoryOptions && faceSprite) {
-            const { accessory, texture: accTex, leftEyePoint, rightEyePoint, foreheadTopPoint } =
-              accessoryOptions;
+            const { accessory, texture: accTex } = accessoryOptions;
             accessorySprite = new Sprite(accTex);
             accessorySprite.anchor.set(0.5, 0.5);
             app.stage.addChild(accessorySprite);
 
             const faceW = faceSprite.width;
             const faceH = faceSprite.height;
+            const aspect = accTex.width / accTex.height;
 
-            if (accessory === 'sunglasses' && leftEyePoint && rightEyePoint) {
-              const eyeMidX = (leftEyePoint.x + rightEyePoint.x) / 2;
-              const eyeMidY = (leftEyePoint.y + rightEyePoint.y) / 2;
-              const eyeDist = Math.abs(rightEyePoint.x - leftEyePoint.x);
-              const targetW = Math.max(eyeDist * 2.4 * faceW, 30);
-              const aspect = accTex.width / accTex.height;
-              accessorySprite.width = targetW;
-              accessorySprite.height = targetW / aspect;
-              accOffsetX = (eyeMidX - 0.5) * faceW;
-              accOffsetY = (eyeMidY - 0.5) * faceH;
-              accRelativeToFace = true;
-            } else if (accessory === 'hat' && foreheadTopPoint) {
-              const targetW = faceW * 1.1;
-              const aspect = accTex.width / accTex.height;
-              accessorySprite.width = targetW;
-              accessorySprite.height = targetW / aspect;
-              accOffsetX = (foreheadTopPoint.x - 0.5) * faceW;
-              accOffsetY = (foreheadTopPoint.y - 0.5) * faceH - accessorySprite.height / 2;
-              accRelativeToFace = true;
-            } else if (accessory === 'balloon') {
-              accessorySprite.width = 80;
-              accessorySprite.height = 80;
-              accOffsetX = 65;
-              accOffsetY = -230;
-              accRelativeToFace = false;
-            } else {
-              // Fallback when landmarks are missing: place above face center
-              const targetW = faceW * 0.9;
-              const aspect = accTex.width / accTex.height;
-              accessorySprite.width = targetW;
-              accessorySprite.height = targetW / aspect;
+            // Offsets derived from the customize-screen CSS proportions so hub and
+            // preview look the same. All positions are relative to the face sprite center.
+            if (accessory === 'sunglasses') {
+              accessorySprite.width = faceW * 1.1;
+              accessorySprite.height = accessorySprite.width / aspect;
               accOffsetX = 0;
-              accOffsetY = -faceH * 0.5 - accessorySprite.height / 2;
-              accRelativeToFace = true;
+              accOffsetY = faceH * 0.33;  // eye level: 33% below face center
+            } else if (accessory === 'hat') {
+              accessorySprite.width = faceW * 0.85;
+              accessorySprite.height = accessorySprite.width / aspect;
+              accOffsetX = 0;
+              accOffsetY = -faceH * 0.16;  // 16% above face center (hat on head)
+            } else if (accessory === 'balloon') {
+              accessorySprite.width = faceW * 0.58;
+              accessorySprite.height = accessorySprite.width / aspect;
+              accOffsetX = faceW * 0.73;   // upper-right of face
+              accOffsetY = -faceH * 0.20;
             }
+            accRelativeToFace = true;
           }
 
           let wx = startX;
