@@ -153,7 +153,7 @@ export const CustomizeAvatarView: React.FC = () => {
         userProfile.org_id,
         settings,
       );
-      navigate(-1);
+      navigate("/user/profile", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "failed to save");
     } finally {

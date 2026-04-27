@@ -241,7 +241,9 @@ export const hubService = {
         .eq("owner_id", ownerId)
         .eq("org_id", orgId)
         .eq("is_public", true)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) {
         console.error(
