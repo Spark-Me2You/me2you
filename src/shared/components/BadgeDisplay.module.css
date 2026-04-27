@@ -3,9 +3,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-top: 8px;
+  margin: 0;
   width: 100%;
   justify-items: center;
+  align-items: center;
 }
 
 /* Each badge is wrapped so we can attach a tooltip on hover. */

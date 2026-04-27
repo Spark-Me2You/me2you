@@ -54,19 +54,21 @@ interface ProfileCardViewProps {
   onHome?: () => void;
 }
 
-const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const FractalBox: React.FC<{ children: React.ReactNode; maxHeight?: number | string }> = ({ children, maxHeight }) => (
   <div
     style={{
       position: 'relative',
       width: '100%',
       minHeight: '90px',
+      maxHeight,
       maxWidth: '100%',
-      overflow: 'hidden',
+      // overflow stays visible so the tape (positioned at -5/-10) isn't clipped.
+      overflow: 'visible',
       boxSizing: 'border-box',
     }}
   >
-    <div style={{ ...TAPE_STYLE, top: -5, left: -10 }} />
-    <div style={{ ...TAPE_STYLE, bottom: -5, right: -10 }} />
+    <div style={{ ...TAPE_STYLE, top: -5, left: -10, zIndex: 3 }} />
+    <div style={{ ...TAPE_STYLE, bottom: -5, right: -10, zIndex: 3 }} />
 
     <svg
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
@@ -90,7 +92,17 @@ const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         filter="url(#fractal-box)"
       />
     </svg>
-    <div style={{ position: 'relative', zIndex: 1, padding: '10px 14px' }}>
+    <div
+      style={{
+        position: 'relative',
+        zIndex: 1,
+        padding: '10px 14px',
+        overflow: 'auto',
+        maxHeight: maxHeight ? '100%' : undefined,
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       {children}
     </div>
   </div>
@@ -212,22 +224,24 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                   interests:
                 </span>
               </div>
-              <FractalBox>
+              <FractalBox maxHeight={140}>
                 {Array.isArray(owner.interests) && owner.interests.length > 0 ? (
-                  <ul style={{ ...TEXT_STYLE, paddingLeft: '1.5em' }}>
+                  <ul style={{ ...TEXT_STYLE, fontSize: 14, lineHeight: 1.25, paddingLeft: '1.4em', margin: 0 }}>
                     {owner.interests.map((interest, i) => (
                       <li key={i}>{interest}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p style={{ ...TEXT_STYLE, color: '#999', fontStyle: 'italic' }}>
+                  <p style={{ ...TEXT_STYLE, fontSize: 14, color: '#999', fontStyle: 'italic' }}>
                     nothing listed yet
                   </p>
                 )}
               </FractalBox>
             </div>
 
-            {/* Bottom row: badges (left half) + envelope (right half) */}
+            {/* Bottom row: badges (left half) + envelope (right half).
+                `flex: 1` lets it claim the remaining vertical space below
+                interests so badges/envelope can center between the two edges. */}
             <div
               style={{
                 display: 'flex',
@@ -235,10 +249,19 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
                 marginTop: '2%',
                 width: '100%',
                 minWidth: 0,
-                alignItems: 'flex-start',
+                flex: 1,
+                alignItems: 'center',
               }}
             >
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <BadgeDisplay
                   userId={owner.id}
                   userCreatedAt={owner.created_at}

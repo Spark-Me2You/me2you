@@ -89,8 +89,7 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
           fontFamily: "'Jersey 10', sans-serif",
           fontSize: 'clamp(14px, 1.6vw, 28px)',
           letterSpacing: '0.17em',
-          color: '#fff',
-          textShadow: '2px 2px 0 rgba(0,0,0,0.45)',
+          color: '#000000',
           textAlign: 'center',
           padding: '0 12%',
           pointerEvents: 'none',
@@ -192,8 +191,8 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                   onClick={handleClose}
                   style={{
                     position: 'absolute',
-                    bottom: '12%',
-                    left: '50%',
+                    bottom: '5%',
+                    left: '80%',
                     transform: 'translateX(-50%)',
                     fontFamily: "'Jersey 10', sans-serif",
                     fontSize: 16,
@@ -220,7 +219,7 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 12,
+                    gap: 60,
                   }}
                 >
                   <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 20, letterSpacing: '0.1em', margin: 0, color: '#333', textAlign: 'center' }}>
@@ -241,7 +240,7 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                       boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                     }}
                   >
-                    generate qr
+                    generate QR code
                   </button>
                 </div>
 
@@ -250,11 +249,11 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                   onClick={handleClose}
                   style={{
                     position: 'absolute',
-                    bottom: '14%',
+                    bottom: '10%',
                     left: '50%',
                     transform: 'translateX(-50%)',
                     fontFamily: "'Jersey 10', sans-serif",
-                    fontSize: 16,
+                    fontSize: 20,
                     letterSpacing: '0.1em',
                     color: '#888',
                     background: 'none',
