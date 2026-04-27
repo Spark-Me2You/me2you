@@ -24,6 +24,19 @@ interface ClaimDrawingResponse {
   error?: string;
 }
 
+interface ClaimMessageResponse {
+  success: boolean;
+  token_id?: string;
+  message_id?: string;
+  error?: string;
+}
+
+export interface MessageClaimResult {
+  success: true;
+  token_id: string;
+  message_id: string;
+}
+
 export interface DrawingClaimResult {
   success: true;
   token_id: string;
@@ -102,12 +115,44 @@ export const claimService = {
     };
   },
 
+  executeMessageClaim: async (tokenId: string, body: string): Promise<MessageClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ClaimMessageResponse>(
+      'claim-message',
+      { body: { token_id: tokenId, body } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-message error:', error);
+      throw new Error(error.message || 'Failed to send message');
+    }
+
+    if (!data?.success || !data.token_id || !data.message_id) {
+      console.error('[claimService] claim-message returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to send message');
+    }
+
+    return {
+      success: true,
+      token_id: data.token_id,
+      message_id: data.message_id,
+    };
+  },
+
   subscribeToClaim: (
     tokenId: string,
     onClaimed: (payload: ClaimPayload, claimedBy: string) => void
   ): (() => void) => {
+    const channelName = `claim-token-${tokenId}`;
+    let removed = false;
+
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      supabase.removeChannel(channel);
+    };
+
     const channel = supabase
-      .channel(`claim-token-${tokenId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -119,14 +164,19 @@ export const claimService = {
         (event) => {
           const row = event.new as { status: string; payload: ClaimPayload; claimed_by: string };
           if (row.status === 'claimed') {
+            remove();
             onClaimed(row.payload, row.claimed_by);
           }
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          console.error(`[realtime] ${channelName} error:`, err);
+        } else {
+          console.log(`[realtime] ${channelName} ${status}`);
+        }
+      });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return remove;
   },
 };

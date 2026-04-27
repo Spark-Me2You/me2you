@@ -9,7 +9,7 @@ import type { RandomImageData, UserProfile } from "../types/image";
 
 type DiscoveryUserData = Pick<
   UserProfile,
-  "id" | "name" | "status" | "pronouns" | "major" | "interests" | "created_at"
+  "id" | "name" | "status" | "pronouns" | "major" | "interests" | "created_at" | "accessory"
 >;
 
 export const discoveryService = {
@@ -49,7 +49,8 @@ export const discoveryService = {
             pronouns,
             major,
             interests,
-            created_at
+            created_at,
+            accessory
           )
         `,
         )
@@ -123,6 +124,7 @@ export const discoveryService = {
           major: userData.major ?? null,
           interests: userData.interests ?? null,
           created_at: userData.created_at,
+          accessory: userData.accessory ?? null,
         },
         imageUrl,
       };
@@ -213,7 +215,8 @@ export const discoveryService = {
             pronouns,
             major,
             interests,
-            created_at
+            created_at,
+            accessory
           )
         `,
         )
@@ -276,6 +279,7 @@ export const discoveryService = {
               major: userData.major ?? null,
               interests: userData.interests ?? null,
               created_at: userData.created_at,
+              accessory: userData.accessory ?? null,
             },
             imageUrl,
           };

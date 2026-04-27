@@ -19,6 +19,7 @@ export interface HubUserData {
     major: string | null;
     interests: string[] | null;
     created_at: string;
+    accessory: 'sunglasses' | 'hat' | 'balloon' | null;
   };
   profileImageUrl: string | null;
 }
@@ -31,6 +32,7 @@ type UserProfileData = {
   major: string | null;
   interests: string[] | null;
   created_at: string;
+  accessory: 'sunglasses' | 'hat' | 'balloon' | null;
 };
 
 export const hubService = {
@@ -74,7 +76,8 @@ export const hubService = {
             pronouns,
             major,
             interests,
-            created_at
+            created_at,
+            accessory
           )
         `,
         )
@@ -139,6 +142,7 @@ export const hubService = {
                 major: userData.major,
                 interests: userData.interests,
                 created_at: userData.created_at,
+                accessory: userData.accessory ?? null,
               },
               profileImageUrl,
             });
@@ -154,7 +158,7 @@ export const hubService = {
       // Step 3: Query for users WITHOUT profile images
       const { data: allUsersData, error: usersError } = await supabase
         .from("user")
-        .select("id, name, status, pronouns, major, interests, created_at")
+        .select("id, name, status, pronouns, major, interests, created_at, accessory")
         .eq("org_id", orgId)
         .eq("visibility", "public");
 
@@ -187,6 +191,7 @@ export const hubService = {
                 major: user.major,
                 interests: user.interests,
                 created_at: user.created_at,
+                accessory: (user.accessory as 'sunglasses' | 'hat' | 'balloon' | null) ?? null,
               },
               profileImageUrl: null,
             });
@@ -236,7 +241,9 @@ export const hubService = {
         .eq("owner_id", ownerId)
         .eq("org_id", orgId)
         .eq("is_public", true)
-        .single();
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) {
         console.error(

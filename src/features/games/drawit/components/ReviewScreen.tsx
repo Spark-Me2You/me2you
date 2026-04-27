@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import QRCode from "react-qr-code";
+import React, { useState, useRef } from "react";
 import { useAuth } from "@/core/auth";
-import { claimService } from "@/core/supabase/claimService";
-import { stageDrawingForClaim } from "../utils/gallerySupabase";
+import { ClaimSection } from "@/features/claim";
+import type { ClaimPayload } from "@/features/claim";
+import { uploadTempDrawing } from "../utils/gallerySupabase";
 import nextButton from "../../../../assets/next_button.svg";
 import styles from "./ReviewScreen.module.css";
 
@@ -16,8 +16,8 @@ interface Props {
 
 type StageState =
   | { kind: "idle" }
-  | { kind: "staging" }
-  | { kind: "ready"; claimUrl: string; tokenId: string; expiresAt: string }
+  | { kind: "uploading" }
+  | { kind: "ready"; payload: ClaimPayload }
   | { kind: "error"; message: string };
 
 export const ReviewScreen: React.FC<Props> = ({
@@ -29,39 +29,31 @@ export const ReviewScreen: React.FC<Props> = ({
 }) => {
   const { kioskOrgId } = useAuth();
   const [stage, setStage] = useState<StageState>({ kind: "idle" });
-  const hasStagedRef = useRef(false);
-
-  // Subscribe to the token so we know when the user completes the claim on
-  // their phone — the kiosk can then auto-advance to the thanks screen.
-  useEffect(() => {
-    if (stage.kind !== "ready") return;
-    const unsubscribe = claimService.subscribeToClaim(stage.tokenId, () => {
-      onClaimed();
-    });
-    return unsubscribe;
-  }, [stage, onClaimed]);
+  const hasUploadedRef = useRef(false);
 
   const handleClaim = async () => {
-    if (hasStagedRef.current) return;
-    hasStagedRef.current = true;
+    if (hasUploadedRef.current) return;
+    hasUploadedRef.current = true;
 
     if (!kioskOrgId) {
       setStage({ kind: "error", message: "Kiosk session is missing an org — sign in again." });
       return;
     }
 
-    setStage({ kind: "staging" });
+    setStage({ kind: "uploading" });
     try {
-      const { claim_url, token_id, expires_at } = await stageDrawingForClaim(
-        imageDataUrl,
-        kioskOrgId,
-        word,
-      );
-      setStage({ kind: "ready", claimUrl: claim_url, tokenId: token_id, expiresAt: expires_at });
+      const { tempPath } = await uploadTempDrawing(imageDataUrl, kioskOrgId);
+      const payload: ClaimPayload = {
+        version: "1.0",
+        type: "drawing",
+        display: { title: "Claim your drawing", description: word },
+        data: { image_path: tempPath, prompt: word },
+      };
+      setStage({ kind: "ready", payload });
     } catch (err) {
-      hasStagedRef.current = false;
-      const message = err instanceof Error ? err.message : "Failed to generate claim QR";
-      console.error("[drawit:review] staging failed:", err);
+      hasUploadedRef.current = false;
+      const message = err instanceof Error ? err.message : "Failed to upload drawing";
+      console.error("[drawit:review] upload failed:", err);
       setStage({ kind: "error", message });
     }
   };
@@ -78,7 +70,7 @@ export const ReviewScreen: React.FC<Props> = ({
           type="button"
           className={styles.primary}
           onClick={handleClaim}
-          disabled={stage.kind === "staging" || stage.kind === "ready"}
+          disabled={stage.kind === "uploading" || stage.kind === "ready"}
         >
           Claim & Send to Gallery
         </button>
@@ -92,7 +84,7 @@ export const ReviewScreen: React.FC<Props> = ({
           <div className={styles.modalCard}>
             <h3 className={styles.modalTitle}>Scan to Claim</h3>
 
-            {stage.kind === "staging" && (
+            {stage.kind === "uploading" && (
               <p className={styles.modalSubtitle}>Preparing your QR code…</p>
             )}
 
@@ -101,9 +93,7 @@ export const ReviewScreen: React.FC<Props> = ({
                 <p className={styles.modalSubtitle}>
                   Scan with your phone to save this drawing to your gallery.
                 </p>
-                <div className={styles.qrWrap}>
-                  <QRCode value={stage.claimUrl} size={220} />
-                </div>
+                <ClaimSection payload={stage.payload} onClaimed={onClaimed} />
               </>
             )}
 

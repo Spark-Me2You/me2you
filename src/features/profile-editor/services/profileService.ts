@@ -12,6 +12,7 @@ import {
 import { registrationService } from "@/features/registration/services/registrationService";
 import type { UserProfile } from "@/core/auth/AuthContext";
 import type {
+  AvatarLandmarkPoints,
   UpdateProfileInput,
   ProfileWithImage,
   DeleteImagesResponse,
@@ -71,6 +72,26 @@ const isTransientSaveError = (error: unknown): boolean => {
     message.includes("connection") ||
     message.includes("abort")
   );
+};
+
+const parsePoint = (raw: unknown): { x: number; y: number } | null => {
+  if (!raw) return null;
+
+  if (typeof raw === "string") {
+    const parts = raw.replace(/[()]/g, "").split(",");
+    const x = Number(parts[0]);
+    const y = Number(parts[1]);
+    return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+  }
+
+  if (typeof raw === "object" && raw !== null) {
+    const point = raw as { x?: unknown; y?: unknown };
+    if (typeof point.x === "number" && typeof point.y === "number") {
+      return { x: point.x, y: point.y };
+    }
+  }
+
+  return null;
 };
 
 const ensureFreshSession = async (
@@ -189,6 +210,7 @@ export const profileService = {
             .from("gesture_image")
             .select("id, storage_path")
             .eq("owner_id", userId)
+            .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
           PROFILE_QUERY_TIMEOUT_MS,
@@ -197,7 +219,9 @@ export const profileService = {
         withTimeout(
           supabase
             .from("cropped_image")
-            .select("id, storage_path")
+            .select(
+              "id, storage_path, centroid_point, left_eye_point, right_eye_point, forehead_top_point",
+            )
             .eq("owner_id", userId)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -216,6 +240,14 @@ export const profileService = {
 
     const imageData = imageResponse.data;
     const bobbleheadData = bobbleheadResponse.data;
+    const bobbleheadLandmarks: AvatarLandmarkPoints | null = bobbleheadData
+      ? {
+          centroid_point: parsePoint(bobbleheadData.centroid_point),
+          left_eye_point: parsePoint(bobbleheadData.left_eye_point),
+          right_eye_point: parsePoint(bobbleheadData.right_eye_point),
+          forehead_top_point: parsePoint(bobbleheadData.forehead_top_point),
+        }
+      : null;
 
     const [imageUrl, bobbleheadUrl] = await Promise.all([
       imageData?.storage_path
@@ -248,6 +280,7 @@ export const profileService = {
       bobbleheadUrl,
       bobbleheadStoragePath: bobbleheadData?.storage_path || null,
       bobbleheadId: bobbleheadData?.id || null,
+      bobbleheadLandmarks,
     };
   },
 

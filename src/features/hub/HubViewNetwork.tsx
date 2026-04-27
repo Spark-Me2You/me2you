@@ -39,6 +39,7 @@ function toRandomImageData(hubUser: HubUserData, orgId: string): RandomImageData
       interests: hubUser.user.interests,
       org_id: orgId,
       created_at: hubUser.user.created_at,
+      accessory: hubUser.user.accessory ?? null,
     },
     imageUrl: hubUser.profileImageUrl || '',
   };

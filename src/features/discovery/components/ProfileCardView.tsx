@@ -7,6 +7,7 @@
 import React from 'react';
 import type { RandomImageData } from '../types/image';
 import { BadgeDisplay } from '@/shared/components/BadgeDisplay';
+import { SendMessageButton } from '@/features/messages';
 import me2youLogo from '@/assets/me2you.png';
 import registerQr from '@/assets/registerqr.png';
 import otterHandImage from '@/assets/hand.png';
@@ -40,6 +41,10 @@ const TEXT_STYLE: React.CSSProperties = {
   letterSpacing: '-0.72px',
   margin: 0,
   textAlign: 'left',
+  // Keep typed text inside the box.
+  wordBreak: 'break-word',
+  overflowWrap: 'break-word',
+  whiteSpace: 'normal',
 };
 
 interface ProfileCardViewProps {
@@ -49,10 +54,21 @@ interface ProfileCardViewProps {
   onHome?: () => void;
 }
 
-const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ position: 'relative', width: '70%', minHeight: '90px' }}>
-    <div style={{ ...TAPE_STYLE, top: -5, left: -10 }} />
-    <div style={{ ...TAPE_STYLE, bottom: -5, right: -10 }} />
+const FractalBox: React.FC<{ children: React.ReactNode; maxHeight?: number | string }> = ({ children, maxHeight }) => (
+  <div
+    style={{
+      position: 'relative',
+      width: '100%',
+      minHeight: '90px',
+      maxHeight,
+      maxWidth: '100%',
+      // overflow stays visible so the tape (positioned at -5/-10) isn't clipped.
+      overflow: 'visible',
+      boxSizing: 'border-box',
+    }}
+  >
+    <div style={{ ...TAPE_STYLE, top: -5, left: -10, zIndex: 3 }} />
+    <div style={{ ...TAPE_STYLE, bottom: -5, right: -10, zIndex: 3 }} />
 
     <svg
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
@@ -76,7 +92,17 @@ const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
         filter="url(#fractal-box)"
       />
     </svg>
-    <div style={{ position: 'relative', zIndex: 1, padding: '10px 14px' }}>
+    <div
+      style={{
+        position: 'relative',
+        zIndex: 1,
+        padding: '10px 14px',
+        overflow: 'auto',
+        maxHeight: maxHeight ? '100%' : undefined,
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
       {children}
     </div>
   </div>
@@ -175,10 +201,10 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           </div>
 
           {/* ── Right column ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5%', paddingTop: '0.5%' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4%', paddingTop: '0.5%', minWidth: 0 }}>
 
             {/* Status */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, width: '100%' }}>
               <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
                 <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   status:
@@ -192,34 +218,67 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             </div>
 
             {/* Interests */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, width: '100%' }}>
               <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
                 <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   interests:
                 </span>
               </div>
-              <FractalBox>
+              <FractalBox maxHeight={140}>
                 {Array.isArray(owner.interests) && owner.interests.length > 0 ? (
-                  <ul style={{ ...TEXT_STYLE, paddingLeft: '1.5em' }}>
+                  <ul style={{ ...TEXT_STYLE, fontSize: 14, lineHeight: 1.25, paddingLeft: '1.4em', margin: 0 }}>
                     {owner.interests.map((interest, i) => (
                       <li key={i}>{interest}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p style={{ ...TEXT_STYLE, color: '#999', fontStyle: 'italic' }}>
+                  <p style={{ ...TEXT_STYLE, fontSize: 14, color: '#999', fontStyle: 'italic' }}>
                     nothing listed yet
                   </p>
                 )}
               </FractalBox>
             </div>
 
-            {/* Badges */}
-            <div style={{ marginTop: '2%' }}>
-              <BadgeDisplay
-                userId={owner.id}
-                userCreatedAt={owner.created_at}
-                orgId={owner.org_id}
-              />
+            {/* Bottom row: badges (left half) + envelope (right half).
+                `flex: 1` lets it claim the remaining vertical space below
+                interests so badges/envelope can center between the two edges. */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '4%',
+                marginTop: '2%',
+                width: '100%',
+                minWidth: 0,
+                flex: 1,
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <BadgeDisplay
+                  userId={owner.id}
+                  userCreatedAt={owner.created_at}
+                  orgId={owner.org_id}
+                />
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SendMessageButton recipientId={owner.id} recipientName={owner.name} />
+              </div>
             </div>
 
           </div>

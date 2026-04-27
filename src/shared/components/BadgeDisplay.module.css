@@ -1,12 +1,82 @@
+/* 3-column grid; rows wrap (typically capped at 2 rows = 6 badges). */
 .badgeContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 0;
+  width: 100%;
+  justify-items: center;
+  align-items: center;
+}
+
+/* Each badge is wrapped so we can attach a tooltip on hover. */
+.badgeWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .badge {
-  width: 80px;
+  width: 100%;
+  max-width: 90px;
   height: auto;
   object-fit: contain;
+  display: block;
+  transition: transform 120ms ease;
+}
+
+/* Scale up when there are only a few badges so they don't look lonely. */
+.badgeContainer[data-count="1"] {
+  grid-template-columns: 1fr;
+}
+.badgeContainer[data-count="1"] .badge { max-width: 180px; }
+
+.badgeContainer[data-count="2"] {
+  grid-template-columns: repeat(2, 1fr);
+}
+.badgeContainer[data-count="2"] .badge { max-width: 140px; }
+
+.badgeContainer[data-count="3"] .badge { max-width: 110px; }
+
+.badgeWrap:hover .badge {
+  transform: scale(1.06);
+}
+
+/* Tooltip — shown on hover, sits just above the badge. */
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1a1a1a transparent transparent transparent;
+}
+
+.badgeWrap:hover .tooltip,
+.badgeWrap:focus-within .tooltip {
+  opacity: 1;
 }

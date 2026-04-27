@@ -1,15 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { supabase } from '@/core/supabase/client';
 import { claimService } from '@/core/supabase/claimService';
+import { MessageComposePage } from '@/features/messages';
 import styles from './ClaimPage.module.css';
+
+interface ComposeContext {
+  tokenId: string;
+  recipientName: string;
+}
 
 export function ClaimPage() {
   const { tokenId } = useParams<{ tokenId: string }>();
   const navigate = useNavigate();
   const { authMode, isLoading } = useAuth();
   const hasExecutedRef = useRef(false);
+  const [composeContext, setComposeContext] = useState<ComposeContext | null>(null);
 
   useEffect(() => {
     if (isLoading) return;
@@ -34,6 +41,7 @@ export function ClaimPage() {
     // Peek at the pending token's payload to decide which edge function to call.
     // Drawing claims need a dedicated function because moving the PNG between
     // buckets is a storage op that can't live in a Postgres trigger.
+    // Message claims show a compose UI instead of auto-executing.
     (async () => {
       try {
         const { data: token } = await supabase
@@ -42,7 +50,16 @@ export function ClaimPage() {
           .eq('id', tokenId)
           .single();
 
-        const payloadType = (token?.payload as { type?: string } | null)?.type;
+        const payload = token?.payload as { type?: string; data?: { recipient_name?: string } } | null;
+        const payloadType = payload?.type;
+
+        if (payloadType === 'message') {
+          setComposeContext({
+            tokenId,
+            recipientName: payload?.data?.recipient_name ?? 'someone',
+          });
+          return;
+        }
 
         if (payloadType === 'drawing') {
           await claimService.executeDrawingClaim(tokenId);
@@ -58,6 +75,15 @@ export function ClaimPage() {
       }
     })();
   }, [authMode, isLoading, tokenId, navigate]);
+
+  if (composeContext) {
+    return (
+      <MessageComposePage
+        tokenId={composeContext.tokenId}
+        recipientName={composeContext.recipientName}
+      />
+    );
+  }
 
   return (
     <div className={styles.page}>

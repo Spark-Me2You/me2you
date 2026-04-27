@@ -16,6 +16,7 @@ import type { FlapFlapState } from "../game/FlapFlapEngine";
 import { FLAPFLAP_CONFIG } from "../config/flapflapConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { useAuth } from "@/core/auth";
+import { ExitButton } from "@/shared/components";
 import type { GameProps } from "../../types/game";
 import { GameOverClaim } from "./GameOverClaim";
 import { FlapFlapLeaderboard } from "./FlapFlapLeaderboard";
@@ -282,9 +283,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
       <CameraOverlay onVideoReady={handleVideoReady} />
 
-      <button className={styles.exitButton} onClick={onExit}>
-        exit
-      </button>
+      <ExitButton onClick={onExit} />
     </div>
   );
 };

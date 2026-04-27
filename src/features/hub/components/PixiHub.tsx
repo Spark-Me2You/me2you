@@ -1,14 +1,45 @@
 import React, { useEffect, useRef } from "react";
 import { Application, Assets, Sprite, Texture } from "pixi.js";
+import type { Accessory } from "@/core/auth/AuthContext";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
-import { croppedImageService } from "@/features/hub/services/croppedImageService";
+import { croppedImageService, type CroppedImageRow } from "@/features/hub/services/croppedImageService";
+import { hubRealtimeService } from "@/features/hub/services/hubRealtimeService";
 import { storageService } from "@/core/supabase/storage";
+import {
+  HUB_ACCESSORY_TUNING,
+  MII_BODY_SCALE,
+  MII_FACE_SCALE,
+  MII_HEAD_OFFSET_X,
+  MII_HEAD_OFFSET_Y,
+  getAccessoryPlacement,
+  getBalloonCenterFromHandAnchor,
+} from "@/shared/utils";
+import { ExitButton } from "@/shared/components";
+import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
 
 export interface CharacterClickData {
   owner_id: string;
   cropped_image_id: string;
   storage_path: string;
+}
+
+type AccessoryOptions = {
+  accessory: Accessory | "glasses";
+  texture: Texture;
+  leftEyePoint?: { x: number; y: number };
+  rightEyePoint?: { x: number; y: number };
+  foreheadTopPoint?: { x: number; y: number };
+  relativeX?: number;
+  relativeY?: number;
+  scale?: number;
+};
+
+interface WalkerHandle {
+  ownerId: string;
+  tick: (dt: number) => void;
+  replaceAccessory: (options?: AccessoryOptions) => void;
+  replaceFace: (storagePath: string) => Promise<void>;
 }
 
 export const PixiHub: React.FC<{
@@ -17,6 +48,9 @@ export const PixiHub: React.FC<{
 }> = ({ onCharacterClick, orgId }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
+  const addWalkerRef = useRef<((row: CroppedImageRow) => Promise<void>) | null>(null);
+  const updateAccRef = useRef<((ownerId: string, settings: AccessorySettings) => void) | null>(null);
+  const replaceFaceRef = useRef<((ownerId: string, storagePath: string) => Promise<void>) | null>(null);
   const { transitionTo } = useAppState();
 
   useEffect(() => {
@@ -62,8 +96,10 @@ export const PixiHub: React.FC<{
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
-        const HEAD_OFFSET_X = 5;
-        const HEAD_OFFSET_Y = -145;
+        const BODY_SCALE = MII_BODY_SCALE;
+        const FACE_SCALE = MII_FACE_SCALE;
+        const HEAD_OFFSET_X = MII_HEAD_OFFSET_X;
+        const HEAD_OFFSET_Y = MII_HEAD_OFFSET_Y;
 
         function buildFrameSets(
           def: Texture,
@@ -91,13 +127,13 @@ export const PixiHub: React.FC<{
           ownerId?: string,
           croppedImageId?: string,
           storagePath?: string,
-        ) {
+          accessoryOptions?: AccessoryOptions,
+        ): WalkerHandle {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
-          walker.scale.set(0.4);
+          walker.scale.set(BODY_SCALE);
           app.stage.addChild(walker);
 
-          // Make walker clickable if we have owner data
           if (ownerId && onCharacterClick) {
             walker.interactive = true;
             walker.cursor = "pointer";
@@ -113,11 +149,69 @@ export const PixiHub: React.FC<{
           let faceSprite: Sprite | null = null;
           if (faceTexture && centroidPoint) {
             faceSprite = new Sprite(faceTexture);
-            // Use center anchor since centroid is relative to original image, not crop
             faceSprite.anchor.set(0.5, 0.5);
-            faceSprite.scale.set(0.35);
+            faceSprite.scale.set(FACE_SCALE);
             app.stage.addChild(faceSprite);
           }
+
+          let accessorySprite: Sprite | null = null;
+          let accOffsetX = 0;
+          let accOffsetY = 0;
+          let accRelativeToFace = true;
+          let accUseBalloonHandAnchor = false;
+          let accBaseRotation = 0;
+
+          function applyAccessoryOptions(options?: AccessoryOptions) {
+            if (accessorySprite) {
+              app.stage.removeChild(accessorySprite);
+              accessorySprite.destroy();
+              accessorySprite = null;
+            }
+            accOffsetX = 0;
+            accOffsetY = 0;
+            accRelativeToFace = true;
+            accUseBalloonHandAnchor = false;
+            accBaseRotation = 0;
+
+            if (options && faceSprite) {
+              const {
+                accessory,
+                texture: accTex,
+                relativeX = 0,
+                relativeY = 0,
+                scale = 1,
+              } = options;
+              accessorySprite = new Sprite(accTex);
+              accessorySprite.anchor.set(0.5, 0.5);
+              app.stage.addChild(accessorySprite);
+
+              const faceW = faceSprite.width;
+              const faceH = faceSprite.height;
+              const aspect = accTex.width / accTex.height;
+
+              const normalizedAccessory: Accessory =
+                accessory === "glasses" ? "sunglasses" : accessory;
+              const placement = getAccessoryPlacement({
+                accessory: normalizedAccessory,
+                faceWidth: faceW,
+                faceHeight: faceH,
+                accessoryAspectRatio: aspect,
+                relativeX,
+                relativeY,
+                scale,
+              });
+
+              accessorySprite.width = placement.width;
+              accessorySprite.height = placement.height;
+              accOffsetX = placement.offsetX;
+              accOffsetY = placement.offsetY;
+              accBaseRotation = placement.baseRotation;
+              accRelativeToFace = placement.anchor === "face";
+              accUseBalloonHandAnchor = placement.anchor === "balloon-hand";
+            }
+          }
+
+          applyAccessoryOptions(accessoryOptions);
 
           let wx = startX;
           let wy = startY;
@@ -163,7 +257,7 @@ export const PixiHub: React.FC<{
           }
           pickState();
 
-          return (dt: number) => {
+          function tick(dt: number) {
             stateTimer -= dt;
             if (stateTimer <= 0) pickState();
 
@@ -197,7 +291,7 @@ export const PixiHub: React.FC<{
                 ? walkFramesRight
                 : walkFramesLeft;
 
-              walker.scale.x = 0.4;
+              walker.scale.x = BODY_SCALE;
               bobPhase += 0.1 * dt;
               walker.y = wy + Math.sin(bobPhase) * 1.8;
 
@@ -246,6 +340,61 @@ export const PixiHub: React.FC<{
                 faceSprite.rotation = 0;
               }
             }
+
+            if (accessorySprite) {
+              const bobRotation =
+                state === "walk" ? Math.sin(bobPhase * 0.5) * 0.04 : 0;
+
+              if (accUseBalloonHandAnchor) {
+                const handX =
+                  walker.x +
+                  walker.width * HUB_ACCESSORY_TUNING.balloon.handXFactor;
+                const handY =
+                  walker.y -
+                  walker.height * HUB_ACCESSORY_TUNING.balloon.handYFactor;
+
+                const totalRotation = accBaseRotation + bobRotation;
+                const center = getBalloonCenterFromHandAnchor({
+                  handX,
+                  handY,
+                  balloonWidth: accessorySprite.width,
+                  balloonHeight: accessorySprite.height,
+                  rotationRadians: totalRotation,
+                  userDeltaX: accOffsetX,
+                  userDeltaY: accOffsetY,
+                });
+
+                accessorySprite.x = center.x;
+                accessorySprite.y = center.y;
+              } else if (accRelativeToFace) {
+                accessorySprite.x = walker.x + HEAD_OFFSET_X + accOffsetX;
+                accessorySprite.y = walker.y + HEAD_OFFSET_Y + accOffsetY;
+              } else {
+                accessorySprite.x = walker.x + accOffsetX;
+                accessorySprite.y = walker.y + accOffsetY;
+              }
+
+              accessorySprite.rotation = accBaseRotation + bobRotation;
+            }
+          }
+
+          async function replaceFace(storagePath: string) {
+            try {
+              const faceUrl = await storageService.getPhotoUrl(storagePath);
+              const newTexture = await Assets.load(faceUrl);
+              if (faceSprite) {
+                faceSprite.texture = newTexture;
+              }
+            } catch (err) {
+              console.error("[PixiHub] Failed to replace face texture:", err);
+            }
+          }
+
+          return {
+            ownerId: ownerId ?? "",
+            tick,
+            replaceAccessory: applyAccessoryOptions,
+            replaceFace,
           };
         }
 
@@ -273,6 +422,33 @@ export const PixiHub: React.FC<{
           return;
         }
 
+        const loadAccessoryTexture = async (
+          path: string,
+        ): Promise<Texture | null> => {
+          try {
+            return await Assets.load(path);
+          } catch {
+            console.warn(`[PixiHub] Could not load accessory texture: ${path}`);
+            return null;
+          }
+        };
+
+        const [sgTex, hatTex, balloonTex] = await Promise.all([
+          loadAccessoryTexture("/accessories/sunglasses.svg"),
+          loadAccessoryTexture("/accessories/hat.svg"),
+          loadAccessoryTexture("/accessories/balloon.svg"),
+        ]);
+
+        const accessoryTextures: Record<string, Texture> = {};
+        if (sgTex) accessoryTextures["sunglasses"] = sgTex;
+        if (hatTex) accessoryTextures["hat"] = hatTex;
+        if (balloonTex) accessoryTextures["balloon"] = balloonTex;
+
+        if (!isMounted) {
+          app.destroy();
+          return;
+        }
+
         const w = app.screen.width;
         const h = app.screen.height;
 
@@ -283,7 +459,61 @@ export const PixiHub: React.FC<{
           };
         }
 
-        const tickers: Array<(dt: number) => void> = [];
+        const walkersMap = new Map<string, WalkerHandle>();
+
+        async function spawnWalker(row: CroppedImageRow) {
+          const existing = walkersMap.get(row.owner_id);
+          if (existing) {
+            await existing.replaceFace(row.storage_path);
+            return;
+          }
+
+          try {
+            const faceUrl = await storageService.getPhotoUrl(row.storage_path);
+            const faceTexture = await Assets.load(faceUrl);
+            if (!isMounted) return;
+
+            const position = randSpawn();
+            const settings = row.accessorySettings;
+            const selectedAccessory = settings?.selected_accessory ?? null;
+            const accTex = selectedAccessory
+              ? accessoryTextures[selectedAccessory]
+              : undefined;
+
+            const handle = createWalker(
+              position.x,
+              position.y,
+              defaultBodyFrames.idle[0],
+              defaultBodyFrames.idle,
+              defaultBodyFrames.walkRight,
+              defaultBodyFrames.walkLeft,
+              faceTexture,
+              row.centroid_point ?? undefined,
+              row.owner_id,
+              row.id,
+              row.storage_path,
+              selectedAccessory && accTex
+                ? {
+                    accessory: selectedAccessory,
+                    texture: accTex,
+                    leftEyePoint: row.left_eye_point ?? undefined,
+                    rightEyePoint: row.right_eye_point ?? undefined,
+                    foreheadTopPoint: row.forehead_top_point ?? undefined,
+                    relativeX: settings?.relative_x ?? 0,
+                    relativeY: settings?.relative_y ?? 0,
+                    scale: settings?.scale ?? 1,
+                  }
+                : undefined,
+            );
+
+            walkersMap.set(row.owner_id, handle);
+          } catch (error) {
+            console.error(
+              `[PixiHub] Failed to load character for ${row.id}:`,
+              error,
+            );
+          }
+        }
 
         // Fetch and load characters in paginated batches
         const loadBatches = async () => {
@@ -300,48 +530,8 @@ export const PixiHub: React.FC<{
 
               if (rows.length === 0) break;
 
-              // Load all characters in this batch in parallel
-              await Promise.all(
-                rows.map(async (row) => {
-                  try {
-                    // Generate public URL from storage_path
-                    const faceUrl = await storageService.getPhotoUrl(
-                      row.storage_path,
-                    );
+              await Promise.all(rows.map(spawnWalker));
 
-                    // Load face texture
-                    const faceTexture = await Assets.load(faceUrl);
-
-                    if (!isMounted) return;
-
-                    // Create walker with face
-                    const position = randSpawn();
-                    const ticker = createWalker(
-                      position.x,
-                      position.y,
-                      defaultBodyFrames.idle[0],
-                      defaultBodyFrames.idle,
-                      defaultBodyFrames.walkRight,
-                      defaultBodyFrames.walkLeft,
-                      faceTexture,
-                      row.centroid_point ?? undefined,
-                      row.owner_id,
-                      row.id,
-                      row.storage_path,
-                    );
-
-                    // Add ticker to array immediately
-                    tickers.push(ticker);
-                  } catch (error) {
-                    console.error(
-                      `[PixiHub] Failed to load character for ${row.id}:`,
-                      error,
-                    );
-                  }
-                }),
-              );
-
-              // Check if there are more batches
               if (!pagination.hasMore) break;
               offset = pagination.offset;
             } catch (error) {
@@ -351,13 +541,39 @@ export const PixiHub: React.FC<{
           }
         };
 
-        // Start loading batches
         loadBatches();
 
-        // Add ticker to update all walkers
         app.ticker.add((time) => {
-          tickers.forEach((tick) => tick(time.deltaTime));
+          walkersMap.forEach((handle) => handle.tick(time.deltaTime));
         });
+
+        // Expose imperative API to realtime subscription effect
+        addWalkerRef.current = spawnWalker;
+
+        replaceFaceRef.current = async (ownerId: string, storagePath: string) => {
+          const handle = walkersMap.get(ownerId);
+          if (!handle) return;
+          await handle.replaceFace(storagePath);
+        };
+
+        updateAccRef.current = (ownerId: string, settings: AccessorySettings) => {
+          const handle = walkersMap.get(ownerId);
+          if (!handle) return;
+          const accTex = settings.selected_accessory
+            ? accessoryTextures[settings.selected_accessory]
+            : undefined;
+          handle.replaceAccessory(
+            settings.selected_accessory && accTex
+              ? {
+                  accessory: settings.selected_accessory,
+                  texture: accTex,
+                  relativeX: settings.relative_x,
+                  relativeY: settings.relative_y,
+                  scale: settings.scale,
+                }
+              : undefined,
+          );
+        };
       } catch (err) {
         console.error("Failed to initialize Pixi app:", err);
       }
@@ -367,12 +583,46 @@ export const PixiHub: React.FC<{
 
     return () => {
       isMounted = false;
+      addWalkerRef.current = null;
+      updateAccRef.current = null;
+      replaceFaceRef.current = null;
       if (appRef.current) {
         appRef.current.destroy();
         appRef.current = null;
       }
     };
   }, [transitionTo]);
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    const unsubImages = hubRealtimeService.subscribeToNewCroppedImages(
+      orgId,
+      (row) => {
+        addWalkerRef.current?.(row);
+      },
+    );
+
+    const unsubAcc = hubRealtimeService.subscribeToAccessoryUpdates(
+      orgId,
+      (ownerId, settings) => {
+        updateAccRef.current?.(ownerId, settings);
+      },
+    );
+
+    const unsubFaceUpdates = hubRealtimeService.subscribeToProfilePictureUpdates(
+      orgId,
+      (ownerId, storagePath) => {
+        replaceFaceRef.current?.(ownerId, storagePath);
+      },
+    );
+
+    return () => {
+      unsubImages();
+      unsubAcc();
+      unsubFaceUpdates();
+    };
+  }, [orgId]);
 
   const handleClick = () => {
     transitionTo(AppState.IDLE);
@@ -381,26 +631,7 @@ export const PixiHub: React.FC<{
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-      <button
-        onClick={handleClick}
-        style={{
-          position: "fixed",
-          bottom: "3%",
-          right: "4%",
-          backgroundColor: "#7105e4",
-          color: "#fff",
-          border: "none",
-          padding: "14px 28px",
-          fontFamily: "'Jersey 10', sans-serif",
-          fontSize: "clamp(16px, 1.8vw, 28px)",
-          letterSpacing: "5px",
-          cursor: "pointer",
-          borderRadius: 6,
-          zIndex: 100,
-        }}
-      >
-        back
-      </button>
+      <ExitButton onClick={handleClick} />
     </div>
   );
 };

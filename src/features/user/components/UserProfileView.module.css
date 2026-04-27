@@ -38,7 +38,7 @@
 
 .content::before,
 .content::after {
-  content: '';
+  content: "";
   flex: 1 0 0;
   min-height: 0;
 }
@@ -90,7 +90,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .tab:last-child {
@@ -124,7 +126,11 @@
     linear-gradient(45deg, transparent 75%, #eee 75%),
     linear-gradient(-45deg, transparent 75%, #eee 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
 }
 
 .picture {
@@ -147,39 +153,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   background: #fefffb;
-}
-
-.miiBody {
-  max-width: 90%;
-  max-height: 80%;
-  object-fit: contain;
-  display: block;
-  transform: scale(0.6);
-}
-
-.miiFace {
-  position: absolute;
-  top: 8%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 45%;
-  height: auto;
-  object-fit: contain;
-}
-
-.miiFaceMissing {
-  position: absolute;
-  top: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: "Jersey 10", sans-serif;
-  font-size: 14px;
-  color: #999;
-  text-align: center;
 }
 
 .initials {
@@ -230,7 +204,7 @@
 
 .fieldWrapper::before,
 .fieldWrapper::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 40px;
   height: 10px;
@@ -301,7 +275,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .editButton:hover {
@@ -324,7 +300,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .gameScoresButton:hover {
@@ -347,7 +325,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .drawingsButton:hover {
@@ -355,6 +335,29 @@
 }
 
 .drawingsButton:active {
+  transform: scale(0.98);
+}
+
+.messagesButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #7b1fa2;
+  background: rgba(123, 31, 162, 0.1);
+  border: 2px solid #7b1fa2;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.messagesButton:hover {
+  background: rgba(123, 31, 162, 0.2);
+}
+
+.messagesButton:active {
   transform: scale(0.98);
 }
 
@@ -378,7 +381,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .signOutButton:hover {
@@ -401,7 +406,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .scanButton:hover {
@@ -432,7 +439,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .deleteButton:hover {
@@ -461,7 +470,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .confirmDeleteButton:hover {
@@ -490,7 +501,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .cancelDeleteButton:hover {
@@ -513,4 +526,29 @@
   color: #b71c1c;
   text-align: center;
   margin: 8px 0 0 0;
+}
+
+.customizeButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #7105e4;
+  background: rgba(113, 5, 228, 0.08);
+  border: 2px solid #7105e4;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+}
+
+.customizeButton:hover {
+  background: rgba(113, 5, 228, 0.16);
+}
+
+.customizeButton:active {
+  transform: scale(0.98);
 }

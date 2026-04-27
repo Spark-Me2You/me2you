@@ -41,27 +41,6 @@
   z-index: 9999;
 }
 
-.exit {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  padding: 12px 30px;
-  font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 28px;
-  letter-spacing: 3px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 3px solid rgba(255, 255, 255, 0.4);
-  border-radius: 12px;
-  color: white;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  z-index: 10001;
-}
-
-.exit:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
 .submit {
   position: fixed;
   bottom: 20px;

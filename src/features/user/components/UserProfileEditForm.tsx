@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import logo from '@/assets/me2you.png';
-import miiBody from '@/assets/mii_body.png';
 import type {
+  AccessorySettings,
+  AvatarLandmarkPoints,
   ProfileWithImage,
   UpdateProfileInput,
 } from '@/features/profile-editor/types/profileTypes';
+import { DEFAULT_ACCESSORY_SETTINGS } from '@/features/profile-editor/types/profileTypes';
+import { UserMiiPixiPreview } from './UserMiiPixiPreview';
 import styles from './UserProfileEditForm.module.css';
 
 interface UserProfileEditFormProps {
   initialData: ProfileWithImage;
   gestureImageUrl?: string | null;
+  accessorySettings?: AccessorySettings;
+  bobbleheadLandmarks?: AvatarLandmarkPoints | null;
   onSave: (data: UpdateProfileInput) => Promise<void>;
   onCancel: () => void;
   onChangePhoto: () => void;
@@ -20,6 +25,8 @@ interface UserProfileEditFormProps {
 export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
   initialData,
   gestureImageUrl = null,
+  accessorySettings = DEFAULT_ACCESSORY_SETTINGS,
+  bobbleheadLandmarks = null,
   onSave,
   onCancel,
   onChangePhoto,
@@ -112,18 +119,12 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                   <div className={styles.pictureFallback}>no photo</div>
                 )
               ) : (
-                <div className={styles.miiComposite}>
-                  <img src={miiBody} alt="" className={styles.miiBody} />
-                  {initialData.bobbleheadUrl ? (
-                    <img
-                      src={initialData.bobbleheadUrl}
-                      alt=""
-                      className={styles.miiFace}
-                    />
-                  ) : (
-                    <div className={styles.miiFaceMissing}>no face yet</div>
-                  )}
-                </div>
+                <UserMiiPixiPreview
+                  className={styles.miiComposite}
+                  bobbleheadUrl={initialData.bobbleheadUrl}
+                  accessorySettings={accessorySettings}
+                  landmarks={bobbleheadLandmarks}
+                />
               )}
             </div>
           </div>

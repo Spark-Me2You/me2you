@@ -43,6 +43,27 @@ me2you/
 - CV cursor logic lives in `src/core/cv/cursor/`.
 - MediaPipe configuration/loading is in `src/core/cv/mediapipe-config.ts` and `src/core/cv/mediapipe-loader.ts`.
 
+## Avatar Rendering (Hub + User)
+
+- Pixi is now the single rendering path for all mii surfaces.
+  - Hub animated scene: `src/features/hub/components/PixiHub.tsx`
+  - User static previews: `src/features/user/components/UserMiiPixiPreview.tsx`
+- Shared avatar/accessory placement math lives in `src/shared/utils/accessoryLayout.ts`.
+  - `HUB_ACCESSORY_TUNING` drives baseline hat/sunglasses/balloon placement
+  - `getAccessoryPlacement` and `getBalloonCenterFromHandAnchor` are reused by both hub and user preview renderers
+  - `convertPreviewDeltaToHubPixels` applies accessory-table relative deltas consistently
+- Shared avatar part scales/offsets (`MII_BODY_SCALE`, `MII_FACE_SCALE`, `MII_HEAD_OFFSET_X`, `MII_HEAD_OFFSET_Y`) keep body/face proportions aligned between animated hub and static user previews.
+- User pages (`UserProfileView`, `CustomizeAvatarView`, `UserProfileEditForm`) no longer use CSS accessory overlays; they render through Pixi with the same placement logic as hub.
+
+### Accessory Settings and Fallbacks
+
+- Accessory placement state remains stored in `public.accessories`:
+  - `selected_accessory`
+  - `relative_x`, `relative_y`
+  - `scale`
+- User preview inputs include the latest cropped-image landmark payload from `profileService.getCurrentProfile()` (`centroid_point`, `left_eye_point`, `right_eye_point`, `forehead_top_point`).
+- If landmark data is missing, user Pixi previews render a graceful fallback state and defer accessory rendering until landmarks are available.
+
 ## Notes on Cleanup
 
 The following legacy scaffolding was removed because it was unused at runtime:
