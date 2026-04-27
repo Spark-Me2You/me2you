@@ -39,6 +39,37 @@ function parsePoint(raw: string | null): { x: number; y: number } | null {
 }
 
 export const croppedImageService = {
+  getCroppedImageById: async (
+    id: string,
+    orgId: string,
+  ): Promise<CroppedImageRow | null> => {
+    const { data, error } = await supabase
+      .from('cropped_image')
+      .select(
+        'id, storage_path, owner_id, centroid_point, left_eye_point, right_eye_point, forehead_top_point',
+      )
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .eq('is_public', true)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    const ownerIds = [data.owner_id as string];
+    const settingsMap = await accessoryService.getSettingsForOwners(ownerIds);
+
+    return {
+      id: data.id,
+      storage_path: data.storage_path,
+      owner_id: data.owner_id,
+      centroid_point: parsePoint(data.centroid_point),
+      left_eye_point: parsePoint(data.left_eye_point),
+      right_eye_point: parsePoint(data.right_eye_point),
+      forehead_top_point: parsePoint(data.forehead_top_point),
+      accessorySettings: settingsMap.get(data.owner_id) ?? null,
+    };
+  },
+
   /**
    * Fetch a paginated batch of cropped images including face landmarks and user accessory.
    * Makes two queries: one for cropped_image rows, one for the owners' accessories.
