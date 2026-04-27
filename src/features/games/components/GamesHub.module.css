@@ -319,44 +319,6 @@
   top: 32%;
 }
 
-/* ========================================
-   EXIT BUTTON
-   ======================================== */
-
-.exitButton {
-  all: unset;
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 2000;
-  cursor: pointer;
-
-  /* Styling */
-  padding: 16px 40px;
-  font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 5px;
-  color: #ffffff;
-  box-sizing: border-box;
-  display: block;
-  transform-origin: center;
-
-  /* Colors from Figma */
-  background-color: #ff0000;
-  border: 1px solid #58e7f7;
-  border-radius: 13px;
-  opacity: 1;
-  visibility: visible;
-
-  /* Shadow */
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-
-  /* Interaction */
-  transition: all 0.3s ease;
-}
-
 @media (max-width: 900px) {
   .container {
     padding: 3vh 20px 80px;
@@ -378,21 +340,6 @@
     min-height: 0;
     padding: 24px 28px;
   }
-}
-
-.exitButton:hover {
-  background: #cc0000;
-  border-color: #00ffff;
-  transform: scale(1.05);
-}
-
-.exitButton:active {
-  transform: scale(0.98);
-}
-
-.exitButton:focus-visible {
-  outline: 4px solid rgba(255, 255, 255, 0.8);
-  outline-offset: 4px;
 }
 
 /* ========================================

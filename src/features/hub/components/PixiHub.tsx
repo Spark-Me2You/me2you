@@ -4,6 +4,7 @@ import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService } from "@/features/hub/services/croppedImageService";
 import { storageService } from "@/core/supabase/storage";
+import { ExitButton } from "@/shared/components";
 
 export interface CharacterClickData {
   owner_id: string;
@@ -478,26 +479,7 @@ export const PixiHub: React.FC<{
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-      <button
-        onClick={handleClick}
-        style={{
-          position: "fixed",
-          bottom: "3%",
-          right: "4%",
-          backgroundColor: "#7105e4",
-          color: "#fff",
-          border: "none",
-          padding: "14px 28px",
-          fontFamily: "'Jersey 10', sans-serif",
-          fontSize: "clamp(16px, 1.8vw, 28px)",
-          letterSpacing: "5px",
-          cursor: "pointer",
-          borderRadius: 6,
-          zIndex: 100,
-        }}
-      >
-        back
-      </button>
+      <ExitButton onClick={handleClick} />
     </div>
   );
 };

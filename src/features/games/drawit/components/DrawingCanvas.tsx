@@ -5,6 +5,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { useDrawingController } from "../hooks/useDrawingController";
 import { CANVAS_BG } from "../config/drawitConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
+import { ExitButton } from "@/shared/components";
 import type { BrushSize, Tool } from "../types/drawit";
 import styles from "./DrawingCanvas.module.css";
 
@@ -57,13 +58,7 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
 
   return (
     <div className={styles.wrapper}>
-      <button
-        type="button"
-        className={styles.exit}
-        onClick={() => setConfirmingQuit(true)}
-      >
-        Exit
-      </button>
+      <ExitButton onClick={() => setConfirmingQuit(true)} />
       <div className={styles.wordBanner}>Draw: {word}</div>
       <Timer onExpire={handleSubmit} />
 

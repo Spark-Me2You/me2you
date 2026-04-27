@@ -38,24 +38,3 @@
   justify-content: center;
 }
 
-.exitButton {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  width: 183px;
-  height: 81px;
-  background: #f00;
-  border: 1px solid #58e7f7;
-  border-radius: 13px;
-  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  font-family: "Averia Libre", cursive;
-  font-weight: 700;
-  font-size: 28px;
-  color: #ffffff;
-  letter-spacing: 0.1em;
-}

@@ -6,6 +6,7 @@
 import React from "react";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
+import { ExitButton } from "@/shared/components";
 import { GAMES_REGISTRY } from "../config/gamesConfig";
 import styles from "./GamesHub.module.css";
 
@@ -63,12 +64,7 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
       </div>
 
       {/* Exit button */}
-      <button
-        className={styles.exitButton}
-        onClick={() => transitionTo(AppState.IDLE)}
-      >
-        exit
-      </button>
+      <ExitButton onClick={() => transitionTo(AppState.IDLE)} />
     </div>
   );
 };
