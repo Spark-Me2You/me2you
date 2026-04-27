@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { profileService } from "@/features/profile-editor/services/profileService";
@@ -10,6 +11,7 @@ import type {
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
 import type { Accessory } from "@/core/auth/AuthContext";
+import { USER_MII_ACCESSORY_CSS_VARS } from "@/shared/utils";
 import logo from "@/assets/me2you.png";
 import miiBody from "@/assets/mii_body.png";
 
@@ -79,7 +81,10 @@ export const UserProfileView: React.FC = () => {
             }
             if (path) {
               const url = await storageService.getPhotoUrl(path);
-              if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+              if (
+                !mountedRef.current ||
+                requestId !== loadRequestIdRef.current
+              ) {
                 return;
               }
               setGestureImageUrl(url);
@@ -376,7 +381,10 @@ export const UserProfileView: React.FC = () => {
                     </div>
                   )
                 ) : (
-                  <div className={styles.miiComposite}>
+                  <div
+                    className={styles.miiComposite}
+                    style={USER_MII_ACCESSORY_CSS_VARS as CSSProperties}
+                  >
                     <img src={miiBody} alt="" className={styles.miiBody} />
                     {profileData.bobbleheadUrl ? (
                       <img

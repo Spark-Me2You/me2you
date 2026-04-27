@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import type { Accessory } from "@/core/auth/AuthContext";
+import type { CSSProperties } from "react";
 import { profileService } from "@/features/profile-editor/services/profileService";
+import { USER_MII_ACCESSORY_CSS_VARS } from "@/shared/utils";
 import logo from "@/assets/me2you.png";
 import miiBody from "@/assets/mii_body.png";
 import styles from "./CustomizeAvatarView.module.css";
@@ -25,7 +27,7 @@ export const CustomizeAvatarView: React.FC = () => {
   const { user, userProfile, setUserProfile, session } = useAuth();
 
   const [selected, setSelected] = useState<Accessory | null>(
-    userProfile?.accessory ?? null
+    userProfile?.accessory ?? null,
   );
   const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +38,7 @@ export const CustomizeAvatarView: React.FC = () => {
       .getCurrentProfile({ userId: user?.id })
       .then((data) => setBobbleheadUrl(data?.bobbleheadUrl ?? null))
       .catch((err) =>
-        console.warn("[CustomizeAvatarView] Failed to load preview:", err)
+        console.warn("[CustomizeAvatarView] Failed to load preview:", err),
       );
   }, [user?.id]);
 
@@ -48,7 +50,7 @@ export const CustomizeAvatarView: React.FC = () => {
       const updated = await profileService.updateProfile(
         user.id,
         { accessory: selected },
-        { sessionExpiresAt: session?.expires_at ?? null }
+        { sessionExpiresAt: session?.expires_at ?? null },
       );
       setUserProfile(updated);
       navigate(-1);
@@ -69,7 +71,10 @@ export const CustomizeAvatarView: React.FC = () => {
 
           {/* Mii preview with accessory overlay */}
           <div className={styles.previewStage}>
-            <div className={styles.miiComposite}>
+            <div
+              className={styles.miiComposite}
+              style={USER_MII_ACCESSORY_CSS_VARS as CSSProperties}
+            >
               <img src={miiBody} alt="" className={styles.miiBody} />
               {bobbleheadUrl && (
                 <img src={bobbleheadUrl} alt="" className={styles.miiFace} />

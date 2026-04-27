@@ -1,0 +1,178 @@
+import type { Accessory } from "@/core/auth/AuthContext";
+
+type FaceAccessoryTuning = {
+  widthFactor: number;
+  offsetXFactor: number;
+  offsetYFactor: number;
+};
+
+type BalloonAccessoryTuning = {
+  widthFactor: number;
+  handXFactor: number;
+  handYFactor: number;
+  tiltRadians: number;
+  stringEndU: number;
+  stringEndV: number;
+};
+
+type HubAccessoryTuning = {
+  sunglasses: FaceAccessoryTuning;
+  hat: FaceAccessoryTuning;
+  balloon: BalloonAccessoryTuning;
+};
+
+type UserPreviewAccessoryCalibration = {
+  // Positive X moves accessory right in preview space.
+  xPercent: number;
+  // Positive Y moves accessory down in preview space.
+  yPercent: number;
+};
+
+export const HUB_ACCESSORY_TUNING: HubAccessoryTuning = {
+  sunglasses: {
+    widthFactor: 0.8,
+    offsetXFactor: 0,
+    // Slightly above face center so lenses sit over the eyes.
+    offsetYFactor: 0.03,
+  },
+  hat: {
+    widthFactor: 0.6,
+    offsetXFactor: 0,
+    // Lift hat high enough that the brim lands near the top of the head.
+    offsetYFactor: -0.46,
+  },
+  balloon: {
+    widthFactor: 0.58,
+    // Approximate right-hand attachment point on the mii body sprite.
+    handXFactor: 0.33,
+    handYFactor: 0.76,
+    tiltRadians: 0.18,
+    // String endpoint in balloon.svg viewBox space (x=27,y=94) mapped to [0,1].
+    stringEndU: 0.45,
+    stringEndV: 0.989,
+  },
+};
+
+// Per-accessory calibration offsets for user mii previews.
+// Keep hub tuning unchanged; use these to fine-tune preview parity.
+export const USER_MII_ACCESSORY_CALIBRATION: Record<
+  Accessory,
+  UserPreviewAccessoryCalibration
+> = {
+  sunglasses: { xPercent: 0, yPercent: 11 },
+  hat: { xPercent: 0, yPercent: 0 },
+  balloon: { xPercent: 0, yPercent: 0 },
+};
+
+const PREVIEW_FACE_TOP_PERCENT = 8;
+const PREVIEW_FACE_WIDTH_PERCENT = 45;
+const PREVIEW_FACE_ASPECT_RATIO = 0.78;
+const PREVIEW_BODY_HEIGHT_PERCENT = 45;
+const PREVIEW_BODY_ASPECT_RATIO = 325 / 250;
+const PREVIEW_BODY_CENTER_X_PERCENT = 50;
+const PREVIEW_STAGE_BOTTOM_PERCENT = 100;
+
+const ACCESSORY_ASPECT_RATIO: Record<Accessory, number> = {
+  sunglasses: 120 / 40,
+  hat: 80 / 90,
+  balloon: 60 / 95,
+};
+
+const toPercent = (value: number): string => `${value.toFixed(2)}%`;
+const toDegrees = (radians: number): string =>
+  `${((radians * 180) / Math.PI).toFixed(2)}deg`;
+
+const getFaceAccessoryPreviewLayout = (
+  tuning: FaceAccessoryTuning,
+  accessoryAspectRatio: number,
+  calibration: UserPreviewAccessoryCalibration,
+) => {
+  const faceHeightPercent =
+    PREVIEW_FACE_WIDTH_PERCENT * PREVIEW_FACE_ASPECT_RATIO;
+  const accessoryWidthPercent = PREVIEW_FACE_WIDTH_PERCENT * tuning.widthFactor;
+  const accessoryHeightPercent = accessoryWidthPercent / accessoryAspectRatio;
+
+  const accessoryCenterXPercent =
+    PREVIEW_BODY_CENTER_X_PERCENT +
+    PREVIEW_FACE_WIDTH_PERCENT * tuning.offsetXFactor;
+  const accessoryCenterYPercent =
+    PREVIEW_FACE_TOP_PERCENT + faceHeightPercent * (0.5 + tuning.offsetYFactor);
+
+  return {
+    leftPercent: accessoryCenterXPercent + calibration.xPercent,
+    topPercent:
+      accessoryCenterYPercent -
+      accessoryHeightPercent / 2 +
+      calibration.yPercent,
+    widthPercent: accessoryWidthPercent,
+  };
+};
+
+const getBalloonPreviewLayout = (
+  tuning: BalloonAccessoryTuning,
+  calibration: UserPreviewAccessoryCalibration,
+) => {
+  const bodyWidthPercent =
+    PREVIEW_BODY_HEIGHT_PERCENT * PREVIEW_BODY_ASPECT_RATIO;
+  const balloonWidthPercent = PREVIEW_FACE_WIDTH_PERCENT * tuning.widthFactor;
+  const balloonHeightPercent =
+    balloonWidthPercent / ACCESSORY_ASPECT_RATIO.balloon;
+
+  const handXPercent =
+    PREVIEW_BODY_CENTER_X_PERCENT + bodyWidthPercent * tuning.handXFactor;
+  const handYPercent =
+    PREVIEW_STAGE_BOTTOM_PERCENT -
+    PREVIEW_BODY_HEIGHT_PERCENT * tuning.handYFactor;
+
+  // Position balloon by anchoring its string endpoint to the hand, matching hub logic.
+  const stringEndDx = balloonWidthPercent * (tuning.stringEndU - 0.5);
+  const stringEndDy = balloonHeightPercent * (tuning.stringEndV - 0.5);
+  const cos = Math.cos(tuning.tiltRadians);
+  const sin = Math.sin(tuning.tiltRadians);
+  const rotatedDx = stringEndDx * cos - stringEndDy * sin;
+  const rotatedDy = stringEndDx * sin + stringEndDy * cos;
+
+  const balloonCenterXPercent = handXPercent - rotatedDx;
+  const balloonCenterYPercent = handYPercent - rotatedDy;
+
+  return {
+    topPercent:
+      balloonCenterYPercent - balloonHeightPercent / 2 + calibration.yPercent,
+    rightPercent:
+      100 -
+      (balloonCenterXPercent + balloonWidthPercent / 2) -
+      calibration.xPercent,
+    widthPercent: balloonWidthPercent,
+  };
+};
+
+const sunglassesPreview = getFaceAccessoryPreviewLayout(
+  HUB_ACCESSORY_TUNING.sunglasses,
+  ACCESSORY_ASPECT_RATIO.sunglasses,
+  USER_MII_ACCESSORY_CALIBRATION.sunglasses,
+);
+const hatPreview = getFaceAccessoryPreviewLayout(
+  HUB_ACCESSORY_TUNING.hat,
+  ACCESSORY_ASPECT_RATIO.hat,
+  USER_MII_ACCESSORY_CALIBRATION.hat,
+);
+const balloonPreview = getBalloonPreviewLayout(
+  HUB_ACCESSORY_TUNING.balloon,
+  USER_MII_ACCESSORY_CALIBRATION.balloon,
+);
+
+// CSS variables consumed by both user-facing mii preview surfaces:
+// - CustomizeAvatarView (edit avatar)
+// - UserProfileView (top "my mii" tab)
+export const USER_MII_ACCESSORY_CSS_VARS = {
+  "--acc-sunglasses-left": toPercent(sunglassesPreview.leftPercent),
+  "--acc-sunglasses-top": toPercent(sunglassesPreview.topPercent),
+  "--acc-sunglasses-width": toPercent(sunglassesPreview.widthPercent),
+  "--acc-hat-left": toPercent(hatPreview.leftPercent),
+  "--acc-hat-top": toPercent(hatPreview.topPercent),
+  "--acc-hat-width": toPercent(hatPreview.widthPercent),
+  "--acc-balloon-top": toPercent(balloonPreview.topPercent),
+  "--acc-balloon-right": toPercent(balloonPreview.rightPercent),
+  "--acc-balloon-width": toPercent(balloonPreview.widthPercent),
+  "--acc-balloon-tilt": toDegrees(HUB_ACCESSORY_TUNING.balloon.tiltRadians),
+} as const;

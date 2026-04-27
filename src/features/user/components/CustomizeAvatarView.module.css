@@ -104,30 +104,32 @@
    Exact landmark-based placement happens in PixiHub at runtime. */
 .accessorySunglasses {
   position: absolute;
-  top: 37%;
-  left: 50%;
+  top: var(--acc-sunglasses-top);
+  left: var(--acc-sunglasses-left);
   transform: translateX(-50%);
-  width: 50%;
+  width: var(--acc-sunglasses-width);
   height: auto;
   pointer-events: none;
 }
 
 .accessoryHat {
   position: absolute;
-  top: 2%;
-  left: 50%;
+  top: var(--acc-hat-top);
+  left: var(--acc-hat-left);
   transform: translateX(-50%);
-  width: 38%;
+  width: var(--acc-hat-width);
   height: auto;
   pointer-events: none;
 }
 
 .accessoryBalloon {
   position: absolute;
-  top: 1%;
-  right: 4%;
-  width: 26%;
+  top: var(--acc-balloon-top);
+  right: var(--acc-balloon-right);
+  width: var(--acc-balloon-width);
   height: auto;
+  transform-origin: 45% 99%;
+  transform: rotate(var(--acc-balloon-tilt));
   pointer-events: none;
 }
 
@@ -151,7 +153,10 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.1s;
 }
 
 .chip:hover {
@@ -198,7 +203,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .cancelButton:hover {
@@ -221,7 +228,9 @@
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
-  transition: background 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .saveButton:hover {

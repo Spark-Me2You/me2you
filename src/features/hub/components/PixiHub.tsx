@@ -4,38 +4,13 @@ import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService } from "@/features/hub/services/croppedImageService";
 import { storageService } from "@/core/supabase/storage";
+import { HUB_ACCESSORY_TUNING } from "@/shared/utils";
 import { ExitButton } from "@/shared/components";
 
 // Global hub mii scaling knob. 0.8 means all character parts render at 80% size.
 const HUB_MII_SIZE_FACTOR = 0.8;
 const HUB_BODY_BASE_SCALE = 0.4;
 const HUB_FACE_BASE_SCALE = 0.35;
-
-// Accessory placement tuning for hub walkers.
-const HUB_ACCESSORY_TUNING = {
-  sunglasses: {
-    widthFactor: 1.1,
-    offsetXFactor: 0,
-    // Slightly above face center so lenses sit over the eyes.
-    offsetYFactor: -0.04,
-  },
-  hat: {
-    widthFactor: 0.9,
-    offsetXFactor: 0,
-    // Lift hat high enough that the brim lands near the top of the head.
-    offsetYFactor: -0.66,
-  },
-  balloon: {
-    widthFactor: 0.58,
-    // Approximate right-hand attachment point on the mii body sprite.
-    handXFactor: 0.33,
-    handYFactor: 0.76,
-    tiltRadians: 0.18,
-    // String endpoint in balloon.svg viewBox space (x=27,y=94) mapped to [0,1].
-    stringEndU: 0.45,
-    stringEndV: 0.989,
-  },
-} as const;
 
 export interface CharacterClickData {
   owner_id: string;
