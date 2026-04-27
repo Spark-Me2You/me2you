@@ -4,7 +4,11 @@ import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService } from "@/features/hub/services/croppedImageService";
 import { storageService } from "@/core/supabase/storage";
-import { HUB_ACCESSORY_TUNING } from "@/shared/utils";
+import {
+  HUB_ACCESSORY_TUNING,
+  PREVIEW_FACE_WIDTH_PERCENT_EXPORT as PREVIEW_FACE_W_PCT,
+  HUB_PREVIEW_FACE_HEIGHT_PERCENT as PREVIEW_FACE_H_PCT,
+} from "@/shared/utils";
 import { ExitButton } from "@/shared/components";
 
 // Global hub mii scaling knob. 0.8 means all character parts render at 80% size.
@@ -107,6 +111,9 @@ export const PixiHub: React.FC<{
             leftEyePoint?: { x: number; y: number };
             rightEyePoint?: { x: number; y: number };
             foreheadTopPoint?: { x: number; y: number };
+            relativeX?: number;
+            relativeY?: number;
+            scale?: number;
           },
         ) {
           const walker = new Sprite(texture);
@@ -145,7 +152,13 @@ export const PixiHub: React.FC<{
           let accBaseRotation = 0;
 
           if (accessoryOptions && faceSprite) {
-            const { accessory, texture: accTex } = accessoryOptions;
+            const {
+              accessory,
+              texture: accTex,
+              relativeX = 0,
+              relativeY = 0,
+              scale = 1,
+            } = accessoryOptions;
             accessorySprite = new Sprite(accTex);
             accessorySprite.anchor.set(0.5, 0.5);
             app.stage.addChild(accessorySprite);
@@ -154,30 +167,38 @@ export const PixiHub: React.FC<{
             const faceH = faceSprite.height;
             const aspect = accTex.width / accTex.height;
 
+            // Convert preview-container-percent deltas to hub pixel offsets,
+            // scaled proportionally to the hub face sprite size.
+            const userDeltaX = (relativeX / PREVIEW_FACE_W_PCT) * faceW;
+            const userDeltaY = (relativeY / PREVIEW_FACE_H_PCT) * faceH;
+
             // Offsets derived from the customize-screen CSS proportions so hub and
             // preview look the same. All positions are relative to the face sprite center.
             if (accessory === "sunglasses" || accessory === "glasses") {
               accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.sunglasses.widthFactor;
+                faceW * HUB_ACCESSORY_TUNING.sunglasses.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
               accOffsetX =
-                faceW * HUB_ACCESSORY_TUNING.sunglasses.offsetXFactor;
+                faceW * HUB_ACCESSORY_TUNING.sunglasses.offsetXFactor + userDeltaX;
               accOffsetY =
-                faceH * HUB_ACCESSORY_TUNING.sunglasses.offsetYFactor;
+                faceH * HUB_ACCESSORY_TUNING.sunglasses.offsetYFactor + userDeltaY;
             } else if (accessory === "hat") {
               accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.hat.widthFactor;
+                faceW * HUB_ACCESSORY_TUNING.hat.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX = faceW * HUB_ACCESSORY_TUNING.hat.offsetXFactor;
-              accOffsetY = faceH * HUB_ACCESSORY_TUNING.hat.offsetYFactor;
+              accOffsetX = faceW * HUB_ACCESSORY_TUNING.hat.offsetXFactor + userDeltaX;
+              accOffsetY = faceH * HUB_ACCESSORY_TUNING.hat.offsetYFactor + userDeltaY;
             } else if (accessory === "balloon") {
               accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.balloon.widthFactor;
+                faceW * HUB_ACCESSORY_TUNING.balloon.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
               // Balloon should anchor to hand, not face.
               accRelativeToFace = false;
               accUseBalloonHandAnchor = true;
               accBaseRotation = HUB_ACCESSORY_TUNING.balloon.tiltRadians;
+              // Store user delta on the offset vars; applied after hand-anchor math.
+              accOffsetX = userDeltaX;
+              accOffsetY = userDeltaY;
             }
           }
 
@@ -336,8 +357,9 @@ export const PixiHub: React.FC<{
                 const rotatedDx = stringEndDx * cos - stringEndDy * sin;
                 const rotatedDy = stringEndDx * sin + stringEndDy * cos;
 
-                accessorySprite.x = handX - rotatedDx;
-                accessorySprite.y = handY - rotatedDy;
+                // accOffsetX/Y carry the user's relativeX/Y delta for balloon
+                accessorySprite.x = handX - rotatedDx + accOffsetX;
+                accessorySprite.y = handY - rotatedDy + accOffsetY;
               } else if (accRelativeToFace) {
                 accessorySprite.x = walker.x + HEAD_OFFSET_X + accOffsetX;
                 accessorySprite.y = walker.y + HEAD_OFFSET_Y + accOffsetY;
@@ -446,8 +468,10 @@ export const PixiHub: React.FC<{
 
                     // Create walker with face and optional accessory
                     const position = randSpawn();
-                    const accTex = row.accessory
-                      ? accessoryTextures[row.accessory]
+                    const settings = row.accessorySettings;
+                    const selectedAccessory = settings?.selected_accessory ?? null;
+                    const accTex = selectedAccessory
+                      ? accessoryTextures[selectedAccessory]
                       : undefined;
                     const ticker = createWalker(
                       position.x,
@@ -461,14 +485,17 @@ export const PixiHub: React.FC<{
                       row.owner_id,
                       row.id,
                       row.storage_path,
-                      row.accessory && accTex
+                      selectedAccessory && accTex
                         ? {
-                            accessory: row.accessory,
+                            accessory: selectedAccessory,
                             texture: accTex,
                             leftEyePoint: row.left_eye_point ?? undefined,
                             rightEyePoint: row.right_eye_point ?? undefined,
                             foreheadTopPoint:
                               row.forehead_top_point ?? undefined,
+                            relativeX: settings?.relative_x ?? 0,
+                            relativeY: settings?.relative_y ?? 0,
+                            scale: settings?.scale ?? 1,
                           }
                         : undefined,
                     );

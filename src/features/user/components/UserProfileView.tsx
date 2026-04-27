@@ -11,7 +11,10 @@ import type {
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
 import type { Accessory } from "@/core/auth/AuthContext";
-import { USER_MII_ACCESSORY_CSS_VARS } from "@/shared/utils";
+import { computeUserMiiAccessoryCssVars } from "@/shared/utils";
+import { accessoryService } from "@/features/profile-editor/services/accessoryService";
+import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
+import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
 import miiBody from "@/assets/mii_body.png";
 
@@ -35,6 +38,7 @@ export const UserProfileView: React.FC = () => {
 
   const [profileData, setProfileData] = useState<ProfileWithImage | null>(null);
   const [gestureImageUrl, setGestureImageUrl] = useState<string | null>(null);
+  const [accessorySettings, setAccessorySettings] = useState<AccessorySettings>(DEFAULT_ACCESSORY_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -60,15 +64,19 @@ export const UserProfileView: React.FC = () => {
       }
 
       try {
-        const data = await profileService.getCurrentProfile({
-          userId: currentUserId,
-        });
+        const [data, accSettings] = await Promise.all([
+          profileService.getCurrentProfile({ userId: currentUserId }),
+          currentUserId
+            ? accessoryService.getAccessorySettings(currentUserId)
+            : Promise.resolve(DEFAULT_ACCESSORY_SETTINGS),
+        ]);
 
         if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
           return;
         }
 
         setProfileData(data);
+        setAccessorySettings(accSettings);
 
         if (data?.profile.org_id && data.profile.id) {
           try {
@@ -383,7 +391,12 @@ export const UserProfileView: React.FC = () => {
                 ) : (
                   <div
                     className={styles.miiComposite}
-                    style={USER_MII_ACCESSORY_CSS_VARS as CSSProperties}
+                    style={computeUserMiiAccessoryCssVars(
+                      accessorySettings.selected_accessory,
+                      accessorySettings.relative_x,
+                      accessorySettings.relative_y,
+                      accessorySettings.scale,
+                    ) as CSSProperties}
                   >
                     <img src={miiBody} alt="" className={styles.miiBody} />
                     {profileData.bobbleheadUrl ? (
@@ -395,14 +408,14 @@ export const UserProfileView: React.FC = () => {
                     ) : (
                       <div className={styles.miiFaceMissing}>no face yet</div>
                     )}
-                    {profile.accessory && (
+                    {accessorySettings.selected_accessory && (
                       <img
-                        src={ACCESSORY_PREVIEWS[profile.accessory]}
-                        alt={profile.accessory}
+                        src={ACCESSORY_PREVIEWS[accessorySettings.selected_accessory]}
+                        alt={accessorySettings.selected_accessory}
                         className={
-                          profile.accessory === "sunglasses"
+                          accessorySettings.selected_accessory === "sunglasses"
                             ? styles.accessorySunglasses
-                            : profile.accessory === "hat"
+                            : accessorySettings.selected_accessory === "hat"
                               ? styles.accessoryHat
                               : styles.accessoryBalloon
                         }

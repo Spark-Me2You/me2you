@@ -176,3 +176,55 @@ export const USER_MII_ACCESSORY_CSS_VARS = {
   "--acc-balloon-width": toPercent(balloonPreview.widthPercent),
   "--acc-balloon-tilt": toDegrees(HUB_ACCESSORY_TUNING.balloon.tiltRadians),
 } as const;
+
+/**
+ * Returns CSS variable overrides for a single accessory with optional user
+ * placement adjustments applied on top of the baseline tuning.
+ *
+ * @param accessory - Which accessory to render (null → return baseline vars unchanged)
+ * @param relativeX - Horizontal delta in percentage points of the 220px preview
+ *                    container. Positive moves right. Range [-40, 40].
+ * @param relativeY - Vertical delta in percentage points of the 220px preview
+ *                    container. Positive moves down. Range [-40, 40].
+ * @param scale     - Width scale multiplier applied on top of baseline. Range [0.5, 2.0].
+ */
+export function computeUserMiiAccessoryCssVars(
+  accessory: Accessory | null,
+  relativeX: number = 0,
+  relativeY: number = 0,
+  scale: number = 1,
+): Record<string, string> {
+  const vars: Record<string, string> = { ...USER_MII_ACCESSORY_CSS_VARS };
+
+  if (!accessory) return vars;
+
+  if (accessory === 'sunglasses') {
+    vars['--acc-sunglasses-left'] = toPercent(sunglassesPreview.leftPercent + relativeX);
+    vars['--acc-sunglasses-top'] = toPercent(sunglassesPreview.topPercent + relativeY);
+    vars['--acc-sunglasses-width'] = toPercent(sunglassesPreview.widthPercent * scale);
+  } else if (accessory === 'hat') {
+    vars['--acc-hat-left'] = toPercent(hatPreview.leftPercent + relativeX);
+    vars['--acc-hat-top'] = toPercent(hatPreview.topPercent + relativeY);
+    vars['--acc-hat-width'] = toPercent(hatPreview.widthPercent * scale);
+  } else if (accessory === 'balloon') {
+    vars['--acc-balloon-top'] = toPercent(balloonPreview.topPercent + relativeY);
+    // Positive relX = move right = decrease the CSS `right` value.
+    vars['--acc-balloon-right'] = toPercent(balloonPreview.rightPercent - relativeX);
+    vars['--acc-balloon-width'] = toPercent(balloonPreview.widthPercent * scale);
+  }
+
+  return vars;
+}
+
+/**
+ * Conversion helpers for hub (Pixi) rendering.
+ * Hub accessories use pixel coordinates based on face sprite dimensions,
+ * not container percentages.  These factors let PixiHub scale the user's
+ * relativeX/Y (preview-container-percent) into hub pixels proportionally.
+ *
+ *   hubDeltaX = relativeX * faceW / PREVIEW_FACE_WIDTH_PERCENT
+ *   hubDeltaY = relativeY * faceH / HUB_PREVIEW_FACE_HEIGHT_PERCENT
+ */
+export const PREVIEW_FACE_WIDTH_PERCENT_EXPORT = PREVIEW_FACE_WIDTH_PERCENT;
+export const HUB_PREVIEW_FACE_HEIGHT_PERCENT =
+  PREVIEW_FACE_WIDTH_PERCENT * PREVIEW_FACE_ASPECT_RATIO;

@@ -11,6 +11,23 @@ export interface UpdateProfileInput {
   accessory?: Accessory | null;
 }
 
+export interface AccessorySettings {
+  selected_accessory: Accessory | null;
+  /** Percentage-point delta of the 220×220 preview container. Positive = right. */
+  relative_x: number;
+  /** Percentage-point delta of the 220×220 preview container. Positive = down. */
+  relative_y: number;
+  /** Width scale multiplier applied on top of baseline tuning. */
+  scale: number;
+}
+
+export const DEFAULT_ACCESSORY_SETTINGS: AccessorySettings = {
+  selected_accessory: null,
+  relative_x: 0,
+  relative_y: 0,
+  scale: 1,
+};
+
 export interface ProfileWithImage {
   profile: UserProfile;
   imageUrl: string | null;
