@@ -6,6 +6,11 @@ import { croppedImageService } from "@/features/hub/services/croppedImageService
 import { storageService } from "@/core/supabase/storage";
 import { ExitButton } from "@/shared/components";
 
+// Global hub mii scaling knob. 0.8 means all character parts render at 80% size.
+const HUB_MII_SIZE_FACTOR = 0.8;
+const HUB_BODY_BASE_SCALE = 0.4;
+const HUB_FACE_BASE_SCALE = 0.35;
+
 export interface CharacterClickData {
   owner_id: string;
   cropped_image_id: string;
@@ -63,8 +68,11 @@ export const PixiHub: React.FC<{
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
-        const HEAD_OFFSET_X = 5;
-        const HEAD_OFFSET_Y = -145;
+          const BODY_SCALE = HUB_BODY_BASE_SCALE * HUB_MII_SIZE_FACTOR;
+          const FACE_SCALE = HUB_FACE_BASE_SCALE * HUB_MII_SIZE_FACTOR;
+          // Scale head offset along with body/head so face placement stays proportional.
+          const HEAD_OFFSET_X = 5 * HUB_MII_SIZE_FACTOR;
+          const HEAD_OFFSET_Y = -145 * HUB_MII_SIZE_FACTOR;
 
         function buildFrameSets(
           def: Texture,
@@ -102,7 +110,7 @@ export const PixiHub: React.FC<{
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
-          walker.scale.set(0.4);
+          walker.scale.set(BODY_SCALE);
           app.stage.addChild(walker);
 
           // Make walker clickable if we have owner data
@@ -123,7 +131,7 @@ export const PixiHub: React.FC<{
             faceSprite = new Sprite(faceTexture);
             // Use center anchor since centroid is relative to original image, not crop
             faceSprite.anchor.set(0.5, 0.5);
-            faceSprite.scale.set(0.35);
+            faceSprite.scale.set(FACE_SCALE);
             app.stage.addChild(faceSprite);
           }
 
@@ -242,7 +250,7 @@ export const PixiHub: React.FC<{
                 ? walkFramesRight
                 : walkFramesLeft;
 
-              walker.scale.x = 0.4;
+              walker.scale.x = BODY_SCALE;
               bobPhase += 0.1 * dt;
               walker.y = wy + Math.sin(bobPhase) * 1.8;
 
