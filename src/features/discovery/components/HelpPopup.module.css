@@ -45,28 +45,84 @@
   min-width: 0;
 }
 
+/* leftCol holds the gif (centered, pushed up) and the otter pinned at the
+   bottom-left of the corkboard via `position: absolute`. */
+.leftCol {
+  position: relative;
+  align-items: flex-start;
+  padding-top: 25%;
+}
+
 .rightCol {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
-  padding-top: 12px;
+  /* Push the bullet card up so it sits higher inside the corkboard. */
+  padding-top: 4%;
 }
 
 .gif {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 60%;
   object-fit: contain;
   border-radius: 8px;
 }
 
+/* Otter mascot pinned to the bottom-left of the corkboard.
+   `left` + `bottom` are exposed so they can be nudged easily. */
+.otter {
+  position: absolute;
+  left: 0px;
+  bottom: -38px;
+  width: 45%;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+/* "confused?" title — pinned to the top-left of the corkboard. */
 .title {
-  margin: 0 0 16px 0;
+  position: absolute;
+  top: 6%;
+  left: 6%;
+  margin: 0;
   font-family: "Jersey 10", sans-serif;
-  font-size: 48px;
+  font-size: 60px;
   letter-spacing: 4px;
   color: #fff;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
   text-transform: lowercase;
+  z-index: 1;
+}
+
+/* Yellow taped label that holds the bullet list — matches the home-page
+   .tapeLabelWrap aesthetic (light yellow card + pink tape strip). */
+.bulletCard {
+  position: relative;
+  /* Narrower + taller so the card fits comfortably inside the corkboard. */
+  width: 75%;
+  min-height: 70%;
+  background: #ffeeb0;
+  border-radius: 6px;
+  padding: 32px 22px 26px 22px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.22),
+    inset 0 0 4px rgba(0, 0, 0, 0.15);
+  overflow: visible;
+}
+
+.bulletCardTape {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 110px;
+  height: 24px;
+  background: #e405ac;
+  transform: translateX(-50%) rotate(-4deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+  z-index: 1;
 }
 
 .list {
@@ -74,9 +130,9 @@
   padding-left: 1.2em;
   margin: 0;
   font-family: "Averia Libre", sans-serif;
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1.35;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.2px;
   color: #1a1a1a;
 }
 

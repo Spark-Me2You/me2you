@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import corkboardImage from "@/assets/corkboard.png";
-import cvMouseGif from "@/assets/cvmousegif.gif";
+import DiscoverGif from "@/assets/discovergif.gif";
+import otterImage from "@/assets/otter_default_rough_draft.png";
 import styles from "./HelpPopup.module.css";
 
 const DEFAULT_BULLETS = [
-  "stand in the camera frame so we can see your hands",
-  "make one of the poses shown at the top to play",
-  "hold the pose until you see the match flash",
-  "tap exit any time to leave",
+  "Strike one of these three poses (peace, wave, thumbs up) and see another person in your space shoot one back at you!",
+  "Want to learn more about them? Hold that pose!! Their profile will expand and you'll be able to see more and make your own account!",
+  "Having issues? Make sure to stand in the camera frame so we can see your hands! Remember to slow down and exaggerate your movements for the best results!",
 ];
 
 type HelpPopupProps = {
@@ -23,7 +23,7 @@ export const HelpPopup: React.FC<HelpPopupProps> = ({
   onClose,
   title = "confused?",
   bullets = DEFAULT_BULLETS,
-  gifSrc = cvMouseGif,
+  gifSrc = DiscoverGif,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -63,17 +63,21 @@ export const HelpPopup: React.FC<HelpPopupProps> = ({
           ×
         </button>
         <img src={corkboardImage} alt="" className={styles.cork} />
+        <img src={otterImage} alt="" className={styles.otter} />
+        <h2 className={styles.title}>{title}</h2>
         <div className={styles.content}>
           <div className={styles.leftCol}>
             <img src={gifSrc} alt="" className={styles.gif} />
           </div>
           <div className={styles.rightCol}>
-            <h2 className={styles.title}>{title}</h2>
-            <ul className={styles.list}>
-              {bullets.map((b) => (
-                <li key={b}>{b}</li>
-              ))}
-            </ul>
+            <div className={styles.bulletCard}>
+              <div className={styles.bulletCardTape} />
+              <ul className={styles.list}>
+                {bullets.map((b) => (
+                  <li key={b}>{b}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
