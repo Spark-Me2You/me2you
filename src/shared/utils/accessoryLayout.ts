@@ -198,33 +198,59 @@ export function computeUserMiiAccessoryCssVars(
 
   if (!accessory) return vars;
 
-  if (accessory === 'sunglasses') {
-    vars['--acc-sunglasses-left'] = toPercent(sunglassesPreview.leftPercent + relativeX);
-    vars['--acc-sunglasses-top'] = toPercent(sunglassesPreview.topPercent + relativeY);
-    vars['--acc-sunglasses-width'] = toPercent(sunglassesPreview.widthPercent * scale);
-  } else if (accessory === 'hat') {
-    vars['--acc-hat-left'] = toPercent(hatPreview.leftPercent + relativeX);
-    vars['--acc-hat-top'] = toPercent(hatPreview.topPercent + relativeY);
-    vars['--acc-hat-width'] = toPercent(hatPreview.widthPercent * scale);
-  } else if (accessory === 'balloon') {
-    vars['--acc-balloon-top'] = toPercent(balloonPreview.topPercent + relativeY);
+  if (accessory === "sunglasses") {
+    vars["--acc-sunglasses-left"] = toPercent(
+      sunglassesPreview.leftPercent + relativeX,
+    );
+    vars["--acc-sunglasses-top"] = toPercent(
+      sunglassesPreview.topPercent + relativeY,
+    );
+    vars["--acc-sunglasses-width"] = toPercent(
+      sunglassesPreview.widthPercent * scale,
+    );
+  } else if (accessory === "hat") {
+    vars["--acc-hat-left"] = toPercent(hatPreview.leftPercent + relativeX);
+    vars["--acc-hat-top"] = toPercent(hatPreview.topPercent + relativeY);
+    vars["--acc-hat-width"] = toPercent(hatPreview.widthPercent * scale);
+  } else if (accessory === "balloon") {
+    vars["--acc-balloon-top"] = toPercent(
+      balloonPreview.topPercent + relativeY,
+    );
     // Positive relX = move right = decrease the CSS `right` value.
-    vars['--acc-balloon-right'] = toPercent(balloonPreview.rightPercent - relativeX);
-    vars['--acc-balloon-width'] = toPercent(balloonPreview.widthPercent * scale);
+    vars["--acc-balloon-right"] = toPercent(
+      balloonPreview.rightPercent - relativeX,
+    );
+    vars["--acc-balloon-width"] = toPercent(
+      balloonPreview.widthPercent * scale,
+    );
   }
 
   return vars;
 }
 
 /**
- * Conversion helpers for hub (Pixi) rendering.
- * Hub accessories use pixel coordinates based on face sprite dimensions,
- * not container percentages.  These factors let PixiHub scale the user's
- * relativeX/Y (preview-container-percent) into hub pixels proportionally.
+ * Common denominator for converting preview-container-percent deltas into hub
+ * Pixi pixels.  Both X and Y use face WIDTH as the reference so that equal
+ * drag distances in the (square) 220 px preview map to equal proportional
+ * movements relative to the face sprite in the hub, regardless of the face
+ * image's actual aspect ratio.
  *
- *   hubDeltaX = relativeX * faceW / PREVIEW_FACE_WIDTH_PERCENT
- *   hubDeltaY = relativeY * faceH / HUB_PREVIEW_FACE_HEIGHT_PERCENT
+ * Usage in PixiHub:
+ *   const px = faceW / HUB_DELTA_DENOMINATOR;
+ *   userDeltaX = relativeX * px * HUB_DELTA_SCALE.x;
+ *   userDeltaY = relativeY * px * HUB_DELTA_SCALE.y;
  */
-export const PREVIEW_FACE_WIDTH_PERCENT_EXPORT = PREVIEW_FACE_WIDTH_PERCENT;
-export const HUB_PREVIEW_FACE_HEIGHT_PERCENT =
-  PREVIEW_FACE_WIDTH_PERCENT * PREVIEW_FACE_ASPECT_RATIO;
+export const HUB_DELTA_DENOMINATOR = PREVIEW_FACE_WIDTH_PERCENT; // = 45
+
+/**
+ * Per-axis scale multipliers applied on top of the base conversion.
+ * Adjust these constants to fine-tune hub movement proportions without
+ * touching the coordinate math.
+ *
+ * At 1.0 / 1.0 the accessory moves the same fraction of the hub face
+ * sprite as it does in the 220 px preview container.
+ */
+export const HUB_DELTA_SCALE = {
+  x: 0.9,
+  y: 0.85,
+};

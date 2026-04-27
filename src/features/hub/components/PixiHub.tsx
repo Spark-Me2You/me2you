@@ -6,8 +6,8 @@ import { croppedImageService } from "@/features/hub/services/croppedImageService
 import { storageService } from "@/core/supabase/storage";
 import {
   HUB_ACCESSORY_TUNING,
-  PREVIEW_FACE_WIDTH_PERCENT_EXPORT as PREVIEW_FACE_W_PCT,
-  HUB_PREVIEW_FACE_HEIGHT_PERCENT as PREVIEW_FACE_H_PCT,
+  HUB_DELTA_DENOMINATOR,
+  HUB_DELTA_SCALE,
 } from "@/shared/utils";
 import { ExitButton } from "@/shared/components";
 
@@ -167,10 +167,15 @@ export const PixiHub: React.FC<{
             const faceH = faceSprite.height;
             const aspect = accTex.width / accTex.height;
 
-            // Convert preview-container-percent deltas to hub pixel offsets,
-            // scaled proportionally to the hub face sprite size.
-            const userDeltaX = (relativeX / PREVIEW_FACE_W_PCT) * faceW;
-            const userDeltaY = (relativeY / PREVIEW_FACE_H_PCT) * faceH;
+            // Convert preview-container-percent deltas to hub pixel offsets.
+            // Both axes use face WIDTH as the common reference so that equal
+            // drag distances in the square 220px preview produce equal
+            // proportional shifts relative to the face sprite in the hub,
+            // regardless of the face image's actual aspect ratio.
+            // Adjust HUB_DELTA_SCALE in accessoryLayout.ts to fine-tune.
+            const px = faceW / HUB_DELTA_DENOMINATOR;
+            const userDeltaX = relativeX * px * HUB_DELTA_SCALE.x;
+            const userDeltaY = relativeY * px * HUB_DELTA_SCALE.y;
 
             // Offsets derived from the customize-screen CSS proportions so hub and
             // preview look the same. All positions are relative to the face sprite center.
