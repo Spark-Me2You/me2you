@@ -64,6 +64,13 @@
   gap: 6px;
 }
 
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .senderName {
   font-family: "Jersey 10", sans-serif;
   font-size: 18px;
@@ -71,6 +78,28 @@
   color: #e44805;
   margin: 0;
   text-transform: lowercase;
+}
+
+.deleteButton {
+  font-family: "Jersey 10", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  color: #aaa;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.deleteButton:hover:not(:disabled) {
+  color: #d32f2f;
+}
+
+.deleteButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .body {
