@@ -42,22 +42,15 @@ export async function uploadDrawing(dataUrl: string, word: string): Promise<Draw
 }
 
 /**
- * Stage a drawing for user pickup via QR claim.
- *
- * Uploads the PNG to the private `temp-drawings` bucket under the kiosk's org
- * folder, then mints a claim token whose payload points at that temp path.
- * The returned `claim_url` is what the kiosk renders as a QR code; once a user
- * scans and completes the claim-drawing flow, the file is moved into the
- * permanent `drawings` bucket under the user's folder.
- *
- * Expects the Supabase session to be a kiosk (app_metadata.is_kiosk=true,
- * org_id populated) — enforced by storage RLS and generate-claim-token.
+ * Upload a drawing PNG to the private `temp-drawings` bucket under the kiosk's
+ * org folder. Returns the storage path; the caller uses it to build a ClaimPayload
+ * for useClaimQR. The file is moved to `drawings` by the claim-drawing edge
+ * function when the user completes the claim on their phone.
  */
-export async function stageDrawingForClaim(
+export async function uploadTempDrawing(
   dataUrl: string,
   orgId: string,
-  prompt: string,
-): Promise<{ claim_url: string; expires_at: string; token_id: string }> {
+): Promise<{ tempPath: string }> {
   const blob = dataUrlToBlob(dataUrl);
   const drawingId = crypto.randomUUID();
   const tempPath = `${orgId}/${drawingId}.png`;
@@ -67,29 +60,7 @@ export async function stageDrawingForClaim(
     .upload(tempPath, blob, { contentType: "image/png", upsert: false });
   if (upErr) throw new Error(`Temp drawing upload failed: ${upErr.message}`);
 
-  const { data, error } = await supabase.functions.invoke<{
-    success: boolean;
-    token_id?: string;
-    claim_url?: string;
-    expires_at?: string;
-    error?: string;
-  }>("generate-claim-token", {
-    body: {
-      payload: {
-        version: "1.0",
-        type: "drawing",
-        display: { title: "Claim your drawing", description: prompt },
-        data: { image_path: tempPath, prompt },
-      },
-    },
-  });
-
-  if (error || !data?.success || !data.token_id || !data.claim_url || !data.expires_at) {
-    await supabase.storage.from("temp-drawings").remove([tempPath]).catch(() => undefined);
-    throw new Error(error?.message || data?.error || "Failed to generate claim token");
-  }
-
-  return { claim_url: data.claim_url, expires_at: data.expires_at, token_id: data.token_id };
+  return { tempPath };
 }
 
 export async function fetchTodaysDrawings(): Promise<DrawingSubmission[]> {

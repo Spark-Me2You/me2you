@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { claimService } from '@/core/supabase/claimService';
+import { playClaimSound } from '@/shared/sound/playClaimSound';
 import type { ClaimPayload, GeneratedClaim } from '../types';
 
 interface UseClaimQROptions {
@@ -84,6 +85,7 @@ export function useClaimQR(payload: ClaimPayload, options: UseClaimQROptions = {
     const unsubscribe = claimService.subscribeToClaim(
       claim.token_id,
       (claimedPayload, claimedBy) => {
+        playClaimSound();
         optionsRef.current.onClaimed?.(claimedPayload, claimedBy);
       }
     );
