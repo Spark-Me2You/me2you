@@ -14,6 +14,7 @@ import {
   CustomizeAvatarView,
 } from "@/features/user";
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
+import { MessagesView } from "@/features/messages";
 import AppContainer from "./AppContainer";
 import "./App.css";
 
@@ -69,13 +70,22 @@ function App() {
           </UserProtectedRoute>
         }
       />
-
       {/* User-only route: Avatar accessory customization */}
       <Route
         path="/user/customize"
         element={
           <UserProtectedRoute>
             <CustomizeAvatarView />
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* User-only route: Personal messages inbox */}
+      <Route
+        path="/user/messages"
+        element={
+          <UserProtectedRoute>
+            <MessagesView />
           </UserProtectedRoute>
         }
       />
