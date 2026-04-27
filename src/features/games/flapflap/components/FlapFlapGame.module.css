@@ -33,30 +33,6 @@
   max-width: 28vw;
 }
 
-.exitButton {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  padding: 15px 40px;
-  font-family: "Jersey 10", Arial, sans-serif;
-  font-size: 32px;
-  letter-spacing: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  z-index: 10000;
-}
-
-.exitButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
-}
-
 @media (max-width: 1600px) {
   .gameLayout {
     flex-direction: column;

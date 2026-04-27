@@ -4,6 +4,17 @@ import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService } from "@/features/hub/services/croppedImageService";
 import { storageService } from "@/core/supabase/storage";
+import {
+  HUB_ACCESSORY_TUNING,
+  HUB_DELTA_DENOMINATOR,
+  HUB_DELTA_SCALE,
+} from "@/shared/utils";
+import { ExitButton } from "@/shared/components";
+
+// Global hub mii scaling knob. 0.8 means all character parts render at 80% size.
+const HUB_MII_SIZE_FACTOR = 0.8;
+const HUB_BODY_BASE_SCALE = 0.4;
+const HUB_FACE_BASE_SCALE = 0.35;
 
 export interface CharacterClickData {
   owner_id: string;
@@ -62,8 +73,11 @@ export const PixiHub: React.FC<{
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
-        const HEAD_OFFSET_X = 5;
-        const HEAD_OFFSET_Y = -145;
+        const BODY_SCALE = HUB_BODY_BASE_SCALE * HUB_MII_SIZE_FACTOR;
+        const FACE_SCALE = HUB_FACE_BASE_SCALE * HUB_MII_SIZE_FACTOR;
+        // Scale head offset along with body/head so face placement stays proportional.
+        const HEAD_OFFSET_X = 5 * HUB_MII_SIZE_FACTOR;
+        const HEAD_OFFSET_Y = -145 * HUB_MII_SIZE_FACTOR;
 
         function buildFrameSets(
           def: Texture,
@@ -97,11 +111,14 @@ export const PixiHub: React.FC<{
             leftEyePoint?: { x: number; y: number };
             rightEyePoint?: { x: number; y: number };
             foreheadTopPoint?: { x: number; y: number };
+            relativeX?: number;
+            relativeY?: number;
+            scale?: number;
           },
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
-          walker.scale.set(0.4);
+          walker.scale.set(BODY_SCALE);
           app.stage.addChild(walker);
 
           // Make walker clickable if we have owner data
@@ -122,7 +139,7 @@ export const PixiHub: React.FC<{
             faceSprite = new Sprite(faceTexture);
             // Use center anchor since centroid is relative to original image, not crop
             faceSprite.anchor.set(0.5, 0.5);
-            faceSprite.scale.set(0.35);
+            faceSprite.scale.set(FACE_SCALE);
             app.stage.addChild(faceSprite);
           }
 
@@ -131,9 +148,17 @@ export const PixiHub: React.FC<{
           let accOffsetX = 0;
           let accOffsetY = 0;
           let accRelativeToFace = true;
+          let accUseBalloonHandAnchor = false;
+          let accBaseRotation = 0;
 
           if (accessoryOptions && faceSprite) {
-            const { accessory, texture: accTex } = accessoryOptions;
+            const {
+              accessory,
+              texture: accTex,
+              relativeX = 0,
+              relativeY = 0,
+              scale = 1,
+            } = accessoryOptions;
             accessorySprite = new Sprite(accTex);
             accessorySprite.anchor.set(0.5, 0.5);
             app.stage.addChild(accessorySprite);
@@ -142,25 +167,44 @@ export const PixiHub: React.FC<{
             const faceH = faceSprite.height;
             const aspect = accTex.width / accTex.height;
 
+            // Convert preview-container-percent deltas to hub pixel offsets.
+            // Both axes use face WIDTH as the common reference so that equal
+            // drag distances in the square 220px preview produce equal
+            // proportional shifts relative to the face sprite in the hub,
+            // regardless of the face image's actual aspect ratio.
+            // Adjust HUB_DELTA_SCALE in accessoryLayout.ts to fine-tune.
+            const px = faceW / HUB_DELTA_DENOMINATOR;
+            const userDeltaX = relativeX * px * HUB_DELTA_SCALE.x;
+            const userDeltaY = relativeY * px * HUB_DELTA_SCALE.y;
+
             // Offsets derived from the customize-screen CSS proportions so hub and
             // preview look the same. All positions are relative to the face sprite center.
-            if (accessory === 'sunglasses') {
-              accessorySprite.width = faceW * 1.1;
+            if (accessory === "sunglasses" || accessory === "glasses") {
+              accessorySprite.width =
+                faceW * HUB_ACCESSORY_TUNING.sunglasses.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX = 0;
-              accOffsetY = faceH * 0.33;  // eye level: 33% below face center
-            } else if (accessory === 'hat') {
-              accessorySprite.width = faceW * 0.85;
+              accOffsetX =
+                faceW * HUB_ACCESSORY_TUNING.sunglasses.offsetXFactor + userDeltaX;
+              accOffsetY =
+                faceH * HUB_ACCESSORY_TUNING.sunglasses.offsetYFactor + userDeltaY;
+            } else if (accessory === "hat") {
+              accessorySprite.width =
+                faceW * HUB_ACCESSORY_TUNING.hat.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX = 0;
-              accOffsetY = -faceH * 0.16;  // 16% above face center (hat on head)
-            } else if (accessory === 'balloon') {
-              accessorySprite.width = faceW * 0.58;
+              accOffsetX = faceW * HUB_ACCESSORY_TUNING.hat.offsetXFactor + userDeltaX;
+              accOffsetY = faceH * HUB_ACCESSORY_TUNING.hat.offsetYFactor + userDeltaY;
+            } else if (accessory === "balloon") {
+              accessorySprite.width =
+                faceW * HUB_ACCESSORY_TUNING.balloon.widthFactor * scale;
               accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX = faceW * 0.73;   // upper-right of face
-              accOffsetY = -faceH * 0.20;
+              // Balloon should anchor to hand, not face.
+              accRelativeToFace = false;
+              accUseBalloonHandAnchor = true;
+              accBaseRotation = HUB_ACCESSORY_TUNING.balloon.tiltRadians;
+              // Store user delta on the offset vars; applied after hand-anchor math.
+              accOffsetX = userDeltaX;
+              accOffsetY = userDeltaY;
             }
-            accRelativeToFace = true;
           }
 
           let wx = startX;
@@ -241,7 +285,7 @@ export const PixiHub: React.FC<{
                 ? walkFramesRight
                 : walkFramesLeft;
 
-              walker.scale.x = 0.4;
+              walker.scale.x = BODY_SCALE;
               bobPhase += 0.1 * dt;
               walker.y = wy + Math.sin(bobPhase) * 1.8;
 
@@ -292,18 +336,44 @@ export const PixiHub: React.FC<{
             }
 
             if (accessorySprite) {
-              if (accRelativeToFace) {
-                accessorySprite.x = (walker.x + HEAD_OFFSET_X) + accOffsetX;
-                accessorySprite.y = (walker.y + HEAD_OFFSET_Y) + accOffsetY;
+              const bobRotation =
+                state === "walk" ? Math.sin(bobPhase * 0.5) * 0.04 : 0;
+
+              if (accUseBalloonHandAnchor) {
+                // Anchor the balloon string endpoint into the right hand and then
+                // back-solve the balloon center, accounting for rotation.
+                const handX =
+                  walker.x +
+                  walker.width * HUB_ACCESSORY_TUNING.balloon.handXFactor;
+                const handY =
+                  walker.y -
+                  walker.height * HUB_ACCESSORY_TUNING.balloon.handYFactor;
+
+                const totalRotation = accBaseRotation + bobRotation;
+                const stringEndDx =
+                  accessorySprite.width *
+                  (HUB_ACCESSORY_TUNING.balloon.stringEndU - 0.5);
+                const stringEndDy =
+                  accessorySprite.height *
+                  (HUB_ACCESSORY_TUNING.balloon.stringEndV - 0.5);
+
+                const cos = Math.cos(totalRotation);
+                const sin = Math.sin(totalRotation);
+                const rotatedDx = stringEndDx * cos - stringEndDy * sin;
+                const rotatedDy = stringEndDx * sin + stringEndDy * cos;
+
+                // accOffsetX/Y carry the user's relativeX/Y delta for balloon
+                accessorySprite.x = handX - rotatedDx + accOffsetX;
+                accessorySprite.y = handY - rotatedDy + accOffsetY;
+              } else if (accRelativeToFace) {
+                accessorySprite.x = walker.x + HEAD_OFFSET_X + accOffsetX;
+                accessorySprite.y = walker.y + HEAD_OFFSET_Y + accOffsetY;
               } else {
                 accessorySprite.x = walker.x + accOffsetX;
                 accessorySprite.y = walker.y + accOffsetY;
               }
-              if (state === "walk") {
-                accessorySprite.rotation = Math.sin(bobPhase * 0.5) * 0.04;
-              } else {
-                accessorySprite.rotation = 0;
-              }
+
+              accessorySprite.rotation = accBaseRotation + bobRotation;
             }
           };
         }
@@ -333,7 +403,9 @@ export const PixiHub: React.FC<{
         }
 
         // Load accessory textures once (SVG placeholders — replace with PNGs when final art is ready)
-        const loadAccessoryTexture = async (path: string): Promise<Texture | null> => {
+        const loadAccessoryTexture = async (
+          path: string,
+        ): Promise<Texture | null> => {
           try {
             return await Assets.load(path);
           } catch {
@@ -343,15 +415,15 @@ export const PixiHub: React.FC<{
         };
 
         const [sgTex, hatTex, balloonTex] = await Promise.all([
-          loadAccessoryTexture('/accessories/sunglasses.svg'),
-          loadAccessoryTexture('/accessories/hat.svg'),
-          loadAccessoryTexture('/accessories/balloon.svg'),
+          loadAccessoryTexture("/accessories/sunglasses.svg"),
+          loadAccessoryTexture("/accessories/hat.svg"),
+          loadAccessoryTexture("/accessories/balloon.svg"),
         ]);
 
         const accessoryTextures: Record<string, Texture> = {};
-        if (sgTex) accessoryTextures['sunglasses'] = sgTex;
-        if (hatTex) accessoryTextures['hat'] = hatTex;
-        if (balloonTex) accessoryTextures['balloon'] = balloonTex;
+        if (sgTex) accessoryTextures["sunglasses"] = sgTex;
+        if (hatTex) accessoryTextures["hat"] = hatTex;
+        if (balloonTex) accessoryTextures["balloon"] = balloonTex;
 
         if (!isMounted) {
           app.destroy();
@@ -401,8 +473,10 @@ export const PixiHub: React.FC<{
 
                     // Create walker with face and optional accessory
                     const position = randSpawn();
-                    const accTex = row.accessory
-                      ? accessoryTextures[row.accessory]
+                    const settings = row.accessorySettings;
+                    const selectedAccessory = settings?.selected_accessory ?? null;
+                    const accTex = selectedAccessory
+                      ? accessoryTextures[selectedAccessory]
                       : undefined;
                     const ticker = createWalker(
                       position.x,
@@ -416,13 +490,17 @@ export const PixiHub: React.FC<{
                       row.owner_id,
                       row.id,
                       row.storage_path,
-                      row.accessory && accTex
+                      selectedAccessory && accTex
                         ? {
-                            accessory: row.accessory,
+                            accessory: selectedAccessory,
                             texture: accTex,
                             leftEyePoint: row.left_eye_point ?? undefined,
                             rightEyePoint: row.right_eye_point ?? undefined,
-                            foreheadTopPoint: row.forehead_top_point ?? undefined,
+                            foreheadTopPoint:
+                              row.forehead_top_point ?? undefined,
+                            relativeX: settings?.relative_x ?? 0,
+                            relativeY: settings?.relative_y ?? 0,
+                            scale: settings?.scale ?? 1,
                           }
                         : undefined,
                     );
@@ -478,26 +556,7 @@ export const PixiHub: React.FC<{
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-      <button
-        onClick={handleClick}
-        style={{
-          position: "fixed",
-          bottom: "3%",
-          right: "4%",
-          backgroundColor: "#7105e4",
-          color: "#fff",
-          border: "none",
-          padding: "14px 28px",
-          fontFamily: "'Jersey 10', sans-serif",
-          fontSize: "clamp(16px, 1.8vw, 28px)",
-          letterSpacing: "5px",
-          cursor: "pointer",
-          borderRadius: 6,
-          zIndex: 100,
-        }}
-      >
-        back
-      </button>
+      <ExitButton onClick={handleClick} />
     </div>
   );
 };

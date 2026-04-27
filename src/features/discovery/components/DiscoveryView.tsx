@@ -15,6 +15,7 @@ import {
   isSupportedGesture,
   CATEGORY_LIST,
 } from "../config/gestureMapping";
+import { ExitButton } from "@/shared/components";
 import styles from "./DiscoveryView.module.css";
 
 /**
@@ -265,10 +266,7 @@ export const DiscoveryView: React.FC = () => {
       {/* "choose a pose:" overlay - always visible */}
       <PoseOverlay />
 
-      {/* Exit button - top right */}
-      <button className={styles.exitButton} onClick={handleBack}>
-        exit
-      </button>
+      <ExitButton onClick={handleBack} />
     </div>
   );
 };

@@ -4,7 +4,8 @@
  */
 
 import { supabase } from '@/core/supabase/client';
-import type { Accessory } from '@/core/auth/AuthContext';
+import { accessoryService } from '@/features/profile-editor/services/accessoryService';
+import type { AccessorySettings } from '@/features/profile-editor/types/profileTypes';
 
 /**
  * Cropped image row with landmark points, storage path, and owner info
@@ -17,7 +18,7 @@ export interface CroppedImageRow {
   left_eye_point: { x: number; y: number } | null;
   right_eye_point: { x: number; y: number } | null;
   forehead_top_point: { x: number; y: number } | null;
-  accessory: Accessory | null;
+  accessorySettings: AccessorySettings | null;
 }
 
 /**
@@ -76,24 +77,9 @@ export const croppedImageService = {
 
       const rawRows = data || [];
 
-      // Fetch accessories for all owners in this batch
+      // Fetch accessory settings for all owners in this batch from the accessories table
       const ownerIds = rawRows.map((r: any) => r.owner_id as string);
-      let accessoryMap = new Map<string, Accessory | null>();
-
-      if (ownerIds.length > 0) {
-        const { data: userData, error: userError } = await supabase
-          .from('user')
-          .select('id, accessory')
-          .in('id', ownerIds);
-
-        if (userError) {
-          console.warn('[croppedImageService] Failed to fetch user accessories:', userError);
-        } else {
-          accessoryMap = new Map(
-            (userData || []).map((u: any) => [u.id as string, (u.accessory as Accessory | null)])
-          );
-        }
-      }
+      const settingsMap = await accessoryService.getSettingsForOwners(ownerIds);
 
       const rows: CroppedImageRow[] = rawRows.map((row: any) => ({
         id: row.id,
@@ -103,7 +89,7 @@ export const croppedImageService = {
         left_eye_point: parsePoint(row.left_eye_point),
         right_eye_point: parsePoint(row.right_eye_point),
         forehead_top_point: parsePoint(row.forehead_top_point),
-        accessory: accessoryMap.get(row.owner_id) ?? null,
+        accessorySettings: settingsMap.get(row.owner_id) ?? null,
       }));
 
       console.log(
