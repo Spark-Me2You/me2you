@@ -1,4 +1,5 @@
 export { ClaimQR } from './components/ClaimQR';
+export { ClaimSection } from './components/ClaimSection';
 export { ClaimScanner } from './components/ClaimScanner';
 export { ClaimPage } from './components/ClaimPage';
 export { ClaimSuccessPage } from './components/ClaimSuccessPage';

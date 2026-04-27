@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { ClaimQR, useClaimQR } from "@/features/claim";
+import { ClaimSection } from "@/features/claim";
 import type { ClaimPayload } from "@/features/claim";
 import type { FlapFlapLeaderboardEntry } from "@/features/games/services/gameScoreService";
 import { FlapFlapLeaderboard } from "./FlapFlapLeaderboard";
@@ -12,26 +12,6 @@ interface GameOverClaimProps {
   isLeaderboardLoading: boolean;
   leaderboardError: string | null;
   onScoreClaimed?: () => void;
-}
-
-interface ClaimSectionProps {
-  payload: ClaimPayload;
-  onClaimed: () => void;
-}
-
-function ClaimSection({ payload, onClaimed }: ClaimSectionProps) {
-  const { claim, isGenerating, error, secondsRemaining, regenerate } =
-    useClaimQR(payload, { onClaimed: () => onClaimed() });
-
-  return (
-    <ClaimQR
-      claim={claim}
-      isGenerating={isGenerating}
-      error={error}
-      secondsRemaining={secondsRemaining}
-      onRegenerate={regenerate}
-    />
-  );
 }
 
 export function GameOverClaim({
@@ -77,7 +57,7 @@ export function GameOverClaim({
       {claimed ? (
         <div className={styles.confirmedState}>
           <span className={styles.trophy}>🏆</span>
-          <p className={styles.confirmedText}>Score saved!</p>
+          <p className={styles.confirmedText}>Score Claimed</p>
           <FlapFlapLeaderboard
             className={styles.overlayLeaderboard}
             entries={leaderboardEntries}
