@@ -41,6 +41,10 @@ const TEXT_STYLE: React.CSSProperties = {
   letterSpacing: '-0.72px',
   margin: 0,
   textAlign: 'left',
+  // Keep typed text inside the box.
+  wordBreak: 'break-word',
+  overflowWrap: 'break-word',
+  whiteSpace: 'normal',
 };
 
 interface ProfileCardViewProps {
@@ -51,7 +55,16 @@ interface ProfileCardViewProps {
 }
 
 const FractalBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ position: 'relative', width: '70%', minHeight: '90px' }}>
+  <div
+    style={{
+      position: 'relative',
+      width: '100%',
+      minHeight: '90px',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+    }}
+  >
     <div style={{ ...TAPE_STYLE, top: -5, left: -10 }} />
     <div style={{ ...TAPE_STYLE, bottom: -5, right: -10 }} />
 
@@ -176,10 +189,10 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           </div>
 
           {/* ── Right column ── */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5%', paddingTop: '0.5%' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4%', paddingTop: '0.5%', minWidth: 0 }}>
 
             {/* Status */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, width: '100%' }}>
               <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
                 <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   status:
@@ -193,7 +206,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
             </div>
 
             {/* Interests */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, width: '100%' }}>
               <div style={{ backgroundColor: ORANGE, display: 'inline-block', padding: '6px 14px' }}>
                 <span style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 'clamp(12px, 1.8vw, 32px)', letterSpacing: '0.17em', color: '#000' }}>
                   interests:
@@ -214,17 +227,36 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
               </FractalBox>
             </div>
 
-            {/* Badges */}
-            <div style={{ marginTop: '2%' }}>
-              <BadgeDisplay
-                userId={owner.id}
-                userCreatedAt={owner.created_at}
-                orgId={owner.org_id}
-              />
+            {/* Bottom row: badges (left half) + envelope (right half) */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '4%',
+                marginTop: '2%',
+                width: '100%',
+                minWidth: 0,
+                alignItems: 'flex-start',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <BadgeDisplay
+                  userId={owner.id}
+                  userCreatedAt={owner.created_at}
+                  orgId={owner.org_id}
+                />
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <SendMessageButton recipientId={owner.id} recipientName={owner.name} />
+              </div>
             </div>
-
-            {/* Send Message */}
-            <SendMessageButton recipientId={owner.id} recipientName={owner.name} />
 
           </div>
         </div>

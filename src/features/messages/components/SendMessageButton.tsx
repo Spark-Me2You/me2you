@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { ClaimQR, useClaimQR } from '@/features/claim';
 import type { ClaimPayload } from '@/features/claim';
+import envelopeClosed from '@/assets/envelope1.png';
+import envelopeOpen from '@/assets/openenvelope.png';
 
 const ORANGE = '#e44805';
 
@@ -61,25 +63,39 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
 
   return (
     <>
+      {/* Closed-envelope trigger button — fits inside its parent column. */}
       <div
         onClick={handleOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOpen(); }}
         style={{
-          display: 'inline-block',
-          marginTop: '8%',
-          backgroundColor: ORANGE,
-          padding: '8px 18px',
-          borderRadius: 8,
+          position: 'relative',
+          width: '90%',
+          maxWidth: 200,
+          aspectRatio: '3 / 2',
+          backgroundImage: `url(${envelopeClosed})`,
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           cursor: 'pointer',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+          filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.25))',
         }}
       >
         <span style={{
           fontFamily: "'Jersey 10', sans-serif",
-          fontSize: 'clamp(12px, 1.8vw, 28px)',
+          fontSize: 'clamp(14px, 1.6vw, 28px)',
           letterSpacing: '0.17em',
           color: '#fff',
+          textShadow: '2px 2px 0 rgba(0,0,0,0.45)',
+          textAlign: 'center',
+          padding: '0 12%',
+          pointerEvents: 'none',
         }}>
-          send message
+          send a message
         </span>
       </div>
 
@@ -96,22 +112,38 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
           }}
           onClick={handleClose}
         >
+          {/* Open-envelope panel — content overlaid on top of the open envelope image. */}
           <div
-            style={{
-              background: '#fff',
-              borderRadius: 20,
-              padding: '32px 40px',
-              minWidth: 320,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 20,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-            }}
             onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: 'min(640px, 90vw)',
+              aspectRatio: '5 / 4',
+              backgroundImage: `url(${envelopeOpen})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.35))',
+            }}
           >
             {claimed ? (
-              <>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '45%',
+                  left: '20%',
+                  right: '20%',
+                  bottom: '10%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 12,
+                }}
+              >
                 <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 24, letterSpacing: '0.1em', margin: 0, color: ORANGE }}>
                   message sent!
                 </p>
@@ -131,15 +163,69 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                 >
                   ok
                 </button>
+              </div>
+            ) : isClaimRequested ? (
+              <>
+                {/* QR view — text + (smaller) QR sit on the envelope body. */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '46%',
+                    left: '20%',
+                    right: '20%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 18, letterSpacing: '0.1em', margin: 0, color: '#333', textAlign: 'center' }}>
+                    scan to send a message to {recipientName}
+                  </p>
+                  <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
+                    <ClaimSection payload={payload} onClaimed={handleClaimed} />
+                  </div>
+                </div>
+
+                {/* Cancel sits on the bottom of the envelope, independent of the content above. */}
+                <button
+                  onClick={handleClose}
+                  style={{
+                    position: 'absolute',
+                    bottom: '12%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontFamily: "'Jersey 10', sans-serif",
+                    fontSize: 16,
+                    letterSpacing: '0.1em',
+                    color: '#888',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px 0',
+                  }}
+                >
+                  cancel
+                </button>
               </>
             ) : (
               <>
-                <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 20, letterSpacing: '0.1em', margin: 0, color: '#333', textAlign: 'center' }}>
-                  {isClaimRequested ? `scan to send a message to ${recipientName}` : `send a message to ${recipientName}`}
-                </p>
-                {isClaimRequested ? (
-                  <ClaimSection payload={payload} onClaimed={handleClaimed} />
-                ) : (
+                {/* Pre-QR view — top text + generate-qr button stay together. */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '45%',
+                    left: '20%',
+                    right: '20%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <p style={{ fontFamily: "'Jersey 10', sans-serif", fontSize: 20, letterSpacing: '0.1em', margin: 0, color: '#333', textAlign: 'center' }}>
+                    send a message to {recipientName}
+                  </p>
                   <button
                     onClick={() => setIsClaimRequested(true)}
                     style={{
@@ -157,10 +243,16 @@ export function SendMessageButton({ recipientId, recipientName }: SendMessageBut
                   >
                     generate qr
                   </button>
-                )}
+                </div>
+
+                {/* Cancel positioned independently — easy to nudge separately. */}
                 <button
                   onClick={handleClose}
                   style={{
+                    position: 'absolute',
+                    bottom: '14%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
                     fontFamily: "'Jersey 10', sans-serif",
                     fontSize: 16,
                     letterSpacing: '0.1em',

@@ -7,6 +7,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/core/supabase/client';
 import { getEarnedBadges, type BadgeId } from '@/core/badges/badgeService';
+
+const BADGE_TITLES: Record<string, string> = {
+  new_test: 'newcomer',
+  '1week_test': '1 week strong',
+  '1month_test': '1 month strong',
+  firstplace_test: 'first place!',
+};
+
+function badgeTitle(id: string) {
+  return BADGE_TITLES[id] ?? id.replace(/_/g, ' ');
+}
 import type { UserProfile } from '@/features/discovery/types/image';
 import styles from './BadgeDisplay.module.css';
 
@@ -76,15 +87,20 @@ export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   }
 
   return (
-    <div className={styles.badgeContainer}>
-      {badges.map((badgeId) => (
-        <img
-          key={badgeId}
-          src={`/badges/${badgeId}.PNG`}
-          alt={badgeId}
-          className={styles.badge}
-        />
-      ))}
+    <div className={styles.badgeContainer} data-count={badges.length}>
+      {badges.map((badgeId) => {
+        const title = badgeTitle(badgeId);
+        return (
+          <span key={badgeId} className={styles.badgeWrap} tabIndex={0}>
+            <img
+              src={`/badges/${badgeId}.PNG`}
+              alt={title}
+              className={styles.badge}
+            />
+            <span className={styles.tooltip}>{title}</span>
+          </span>
+        );
+      })}
     </div>
   );
 };
