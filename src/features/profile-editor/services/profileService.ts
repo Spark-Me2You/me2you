@@ -189,6 +189,7 @@ export const profileService = {
             .from("gesture_image")
             .select("id, storage_path")
             .eq("owner_id", userId)
+            .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
           PROFILE_QUERY_TIMEOUT_MS,

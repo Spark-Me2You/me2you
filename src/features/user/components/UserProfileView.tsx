@@ -3,8 +3,6 @@ import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { profileService } from "@/features/profile-editor/services/profileService";
-import { hubService } from "@/features/hub/services/hubService";
-import { storageService } from "@/core/supabase";
 import type {
   ProfileWithImage,
   UpdateProfileInput,
@@ -37,7 +35,6 @@ export const UserProfileView: React.FC = () => {
   const currentUserId = session?.user.id ?? null;
 
   const [profileData, setProfileData] = useState<ProfileWithImage | null>(null);
-  const [gestureImageUrl, setGestureImageUrl] = useState<string | null>(null);
   const [accessorySettings, setAccessorySettings] = useState<AccessorySettings>(DEFAULT_ACCESSORY_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -51,66 +48,29 @@ export const UserProfileView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"picture" | "mii">("picture");
 
   const mountedRef = useRef(true);
-  const loadRequestIdRef = useRef(0);
+  const profileLoadRequestIdRef = useRef(0);
+  const accessoryLoadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
 
-  const loadProfile = useCallback(
+  const loadCoreProfile = useCallback(
     async (options?: { setLoading?: boolean }) => {
       const setLoading = options?.setLoading ?? true;
-      const requestId = ++loadRequestIdRef.current;
+      const requestId = ++profileLoadRequestIdRef.current;
 
       if (setLoading) {
         setIsLoading(true);
       }
 
       try {
-        const [data, accSettings] = await Promise.all([
-          profileService.getCurrentProfile({ userId: currentUserId }),
-          currentUserId
-            ? accessoryService.getAccessorySettings(currentUserId)
-            : Promise.resolve(DEFAULT_ACCESSORY_SETTINGS),
-        ]);
+        const data = await profileService.getCurrentProfile({ userId: currentUserId });
 
-        if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+        if (!mountedRef.current || requestId !== profileLoadRequestIdRef.current) {
           return;
         }
 
         setProfileData(data);
-        setAccessorySettings(accSettings);
-
-        if (data?.profile.org_id && data.profile.id) {
-          try {
-            const path = await hubService.getGestureImageByOwnerId(
-              data.profile.id,
-              data.profile.org_id,
-            );
-            if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
-              return;
-            }
-            if (path) {
-              const url = await storageService.getPhotoUrl(path);
-              if (
-                !mountedRef.current ||
-                requestId !== loadRequestIdRef.current
-              ) {
-                return;
-              }
-              setGestureImageUrl(url);
-            } else {
-              setGestureImageUrl(null);
-            }
-          } catch (gestureErr) {
-            console.warn(
-              "[UserProfileView] Failed to fetch gesture image:",
-              gestureErr,
-            );
-            if (mountedRef.current && requestId === loadRequestIdRef.current) {
-              setGestureImageUrl(null);
-            }
-          }
-        }
       } catch (err) {
-        if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+        if (!mountedRef.current || requestId !== profileLoadRequestIdRef.current) {
           return;
         }
 
@@ -119,7 +79,7 @@ export const UserProfileView: React.FC = () => {
         if (
           setLoading &&
           mountedRef.current &&
-          requestId === loadRequestIdRef.current
+          requestId === profileLoadRequestIdRef.current
         ) {
           setIsLoading(false);
         }
@@ -128,14 +88,41 @@ export const UserProfileView: React.FC = () => {
     [currentUserId],
   );
 
+  const loadAccessorySettings = useCallback(async () => {
+    if (!currentUserId) {
+      setAccessorySettings(DEFAULT_ACCESSORY_SETTINGS);
+      return;
+    }
+
+    const requestId = ++accessoryLoadRequestIdRef.current;
+
+    try {
+      const settings = await accessoryService.getAccessorySettings(currentUserId);
+
+      if (!mountedRef.current || requestId !== accessoryLoadRequestIdRef.current) {
+        return;
+      }
+
+      setAccessorySettings(settings);
+    } catch (err) {
+      if (!mountedRef.current || requestId !== accessoryLoadRequestIdRef.current) {
+        return;
+      }
+
+      console.warn("[UserProfileView] Failed to load accessory settings:", err);
+      setAccessorySettings(DEFAULT_ACCESSORY_SETTINGS);
+    }
+  }, [currentUserId]);
+
   useEffect(() => {
     mountedRef.current = true;
-    loadProfile();
+    void loadCoreProfile();
+    void loadAccessorySettings();
 
     return () => {
       mountedRef.current = false;
     };
-  }, [loadProfile]);
+  }, [loadCoreProfile, loadAccessorySettings]);
 
   const nextSaveToken = useCallback(() => {
     return ++saveRequestIdRef.current;
@@ -220,7 +207,7 @@ export const UserProfileView: React.FC = () => {
       }
       setIsPhotoModalOpen(false);
 
-      void loadProfile({ setLoading: false }).catch((refreshError) => {
+      void loadCoreProfile({ setLoading: false }).catch((refreshError) => {
         console.warn(
           "[UserProfileView] Post-photo profile refresh failed:",
           refreshError,
@@ -294,7 +281,7 @@ export const UserProfileView: React.FC = () => {
       <>
         <UserProfileEditForm
           initialData={profileData}
-          gestureImageUrl={gestureImageUrl}
+          gestureImageUrl={profileData.imageUrl}
           onSave={handleSaveProfile}
           onCancel={() => {
             setMode("view");
@@ -375,9 +362,9 @@ export const UserProfileView: React.FC = () => {
               </div>
               <div className={styles.avatarStage}>
                 {activeTab === "picture" ? (
-                  gestureImageUrl || profileData.imageUrl ? (
+                  profileData.imageUrl ? (
                     <img
-                      src={gestureImageUrl ?? profileData.imageUrl ?? ""}
+                      src={profileData.imageUrl}
                       alt={profile.name}
                       className={styles.picture}
                     />
