@@ -21,6 +21,13 @@ export interface AccessorySettings {
   scale: number;
 }
 
+export interface AvatarLandmarkPoints {
+  centroid_point: { x: number; y: number } | null;
+  left_eye_point: { x: number; y: number } | null;
+  right_eye_point: { x: number; y: number } | null;
+  forehead_top_point: { x: number; y: number } | null;
+}
+
 export const DEFAULT_ACCESSORY_SETTINGS: AccessorySettings = {
   selected_accessory: null,
   relative_x: 0,
@@ -36,6 +43,7 @@ export interface ProfileWithImage {
   bobbleheadUrl: string | null;
   bobbleheadStoragePath: string | null;
   bobbleheadId: string | null;
+  bobbleheadLandmarks: AvatarLandmarkPoints | null;
 }
 
 export interface DeleteImagesResponse {
