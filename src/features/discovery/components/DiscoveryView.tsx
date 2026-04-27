@@ -16,6 +16,7 @@ import {
   CATEGORY_LIST,
 } from "../config/gestureMapping";
 import { ExitButton } from "@/shared/components";
+import { HelpPopup } from "./HelpPopup";
 import styles from "./DiscoveryView.module.css";
 
 /**
@@ -39,6 +40,8 @@ export const DiscoveryView: React.FC = () => {
   );
   const [selectedProfile, setSelectedProfile] =
     useState<RandomImageData | null>(null);
+
+  const [showHelp, setShowHelp] = useState(false);
 
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
@@ -267,6 +270,17 @@ export const DiscoveryView: React.FC = () => {
       <PoseOverlay />
 
       <ExitButton onClick={handleBack} />
+
+      <button
+        type="button"
+        className={styles.helpButton}
+        onClick={() => setShowHelp(true)}
+        aria-label="open help"
+      >
+        ?
+      </button>
+
+      <HelpPopup isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 };
