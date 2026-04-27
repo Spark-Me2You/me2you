@@ -264,14 +264,14 @@
 .cornerTitle {
   position: absolute;
   bottom: 5%;
-  right: -5%;
-  width: 376px;
+  right: 0%;
+  width: 500px;
   transform: rotate(180.591deg);
   transform-origin: center;
   color: #fff;
   text-align: center;
   font-family: "Jersey 10", sans-serif;
-  font-size: 41px;
+  font-size: 60px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -325,11 +325,12 @@
   z-index: 1;
 }
 
-/* CV mouse demo gif wrapper — rotated to sit upright on the (rotated) corkboard.
-   Tape lives inside this wrapper so it sticks to the gif's visual top. */
-.gifWrap {
+/* CV mouse demo gif wrap — holds the gif + a pink tape strip on its visual top.
+   Wrapper carries the 175deg rotation so tape is positioned in the rotated frame.
+   Visual top of the wrapper = unrotated bottom (corkboard is ~173deg flipped). */
+.cvMouseGifWrap {
   position: absolute;
-  bottom: 15%;
+  bottom: 20%;
   right: 4%;
   width: 40%;
   height: 35%;
@@ -338,35 +339,35 @@
   pointer-events: none;
 }
 
-.gifImg {
+.cvMouseGif {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
 
-/* Pink tape on the visual top of the gif. The wrapper is rotated ~175deg
-   (close to 180), so the wrapper's local BOTTOM becomes the visual TOP. */
-.gifTape {
+/* Pink tape on the visual top of the gif.
+   Sits at unrotated bottom (= visual top because of ~180deg flip on corkboard). */
+.cvMouseGifTape {
   position: absolute;
   top: -10px;
   left: 50%;
   width: 110px;
   height: 24px;
   background: #e405ac;
-  transform: translateX(-50%) rotate(-3deg);
-  box-shadow: 0px 2px 3px rgba(0, 0, 0, 0.2);
+  transform: translateX(-50%) rotate(6deg);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 6;
 }
 
 /* Pink-taped label wrap below the gif (text added by the user later). */
 .tapeLabelWrap {
   position: absolute;
-  bottom: 15%;
+  bottom: 20%;
   right: 42%;
   width: 200px;
-  height: 400px;
-  background: #fff;
+  height: 375px;
+  background: #ffeeb0;
   border-radius: 6px;
   transform: rotate(184deg);
   box-shadow:
@@ -416,11 +417,11 @@
    visual right of the info button in the rotated cork-board space. */
 .arrow2 {
   position: absolute;
-  top: 28%;
+  top: 25%;
   right: 50%;
   width: 44px;
   height: 16px;
-  transform: rotate(-10deg);
+  transform: rotate(-20deg);
   z-index: 4;
   pointer-events: none;
 }
@@ -428,7 +429,7 @@
 /* Info button (Figma: 46px Jersey 10, tracking 7.82px, pink bg, yellow border 7px) */
 .infoButtonWrap {
   position: absolute;
-  top: 22%;
+  top: 20%;
   right: 8%;
   width: 273px;   /* 259 content + 7*2 border */
   height: 108px;  /* 94 content + 7*2 border */

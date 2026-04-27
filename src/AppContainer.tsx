@@ -179,16 +179,16 @@ function AppContainerContent() {
                 <img src={corkboardImage} alt="" className={styles.corkBoardBg} />
 
                 {/* Corner title (top-left of corkboard) */}
-                <div className={styles.cornerTitle}>NEW HERE?</div>
+                <div className={styles.cornerTitle}>MOUSE TUTORIAL</div>
 
                 {/* Gesture demo gif (with pink tape on top) */}
-                <div className={styles.gifWrap}>
+                <div className={styles.cvMouseGifWrap}>
                   <img
                     src={cvMouseGif}
                     alt="Hover and click gesture demo"
-                    className={styles.gifImg}
+                    className={styles.cvMouseGif}
                   />
-                  <div className={styles.gifTape} />
+                  <div className={styles.cvMouseGifTape} />
                 </div>
 
                 {/* Pink-tape label below gif */}
