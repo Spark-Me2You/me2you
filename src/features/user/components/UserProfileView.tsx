@@ -9,8 +9,15 @@ import type {
   UpdateProfileInput,
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
+import type { Accessory } from "@/core/auth/AuthContext";
 import logo from "@/assets/me2you.png";
 import miiBody from "@/assets/mii_body.png";
+
+const ACCESSORY_PREVIEWS: Record<Accessory, string> = {
+  sunglasses: "/accessories/sunglasses.svg",
+  hat: "/accessories/hat.svg",
+  balloon: "/accessories/balloon.svg",
+};
 import labelBanner1 from "@/assets/label_banner1.svg";
 import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
@@ -380,6 +387,19 @@ export const UserProfileView: React.FC = () => {
                     ) : (
                       <div className={styles.miiFaceMissing}>no face yet</div>
                     )}
+                    {profile.accessory && (
+                      <img
+                        src={ACCESSORY_PREVIEWS[profile.accessory]}
+                        alt={profile.accessory}
+                        className={
+                          profile.accessory === "sunglasses"
+                            ? styles.accessorySunglasses
+                            : profile.accessory === "hat"
+                              ? styles.accessoryHat
+                              : styles.accessoryBalloon
+                        }
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -470,6 +490,15 @@ export const UserProfileView: React.FC = () => {
                 className={styles.drawingsButton}
               >
                 my drawings
+              </button>
+            </div>
+
+            <div className={styles.buttonRowTop}>
+              <button
+                onClick={() => navigate("/user/customize")}
+                className={styles.customizeButton}
+              >
+                customize avatar
               </button>
             </div>
 

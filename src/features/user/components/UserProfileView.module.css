@@ -154,11 +154,12 @@
 }
 
 .miiBody {
-  max-width: 90%;
-  max-height: 80%;
+  /* max-height 45% of the avatarStage (~224px) ≈ 101px, matching the hub's
+     body scale=0.4 relationship so the face lands just above the body neck. */
+  max-height: 45%;
+  width: auto;
   object-fit: contain;
   display: block;
-  transform: scale(0.6);
 }
 
 .miiFace {
@@ -169,6 +170,36 @@
   width: 45%;
   height: auto;
   object-fit: contain;
+}
+
+/* Accessory overlays — same proportions as CustomizeAvatarView for consistency */
+.accessorySunglasses {
+  position: absolute;
+  top: 37%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: auto;
+  pointer-events: none;
+}
+
+.accessoryHat {
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 38%;
+  height: auto;
+  pointer-events: none;
+}
+
+.accessoryBalloon {
+  position: absolute;
+  top: 1%;
+  right: 4%;
+  width: 26%;
+  height: auto;
+  pointer-events: none;
 }
 
 .miiFaceMissing {
@@ -513,4 +544,27 @@
   color: #b71c1c;
   text-align: center;
   margin: 8px 0 0 0;
+}
+
+.customizeButton {
+  flex: 1;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 20px;
+  color: #7105e4;
+  background: rgba(113, 5, 228, 0.08);
+  border: 2px solid #7105e4;
+  border-radius: 14px;
+  padding: 20px 14px;
+  cursor: pointer;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.customizeButton:hover {
+  background: rgba(113, 5, 228, 0.16);
+}
+
+.customizeButton:active {
+  transform: scale(0.98);
 }

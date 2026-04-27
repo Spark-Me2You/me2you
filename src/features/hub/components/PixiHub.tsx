@@ -91,6 +91,13 @@ export const PixiHub: React.FC<{
           ownerId?: string,
           croppedImageId?: string,
           storagePath?: string,
+          accessoryOptions?: {
+            accessory: string;
+            texture: Texture;
+            leftEyePoint?: { x: number; y: number };
+            rightEyePoint?: { x: number; y: number };
+            foreheadTopPoint?: { x: number; y: number };
+          },
         ) {
           const walker = new Sprite(texture);
           walker.anchor.set(0.5, 1);
@@ -117,6 +124,43 @@ export const PixiHub: React.FC<{
             faceSprite.anchor.set(0.5, 0.5);
             faceSprite.scale.set(0.35);
             app.stage.addChild(faceSprite);
+          }
+
+          // Accessory sprite — positioned via face landmarks or fixed body offset
+          let accessorySprite: Sprite | null = null;
+          let accOffsetX = 0;
+          let accOffsetY = 0;
+          let accRelativeToFace = true;
+
+          if (accessoryOptions && faceSprite) {
+            const { accessory, texture: accTex } = accessoryOptions;
+            accessorySprite = new Sprite(accTex);
+            accessorySprite.anchor.set(0.5, 0.5);
+            app.stage.addChild(accessorySprite);
+
+            const faceW = faceSprite.width;
+            const faceH = faceSprite.height;
+            const aspect = accTex.width / accTex.height;
+
+            // Offsets derived from the customize-screen CSS proportions so hub and
+            // preview look the same. All positions are relative to the face sprite center.
+            if (accessory === 'sunglasses') {
+              accessorySprite.width = faceW * 1.1;
+              accessorySprite.height = accessorySprite.width / aspect;
+              accOffsetX = 0;
+              accOffsetY = faceH * 0.33;  // eye level: 33% below face center
+            } else if (accessory === 'hat') {
+              accessorySprite.width = faceW * 0.85;
+              accessorySprite.height = accessorySprite.width / aspect;
+              accOffsetX = 0;
+              accOffsetY = -faceH * 0.16;  // 16% above face center (hat on head)
+            } else if (accessory === 'balloon') {
+              accessorySprite.width = faceW * 0.58;
+              accessorySprite.height = accessorySprite.width / aspect;
+              accOffsetX = faceW * 0.73;   // upper-right of face
+              accOffsetY = -faceH * 0.20;
+            }
+            accRelativeToFace = true;
           }
 
           let wx = startX;
@@ -246,6 +290,21 @@ export const PixiHub: React.FC<{
                 faceSprite.rotation = 0;
               }
             }
+
+            if (accessorySprite) {
+              if (accRelativeToFace) {
+                accessorySprite.x = (walker.x + HEAD_OFFSET_X) + accOffsetX;
+                accessorySprite.y = (walker.y + HEAD_OFFSET_Y) + accOffsetY;
+              } else {
+                accessorySprite.x = walker.x + accOffsetX;
+                accessorySprite.y = walker.y + accOffsetY;
+              }
+              if (state === "walk") {
+                accessorySprite.rotation = Math.sin(bobPhase * 0.5) * 0.04;
+              } else {
+                accessorySprite.rotation = 0;
+              }
+            }
           };
         }
 
@@ -267,6 +326,32 @@ export const PixiHub: React.FC<{
           bodyFrames[0][3],
           bodyFrames[0][4],
         );
+
+        if (!isMounted) {
+          app.destroy();
+          return;
+        }
+
+        // Load accessory textures once (SVG placeholders — replace with PNGs when final art is ready)
+        const loadAccessoryTexture = async (path: string): Promise<Texture | null> => {
+          try {
+            return await Assets.load(path);
+          } catch {
+            console.warn(`[PixiHub] Could not load accessory texture: ${path}`);
+            return null;
+          }
+        };
+
+        const [sgTex, hatTex, balloonTex] = await Promise.all([
+          loadAccessoryTexture('/accessories/sunglasses.svg'),
+          loadAccessoryTexture('/accessories/hat.svg'),
+          loadAccessoryTexture('/accessories/balloon.svg'),
+        ]);
+
+        const accessoryTextures: Record<string, Texture> = {};
+        if (sgTex) accessoryTextures['sunglasses'] = sgTex;
+        if (hatTex) accessoryTextures['hat'] = hatTex;
+        if (balloonTex) accessoryTextures['balloon'] = balloonTex;
 
         if (!isMounted) {
           app.destroy();
@@ -314,8 +399,11 @@ export const PixiHub: React.FC<{
 
                     if (!isMounted) return;
 
-                    // Create walker with face
+                    // Create walker with face and optional accessory
                     const position = randSpawn();
+                    const accTex = row.accessory
+                      ? accessoryTextures[row.accessory]
+                      : undefined;
                     const ticker = createWalker(
                       position.x,
                       position.y,
@@ -328,6 +416,15 @@ export const PixiHub: React.FC<{
                       row.owner_id,
                       row.id,
                       row.storage_path,
+                      row.accessory && accTex
+                        ? {
+                            accessory: row.accessory,
+                            texture: accTex,
+                            leftEyePoint: row.left_eye_point ?? undefined,
+                            rightEyePoint: row.right_eye_point ?? undefined,
+                            foreheadTopPoint: row.forehead_top_point ?? undefined,
+                          }
+                        : undefined,
                     );
 
                     // Add ticker to array immediately

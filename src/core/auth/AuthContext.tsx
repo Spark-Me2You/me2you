@@ -13,6 +13,8 @@ import type { User, Session } from '@supabase/supabase-js';
  */
 export type AuthMode = 'admin' | 'kiosk' | 'user' | 'unauthenticated';
 
+export type Accessory = 'sunglasses' | 'hat' | 'balloon';
+
 /**
  * User Profile Data
  * Represents a registered user's profile from the user table
@@ -28,6 +30,7 @@ export interface UserProfile {
   visibility: string;
   created_at: string;
   updated_at: string;
+  accessory: Accessory | null;
 }
 
 /**
