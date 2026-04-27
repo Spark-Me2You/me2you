@@ -1,0 +1,192 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  animation: fadeIn 200ms ease-out;
+}
+
+.panel {
+  position: fixed;
+  top: 50%;
+  right: 5%;
+  transform: translateY(-50%);
+  width: min(900px, 80vw);
+  /* Height follows the corkboard image's natural aspect ratio
+     (894 x 603 → ~1.483). The image renders untouched and the panel
+     bounds match the visible corkboard exactly. */
+  z-index: 201;
+  animation: slideInRight 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cork {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  padding: 6%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  z-index: 1;
+}
+
+.leftCol,
+.rightCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* leftCol holds the gif (centered, pushed up) and the otter pinned at the
+   bottom-left of the corkboard via `position: absolute`. */
+.leftCol {
+  position: relative;
+  align-items: flex-start;
+  padding-top: 25%;
+}
+
+.rightCol {
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  /* Push the bullet card up so it sits higher inside the corkboard. */
+  padding-top: 4%;
+}
+
+.gif {
+  max-width: 100%;
+  max-height: 60%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Otter mascot pinned to the bottom-left of the corkboard.
+   `left` + `bottom` are exposed so they can be nudged easily. */
+.otter {
+  position: absolute;
+  left: 0px;
+  bottom: -38px;
+  width: 45%;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+}
+
+/* "confused?" title — pinned to the top-left of the corkboard. */
+.title {
+  position: absolute;
+  top: 6%;
+  left: 6%;
+  margin: 0;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 60px;
+  letter-spacing: 4px;
+  color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  text-transform: lowercase;
+  z-index: 1;
+}
+
+/* Yellow taped label that holds the bullet list — matches the home-page
+   .tapeLabelWrap aesthetic (light yellow card + pink tape strip). */
+.bulletCard {
+  position: relative;
+  /* Narrower + taller so the card fits comfortably inside the corkboard. */
+  width: 75%;
+  min-height: 70%;
+  background: #ffeeb0;
+  border-radius: 6px;
+  padding: 32px 22px 26px 22px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.22),
+    inset 0 0 4px rgba(0, 0, 0, 0.15);
+  overflow: visible;
+}
+
+.bulletCardTape {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 110px;
+  height: 24px;
+  background: #e405ac;
+  transform: translateX(-50%) rotate(-4deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+  z-index: 1;
+}
+
+.list {
+  list-style: disc;
+  padding-left: 1.2em;
+  margin: 0;
+  font-family: "Averia Libre", sans-serif;
+  font-size: 18px;
+  line-height: 1.35;
+  letter-spacing: 1.2px;
+  color: #1a1a1a;
+}
+
+.list li {
+  margin-bottom: 10px;
+}
+
+.list li:last-child {
+  margin-bottom: 0;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 30px;
+  right: 50px;
+  width: 56px;
+  height: 56px;
+  background: #e44805;
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  font-family: "Jersey 10", sans-serif;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 120ms ease, background-color 120ms ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  background: #b8360a;
+  transform: scale(1.06);
+}
+
+.closeBtn:active {
+  transform: scale(0.96);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translate(40%, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
