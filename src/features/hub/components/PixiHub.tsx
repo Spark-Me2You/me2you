@@ -1,20 +1,20 @@
 import React, { useEffect, useRef } from "react";
 import { Application, Assets, Sprite, Texture } from "pixi.js";
+import type { Accessory } from "@/core/auth/AuthContext";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService } from "@/features/hub/services/croppedImageService";
 import { storageService } from "@/core/supabase/storage";
 import {
   HUB_ACCESSORY_TUNING,
-  HUB_DELTA_DENOMINATOR,
-  HUB_DELTA_SCALE,
+  MII_BODY_SCALE,
+  MII_FACE_SCALE,
+  MII_HEAD_OFFSET_X,
+  MII_HEAD_OFFSET_Y,
+  getAccessoryPlacement,
+  getBalloonCenterFromHandAnchor,
 } from "@/shared/utils";
 import { ExitButton } from "@/shared/components";
-
-// Global hub mii scaling knob. 0.8 means all character parts render at 80% size.
-const HUB_MII_SIZE_FACTOR = 0.8;
-const HUB_BODY_BASE_SCALE = 0.4;
-const HUB_FACE_BASE_SCALE = 0.35;
 
 export interface CharacterClickData {
   owner_id: string;
@@ -73,11 +73,10 @@ export const PixiHub: React.FC<{
 
         const IDLE_FRAME_DURATION = 60 / 4;
         const WALK_FRAME_DURATION = 60 / 6;
-        const BODY_SCALE = HUB_BODY_BASE_SCALE * HUB_MII_SIZE_FACTOR;
-        const FACE_SCALE = HUB_FACE_BASE_SCALE * HUB_MII_SIZE_FACTOR;
-        // Scale head offset along with body/head so face placement stays proportional.
-        const HEAD_OFFSET_X = 5 * HUB_MII_SIZE_FACTOR;
-        const HEAD_OFFSET_Y = -145 * HUB_MII_SIZE_FACTOR;
+        const BODY_SCALE = MII_BODY_SCALE;
+        const FACE_SCALE = MII_FACE_SCALE;
+        const HEAD_OFFSET_X = MII_HEAD_OFFSET_X;
+        const HEAD_OFFSET_Y = MII_HEAD_OFFSET_Y;
 
         function buildFrameSets(
           def: Texture,
@@ -106,7 +105,7 @@ export const PixiHub: React.FC<{
           croppedImageId?: string,
           storagePath?: string,
           accessoryOptions?: {
-            accessory: string;
+            accessory: Accessory | "glasses";
             texture: Texture;
             leftEyePoint?: { x: number; y: number };
             rightEyePoint?: { x: number; y: number };
@@ -167,44 +166,25 @@ export const PixiHub: React.FC<{
             const faceH = faceSprite.height;
             const aspect = accTex.width / accTex.height;
 
-            // Convert preview-container-percent deltas to hub pixel offsets.
-            // Both axes use face WIDTH as the common reference so that equal
-            // drag distances in the square 220px preview produce equal
-            // proportional shifts relative to the face sprite in the hub,
-            // regardless of the face image's actual aspect ratio.
-            // Adjust HUB_DELTA_SCALE in accessoryLayout.ts to fine-tune.
-            const px = faceW / HUB_DELTA_DENOMINATOR;
-            const userDeltaX = relativeX * px * HUB_DELTA_SCALE.x;
-            const userDeltaY = relativeY * px * HUB_DELTA_SCALE.y;
+            const normalizedAccessory: Accessory =
+              accessory === "glasses" ? "sunglasses" : accessory;
+            const placement = getAccessoryPlacement({
+              accessory: normalizedAccessory,
+              faceWidth: faceW,
+              faceHeight: faceH,
+              accessoryAspectRatio: aspect,
+              relativeX,
+              relativeY,
+              scale,
+            });
 
-            // Offsets derived from the customize-screen CSS proportions so hub and
-            // preview look the same. All positions are relative to the face sprite center.
-            if (accessory === "sunglasses" || accessory === "glasses") {
-              accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.sunglasses.widthFactor * scale;
-              accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX =
-                faceW * HUB_ACCESSORY_TUNING.sunglasses.offsetXFactor + userDeltaX;
-              accOffsetY =
-                faceH * HUB_ACCESSORY_TUNING.sunglasses.offsetYFactor + userDeltaY;
-            } else if (accessory === "hat") {
-              accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.hat.widthFactor * scale;
-              accessorySprite.height = accessorySprite.width / aspect;
-              accOffsetX = faceW * HUB_ACCESSORY_TUNING.hat.offsetXFactor + userDeltaX;
-              accOffsetY = faceH * HUB_ACCESSORY_TUNING.hat.offsetYFactor + userDeltaY;
-            } else if (accessory === "balloon") {
-              accessorySprite.width =
-                faceW * HUB_ACCESSORY_TUNING.balloon.widthFactor * scale;
-              accessorySprite.height = accessorySprite.width / aspect;
-              // Balloon should anchor to hand, not face.
-              accRelativeToFace = false;
-              accUseBalloonHandAnchor = true;
-              accBaseRotation = HUB_ACCESSORY_TUNING.balloon.tiltRadians;
-              // Store user delta on the offset vars; applied after hand-anchor math.
-              accOffsetX = userDeltaX;
-              accOffsetY = userDeltaY;
-            }
+            accessorySprite.width = placement.width;
+            accessorySprite.height = placement.height;
+            accOffsetX = placement.offsetX;
+            accOffsetY = placement.offsetY;
+            accBaseRotation = placement.baseRotation;
+            accRelativeToFace = placement.anchor === "face";
+            accUseBalloonHandAnchor = placement.anchor === "balloon-hand";
           }
 
           let wx = startX;
@@ -350,21 +330,18 @@ export const PixiHub: React.FC<{
                   walker.height * HUB_ACCESSORY_TUNING.balloon.handYFactor;
 
                 const totalRotation = accBaseRotation + bobRotation;
-                const stringEndDx =
-                  accessorySprite.width *
-                  (HUB_ACCESSORY_TUNING.balloon.stringEndU - 0.5);
-                const stringEndDy =
-                  accessorySprite.height *
-                  (HUB_ACCESSORY_TUNING.balloon.stringEndV - 0.5);
+                const center = getBalloonCenterFromHandAnchor({
+                  handX,
+                  handY,
+                  balloonWidth: accessorySprite.width,
+                  balloonHeight: accessorySprite.height,
+                  rotationRadians: totalRotation,
+                  userDeltaX: accOffsetX,
+                  userDeltaY: accOffsetY,
+                });
 
-                const cos = Math.cos(totalRotation);
-                const sin = Math.sin(totalRotation);
-                const rotatedDx = stringEndDx * cos - stringEndDy * sin;
-                const rotatedDy = stringEndDx * sin + stringEndDy * cos;
-
-                // accOffsetX/Y carry the user's relativeX/Y delta for balloon
-                accessorySprite.x = handX - rotatedDx + accOffsetX;
-                accessorySprite.y = handY - rotatedDy + accOffsetY;
+                accessorySprite.x = center.x;
+                accessorySprite.y = center.y;
               } else if (accRelativeToFace) {
                 accessorySprite.x = walker.x + HEAD_OFFSET_X + accOffsetX;
                 accessorySprite.y = walker.y + HEAD_OFFSET_Y + accOffsetY;

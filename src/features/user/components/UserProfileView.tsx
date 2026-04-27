@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { profileService } from "@/features/profile-editor/services/profileService";
@@ -8,24 +7,16 @@ import type {
   UpdateProfileInput,
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
-import type { Accessory } from "@/core/auth/AuthContext";
-import { computeUserMiiAccessoryCssVars } from "@/shared/utils";
 import { accessoryService } from "@/features/profile-editor/services/accessoryService";
 import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
-import miiBody from "@/assets/mii_body.png";
-
-const ACCESSORY_PREVIEWS: Record<Accessory, string> = {
-  sunglasses: "/accessories/sunglasses.svg",
-  hat: "/accessories/hat.svg",
-  balloon: "/accessories/balloon.svg",
-};
 import labelBanner1 from "@/assets/label_banner1.svg";
 import labelBanner2 from "@/assets/label_banner2b.svg";
 import labelBanner3 from "@/assets/label_banner3.svg";
 import { UserProfileEditForm } from "./UserProfileEditForm";
 import { UserPhotoCaptureModal } from "./UserPhotoCaptureModal";
+import { UserMiiPixiPreview } from "./UserMiiPixiPreview";
 import { ClaimScanner } from "@/features/claim";
 import styles from "./UserProfileView.module.css";
 
@@ -46,11 +37,20 @@ export const UserProfileView: React.FC = () => {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"picture" | "mii">("picture");
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
   const profileLoadRequestIdRef = useRef(0);
   const accessoryLoadRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
+  const profileLoadTimeoutRef = useRef<number | null>(null);
+
+  const clearProfileLoadTimeout = useCallback(() => {
+    if (profileLoadTimeoutRef.current !== null) {
+      window.clearTimeout(profileLoadTimeoutRef.current);
+      profileLoadTimeoutRef.current = null;
+    }
+  }, []);
 
   const loadCoreProfile = useCallback(
     async (options?: { setLoading?: boolean }) => {
@@ -59,6 +59,18 @@ export const UserProfileView: React.FC = () => {
 
       if (setLoading) {
         setIsLoading(true);
+        setProfileLoadError(null);
+        clearProfileLoadTimeout();
+        profileLoadTimeoutRef.current = window.setTimeout(() => {
+          if (
+            mountedRef.current &&
+            requestId === profileLoadRequestIdRef.current
+          ) {
+            console.warn("[UserProfileView] Profile load timed out");
+            setIsLoading(false);
+            setProfileLoadError("profile is taking too long to load. try again.");
+          }
+        }, 12000);
       }
 
       try {
@@ -76,6 +88,7 @@ export const UserProfileView: React.FC = () => {
 
         console.error("[UserProfileView] Failed to load profile:", err);
       } finally {
+        clearProfileLoadTimeout();
         if (
           setLoading &&
           mountedRef.current &&
@@ -85,7 +98,7 @@ export const UserProfileView: React.FC = () => {
         }
       }
     },
-    [currentUserId],
+    [clearProfileLoadTimeout, currentUserId],
   );
 
   const loadAccessorySettings = useCallback(async () => {
@@ -121,8 +134,9 @@ export const UserProfileView: React.FC = () => {
 
     return () => {
       mountedRef.current = false;
+      clearProfileLoadTimeout();
     };
-  }, [loadCoreProfile, loadAccessorySettings]);
+  }, [clearProfileLoadTimeout, loadCoreProfile, loadAccessorySettings]);
 
   const nextSaveToken = useCallback(() => {
     return ++saveRequestIdRef.current;
@@ -273,6 +287,32 @@ export const UserProfileView: React.FC = () => {
   }
 
   if (!profileData) {
+    if (profileLoadError) {
+      return (
+        <div className={styles.page}>
+          <img src={logo} alt="me2you" className={styles.logo} />
+          <div className={styles.content}>
+            <div className={styles.profileCard}>
+              <div className={styles.photoPlaceholder}>
+                <span className={styles.loadingText}>{profileLoadError}</span>
+                <button
+                  type="button"
+                  className={styles.customizeButton}
+                  onClick={() => {
+                    setProfileLoadError(null);
+                    void loadCoreProfile();
+                    void loadAccessorySettings();
+                  }}
+                >
+                  retry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   }
 
@@ -282,6 +322,8 @@ export const UserProfileView: React.FC = () => {
         <UserProfileEditForm
           initialData={profileData}
           gestureImageUrl={profileData.imageUrl}
+          accessorySettings={accessorySettings}
+          bobbleheadLandmarks={profileData.bobbleheadLandmarks}
           onSave={handleSaveProfile}
           onCancel={() => {
             setMode("view");
@@ -376,39 +418,12 @@ export const UserProfileView: React.FC = () => {
                     </div>
                   )
                 ) : (
-                  <div
+                  <UserMiiPixiPreview
                     className={styles.miiComposite}
-                    style={computeUserMiiAccessoryCssVars(
-                      accessorySettings.selected_accessory,
-                      accessorySettings.relative_x,
-                      accessorySettings.relative_y,
-                      accessorySettings.scale,
-                    ) as CSSProperties}
-                  >
-                    <img src={miiBody} alt="" className={styles.miiBody} />
-                    {profileData.bobbleheadUrl ? (
-                      <img
-                        src={profileData.bobbleheadUrl}
-                        alt=""
-                        className={styles.miiFace}
-                      />
-                    ) : (
-                      <div className={styles.miiFaceMissing}>no face yet</div>
-                    )}
-                    {accessorySettings.selected_accessory && (
-                      <img
-                        src={ACCESSORY_PREVIEWS[accessorySettings.selected_accessory]}
-                        alt={accessorySettings.selected_accessory}
-                        className={
-                          accessorySettings.selected_accessory === "sunglasses"
-                            ? styles.accessorySunglasses
-                            : accessorySettings.selected_accessory === "hat"
-                              ? styles.accessoryHat
-                              : styles.accessoryBalloon
-                        }
-                      />
-                    )}
-                  </div>
+                    bobbleheadUrl={profileData.bobbleheadUrl}
+                    accessorySettings={accessorySettings}
+                    landmarks={profileData.bobbleheadLandmarks}
+                  />
                 )}
               </div>
             </div>

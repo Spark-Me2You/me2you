@@ -2,21 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import type { Accessory } from "@/core/auth/AuthContext";
-import type { CSSProperties } from "react";
 import { profileService } from "@/features/profile-editor/services/profileService";
 import { accessoryService } from "@/features/profile-editor/services/accessoryService";
-import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
+import type {
+  AccessorySettings,
+  AvatarLandmarkPoints,
+} from "@/features/profile-editor/types/profileTypes";
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
-import { computeUserMiiAccessoryCssVars } from "@/shared/utils";
 import logo from "@/assets/me2you.png";
-import miiBody from "@/assets/mii_body.png";
+import { UserMiiPixiPreview } from "./UserMiiPixiPreview";
 import styles from "./CustomizeAvatarView.module.css";
-
-const ACCESSORY_PREVIEWS: Record<Accessory, string> = {
-  sunglasses: "/accessories/sunglasses.svg",
-  hat: "/accessories/hat.svg",
-  balloon: "/accessories/balloon.svg",
-};
 
 const ACCESSORY_LABELS: { key: Accessory | null; label: string }[] = [
   { key: null, label: "none" },
@@ -37,6 +32,9 @@ export const CustomizeAvatarView: React.FC = () => {
 
   const [settings, setSettings] = useState<AccessorySettings>(DEFAULT_ACCESSORY_SETTINGS);
   const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(null);
+  const [bobbleheadLandmarks, setBobbleheadLandmarks] =
+    useState<AvatarLandmarkPoints | null>(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,10 +49,13 @@ export const CustomizeAvatarView: React.FC = () => {
       accessoryService.getAccessorySettings(user.id),
     ]).then(([profileData, accSettings]) => {
       setBobbleheadUrl(profileData?.bobbleheadUrl ?? null);
+      setBobbleheadLandmarks(profileData?.bobbleheadLandmarks ?? null);
       setSettings(accSettings);
     }).catch((err) =>
       console.warn("[CustomizeAvatarView] Failed to load preview:", err),
-    );
+    ).finally(() => {
+      setIsDataLoading(false);
+    });
   }, [user?.id]);
 
   // --- Drag handlers ---
@@ -170,13 +171,6 @@ export const CustomizeAvatarView: React.FC = () => {
     }));
   };
 
-  const cssVars = computeUserMiiAccessoryCssVars(
-    settings.selected_accessory,
-    settings.relative_x,
-    settings.relative_y,
-    settings.scale,
-  );
-
   const hasAccessory = settings.selected_accessory !== null;
 
   return (
@@ -195,28 +189,16 @@ export const CustomizeAvatarView: React.FC = () => {
               onMouseDown={hasAccessory ? handleMouseDown : undefined}
               onTouchStart={hasAccessory ? handleTouchStart : undefined}
             >
-              <div
-                className={styles.miiComposite}
-                style={cssVars as CSSProperties}
-              >
-                <img src={miiBody} alt="" className={styles.miiBody} />
-                {bobbleheadUrl && (
-                  <img src={bobbleheadUrl} alt="" className={styles.miiFace} />
-                )}
-                {settings.selected_accessory && (
-                  <img
-                    src={ACCESSORY_PREVIEWS[settings.selected_accessory]}
-                    alt={settings.selected_accessory}
-                    className={
-                      settings.selected_accessory === "sunglasses"
-                        ? styles.accessorySunglasses
-                        : settings.selected_accessory === "hat"
-                          ? styles.accessoryHat
-                          : styles.accessoryBalloon
-                    }
-                  />
-                )}
-              </div>
+              {isDataLoading ? (
+                <div className={styles.previewLoading}>loading</div>
+              ) : (
+                <UserMiiPixiPreview
+                  className={styles.miiComposite}
+                  bobbleheadUrl={bobbleheadUrl}
+                  accessorySettings={settings}
+                  landmarks={bobbleheadLandmarks}
+                />
+              )}
             </div>
 
             {/* Vertical scale slider */}
