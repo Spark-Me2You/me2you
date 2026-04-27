@@ -48,6 +48,9 @@ me2you/
 - The kiosk hub's Pixi renderer lives in `src/features/hub/components/PixiHub.tsx`.
 - Character sizing is controlled by `HUB_MII_SIZE_FACTOR` in that file.
 - Body scale, face scale, and head-position offsets are derived from this one factor to keep mii and accessory placement proportional when tuning size.
+- Accessory placement is tuned through `HUB_ACCESSORY_TUNING` in the same file:
+  - hat and sunglasses are face-relative offsets
+  - balloon is hand-anchored (string endpoint alignment) with a small outward tilt
 
 ## Notes on Cleanup
 

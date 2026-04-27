@@ -377,7 +377,7 @@
   right: 10%;
   width: 45%;
   height: 45%;
-  background: url('../../../assets/paintbrush.svg') no-repeat center / contain;
+  background: url("../../../assets/paintbrush.svg") no-repeat center / contain;
   transform: rotate(-20deg);
   z-index: 1;
   pointer-events: none;
