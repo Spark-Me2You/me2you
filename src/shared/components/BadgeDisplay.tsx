@@ -4,9 +4,20 @@
  * Can either display pre-computed badges or fetch them from user data
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/core/supabase/client';
 import { getEarnedBadges, type BadgeId } from '@/core/badges/badgeService';
+
+const BADGE_TITLES: Record<string, string> = {
+  new_test: 'newcomer',
+  '1week_test': '1 week strong',
+  '1month_test': '1 month strong',
+  firstplace_test: 'first place!',
+};
+
+function badgeTitle(id: string) {
+  return BADGE_TITLES[id] ?? id.replace(/_/g, ' ');
+}
 import type { UserProfile } from '@/features/discovery/types/image';
 import styles from './BadgeDisplay.module.css';
 
@@ -76,15 +87,51 @@ export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   }
 
   return (
-    <div className={styles.badgeContainer}>
-      {badges.map((badgeId) => (
-        <img
-          key={badgeId}
-          src={`/badges/${badgeId}.PNG`}
-          alt={badgeId}
-          className={styles.badge}
-        />
-      ))}
+    <BadgeGrid badges={badges} />
+  );
+};
+
+// Internal: handles hover state with React so the CV cursor's synthetic
+// mouseenter/mouseleave events trigger tooltip visibility (native CSS :hover
+// does not respond to dispatched MouseEvents).
+const BadgeGrid: React.FC<{ badges: BadgeId[] }> = ({ badges }) => {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const onEnter = useCallback((id: string) => setHovered(id), []);
+  const onLeave = useCallback(
+    (id: string) => setHovered((prev) => (prev === id ? null : prev)),
+    [],
+  );
+
+  return (
+    <div className={styles.badgeContainer} data-count={badges.length}>
+      {badges.map((badgeId) => {
+        const title = badgeTitle(badgeId);
+        const isHovered = hovered === badgeId;
+        return (
+          <span
+            key={badgeId}
+            className={styles.badgeWrap}
+            tabIndex={0}
+            onMouseEnter={() => onEnter(badgeId)}
+            onMouseLeave={() => onLeave(badgeId)}
+            onFocus={() => onEnter(badgeId)}
+            onBlur={() => onLeave(badgeId)}
+          >
+            <img
+              src={`/badges/${badgeId}.PNG`}
+              alt={title}
+              className={styles.badge}
+            />
+            <span
+              className={styles.tooltip}
+              style={{ opacity: isHovered ? 1 : 0 }}
+            >
+              {title}
+            </span>
+          </span>
+        );
+      })}
     </div>
   );
 };
