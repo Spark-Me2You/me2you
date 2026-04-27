@@ -22,4 +22,12 @@ export const messagesService = {
 
   sendMessage: (tokenId: string, body: string) =>
     claimService.executeMessageClaim(tokenId, body),
+
+  deleteMessage: async (messageId: string): Promise<void> => {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId);
+    if (error) throw new Error(error.message);
+  },
 };

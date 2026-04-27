@@ -24,6 +24,7 @@ export function MessagesView() {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!userId) return;
@@ -34,6 +35,16 @@ export function MessagesView() {
       .finally(() => { if (active) setIsLoading(false); });
     return () => { active = false; };
   }, [userId]);
+
+  const handleDelete = async (messageId: string) => {
+    setDeletingIds((prev) => new Set(prev).add(messageId));
+    try {
+      await messagesService.deleteMessage(messageId);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    } catch {
+      setDeletingIds((prev) => { const next = new Set(prev); next.delete(messageId); return next; });
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -54,7 +65,17 @@ export function MessagesView() {
         <div className={styles.list}>
           {messages.map((msg) => (
             <div key={msg.id} className={styles.messageCard}>
-              <p className={styles.senderName}>{msg.sender?.name ?? 'someone'}</p>
+              <div className={styles.cardHeader}>
+                <p className={styles.senderName}>{msg.sender?.name ?? 'someone'}</p>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => handleDelete(msg.id)}
+                  disabled={deletingIds.has(msg.id)}
+                  aria-label="delete message"
+                >
+                  ×
+                </button>
+              </div>
               <p className={styles.body}>{msg.body}</p>
               <p className={styles.timestamp}>{formatRelativeTime(msg.created_at)}</p>
             </div>
