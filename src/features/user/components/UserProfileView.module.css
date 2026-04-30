@@ -3,9 +3,7 @@
   width: 100%;
   max-width: 430px;
   margin: 0 auto;
-  min-height: 100vh;
-  max-height: 100vh;
-  height: 100vh;
+  height: 100dvh;
   background: linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%);
   display: flex;
   flex-direction: column;
@@ -252,7 +250,8 @@
 }
 
 .buttonRowTop {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -289,14 +288,13 @@
 }
 
 .gameScoresButton {
-  flex: 1;
   font-family: "Jersey 10", sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: #1e88e5;
   background: rgba(30, 136, 229, 0.1);
   border: 2px solid #1e88e5;
   border-radius: 14px;
-  padding: 20px 14px;
+  padding: 16px 10px;
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
@@ -314,14 +312,13 @@
 }
 
 .drawingsButton {
-  flex: 1;
   font-family: "Jersey 10", sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: #e91e63;
   background: rgba(233, 30, 99, 0.1);
   border: 2px solid #e91e63;
   border-radius: 14px;
-  padding: 20px 14px;
+  padding: 16px 10px;
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
@@ -339,14 +336,13 @@
 }
 
 .messagesButton {
-  flex: 1;
   font-family: "Jersey 10", sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: #7b1fa2;
   background: rgba(123, 31, 162, 0.1);
   border: 2px solid #7b1fa2;
   border-radius: 14px;
-  padding: 20px 14px;
+  padding: 16px 10px;
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
@@ -395,14 +391,13 @@
 }
 
 .scanButton {
-  flex: 1;
   font-family: "Jersey 10", sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   color: #2e7d32;
   background: rgba(46, 125, 50, 0.1);
   border: 2px solid #2e7d32;
   border-radius: 14px;
-  padding: 20px 14px;
+  padding: 16px 10px;
   cursor: pointer;
   text-transform: lowercase;
   letter-spacing: 1px;
@@ -529,7 +524,7 @@
 }
 
 .customizeButton {
-  flex: 1;
+  grid-column: 1 / -1;
   font-family: "Jersey 10", sans-serif;
   font-size: 20px;
   color: #7105e4;
