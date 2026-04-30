@@ -4,3 +4,4 @@
  */
 
 export { RegistrationQRDisplay } from './components/RegistrationQRDisplay';
+export { RegistrationQRProvider, useRegistrationQR } from './context/RegistrationQRContext';
