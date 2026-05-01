@@ -285,7 +285,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   useLayoutEffect(() => {
     const panel = leaderboardPanelRef.current;
     if (!panel) return;
-    setQrTop(panel.getBoundingClientRect().bottom + 128);
+    setQrTop(panel.getBoundingClientRect().bottom + 150);
   }, [canvasScale]);
 
   return (
