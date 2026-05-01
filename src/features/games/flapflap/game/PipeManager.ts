@@ -18,6 +18,7 @@ export class PipeManager {
   public container: Container;
   private pipes: Pipe[] = [];
   private lastSpawnTime: number = 0;
+  private lastGapY: number | null = null;
   private readonly config = FLAPFLAP_CONFIG;
 
   constructor() {
@@ -70,7 +71,16 @@ export class PipeManager {
     const maxGapY =
       playableHeight - this.config.MIN_PIPE_HEIGHT - this.config.PIPE_GAP / 2;
 
-    const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+    // Cap how far the gap can rise (decrease in gapY) between consecutive pipes.
+    // Going up requires the bird to climb, which is harder than descending with gravity.
+    const effectiveMinGapY =
+      this.lastGapY !== null
+        ? Math.max(minGapY, this.lastGapY - this.config.MAX_PIPE_RISE)
+        : minGapY;
+
+    const gapY =
+      effectiveMinGapY + Math.random() * Math.max(0, maxGapY - effectiveMinGapY);
+    this.lastGapY = gapY;
     const x = this.config.GAME_WIDTH + 50;
 
     // Top pipe
@@ -140,5 +150,6 @@ export class PipeManager {
     }
     this.pipes = [];
     this.lastSpawnTime = 0;
+    this.lastGapY = null;
   }
 }

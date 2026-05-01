@@ -326,7 +326,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
         </div>
       </div>
 
-      <PinnedRegistrationQR side="right" top={350} qrSize={150} />
+      <PinnedRegistrationQR side="right" top={qrTop} qrSize={150} />
 
       <CameraOverlay onVideoReady={handleVideoReady} />
 
