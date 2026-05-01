@@ -4,4 +4,5 @@
  */
 
 export { RegistrationQRDisplay } from './components/RegistrationQRDisplay';
+export { PinnedRegistrationQR } from './components/PinnedRegistrationQR';
 export { RegistrationQRProvider, useRegistrationQR } from './context/RegistrationQRContext';
