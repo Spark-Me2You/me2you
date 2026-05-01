@@ -11,6 +11,7 @@ interface PinnedRegistrationQRProps {
   top?: number;
   qrSize?: number;
   label?: string;
+  verticalCenter?: boolean;
 }
 
 export const PinnedRegistrationQR: React.FC<PinnedRegistrationQRProps> = ({
@@ -18,14 +19,19 @@ export const PinnedRegistrationQR: React.FC<PinnedRegistrationQRProps> = ({
   top = 24,
   qrSize = 140,
   label = 'scan to join!',
+  verticalCenter = false,
 }) => {
-  const positionStyle: React.CSSProperties =
-    side === 'left' ? { top, left: 0 } : { top, right: 0 };
+  const horizontalStyle: React.CSSProperties =
+    side === 'left' ? { left: 0 } : { right: 0 };
+
+  const verticalStyle: React.CSSProperties = verticalCenter
+    ? { top: '50%', transform: 'translateY(-50%)' }
+    : { top };
 
   return (
     <div
       className={`${styles.container} ${side === 'left' ? styles.left : styles.right}`}
-      style={positionStyle}
+      style={{ ...horizontalStyle, ...verticalStyle }}
     >
       <RegistrationQRDisplay size={qrSize} />
       <p className={styles.label}>{label}</p>

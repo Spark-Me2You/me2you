@@ -1,4 +1,5 @@
 import React from "react";
+import { PinnedRegistrationQR } from "@/features/kiosk";
 import styles from "./DrawItMenu.module.css";
 
 interface Props {
@@ -21,5 +22,6 @@ export const DrawItMenu: React.FC<Props> = ({ onStart, onGallery, onBack }) => (
         Back
       </button>
     </div>
+    <PinnedRegistrationQR side="right" top={145} qrSize={150} />
   </div>
 );
