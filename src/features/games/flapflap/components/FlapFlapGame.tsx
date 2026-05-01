@@ -3,7 +3,13 @@
  * Integrates PixiJS game engine with pose detection and React
  */
 
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useState,
+} from "react";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import {
   usePoseDetection,
@@ -24,7 +30,7 @@ import {
   gameScoreService,
   type FlapFlapLeaderboardEntry,
 } from "@/features/games/services/gameScoreService";
-import { RegistrationQRDisplay } from "@/features/kiosk";
+import { PinnedRegistrationQR } from "@/features/kiosk";
 import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
@@ -54,7 +60,9 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   const engineRef = useRef<FlapFlapEngine | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
+  const leaderboardPanelRef = useRef<HTMLDivElement>(null);
   const [canvasScale, setCanvasScale] = useState(1);
+  const [qrTop, setQrTop] = useState(800);
 
   // Pose detection hooks
   const {
@@ -274,6 +282,12 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     return () => ro.disconnect();
   }, []);
 
+  useLayoutEffect(() => {
+    const panel = leaderboardPanelRef.current;
+    if (!panel) return;
+    setQrTop(panel.getBoundingClientRect().bottom + 128);
+  }, [canvasScale]);
+
   return (
     <div ref={layoutRef} className={styles.container}>
       <div className={styles.gameLayout}>
@@ -302,19 +316,17 @@ export const FlapFlapGame: React.FC<GameProps> = ({
           </div>
         </div>
 
-        <div className={styles.leaderboardPanel}>
+        <div ref={leaderboardPanelRef} className={styles.leaderboardPanel}>
           <FlapFlapLeaderboard
             entries={leaderboardEntries}
             isLoading={isLeaderboardLoading}
             error={leaderboardError}
             title="top flappers"
           />
-          <div className={styles.qrSection}>
-            <p className={styles.qrLabel}>scan to join!</p>
-            <RegistrationQRDisplay size={150} />
-          </div>
         </div>
       </div>
+
+      <PinnedRegistrationQR side="right" top={350} qrSize={150} />
 
       <CameraOverlay onVideoReady={handleVideoReady} />
 
