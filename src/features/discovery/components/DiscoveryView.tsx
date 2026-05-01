@@ -16,6 +16,7 @@ import {
   CATEGORY_LIST,
 } from "../config/gestureMapping";
 import { ExitButton } from "@/shared/components";
+import { PinnedRegistrationQR } from "@/features/kiosk";
 import { HelpPopup } from "./HelpPopup";
 import styles from "./DiscoveryView.module.css";
 
@@ -270,6 +271,8 @@ export const DiscoveryView: React.FC = () => {
       <PoseOverlay />
 
       <ExitButton onClick={handleBack} />
+
+      <PinnedRegistrationQR side="left" top={500} qrSize={151} />
 
       <button
         type="button"
