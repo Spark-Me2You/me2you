@@ -292,9 +292,9 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
       <div
         style={{
           position: 'absolute',
-          top: '78%',
+          top: '77%',
           right: '5%',
-          transform: 'translateY(-50%) rotate(-7.207deg)',
+          transform: 'translateY(-50%) rotate(-7.207deg) scale(0.88)',
           borderRadius: 46,
           background: 'rgba(228, 5, 172, 0.93)',
           boxShadow: QR_BOX_SHADOW,
