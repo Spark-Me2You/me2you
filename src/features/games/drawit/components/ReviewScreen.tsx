@@ -5,6 +5,7 @@ import type { ClaimPayload } from "@/features/claim";
 import { uploadTempDrawing } from "../utils/gallerySupabase";
 import nextButton from "../../../../assets/next_button.svg";
 import styles from "./ReviewScreen.module.css";
+import { PinnedRegistrationQR } from "@/features/kiosk/components/PinnedRegistrationQR";
 
 interface Props {
   imageDataUrl: string;
@@ -78,6 +79,8 @@ export const ReviewScreen: React.FC<Props> = ({
           Discard
         </button>
       </div>
+
+      <PinnedRegistrationQR side="right" top={145} qrSize={150} />
 
       {showModal && (
         <div className={styles.modalBackdrop}>

@@ -7,6 +7,7 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   padding: 20px 18px;
   backdrop-filter: blur(10px);
+  overflow: hidden;
 }
 
 .title {
@@ -60,6 +61,7 @@
 }
 
 .name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

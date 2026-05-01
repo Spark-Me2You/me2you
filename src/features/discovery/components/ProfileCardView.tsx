@@ -8,8 +8,8 @@ import React from 'react';
 import type { RandomImageData } from '../types/image';
 import { BadgeDisplay } from '@/shared/components/BadgeDisplay';
 import { SendMessageButton } from '@/features/messages';
+import { RegistrationQRDisplay } from '@/features/kiosk';
 import me2youLogo from '@/assets/me2you.png';
-import registerQr from '@/assets/registerqr.png';
 import otterHandImage from '@/assets/hand.png';
 import arrow2 from '@/assets/arrow2.svg';
 
@@ -292,9 +292,9 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
       <div
         style={{
           position: 'absolute',
-          top: '78%',
+          top: '77%',
           right: '5%',
-          transform: 'translateY(-50%) rotate(-7.207deg)',
+          transform: 'translateY(-50%) rotate(-7.207deg) scale(0.88)',
           borderRadius: 46,
           background: 'rgba(228, 5, 172, 0.93)',
           boxShadow: QR_BOX_SHADOW,
@@ -305,11 +305,7 @@ export const ProfileCardView: React.FC<ProfileCardViewProps> = ({
           boxSizing: 'border-box',
         }}
       >
-        <img
-          src={registerQr}
-          alt="Register QR code"
-          style={{ width: '13vw', objectFit: 'contain', display: 'block' }}
-        />
+        <RegistrationQRDisplay size={220} />
       </div>
 
       {/* ── QR label text ── */}

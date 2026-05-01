@@ -12,6 +12,10 @@ interface Props {
   onBrush: (b: BrushSize) => void;
   onClear: () => void;
   clearActive?: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export const Toolbox: React.FC<Props> = ({
@@ -23,6 +27,10 @@ export const Toolbox: React.FC<Props> = ({
   onBrush,
   onClear,
   clearActive = false,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }) => (
   <div className={styles.toolbox}>
     <div className={styles.palette}>
@@ -84,6 +92,66 @@ export const Toolbox: React.FC<Props> = ({
       >
         Clear
       </button>
+    </div>
+
+    <div className={styles.bottomGroup}>
+      <div className={styles.divider} />
+      <div className={styles.undoRedoRow}>
+        <button
+          type="button"
+          className={styles.iconTool}
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label="undo"
+          title="Undo"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path
+              d="M9 14 4 9l5-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M4 9h9a6 6 0 0 1 0 12h-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <button
+          type="button"
+          className={styles.iconTool}
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label="redo"
+          title="Redo"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path
+              d="m15 14 5-5-5-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M20 9h-9a6 6 0 0 0 0 12h3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 );

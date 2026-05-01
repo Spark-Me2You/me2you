@@ -16,7 +16,6 @@ import {
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
 import { MessagesView } from "@/features/messages";
 import AppContainer from "./AppContainer";
-import "./App.css";
 
 /**
  * Main App Component
