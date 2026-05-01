@@ -24,6 +24,7 @@ import {
   gameScoreService,
   type FlapFlapLeaderboardEntry,
 } from "@/features/games/services/gameScoreService";
+import { RegistrationQRDisplay } from "@/features/kiosk";
 import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
@@ -52,6 +53,8 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
   const engineRef = useRef<FlapFlapEngine | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const [canvasScale, setCanvasScale] = useState(1);
 
   // Pose detection hooks
   const {
@@ -255,20 +258,48 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     void refreshLeaderboard();
   }, [refreshLeaderboard]);
 
+  useEffect(() => {
+    const el = layoutRef.current;
+    if (!el) return;
+    const compute = () => {
+      const availW = el.clientWidth - 40;
+      const availH = el.clientHeight - 56;
+      const byW = (availW - 24 - 360) / 1200;
+      const byH = availH / 900;
+      setCanvasScale(Math.min(1, byW, byH));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className={styles.container}>
+    <div ref={layoutRef} className={styles.container}>
       <div className={styles.gameLayout}>
-        <div ref={containerRef} className={styles.gameCanvas}>
-          {gameState === "GAME_OVER" && (
-            <GameOverClaim
-              score={finalScore}
-              onPlayAgain={handlePlayAgain}
-              leaderboardEntries={leaderboardEntries}
-              isLeaderboardLoading={isLeaderboardLoading}
-              leaderboardError={leaderboardError}
-              onScoreClaimed={handleScoreClaimed}
-            />
-          )}
+        <div
+          className={styles.canvasOuter}
+          style={{
+            width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
+            height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,
+          }}
+        >
+          <div
+            ref={containerRef}
+            className={styles.canvasInner}
+            style={{ transform: `scale(${canvasScale})` }}
+          >
+            {gameState === "GAME_OVER" && (
+              <GameOverClaim
+                score={finalScore}
+                onPlayAgain={handlePlayAgain}
+                leaderboardEntries={leaderboardEntries}
+                isLeaderboardLoading={isLeaderboardLoading}
+                leaderboardError={leaderboardError}
+                onScoreClaimed={handleScoreClaimed}
+              />
+            )}
+          </div>
         </div>
 
         <div className={styles.leaderboardPanel}>
@@ -278,6 +309,10 @@ export const FlapFlapGame: React.FC<GameProps> = ({
             error={leaderboardError}
             title="top flappers"
           />
+          <div className={styles.qrSection}>
+            <p className={styles.qrLabel}>scan to join!</p>
+            <RegistrationQRDisplay size={150} />
+          </div>
         </div>
       </div>
 
