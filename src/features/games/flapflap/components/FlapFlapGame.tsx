@@ -3,7 +3,13 @@
  * Integrates PixiJS game engine with pose detection and React
  */
 
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useState,
+} from "react";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import {
   usePoseDetection,
@@ -24,6 +30,7 @@ import {
   gameScoreService,
   type FlapFlapLeaderboardEntry,
 } from "@/features/games/services/gameScoreService";
+import { PinnedRegistrationQR } from "@/features/kiosk";
 import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
@@ -52,6 +59,10 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
   const engineRef = useRef<FlapFlapEngine | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const leaderboardPanelRef = useRef<HTMLDivElement>(null);
+  const [canvasScale, setCanvasScale] = useState(1);
+  const [qrTop, setQrTop] = useState(800);
 
   // Pose detection hooks
   const {
@@ -255,23 +266,57 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     void refreshLeaderboard();
   }, [refreshLeaderboard]);
 
+  useEffect(() => {
+    const el = layoutRef.current;
+    if (!el) return;
+    const compute = () => {
+      const availW = el.clientWidth - 40;
+      const availH = el.clientHeight - 56;
+      const byW = (availW - 24 - 360) / 1200;
+      const byH = availH / 900;
+      setCanvasScale(Math.min(1, byW, byH));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const panel = leaderboardPanelRef.current;
+    if (!panel) return;
+    setQrTop(panel.getBoundingClientRect().bottom + 150);
+  }, [canvasScale]);
+
   return (
-    <div className={styles.container}>
+    <div ref={layoutRef} className={styles.container}>
       <div className={styles.gameLayout}>
-        <div ref={containerRef} className={styles.gameCanvas}>
-          {gameState === "GAME_OVER" && (
-            <GameOverClaim
-              score={finalScore}
-              onPlayAgain={handlePlayAgain}
-              leaderboardEntries={leaderboardEntries}
-              isLeaderboardLoading={isLeaderboardLoading}
-              leaderboardError={leaderboardError}
-              onScoreClaimed={handleScoreClaimed}
-            />
-          )}
+        <div
+          className={styles.canvasOuter}
+          style={{
+            width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
+            height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,
+          }}
+        >
+          <div
+            ref={containerRef}
+            className={styles.canvasInner}
+            style={{ transform: `scale(${canvasScale})` }}
+          >
+            {gameState === "GAME_OVER" && (
+              <GameOverClaim
+                score={finalScore}
+                onPlayAgain={handlePlayAgain}
+                leaderboardEntries={leaderboardEntries}
+                isLeaderboardLoading={isLeaderboardLoading}
+                leaderboardError={leaderboardError}
+                onScoreClaimed={handleScoreClaimed}
+              />
+            )}
+          </div>
         </div>
 
-        <div className={styles.leaderboardPanel}>
+        <div ref={leaderboardPanelRef} className={styles.leaderboardPanel}>
           <FlapFlapLeaderboard
             entries={leaderboardEntries}
             isLoading={isLeaderboardLoading}
@@ -280,6 +325,8 @@ export const FlapFlapGame: React.FC<GameProps> = ({
           />
         </div>
       </div>
+
+      <PinnedRegistrationQR side="right" top={qrTop} qrSize={150} />
 
       <CameraOverlay onVideoReady={handleVideoReady} />
 

@@ -22,6 +22,7 @@ export const FLAPFLAP_CONFIG = {
   PIPE_SPEED: 200, // pixels/second
   PIPE_SPAWN_INTERVAL: 1800, // ms
   MIN_PIPE_HEIGHT: 80,
+  MAX_PIPE_RISE: 160, // max upward gapY shift between consecutive pipes (pixels) — tune this
 
   // Scrolling background
   BACKGROUND_SPEED: 50, // pixels/second
