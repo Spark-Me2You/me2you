@@ -19,3 +19,10 @@
   color: #ffffff;
   letter-spacing: 0.1em;
 }
+
+.compact {
+  width: 140px;
+  height: 60px;
+  border-radius: 10px;
+  font-size: 22px;
+}

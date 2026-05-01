@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { floodFill } from "../utils/floodFill";
 import { BRUSH_PX, CANVAS_BG } from "../config/drawitConfig";
@@ -14,8 +14,15 @@ interface Params {
 
 export interface DrawingController {
   clear: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  pushSnapshot: () => void;
   toDataURL: () => string;
 }
+
+const HISTORY_MAX = 20;
 
 // Maps a screen-space point into the canvas's internal (unscaled) coordinates.
 function toCanvasSpace(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
@@ -57,9 +64,63 @@ export function useDrawingController({
 
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const wasPinchedRef = useRef(false);
+  const drewDuringStrokeRef = useRef(false);
   // Timestamp (ms) before which drawing is ignored. Used after clear() so the
   // pinch that confirmed the modal doesn't immediately paint a stray stroke.
   const suspendUntilRef = useRef(0);
+
+  const historyRef = useRef<ImageData[]>([]);
+  const redoRef = useRef<ImageData[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  const updateAvailability = useCallback(() => {
+    setCanUndo(historyRef.current.length > 1);
+    setCanRedo(redoRef.current.length > 0);
+  }, []);
+
+  const pushSnapshot = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    historyRef.current.push(snap);
+    if (historyRef.current.length > HISTORY_MAX) historyRef.current.shift();
+    redoRef.current = [];
+    updateAvailability();
+  }, [canvasRef, updateAvailability]);
+
+  // Keep a ref to pushSnapshot so the long-lived RAF tick can call the latest impl.
+  const pushSnapshotRef = useRef(pushSnapshot);
+  pushSnapshotRef.current = pushSnapshot;
+
+  const restore = useCallback(
+    (data: ImageData) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.putImageData(data, 0, 0);
+    },
+    [canvasRef],
+  );
+
+  const undo = useCallback(() => {
+    if (historyRef.current.length <= 1) return;
+    const popped = historyRef.current.pop()!;
+    redoRef.current.push(popped);
+    restore(historyRef.current[historyRef.current.length - 1]);
+    updateAvailability();
+  }, [restore, updateAvailability]);
+
+  const redo = useCallback(() => {
+    const next = redoRef.current.pop();
+    if (!next) return;
+    historyRef.current.push(next);
+    restore(next);
+    updateAvailability();
+  }, [restore, updateAvailability]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -76,6 +137,10 @@ export function useDrawingController({
       const size = BRUSH_PX[brushRef.current];
 
       if (!enabledRef.current || !c.visible) {
+        if (wasPinchedRef.current && drewDuringStrokeRef.current) {
+          pushSnapshotRef.current();
+          drewDuringStrokeRef.current = false;
+        }
         lastPointRef.current = null;
         wasPinchedRef.current = false;
         raf = requestAnimationFrame(tick);
@@ -92,10 +157,17 @@ export function useDrawingController({
       const pinched = c.isPinched;
       const pt = toCanvasSpace(canvas, c.x, c.y);
 
+      // Stroke end: pinch released after we drew something this stroke.
+      if (wasPinchedRef.current && !pinched && drewDuringStrokeRef.current) {
+        pushSnapshotRef.current();
+        drewDuringStrokeRef.current = false;
+      }
+
       if (pinched && pt.inside) {
         if (t === "bucket") {
           if (!wasPinchedRef.current) {
             floodFill(ctx, pt.x, pt.y, col);
+            pushSnapshotRef.current();
           }
         } else {
           const strokeColor = t === "eraser" ? CANVAS_BG : col;
@@ -116,6 +188,7 @@ export function useDrawingController({
             ctx.fill();
           }
           lastPointRef.current = { x: pt.x, y: pt.y };
+          drewDuringStrokeRef.current = true;
         }
       } else {
         lastPointRef.current = null;
@@ -138,7 +211,8 @@ export function useDrawingController({
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     lastPointRef.current = null;
     suspendUntilRef.current = Date.now() + 1000;
-  }, [canvasRef]);
+    pushSnapshot();
+  }, [canvasRef, pushSnapshot]);
 
   const toDataURL = useCallback(() => {
     const canvas = canvasRef.current;
@@ -146,5 +220,5 @@ export function useDrawingController({
     return canvas.toDataURL("image/png");
   }, [canvasRef]);
 
-  return { clear, toDataURL };
+  return { clear, undo, redo, canUndo, canRedo, pushSnapshot, toDataURL };
 }

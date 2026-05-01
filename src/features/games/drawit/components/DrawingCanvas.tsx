@@ -6,6 +6,7 @@ import { useDrawingController } from "../hooks/useDrawingController";
 import { CANVAS_BG } from "../config/drawitConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { ExitButton } from "@/shared/components";
+import { PinnedRegistrationQR } from "@/features/kiosk";
 import type { BrushSize, Tool } from "../types/drawit";
 import styles from "./DrawingCanvas.module.css";
 
@@ -41,7 +42,8 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
     enabled: true,
   });
 
-  // Paint white background on mount so flood-fill has a real canvas to work on.
+  // Paint white background on mount so flood-fill has a real canvas to work on,
+  // and capture that as the initial undo baseline.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -49,6 +51,8 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
     if (!ctx) return;
     ctx.fillStyle = CANVAS_BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    controller.pushSnapshot();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = () => {
@@ -58,7 +62,7 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
 
   return (
     <div className={styles.wrapper}>
-      <ExitButton onClick={() => setConfirmingQuit(true)} />
+      <ExitButton onClick={() => setConfirmingQuit(true)} compact />
       <div className={styles.wordBanner}>Draw: {word}</div>
       <Timer onExpire={handleSubmit} />
 
@@ -78,11 +82,17 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
         onBrush={setBrushSize}
         onClear={() => setConfirmingClear(true)}
         clearActive={confirmingClear}
+        onUndo={controller.undo}
+        onRedo={controller.redo}
+        canUndo={controller.canUndo}
+        canRedo={controller.canRedo}
       />
 
       <button className={styles.submit} onClick={handleSubmit}>
         Submit
       </button>
+
+      <PinnedRegistrationQR side="right" top={145} qrSize={150} />
 
       {confirmingClear && (
         <ConfirmModal

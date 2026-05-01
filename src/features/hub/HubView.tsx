@@ -9,6 +9,7 @@ import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
 import { PixiHub, type CharacterClickData } from './components/PixiHub';
 import { ProfileCardView } from '@/features/discovery/components/ProfileCardView';
+import { PinnedRegistrationQR } from '@/features/kiosk';
 import { hubService } from './services/hubService';
 import { storageService } from '@/core/supabase/storage';
 import type { RandomImageData } from '@/features/discovery/types/image';
@@ -83,5 +84,10 @@ export const HubView: React.FC = () => {
     );
   }
 
-  return <PixiHub onCharacterClick={handleCharacterClick} orgId={kioskOrgId || ''} />;
+  return (
+    <>
+      <PixiHub onCharacterClick={handleCharacterClick} orgId={kioskOrgId || ''} />
+      <PinnedRegistrationQR />
+    </>
+  );
 };

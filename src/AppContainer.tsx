@@ -15,7 +15,7 @@ import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { HubView } from "@/features/hub";
-import { RegistrationQRDisplay } from "@/features/kiosk";
+import { RegistrationQRDisplay, RegistrationQRProvider } from "@/features/kiosk";
 import { useAuth } from "@/core/auth";
 import logo from "@/assets/me2you.png";
 import { GamesView } from "@/features/games";
@@ -370,7 +370,9 @@ function AppContainer() {
     <CvCursorEnabledProvider>
       <SharedCameraProvider>
         <StateProvider>
-          <AppContainerInner />
+          <RegistrationQRProvider>
+            <AppContainerInner />
+          </RegistrationQRProvider>
         </StateProvider>
       </SharedCameraProvider>
     </CvCursorEnabledProvider>
