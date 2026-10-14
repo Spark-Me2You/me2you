@@ -6,6 +6,11 @@
 import { Graphics, Container } from "pixi.js";
 import { FLAPFLAP_CONFIG } from "../config/flapflapConfig";
 
+interface BirdOptions {
+  color?: number;
+  startY?: number;
+}
+
 export class Bird {
   public container: Container;
   public y: number;
@@ -13,11 +18,15 @@ export class Bird {
 
   private graphics: Graphics;
   private readonly config = FLAPFLAP_CONFIG;
+  private readonly color: number;
+  private readonly startY: number;
 
-  constructor() {
+  constructor(options: BirdOptions = {}) {
+    this.color = options.color ?? this.config.BIRD_COLOR;
+    this.startY = options.startY ?? this.config.GAME_HEIGHT / 2;
     this.container = new Container();
     this.graphics = new Graphics();
-    this.y = this.config.GAME_HEIGHT / 2;
+    this.y = this.startY;
 
     this.draw();
     this.container.addChild(this.graphics);
@@ -28,7 +37,7 @@ export class Bird {
     this.graphics.clear();
 
     // Bird body
-    this.graphics.beginFill(this.config.BIRD_COLOR);
+    this.graphics.beginFill(this.color);
     this.graphics.drawEllipse(
       0,
       0,
@@ -73,7 +82,7 @@ export class Bird {
   }
 
   public reset(): void {
-    this.y = this.config.GAME_HEIGHT / 2;
+    this.y = this.startY;
     this.velocity = 0;
     this.graphics.rotation = 0;
     this.updatePosition();
