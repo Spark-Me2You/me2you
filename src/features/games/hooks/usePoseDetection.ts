@@ -12,8 +12,14 @@ import type {
 } from "@/core/cv/mediapipe-loader";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
+interface UsePoseDetectionOptions {
+  numPoses?: number;
+}
+
 export interface UsePoseDetectionReturn {
   landmarksRef: React.RefObject<NormalizedLandmark[] | null>;
+  /** Landmarks for every detected person (length <= numPoses) */
+  allLandmarksRef: React.RefObject<NormalizedLandmark[][]>;
   frameSequenceRef: React.RefObject<number>;
   isInitialized: boolean;
   error: string | null;
@@ -22,8 +28,12 @@ export interface UsePoseDetectionReturn {
 
 export const POSE_PROCESS_INTERVAL_MS = 75; // ms (~13 FPS, better input response)
 
-export const usePoseDetection = (): UsePoseDetectionReturn => {
+export const usePoseDetection = (
+  options: UsePoseDetectionOptions = {},
+): UsePoseDetectionReturn => {
+  const { numPoses = poseLandmarkerConfig.numPoses } = options;
   const landmarksRef = useRef<NormalizedLandmark[] | null>(null);
+  const allLandmarksRef = useRef<NormalizedLandmark[][]>([]);
   const frameSequenceRef = useRef(0);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +45,10 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
 
     const init = async () => {
       try {
-        const poseLandmarker = await createPoseLandmarker(poseLandmarkerConfig);
+        const poseLandmarker = await createPoseLandmarker({
+          ...poseLandmarkerConfig,
+          numPoses,
+        });
         if (mounted) {
           poseLandmarkerRef.current = poseLandmarker;
           setIsInitialized(true);
@@ -59,7 +72,7 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
       mounted = false;
       poseLandmarkerRef.current?.close();
     };
-  }, []);
+  }, [numPoses]);
 
   const processFrame = useCallback(
     (video: HTMLVideoElement, timestamp: number) => {
@@ -82,9 +95,11 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
 
         if (result.landmarks && result.landmarks.length > 0) {
           landmarksRef.current = result.landmarks[0]; // First person's landmarks
+          allLandmarksRef.current = result.landmarks;
           frameSequenceRef.current += 1;
         } else {
           landmarksRef.current = null;
+          allLandmarksRef.current = [];
         }
       } catch (err) {
         console.error("Pose detection error:", err);
@@ -95,6 +110,7 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
 
   return {
     landmarksRef,
+    allLandmarksRef,
     frameSequenceRef,
     isInitialized,
     error,
