@@ -17,6 +17,7 @@ Use this folder for deep-dive docs and design notes:
 - `architecture.md` - source tree and module responsibilities
 - `automatic-rescue-flow.md` - runtime recovery behavior
 - `CONFIG.md` - configuration details
+- `TAILWIND_MIGRATION.md` - step-by-step CSS Modules to Tailwind migration plan and progress
 
 ## Deployment
 

@@ -38,6 +38,18 @@ Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<
 
 ---
 
+## Styling
+
+The repo is migrating from CSS Modules (`*.module.css`) to **Tailwind CSS v4** (via `@tailwindcss/vite`), page by page. Full plan and progress: `docs/TAILWIND_MIGRATION.md`.
+
+- Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
+- New and touched components use Tailwind utilities. Do not create new `.module.css` files.
+- Migrate a component fully (including deleting its `.module.css`) in one commit; never half-convert a file.
+- Keep inline `style={{}}` only for runtime-computed values (prefer CSS vars). Pixi code is not part of the migration.
+- Until the migration finishes, un-migrated components still import their `.module.css`, and Tailwind preflight is not yet enabled.
+
+---
+
 ## Architecture
 
 This is a React + Vite + TypeScript SPA backed by Supabase (PostgreSQL, Auth, Storage, Edge Functions). It has **two distinct rendering contexts**:

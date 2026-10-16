@@ -122,6 +122,15 @@ ONBOARDING → HUB
 | `theme/` | `colors.ts`, `spacing.ts`, `typography.ts` |
 | `utils/` | `accessoryLayout.ts`, `constants.ts`, `gestureConstants.ts` |
 
+## Styling
+
+Styling is moving from CSS Modules to Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` for the plan and status.
+
+- `src/styles/tailwind.css` — Tailwind entry (imported in `main.tsx`)
+- `src/styles/theme.css` — `@theme` tokens: colors, fonts, spacing, keyframes
+- Components use utility classes; un-migrated components still import a sibling `*.module.css`
+- Pixi rendering is unaffected; only the DOM wrappers around canvases are styled with Tailwind
+
 ## Supabase Edge Functions (`supabase/functions/`)
 
 - `mint-kiosk-session` — verifies admin auth, scopes kiosk JWT to an org
