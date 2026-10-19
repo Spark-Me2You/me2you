@@ -73,6 +73,7 @@ export const supabaseMock = {
     signOut: vi.fn(),
     signUp: vi.fn(),
     setSession: vi.fn(),
+    refreshSession: vi.fn(),
     onAuthStateChange: vi.fn(),
   },
 }
