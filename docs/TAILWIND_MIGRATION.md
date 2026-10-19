@@ -87,7 +87,7 @@ Do these first since later pages depend on them. After each, spot-check 2–3 pa
 | Step | Route | Files |
 |---|---|---|
 | 3.1 ✅ | `/claim/:tokenId` | `ClaimPage`, `ClaimErrorPage`, `ClaimSuccessPage`, `ClaimQR`, `ClaimScanner` (verify each state: loading, scanning, error, success) |
-| 3.2 | `/login` | `AdminLoginPage`, `LoginForm` |
+| 3.2 ✅ | `/login` | `AdminLoginPage`, `LoginForm` |
 | 3.3 | `/select-org` | `OrgSelectorPage` |
 | 3.4 | `/register` (entry) | `RegistrationPage`, `RegistrationError` |
 
