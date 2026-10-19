@@ -157,7 +157,7 @@ Tick as steps complete.
 
 - [x] Phase 0 baseline (lint baseline: 53 problems, 50 errors, 3 warnings, all pre-existing)
 - [x] Phase 1 foundation
-- [ ] Phase 2 shared (2.1–2.3)
+- [ ] Phase 2 shared (2.1 done; 2.2–2.3 pending)
 - [ ] Phase 3 small pages (3.1–3.4)
 - [ ] Phase 4 user area (4.1–4.6)
 - [ ] Phase 5 registration (5.1–5.5)
