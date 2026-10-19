@@ -32,6 +32,7 @@
   --font-condensed: "Barlow Condensed", sans-serif;
   --font-handwritten: "Caveat", cursive;
   --font-jersey: "Jersey 10", sans-serif;
+  --font-jersey-arial: "Jersey 10", Arial, sans-serif; /* user pages */
   --font-averia: "Averia Libre", cursive;
   --font-pixelify: "Pixelify Sans", sans-serif;
 }
