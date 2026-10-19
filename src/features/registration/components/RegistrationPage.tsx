@@ -15,8 +15,12 @@ import { ProfileStep } from './ProfileStep';
 import { PhotoStep } from './PhotoStep';
 import { BobbleheadPreviewStep } from './BobbleheadPreviewStep';
 import { SuccessStep } from './SuccessStep';
-import styles from './RegistrationPage.module.css';
 import me2youLogo from '../../../assets/me2you.png';
+
+const PAGE =
+  'relative mx-auto h-screen w-full max-w-[430px] overflow-x-hidden overflow-y-auto bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] [-webkit-overflow-scrolling:touch]';
+const LOGO =
+  'pointer-events-none absolute top-[30px] left-1/2 z-20 w-[270px] origin-top -translate-x-1/2 rotate-[2deg] scale-[1.3] select-none';
 
 /**
  * Registration Wizard (inner component after token validation)
@@ -106,11 +110,11 @@ const RegistrationWizard: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={PAGE}>
       {currentStep !== 'success' && (
-        <img src={me2youLogo} alt="me2you" className={styles.logo} />
+        <img src={me2youLogo} alt="me2you" className={LOGO} />
       )}
-      <div className={styles.stepContent}>
+      <div className="relative min-h-screen">
         {renderStep()}
       </div>
     </div>
@@ -179,18 +183,10 @@ export const RegistrationPage: React.FC = () => {
   // Show loading state
   if (isValidating) {
     return (
-      <div className={styles.page}>
-        <img src={me2youLogo} alt="me2you" className={styles.logo} />
-        <div className={styles.stepContent}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            fontFamily: '"Jersey 10", sans-serif',
-            fontSize: '32px',
-            color: '#333',
-          }}>
+      <div className={PAGE}>
+        <img src={me2youLogo} alt="me2you" className={LOGO} />
+        <div className="relative min-h-screen">
+          <div className="flex min-h-screen items-center justify-center font-jersey text-[32px] text-[#333]">
             validating...
           </div>
         </div>
