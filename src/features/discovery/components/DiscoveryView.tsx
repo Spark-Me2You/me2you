@@ -18,7 +18,6 @@ import {
 import { ExitButton } from "@/shared/components";
 import { PinnedRegistrationQR } from "@/features/kiosk";
 import { HelpPopup } from "./HelpPopup";
-import styles from "./DiscoveryView.module.css";
 
 /**
  * DiscoveryView Component
@@ -242,14 +241,14 @@ export const DiscoveryView: React.FC = () => {
   }
 
   return (
-    <div className={styles.container}>
+    <div className="fixed inset-0 m-0 grid h-screen w-screen grid-cols-[1fr_1fr] overflow-hidden bg-[linear-gradient(180deg,#58e7f7_0%,#fefffb_100%)]">
       {/* Left side: Camera feed */}
-      <div className={styles.leftPanel}>
+      <div className="relative flex items-center justify-center bg-white">
         <CameraView onGestureDetected={setDetectedGesture} />
       </div>
 
       {/* Right side: Matched profile / results */}
-      <div className={styles.rightPanel}>
+      <div className="relative flex h-full items-center justify-center overflow-hidden bg-white">
         <RandomImageCard
           detectedGesture={detectedGesture}
           imageData={imageData}
@@ -276,7 +275,7 @@ export const DiscoveryView: React.FC = () => {
 
       <button
         type="button"
-        className={styles.helpButton}
+        className="fixed top-4 right-4 z-[100] flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-0 bg-[#d3e405] font-jersey text-[40px] leading-none text-black shadow-[0_4px_4px_rgba(0,0,0,0.25),inset_0_0_4px_rgba(0,0,0,0.25),inset_1px_1px_20px_6px_rgba(255,255,255,0.35)] [transition:transform_120ms_ease,background-color_120ms_ease] hover:bg-[#b8c704] hover:[transform:scale(1.06)] active:[transform:scale(0.96)]"
         onClick={() => setShowHelp(true)}
         aria-label="open help"
       >

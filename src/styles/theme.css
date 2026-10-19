@@ -40,4 +40,42 @@
   --font-jersey-arial: "Jersey 10", Arial, sans-serif; /* user pages */
   --font-averia: "Averia Libre", cursive;
   --font-pixelify: "Pixelify Sans", sans-serif;
+
+  /* Animations (kiosk). Keyframes must not animate a property that a utility also sets:
+     !important utilities beat running animations. */
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-slide-in-right: slide-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-completion-flash: completion-flash 0.4s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(40%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes completion-flash {
+    0% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0.8);
+    }
+    50% {
+      box-shadow: 0 0 40px 20px rgba(228, 72, 5, 0.6);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0);
+    }
+  }
 }

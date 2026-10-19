@@ -35,6 +35,7 @@ Branch: `style/tailwind-migration` (branched from `dev`). Commit format per `GIT
 - **Use `text-[Npx]`, not `text-sm`/`text-2xl`.** Named sizes also set a `line-height`, which changes the inherited 1.5 the old CSS relied on. Same for `rounded-*`/spacing: named scales are rem-based and fine at the default 16px root, but prefer arbitrary px when matching a Figma number.
 - **`hover:` only applies on devices that support hover** (`@media (hover: hover)`). The old `:hover` rules also fired on touch taps. On mobile pages this is harmless (no sticky hover after a tap), but be aware when comparing on a phone.
 - **`bg-linear-*` interpolates in oklab** and can look slightly different from the old sRGB gradients. Use the literal `bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]` to match exactly.
+- **`!important` utilities beat running `@keyframes`.** A keyframe can't animate a property that a utility also sets on the same element. Keyframes live in `@theme` (`--animate-*`, see `theme.css`); keep static positioning on different properties (e.g. `-translate-y-1/2` uses `translate`, the keyframe animates `transform`).
 - **Animate `transform`, not `scale`/`rotate`/`translate` utilities.** Those use the individual CSS properties, which a `transition: transform` won't animate. Use `active:[transform:scale(0.98)]` if the old CSS transitioned `transform`.
 
 ## Verification
@@ -120,8 +121,8 @@ Pixi preview containers (`UserMiiPixiPreview`, avatar canvases): only the wrappe
 
 | Step | Feature | Files |
 |---|---|---|
-| 6.1 | Kiosk QR | `RegistrationQRDisplay`, `PinnedRegistrationQR` |
-| 6.2 | Discovery | `DiscoveryView`, `CameraView`, `PoseOverlay`, `RandomImageCard`, `HelpPopup` |
+| 6.1 ✅ | Kiosk QR | `RegistrationQRDisplay`, `PinnedRegistrationQR` |
+| 6.2 ✅ | Discovery | `DiscoveryView`, `CameraView`, `PoseOverlay`, `RandomImageCard`, `HelpPopup` |
 | 6.3 | Games hub | `GamesHub` (428 lines), `CameraOverlay`, `FlapFlapLauncher` |
 | 6.4 | FlapFlap 1P | `FlapFlapGame`, `FlapFlapLeaderboard`, `GameOverClaim` |
 | 6.5 | FlapFlap 2P | `FlapFlap2PGame`, `SplitCameraPanel` |

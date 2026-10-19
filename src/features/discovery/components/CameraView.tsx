@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { useCamera } from '../hooks/useCamera';
 import { useGestureRecognition } from '../hooks/useGestureRecognition';
 import type { GestureRecognitionResult } from '../hooks/useGestureRecognition';
-import styles from './CameraView.module.css';
 
 /**
  * CameraView Component Props
@@ -134,13 +133,13 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
 
   if (combinedError) {
     return (
-      <div className={styles.messageContainer}>
-        <div className={styles.messageContent}>
-          <h3 className={styles.errorTitle}>
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <div className="text-center">
+          <h3 className="mb-4 font-averia text-[24px] text-[#d32f2f]">
             {error ? 'Camera Error' : 'Gesture Recognition Error'}
           </h3>
-          <p className={styles.errorText}>{combinedError}</p>
-          <p className={styles.errorText}>
+          <p className="font-averia text-[18px] text-[#666]">{combinedError}</p>
+          <p className="font-averia text-[18px] text-[#666]">
             {error
               ? 'Please ensure camera permissions are granted and try again.'
               : 'Please ensure the gesture recognizer model is downloaded.'}
@@ -152,8 +151,8 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
 
   if (isLoading || !isInitialized) {
     return (
-      <div className={styles.messageContainer}>
-        <p className={styles.loadingText}>
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <p className="font-averia text-[24px] text-[#666]">
           {isLoading
             ? 'Loading camera...'
             : 'Initializing gesture recognition...'}
@@ -163,18 +162,18 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.videoWrapper}>
+    <div className="flex h-full w-full items-center justify-center bg-white">
+      <div className="relative flex h-full w-full items-center justify-center">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className={styles.video}
+          className="h-full w-full -scale-x-100 bg-black object-cover"
         />
         <canvas
           ref={canvasRef}
-          className={styles.canvas}
+          className="pointer-events-none absolute top-0 left-0 h-full w-full -scale-x-100"
         />
       </div>
     </div>

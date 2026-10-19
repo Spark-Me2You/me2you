@@ -7,7 +7,6 @@
 
 import { QRCodeSVG } from 'qrcode.react';
 import { useRegistrationQR } from '../context/RegistrationQRContext';
-import styles from './RegistrationQRDisplay.module.css';
 
 interface RegistrationQRDisplayProps {
   className?: string;
@@ -22,9 +21,9 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({
 
   if (isLoading && !url) {
     return (
-      <div className={`${styles.qrContainer} ${className || ''}`}>
-        <div className={styles.loadingState}>
-          <span className={styles.loadingText}>Loading QR...</span>
+      <div className={`flex flex-col items-center gap-[10px] ${className || ''}`}>
+        <div className="flex h-[174px] w-[174px] items-center justify-center rounded-[16px] bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px]">
+          <span className="font-jersey text-[20px] text-[rgba(255,255,255,0.7)] lowercase">Loading QR...</span>
         </div>
       </div>
     );
@@ -32,9 +31,9 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({
 
   if (error) {
     return (
-      <div className={`${styles.qrContainer} ${className || ''}`}>
-        <div className={styles.errorState}>
-          <span className={styles.errorText}>QR unavailable</span>
+      <div className={`flex flex-col items-center gap-[10px] ${className || ''}`}>
+        <div className="flex h-[174px] w-[174px] items-center justify-center rounded-[16px] bg-[rgba(255,255,255,0.1)] backdrop-blur-[10px]">
+          <span className="font-jersey text-[20px] text-[rgba(255,255,255,0.7)] lowercase">QR unavailable</span>
         </div>
       </div>
     );
@@ -51,18 +50,17 @@ export const RegistrationQRDisplay: React.FC<RegistrationQRDisplayProps> = ({
 
   return (
     <div
-      className={`${styles.qrContainer} ${className || ''}`}
+      className={`flex cursor-pointer flex-col items-center gap-[10px] ${className || ''}`}
       onClick={handleClick}
-      style={{ cursor: 'pointer' }}
       title="Click to open registration (dev)"
     >
-      <div className={styles.qrWrapper}>
+      <div className="rounded-[12px] bg-white p-[6px]">
         <QRCodeSVG
           value={url}
           size={size}
           level="M"
           includeMargin={true}
-          className={styles.qrCode}
+          className="block rounded-[8px]"
         />
       </div>
     </div>
