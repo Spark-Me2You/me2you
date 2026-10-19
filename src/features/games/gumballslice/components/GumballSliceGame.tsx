@@ -5,6 +5,8 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Assets, type Texture } from "pixi.js";
+import broccoliImg from "../../../../assets/Broccoli_PNG_Picture.png";
 import { useCvCursorEnabled, type HandTrackSample } from "@/core/cv/cursor";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import type { GameProps } from "../../types/game";
@@ -39,6 +41,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   const [hud, setHud] = useState<HudSnapshot>(INITIAL_HUD);
   const [result, setResult] = useState<RoundResult | null>(null);
   const [size] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  const [broccoliTexture, setBroccoliTexture] = useState<Texture | null>(null);
   const engineRef = useRef<GumballSliceEngine | null>(null);
   const sessionRef = useRef("");
 
@@ -66,21 +69,31 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   }, []);
 
   useEffect(() => {
-    if (!app || !isReady) return;
+    let cancelled = false;
+    Assets.load<Texture>(broccoliImg).then((texture) => {
+      if (!cancelled) setBroccoliTexture(texture);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!app || !isReady || !broccoliTexture) return;
 
     // Engine callbacks fire inside the Pixi ticker (RAF); defer React updates
     // out of it, as FlapFlap does.
     const engine = new GumballSliceEngine(app, () => handTrackRef.current, {
       onHud: (next) => setTimeout(() => setHud(next), 0),
       onRoundEnd: (stats, reason) => setTimeout(() => handleRoundEnd(stats, reason), 0),
-    });
+    }, broccoliTexture);
     engineRef.current = engine;
 
     return () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [app, isReady, handTrackRef, handleRoundEnd]);
+  }, [app, isReady, broccoliTexture, handTrackRef, handleRoundEnd]);
 
   // Trail + fingertip dot replace the global cursor while slicing; the normal
   // cursor comes back for the start / results buttons.
@@ -88,7 +101,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
     const slicing = screen === "COUNTDOWN" || screen === "PLAYING";
     engineRef.current?.setTrailVisible(slicing);
     setCursorVariant(slicing ? "hidden" : "default");
-  }, [screen, isReady, setCursorVariant]);
+  }, [screen, isReady, broccoliTexture, setCursorVariant]);
 
   useEffect(() => () => setCursorVariant("default"), [setCursorVariant]);
 

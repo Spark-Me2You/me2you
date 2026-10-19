@@ -1,6 +1,8 @@
 /**
  * Wave planning
  * Waves grow in item count and speed and arrive closer together over a round.
+ * Every few waves a suspense beat replaces the wave: a lull, a tease, and a
+ * single slow-motion mystery item.
  */
 
 import type { GumballSliceConfig } from "../config/gumballSliceConfig";
@@ -34,11 +36,24 @@ export function pickItemKind(
   config: GumballSliceConfig,
   random: () => number = Math.random,
 ): ItemKind {
-  if (waveIndex > 0 && random() < config.BAD_ITEM_FREQUENCY) {
-    return random() < 0.5 ? "broccoli" : "lemon";
-  }
+  if (waveIndex > 0 && random() < config.BAD_ITEM_FREQUENCY) return "broccoli";
   if (random() < config.GOLDEN_CHANCE) return "golden";
   return CANDY_KINDS[Math.floor(random() * CANDY_KINDS.length)];
 }
 
-export const isBadItem = (kind: ItemKind): boolean => kind === "broccoli" || kind === "lemon";
+export function isSuspenseWave(waveIndex: number, config: GumballSliceConfig): boolean {
+  return waveIndex > 0 && waveIndex % config.SUSPENSE_EVERY_WAVES === 0;
+}
+
+/** The mystery item: much more likely to be golden (or broccoli) than a normal launch. */
+export function pickSuspenseKind(
+  config: GumballSliceConfig,
+  random: () => number = Math.random,
+): ItemKind {
+  const roll = random();
+  if (roll < config.SUSPENSE_GOLDEN_CHANCE) return "golden";
+  if (roll < config.SUSPENSE_GOLDEN_CHANCE + config.SUSPENSE_BAD_CHANCE) return "broccoli";
+  return CANDY_KINDS[Math.floor(random() * CANDY_KINDS.length)];
+}
+
+export const isBadItem = (kind: ItemKind): boolean => kind === "broccoli";

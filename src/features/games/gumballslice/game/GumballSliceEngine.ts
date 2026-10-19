@@ -8,7 +8,7 @@
  * refresh rate; the trail head is always the latest raw fingertip.
  */
 
-import { Application, Container, Graphics, Text, TextStyle, type Ticker } from "pixi.js";
+import { Application, Container, Graphics, Text, TextStyle, type Texture, type Ticker } from "pixi.js";
 import type { HandTrackSample } from "@/core/cv/cursor";
 import { typography } from "@/shared/theme/typography";
 import { GUMBALL_SLICE_CONFIG } from "../config/gumballSliceConfig";
@@ -16,9 +16,10 @@ import { ComboTracker } from "../logic/ComboTracker";
 import { PlayerLock } from "../logic/PlayerLock";
 import { SlashTrail, type TrailPoint } from "../logic/SlashTrail";
 import { segmentHitsCircle, segmentSpeed } from "../logic/sliceGeometry";
-import { isBadItem, pickItemKind, planWave } from "../logic/waves";
+import { isBadItem, isSuspenseWave, pickItemKind, pickSuspenseKind, planWave } from "../logic/waves";
 import type { HudSnapshot, ItemKind, RoundEndReason, RoundStats } from "../types/gumballSlice";
 import { buildArt, destroyArt, type ArtSet, type ItemArt } from "./candyArt";
+import { PieceView } from "./PieceView";
 
 export interface GumballSliceCallbacks {
   onHud: (hud: HudSnapshot) => void;
@@ -27,8 +28,8 @@ export interface GumballSliceCallbacks {
 
 type EngineState = "IDLE" | "PLAYING" | "ENDED";
 
-interface Body {
-  view: Graphics;
+interface Body<V extends Container = PieceView> {
+  view: V;
   x: number;
   y: number;
   vx: number;
@@ -43,7 +44,7 @@ interface Item extends Body {
   timeScale: number;
 }
 
-interface Particle extends Body {
+interface Particle extends Body<Graphics> {
   life: number;
   maxLife: number;
 }
@@ -98,6 +99,8 @@ export class GumballSliceEngine {
   private readonly art: ArtSet;
   private readonly items: Item[] = [];
   private readonly halves: Body[] = [];
+  private readonly teaseGfx = new Graphics();
+  private teaseText!: Text;
   private readonly particles: Particle[] = [];
   private readonly popups: Popup[] = [];
   private halfCursor = 0;
@@ -122,6 +125,10 @@ export class GumballSliceEngine {
   private nextWaveAt = 0;
   private waveIndex = 0;
   private pending: PendingLaunch[] = [];
+  // Suspense beat (round seconds; -1 when none is scheduled)
+  private teaseAt = -1;
+  private revealAt = -1;
+  private suspenseX = 0;
   private score = 0;
   private sliced = 0;
   private missed = 0;
@@ -142,7 +149,12 @@ export class GumballSliceEngine {
 
   private readonly tick = (ticker: Ticker) => this.update(ticker);
 
-  constructor(app: Application, getSample: () => HandTrackSample, callbacks: GumballSliceCallbacks) {
+  constructor(
+    app: Application,
+    getSample: () => HandTrackSample,
+    callbacks: GumballSliceCallbacks,
+    broccoliTexture: Texture,
+  ) {
     const c = this.config;
     this.app = app;
     this.getSample = getSample;
@@ -164,7 +176,7 @@ export class GumballSliceEngine {
       jumpWindowMs: c.LOCK_JUMP_WINDOW_MS,
       scaleAdapt: c.LOCK_SCALE_ADAPT,
     });
-    this.art = buildArt(this.radius, c);
+    this.art = buildArt(this.radius, c, broccoliTexture);
 
     this.buildPools();
 
@@ -240,6 +252,7 @@ export class GumballSliceEngine {
     this.readInput(now);
     if (this.state === "PLAYING") this.updateRound(dt, now);
 
+    this.drawTease();
     this.updateItems(dt);
     this.updateHalves(dt);
     this.updateParticles(dt);
@@ -304,7 +317,18 @@ export class GumballSliceEngine {
     }
 
     const timeLeft = c.ROUND_SECONDS - this.elapsed;
-    if (this.elapsed >= this.nextWaveAt && timeLeft > c.NO_LAUNCH_FINAL_SEC) {
+    const suspenseSec = c.SUSPENSE_LULL_SEC + c.SUSPENSE_TEASE_SEC;
+    if (
+      this.elapsed >= this.nextWaveAt &&
+      isSuspenseWave(this.waveIndex, c) &&
+      timeLeft - suspenseSec > c.NO_LAUNCH_FINAL_SEC + c.SUSPENSE_AFTER_SEC
+    ) {
+      this.teaseAt = this.elapsed + c.SUSPENSE_LULL_SEC;
+      this.revealAt = this.elapsed + suspenseSec;
+      this.suspenseX = this.width * (0.3 + Math.random() * 0.4);
+      this.waveIndex += 1;
+      this.nextWaveAt = this.revealAt + c.SUSPENSE_AFTER_SEC;
+    } else if (this.elapsed >= this.nextWaveAt && timeLeft > c.NO_LAUNCH_FINAL_SEC) {
       const plan = planWave(this.waveIndex, c);
       for (let k = 0; k < plan.count; k++) {
         this.pending.push({
@@ -317,13 +341,47 @@ export class GumballSliceEngine {
       this.nextWaveAt = this.elapsed + plan.nextInSec;
     }
 
-    for (let i = this.pending.length - 1; i >= 0; i--) {
+    if (this.revealAt >= 0 && this.elapsed >= this.revealAt) {
+      // High, slow-motion arc so the mystery item hangs in the air.
+      this.launch(pickSuspenseKind(c), c.SUSPENSE_SLOWMO, this.suspenseX, c.APEX_MAX);
+      this.teaseAt = -1;
+      this.revealAt = -1;
+    }
+
+    // Oldest launches first; anything over the on-screen cap waits its turn.
+    let airborne = this.items.reduce((n, item) => n + (item.active ? 1 : 0), 0);
+    for (let i = 0; i < this.pending.length && airborne < c.MAX_ITEMS_ON_SCREEN; ) {
       const launch = this.pending[i];
       if (launch.at <= this.elapsed) {
         this.launch(launch.kind, launch.speed);
         this.pending.splice(i, 1);
+        airborne += 1;
+      } else {
+        i += 1;
       }
     }
+  }
+
+  /** Pulsing glow and "?" at the bottom edge where the mystery item will appear. */
+  private drawTease(): void {
+    const g = this.teaseGfx;
+    g.clear();
+    const teasing = this.state === "PLAYING" && this.teaseAt >= 0 && this.elapsed >= this.teaseAt;
+    this.teaseText.visible = teasing;
+    if (!teasing) return;
+
+    const p = Math.min(1, (this.elapsed - this.teaseAt) / this.config.SUSPENSE_TEASE_SEC);
+    const pulse = 1 + 0.15 * Math.sin(this.elapsed * (8 + 14 * p));
+    const r = this.radius * (1 + 1.2 * p) * pulse;
+    const x = this.suspenseX;
+    const y = this.height;
+    g.circle(x, y, r * 1.8).fill({ color: this.config.TRAIL_GLOW_COLOR, alpha: 0.12 + 0.18 * p });
+    g.circle(x, y, r * 1.2).fill({ color: this.config.TRAIL_GLOW_COLOR, alpha: 0.2 + 0.3 * p });
+    g.circle(x, y, r * 0.6).fill({ color: this.config.TRAIL_CORE_COLOR, alpha: 0.3 + 0.5 * p });
+
+    this.teaseText.position.set(x, y - r * 1.9);
+    this.teaseText.alpha = p;
+    this.teaseText.scale.set(1.2 * pulse);
   }
 
   private endRound(reason: RoundEndReason): void {
@@ -371,7 +429,7 @@ export class GumballSliceEngine {
   // Items & slicing
   // ---------------------------------------------------------------------------
 
-  private launch(kind: ItemKind, waveSpeed: number): void {
+  private launch(kind: ItemKind, waveSpeed: number, x?: number, apexFraction?: number): void {
     const item = this.items.find((i) => !i.active);
     if (!item) return;
     const c = this.config;
@@ -381,19 +439,25 @@ export class GumballSliceEngine {
     const variants = this.art.variants[kind];
     item.art = variants[Math.floor(Math.random() * variants.length)];
     item.kind = kind;
-    item.view.context = item.art.whole;
+    item.view.show(item.art.whole);
 
     const startY = H + this.radius * 1.4;
-    const apex = H * (c.APEX_MIN + Math.random() * (c.APEX_MAX - c.APEX_MIN));
-    item.x = W * (c.LAUNCH_X_MARGIN + Math.random() * (1 - 2 * c.LAUNCH_X_MARGIN));
+    const apex = H * (apexFraction ?? c.APEX_MIN + Math.random() * (c.APEX_MAX - c.APEX_MIN));
+    item.x = x ?? W * (c.LAUNCH_X_MARGIN + Math.random() * (1 - 2 * c.LAUNCH_X_MARGIN));
     item.y = startY;
     item.vy = -Math.sqrt(2 * this.gravity * (apex + this.radius * 1.4));
     // Land somewhere in the middle of the screen so items never fly off the sides.
     const landX = W * (0.2 + Math.random() * 0.6);
     item.vx = (landX - item.x) / ((2 * -item.vy) / this.gravity);
-    item.spin = (Math.random() - 0.5) * 4;
     item.timeScale = waveSpeed * this.speedScale;
-    item.view.rotation = Math.random() * Math.PI * 2;
+    if (isBadItem(kind)) {
+      // Broccoli stays upright-ish so it's recognisable at a glance.
+      item.spin = (Math.random() * 2 - 1) * c.BROCCOLI_WOBBLE;
+      item.view.rotation = (Math.random() - 0.5) * 0.4;
+    } else {
+      item.spin = (Math.random() - 0.5) * 4;
+      item.view.rotation = Math.random() * Math.PI * 2;
+    }
     item.view.position.set(item.x, item.y);
     item.view.visible = true;
     item.active = true;
@@ -469,6 +533,8 @@ export class GumballSliceEngine {
 
   private clearField(): void {
     this.pending = [];
+    this.teaseAt = -1;
+    this.revealAt = -1;
     for (const item of this.items) {
       item.active = false;
       item.view.visible = false;
@@ -497,12 +563,12 @@ export class GumballSliceEngine {
     const halfLayer = new Container();
     const particleLayer = new Container();
     const popupLayer = new Container();
-    this.world.addChild(halfLayer, itemLayer, particleLayer, popupLayer);
+    this.world.addChild(this.teaseGfx, halfLayer, itemLayer, particleLayer, popupLayer);
 
-    const body = (view: Graphics) => ({ view, x: 0, y: 0, vx: 0, vy: 0, spin: 0, active: false });
+    const body = <V extends Container>(view: V) => ({ view, x: 0, y: 0, vx: 0, vy: 0, spin: 0, active: false });
 
     for (let i = 0; i < c.ITEM_POOL_SIZE; i++) {
-      const view = new Graphics(this.art.variants.gumball[0].whole);
+      const view = new PieceView();
       view.visible = false;
       itemLayer.addChild(view);
       this.items.push({
@@ -513,7 +579,7 @@ export class GumballSliceEngine {
       });
     }
     for (let i = 0; i < c.HALF_POOL_SIZE; i++) {
-      const view = new Graphics(this.art.variants.gumball[0].half);
+      const view = new PieceView();
       view.visible = false;
       halfLayer.addChild(view);
       this.halves.push(body(view));
@@ -539,6 +605,12 @@ export class GumballSliceEngine {
       popupLayer.addChild(view);
       this.popups.push({ view, x: 0, y: 0, life: 0, scale: 1, active: false });
     }
+
+    this.teaseText = new Text({ text: "?", style });
+    this.teaseText.anchor.set(0.5);
+    this.teaseText.tint = c.POPUP_GOLDEN_COLOR;
+    this.teaseText.visible = false;
+    popupLayer.addChild(this.teaseText);
   }
 
   private spawnHalves(item: Item, angle: number): void {
@@ -550,7 +622,7 @@ export class GumballSliceEngine {
     for (const side of [1, -1]) {
       const half = this.halves[this.halfCursor];
       this.halfCursor = (this.halfCursor + 1) % this.halves.length;
-      half.view.context = item.art.half;
+      half.view.show(item.art.halves[side === 1 ? 0 : 1]);
       half.view.rotation = side === 1 ? angle : angle + Math.PI;
       half.x = item.x;
       half.y = item.y;

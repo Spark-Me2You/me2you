@@ -40,27 +40,38 @@ export const GUMBALL_SLICE_CONFIG = {
 
   // Candy flight
   CANDY_SPEED_MULTIPLIER: envNumber("VITE_GUMBALL_CANDY_SPEED", 1),
-  CANDY_RADIUS: 0.055,
+  CANDY_RADIUS: 0.08,
   GRAVITY: 1.5, // screen heights / s²
   APEX_MIN: 0.45, // apex height above the bottom edge
   APEX_MAX: 0.85,
   LAUNCH_X_MARGIN: 0.15, // fraction of screen width kept clear at each side
 
   // Waves (grow in count and speed)
-  FIRST_WAVE_SIZE: 2,
-  WAVE_SIZE_GROWTH: 0.4, // extra items per wave
-  MAX_WAVE_SIZE: 7,
+  FIRST_WAVE_SIZE: 1,
+  WAVE_SIZE_GROWTH: 0.3, // extra items per wave
+  MAX_WAVE_SIZE: 4,
+  MAX_ITEMS_ON_SCREEN: 5, // launches wait while this many items are in the air
   WAVE_SPEED_GROWTH: 0.035, // extra speed per wave
   MAX_WAVE_SPEED: 1.45,
   FIRST_WAVE_DELAY_SEC: 0.6,
-  WAVE_INTERVAL_SEC: 2.6,
-  MIN_WAVE_INTERVAL_SEC: 1.5,
+  WAVE_INTERVAL_SEC: 3.0,
+  MIN_WAVE_INTERVAL_SEC: 2.2,
   WAVE_INTERVAL_DECAY_SEC: 0.08,
-  LAUNCH_STAGGER_SEC: 0.18,
+  LAUNCH_STAGGER_SEC: 0.3,
   NO_LAUNCH_FINAL_SEC: 1.2, // no new launches this close to the buzzer
 
+  // Suspense beats: a lull, a glowing tease at the launch spot, then one
+  // mystery item that floats up in slow motion
+  SUSPENSE_EVERY_WAVES: 4, // every Nth wave is a suspense beat (never the first)
+  SUSPENSE_LULL_SEC: 1.2, // quiet time before the tease
+  SUSPENSE_TEASE_SEC: 1.4, // glow builds at the launch spot
+  SUSPENSE_AFTER_SEC: 1.6, // gap before the next normal wave
+  SUSPENSE_SLOWMO: 0.55, // flight time-scale of the mystery item
+  SUSPENSE_GOLDEN_CHANCE: 0.35,
+  SUSPENSE_BAD_CHANCE: 0.3,
+
   // Item mix
-  BAD_ITEM_FREQUENCY: envNumber("VITE_GUMBALL_BAD_ITEM_FREQUENCY", 0.15), // per launched item, from wave 2
+  BAD_ITEM_FREQUENCY: envNumber("VITE_GUMBALL_BAD_ITEM_FREQUENCY", 0.15), // broccoli chance per item, from wave 2
   GOLDEN_CHANCE: 0.04,
 
   // Scoring
@@ -113,9 +124,10 @@ export const GUMBALL_SLICE_CONFIG = {
   WRAPPED_COLOR: colors.btnPink,
   SWIRL_COLOR: colors.btnPurple,
   GOLDEN_COLOR: colors.gold,
-  BROCCOLI_COLOR: colors.leafGreen,
-  BROCCOLI_SHADE_COLOR: colors.leafGreenDark,
-  LEMON_COLOR: colors.btnYellowGreen,
+  BROCCOLI_COLOR: colors.leafGreen, // broccoli crumbs
+  BROCCOLI_SIZE: 2.6, // sprite's longest side ÷ candy radius
+  BROCCOLI_ROTATION_DEG: 58, // stands the side-lying PNG upright (stem down)
+  BROCCOLI_WOBBLE: 0.8, // max spin (rad/s) so it stays upright-ish in flight
   OUTLINE_GOOD: colors.white,
   OUTLINE_BAD: colors.black,
   POPUP_GOOD_COLOR: colors.white,

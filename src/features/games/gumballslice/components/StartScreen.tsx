@@ -73,9 +73,8 @@ export const StartScreen: React.FC<Props> = ({ onStart, onBack }) => {
           <span className={styles.good}>slice candy!</span>
         </div>
         <div className={styles.legendGroup}>
-          <ItemIcon kind="broccoli" size={88} />
-          <ItemIcon kind="lemon" size={88} />
-          <span className={styles.bad}>avoid these</span>
+          <ItemIcon kind="broccoli" size={104} />
+          <span className={styles.bad}>avoid broccoli</span>
         </div>
       </div>
 

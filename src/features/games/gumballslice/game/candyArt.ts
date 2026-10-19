@@ -1,20 +1,26 @@
 /**
  * Candy Art
- * Vector art for every item, built once per round size as shared
- * GraphicsContexts so pooled Graphics just swap contexts (no redraw per spawn).
+ * Looks for every item, built once per screen size. Candy is vector art in
+ * shared GraphicsContexts; broccoli is the photo sprite (Broccoli_PNG_Picture),
+ * stood upright. Pooled PieceViews just swap looks, so nothing is redrawn per
+ * spawn.
  *
- * Good candy: round, glossy, white rim. Bad items: black outline and a
- * non-round silhouette (bumpy broccoli tree, pointed lemon with a sour face)
- * so they read differently by both colour and shape at speed.
+ * Good candy: round, glossy, white rim. Broccoli: a real photo with an
+ * irregular silhouette, so it reads differently by colour and shape at speed.
  */
 
-import { GraphicsContext } from "pixi.js";
+import { GraphicsContext, Rectangle, Texture } from "pixi.js";
 import type { GumballSliceConfig } from "../config/gumballSliceConfig";
 import type { ItemKind } from "../types/gumballSlice";
 
+export type Look =
+  | { type: "vector"; context: GraphicsContext }
+  | { type: "sprite"; texture: Texture; scale: number; rotation: number };
+
 export interface ItemArt {
-  whole: GraphicsContext;
-  half: GraphicsContext; // top half (y < 0), cut edge along the x axis
+  whole: Look;
+  /** The two pieces after a slice. Vector halves are the top half (y < 0), cut edge on the x axis. */
+  halves: [Look, Look];
   particleColor: string;
 }
 
@@ -37,12 +43,17 @@ function cutHalf(ctx: GraphicsContext, r: number, color: string, outline: string
   ctx.ellipse(0, -r * 0.06, r * 0.82, r * 0.14).fill({ color: outline, alpha: 0.5 });
 }
 
+function vectorArt(whole: GraphicsContext, half: GraphicsContext, particleColor: string): ItemArt {
+  const halfLook: Look = { type: "vector", context: half };
+  return { whole: { type: "vector", context: whole }, halves: [halfLook, halfLook], particleColor };
+}
+
 function gumball(r: number, color: string, config: GumballSliceConfig): ItemArt {
   const whole = new GraphicsContext();
   glossyBall(whole, r, color, config.OUTLINE_GOOD);
   const half = new GraphicsContext();
   cutHalf(half, r, color, config.OUTLINE_GOOD);
-  return { whole, half, particleColor: color };
+  return vectorArt(whole, half, color);
 }
 
 function wrapped(r: number, config: GumballSliceConfig): ItemArt {
@@ -63,7 +74,7 @@ function wrapped(r: number, config: GumballSliceConfig): ItemArt {
   whole.rect(-r * 0.12, -r * 0.74, r * 0.24, r * 1.48).fill({ color: rim, alpha: 0.35 });
   const half = new GraphicsContext();
   cutHalf(half, r * 0.8, color, rim);
-  return { whole, half, particleColor: color };
+  return vectorArt(whole, half, color);
 }
 
 function swirl(r: number, config: GumballSliceConfig): ItemArt {
@@ -83,7 +94,7 @@ function swirl(r: number, config: GumballSliceConfig): ItemArt {
   whole.circle(0, 0, r * 0.18).fill({ color: rim });
   const half = new GraphicsContext();
   cutHalf(half, r, color, rim);
-  return { whole, half, particleColor: color };
+  return vectorArt(whole, half, color);
 }
 
 function golden(r: number, config: GumballSliceConfig): ItemArt {
@@ -95,79 +106,38 @@ function golden(r: number, config: GumballSliceConfig): ItemArt {
   whole.star(0, r * 0.1, 5, r * 0.45, r * 0.2).fill({ color: rim });
   const half = new GraphicsContext();
   cutHalf(half, r, color, rim);
-  return { whole, half, particleColor: color };
+  return vectorArt(whole, half, color);
 }
 
-function broccoli(r: number, config: GumballSliceConfig): ItemArt {
-  const crown = config.BROCCOLI_COLOR;
-  const shade = config.BROCCOLI_SHADE_COLOR;
-  const outline = config.OUTLINE_BAD;
-  const w = r * 0.12;
-  const whole = new GraphicsContext();
-  // Stem
-  whole
-    .poly([-r * 0.28, 0, r * 0.28, 0, r * 0.38, r * 1.05, -r * 0.38, r * 1.05])
-    .fill({ color: shade })
-    .stroke({ width: w, color: outline });
-  // Bumpy crown (florets)
-  const florets: [number, number, number][] = [
-    [-r * 0.62, -r * 0.05, r * 0.45],
-    [r * 0.62, -r * 0.05, r * 0.45],
-    [-r * 0.3, -r * 0.5, r * 0.5],
-    [r * 0.3, -r * 0.5, r * 0.5],
-    [0, -r * 0.12, r * 0.5],
-  ];
-  for (const [x, y, fr] of florets) {
-    whole.circle(x, y, fr).fill({ color: crown }).stroke({ width: w, color: outline });
-  }
-  for (const [x, y, fr] of florets) {
-    whole.circle(x - fr * 0.25, y - fr * 0.2, fr * 0.22).fill({ color: shade });
-  }
-  const half = new GraphicsContext();
-  cutHalf(half, r, crown, outline);
-  return { whole, half, particleColor: crown };
+/** Broccoli photo, rotated upright; it splits down the middle into two image halves. */
+function broccoli(r: number, texture: Texture, config: GumballSliceConfig): ItemArt {
+  const { x, y, width, height } = texture.frame;
+  const scale = (r * config.BROCCOLI_SIZE) / Math.max(width, height);
+  const rotation = (config.BROCCOLI_ROTATION_DEG * Math.PI) / 180;
+  const piece = (frame: Rectangle): Look => ({
+    type: "sprite",
+    texture: new Texture({ source: texture.source, frame }),
+    scale,
+    rotation,
+  });
+  return {
+    whole: { type: "sprite", texture, scale, rotation },
+    halves: [
+      piece(new Rectangle(x, y, width / 2, height)),
+      piece(new Rectangle(x + width / 2, y, width / 2, height)),
+    ],
+    particleColor: config.BROCCOLI_COLOR,
+  };
 }
 
-function lemon(r: number, config: GumballSliceConfig): ItemArt {
-  const color = config.LEMON_COLOR;
-  const outline = config.OUTLINE_BAD;
-  const w = r * 0.12;
-  const whole = new GraphicsContext();
-  // Pointed ends
-  whole
-    .poly([-r * 1.0, -r * 0.2, -r * 1.35, 0, -r * 1.0, r * 0.2])
-    .fill({ color })
-    .stroke({ width: w, color: outline });
-  whole
-    .poly([r * 1.0, -r * 0.2, r * 1.35, 0, r * 1.0, r * 0.2])
-    .fill({ color })
-    .stroke({ width: w, color: outline });
-  whole.ellipse(0, 0, r * 1.08, r * 0.8).fill({ color }).stroke({ width: w, color: outline });
-  // Sour face: squinting eyes + wavy mouth
-  const eye = r * 0.16;
-  whole
-    .moveTo(-r * 0.45 - eye, -r * 0.3)
-    .lineTo(-r * 0.45 + eye, -r * 0.18)
-    .moveTo(r * 0.45 + eye, -r * 0.3)
-    .lineTo(r * 0.45 - eye, -r * 0.18)
-    .moveTo(-r * 0.4, r * 0.3)
-    .quadraticCurveTo(-r * 0.2, r * 0.12, 0, r * 0.3)
-    .quadraticCurveTo(r * 0.2, r * 0.48, r * 0.4, r * 0.3)
-    .stroke({ width: w, color: outline, cap: "round" });
-  const half = new GraphicsContext();
-  cutHalf(half, r, color, outline);
-  return { whole, half, particleColor: color };
-}
-
-export function buildArt(radius: number, config: GumballSliceConfig): ArtSet {
+export function buildArt(radius: number, config: GumballSliceConfig, broccoliTexture: Texture): ArtSet {
   return {
     variants: {
       gumball: config.CANDY_COLORS.map((c) => gumball(radius, c, config)),
       wrapped: [wrapped(radius, config)],
       swirl: [swirl(radius, config)],
       golden: [golden(radius, config)],
-      broccoli: [broccoli(radius, config)],
-      lemon: [lemon(radius, config)],
+      broccoli: [broccoli(radius, broccoliTexture, config)],
     },
     dot: new GraphicsContext().circle(0, 0, 1).fill({ color: config.TRAIL_CORE_COLOR }),
     speck: new GraphicsContext().rect(-1, -1, 2, 2).fill({ color: config.TRAIL_CORE_COLOR }),
@@ -175,10 +145,17 @@ export function buildArt(radius: number, config: GumballSliceConfig): ArtSet {
 }
 
 export function destroyArt(art: ArtSet): void {
+  // The full broccoli texture belongs to the Assets cache; only the half
+  // textures cut from it here are ours to destroy.
+  const destroyLook = (look: Look, ownsTexture: boolean) => {
+    if (look.type === "vector") look.context.destroy();
+    else if (ownsTexture) look.texture.destroy(false);
+  };
   for (const list of Object.values(art.variants)) {
     for (const v of list) {
-      v.whole.destroy();
-      v.half.destroy();
+      destroyLook(v.whole, false);
+      if (v.halves[0] !== v.halves[1]) destroyLook(v.halves[1], true);
+      destroyLook(v.halves[0], true);
     }
   }
   art.dot.destroy();

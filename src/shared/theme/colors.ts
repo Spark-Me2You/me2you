@@ -30,7 +30,6 @@ export const colors = {
   gameNightDeep: '#16213e',     // dark game backdrop (bottom)
   gold:          '#ffd700',     // scores, trophies, golden candy
   leafGreen:     '#47c52b',     // games-hub green; broccoli
-  leafGreenDark: '#2a7a18',     // shaded leafGreen
 
   // --- State ---
   error: '#b0003a',
