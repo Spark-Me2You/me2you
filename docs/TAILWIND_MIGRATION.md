@@ -32,6 +32,10 @@ Branch: `style/tailwind-migration` (branched from `dev`). Commit format per `GIT
 - Consequence while `important` is on: a runtime `style={{}}` can't override a utility for the same property. Don't put both on one element.
 - `index.css` `button` also sets `padding: 0.6em 1.2em`, and with preflight off elements are `content-box`. Converted buttons keep that padding unless you set `p-*`; don't add `p-0` unless the old module did.
 - `button:hover { border-color: #646cff }` and `a:hover` in `index.css` used to beat module classes on specificity. Converted components don't pick these up; this is an intentional, expected difference (it was template leftover).
+- **Use `text-[Npx]`, not `text-sm`/`text-2xl`.** Named sizes also set a `line-height`, which changes the inherited 1.5 the old CSS relied on. Same for `rounded-*`/spacing: named scales are rem-based and fine at the default 16px root, but prefer arbitrary px when matching a Figma number.
+- **`hover:` only applies on devices that support hover** (`@media (hover: hover)`). The old `:hover` rules also fired on touch taps. On mobile pages this is harmless (no sticky hover after a tap), but be aware when comparing on a phone.
+- **`bg-linear-*` interpolates in oklab** and can look slightly different from the old sRGB gradients. Use the literal `bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]` to match exactly.
+- **Animate `transform`, not `scale`/`rotate`/`translate` utilities.** Those use the individual CSS properties, which a `transition: transform` won't animate. Use `active:[transform:scale(0.98)]` if the old CSS transitioned `transform`.
 
 ## Verification
 
@@ -82,7 +86,7 @@ Do these first since later pages depend on them. After each, spot-check 2–3 pa
 
 | Step | Route | Files |
 |---|---|---|
-| 3.1 | `/claim/:tokenId` | `ClaimPage`, `ClaimErrorPage`, `ClaimSuccessPage`, `ClaimQR`, `ClaimScanner` (verify each state: loading, scanning, error, success) |
+| 3.1 ✅ | `/claim/:tokenId` | `ClaimPage`, `ClaimErrorPage`, `ClaimSuccessPage`, `ClaimQR`, `ClaimScanner` (verify each state: loading, scanning, error, success) |
 | 3.2 | `/login` | `AdminLoginPage`, `LoginForm` |
 | 3.3 | `/select-org` | `OrgSelectorPage` |
 | 3.4 | `/register` (entry) | `RegistrationPage`, `RegistrationError` |
