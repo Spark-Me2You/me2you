@@ -99,8 +99,8 @@ Do these first since later pages depend on them. After each, spot-check 2–3 pa
 | 4.2 ✅ | `/user/gallery` | `UserGalleryPage` |
 | 4.3 ✅ | `/user/game-scores` | `UserGameScoresPage` |
 | 4.4 ✅ | `/user/messages` | `MessagesView`, `MessageComposePage` |
-| 4.5 | `/user/profile` | `UserProfileView` (549 lines), `UserProfileEditForm` (349), `UserPhotoCaptureModal` (247), `UserMiiPixiPreview` |
-| 4.6 | `/user/customize` | `CustomizeAvatarView` (282) |
+| 4.5 ✅ | `/user/profile` | `UserProfileView` (549 lines), `UserProfileEditForm` (349), `UserPhotoCaptureModal` (247), `UserMiiPixiPreview` |
+| 4.6 ✅ | `/user/customize` | `CustomizeAvatarView` (282) |
 
 Pixi preview containers (`UserMiiPixiPreview`, avatar canvases): only the wrapper classes change; confirm the canvas sizes and resize behavior are unchanged.
 
@@ -171,7 +171,7 @@ Tick as steps complete.
 - [x] Phase 1 foundation
 - [x] Phase 2 shared (2.1–2.3)
 - [x] Phase 3 small pages (3.1–3.4)
-- [ ] Phase 4 user area (4.1–4.6)
+- [x] Phase 4 user area (4.1–4.6)
 - [ ] Phase 5 registration (5.1–5.5)
 - [ ] Phase 6 kiosk features (6.1–6.8)
 - [ ] Phase 7 AppContainer (7.1–7.5)
