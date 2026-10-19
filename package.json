@@ -13,7 +13,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "ladle": "ladle serve",
+    "ladle:build": "ladle build",
+    "test:stories": "playwright test"
   },
   "dependencies": {
     "@jridgewell/resolve-uri": "^3.1.2",
@@ -29,6 +32,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@ladle/react": "^5.1.1",
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",

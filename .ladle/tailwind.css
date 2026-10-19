@@ -1,0 +1,19 @@
+/*
+ * Ladle runs Vite from its own package root, so Tailwind's automatic source
+ * detection never sees the app. Point it at src/ explicitly.
+ */
+@import "../src/styles/tailwind.css";
+@source "../src";
+
+/*
+ * Ladle renders stories in the same document as its sidebar. Make the story
+ * area the containing block for position: fixed, so full-screen kiosk views
+ * and modals fill the story area instead of covering (and swallowing clicks
+ * on) the sidebar and toolbar. Preview mode has no .ladle-main, so it is
+ * unaffected.
+ */
+.ladle-main {
+  transform: translateZ(0);
+  min-height: 100vh;
+  overflow: hidden;
+}

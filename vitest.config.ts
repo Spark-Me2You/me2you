@@ -13,7 +13,7 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}'],
-        exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/**/*.d.ts', 'src/main.tsx'],
+        exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/stories/**', 'src/**/*.d.ts', 'src/main.tsx'],
         reporter: ['text', 'html'],
       },
     },

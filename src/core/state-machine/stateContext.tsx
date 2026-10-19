@@ -10,14 +10,19 @@ const StateContext = createContext<StateContextType | undefined>(undefined);
 
 interface StateProviderProps {
   children: React.ReactNode;
+  /** Starting state; defaults to IDLE. Used by Ladle stories to open a specific view. */
+  initialState?: AppState;
 }
 
 /**
  * State Provider Component
  * TODO: Implement state machine context provider
  */
-export const StateProvider: React.FC<StateProviderProps> = ({ children }) => {
-  const [currentState, setCurrentState] = useState<AppState>(AppState.IDLE);
+export const StateProvider: React.FC<StateProviderProps> = ({
+  children,
+  initialState = AppState.IDLE,
+}) => {
+  const [currentState, setCurrentState] = useState<AppState>(initialState);
 
   const transitionTo = (state: AppState) => {
     // TODO: Implement state transition with validation
