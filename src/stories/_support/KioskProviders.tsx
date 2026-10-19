@@ -21,7 +21,7 @@ export function KioskProviders({ state = AppState.IDLE, children }: { state?: Ap
       <SharedCameraProvider>
         <StateProvider initialState={state}>
           <RegistrationQRProvider>
-            <div className="fixed inset-0 h-screen w-screen overflow-hidden">{children}</div>
+            <div className="fixed inset-0 overflow-hidden">{children}</div>
             <CursorOverlay />
           </RegistrationQRProvider>
         </StateProvider>

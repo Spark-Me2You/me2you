@@ -84,7 +84,7 @@ Kiosk stories (`Kiosk / ...`) use hand tracking, which a fake camera and a simul
 | `F` / `J` | Flap arms for the left / right player, for FlapFlap |
 | `P` | Second player steps in or out |
 
-Normal mouse clicks are blocked in kiosk stories, because the real kiosk has no mouse. Point and "pinch" instead.
+Normal mouse clicks are blocked inside kiosk stories, because the real kiosk has no mouse. Point and "pinch" instead. The block covers only the story area, so the Ladle sidebar and toolbar work as usual. Kiosk views fill the story area beside the sidebar; use the **Fullscreen** toolbar button to see one at full kiosk size.
 
 Some examples:
 
