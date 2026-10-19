@@ -40,14 +40,12 @@ Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<
 
 ## Styling
 
-The repo is migrating from CSS Modules (`*.module.css`) to **Tailwind CSS v4** (via `@tailwindcss/vite`), page by page. Full plan and progress: `docs/TAILWIND_MIGRATION.md`.
+The repo is styled with **Tailwind CSS v4** (via `@tailwindcss/vite`), migrated from CSS Modules. History and gotchas: `docs/TAILWIND_MIGRATION.md`.
 
 - Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
-- New and touched components use Tailwind utilities. Do not create new `.module.css` files.
-- Migrate a component fully (including deleting its `.module.css`) in one commit; never half-convert a file.
+- Components use Tailwind utilities. Do not create `.module.css` files.
 - Keep inline `style={{}}` only for runtime-computed values (prefer CSS vars). Pixi code is not part of the migration.
-- Tailwind utilities are imported with `important` (so they beat the unlayered `index.css`/module rules); don't mix a utility and an inline `style` for the same property. See Known gotchas in the migration doc.
-- Until the migration finishes, un-migrated components still import their `.module.css`, and Tailwind preflight is not yet enabled.
+- Preflight is enabled; app-wide defaults live in `@layer base` in `src/styles/tailwind.css`. A keyframe must not animate a property that a utility also sets, and don't mix a utility and an inline `style` for the same property.
 
 ---
 

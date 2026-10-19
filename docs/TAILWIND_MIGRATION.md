@@ -28,7 +28,7 @@ Branch: `style/tailwind-migration` (branched from `dev`). Commit format per `GIT
 
 ## Known gotchas
 
-- **Unlayered CSS beats Tailwind utilities.** `index.css` has unlayered element rules (`button`, `a`, `h1`, `body`), and CSS Modules are unlayered too. Layered utilities lose to both regardless of specificity. To make converted components behave, `src/styles/tailwind.css` imports utilities with `important` (found in step 2.2). **Phase 8 must remove `important`** once `index.css` and all modules are gone.
+- **Unlayered CSS beats Tailwind utilities.** `index.css` has unlayered element rules (`button`, `a`, `h1`, `body`), and CSS Modules are unlayered too. Layered utilities lose to both regardless of specificity. To make converted components behave, `src/styles/tailwind.css` imports utilities with `important` (found in step 2.2). **Removed in Phase 8** once `index.css` and all modules are gone.
 - Consequence while `important` is on: a runtime `style={{}}` can't override a utility for the same property. Don't put both on one element.
 - `index.css` `button` also sets `padding: 0.6em 1.2em`, and with preflight off elements are `content-box`. Converted buttons keep that padding unless you set `p-*`; don't add `p-0` unless the old module did.
 - `button:hover { border-color: #646cff }` and `a:hover` in `index.css` used to beat module classes on specificity. Converted components don't pick these up; this is an intentional, expected difference (it was template leftover).
@@ -178,4 +178,4 @@ Tick as steps complete.
 - [x] Phase 5 registration (5.1–5.5)
 - [x] Phase 6 kiosk features (6.1–6.8)
 - [x] Phase 7 AppContainer (7.1–7.5)
-- [ ] Phase 8 cleanup
+- [x] Phase 8 cleanup

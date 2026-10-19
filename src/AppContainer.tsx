@@ -33,7 +33,7 @@ function AppContainerContent() {
       case AppState.AUTH:
         return (
           <div>
-            <h1>Authentication</h1>
+            <h1 className="text-[3.2em] leading-[1.1]">Authentication</h1>
             <p>Please swipe your card</p>
           </div>
         );
@@ -41,7 +41,7 @@ function AppContainerContent() {
       case AppState.ONBOARDING:
         return (
           <div>
-            <h1>Welcome!</h1>
+            <h1 className="text-[3.2em] leading-[1.1]">Welcome!</h1>
             <p>Let's create your profile</p>
           </div>
         );
@@ -58,7 +58,7 @@ function AppContainerContent() {
       default:
         return (
           <div>
-            <h1>Unknown State</h1>
+            <h1 className="text-[3.2em] leading-[1.1]">Unknown State</h1>
           </div>
         );
     }

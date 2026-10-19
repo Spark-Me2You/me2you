@@ -2,7 +2,7 @@
  * Design tokens, ported from src/shared/theme/*.ts.
  * Spacing is not redefined: Tailwind's default scale (1 = 4px) already matches spacing.ts.
  * Font sizes are not redefined: use text-[Npx] or add named tokens as pages need them.
- * Google Fonts are still loaded from index.css until the final cleanup phase.
+ * Google Fonts are loaded from tailwind.css.
  */
 @theme {
   /* Brand */
