@@ -126,9 +126,9 @@ Pixi preview containers (`UserMiiPixiPreview`, avatar canvases): only the wrappe
 | 6.3 ✅ | Games hub | `GamesHub` (428 lines), `CameraOverlay`, `FlapFlapLauncher` |
 | 6.4 ✅ | FlapFlap 1P | `FlapFlapGame`, `FlapFlapLeaderboard`, `GameOverClaim` |
 | 6.5 ✅ | FlapFlap 2P | `FlapFlap2PGame`, `SplitCameraPanel` |
-| 6.6 | DrawIt (a) | `DrawItMenu`, `DailyPromptScreen`, `Countdown`, `Timer` |
-| 6.7 | DrawIt (b) | `DrawItGame`, `DrawingCanvas`, `Toolbox`, `ConfirmModal` |
-| 6.8 | DrawIt (c) | `ReviewScreen`, `Gallery`, `ThanksScreen` |
+| 6.6 ✅ | DrawIt (a) | `DrawItMenu`, `DailyPromptScreen`, `Countdown`, `Timer` |
+| 6.7 ✅ | DrawIt (b) | `DrawItGame`, `DrawingCanvas`, `Toolbox`, `ConfirmModal` |
+| 6.8 ✅ | DrawIt (c) | `ReviewScreen`, `Gallery`, `ThanksScreen` |
 
 Kiosk screens are driven by the CV cursor. After each step, confirm the hover/click targets still line up (the cursor hit-testing uses element bounds, so sizing/positioning changes matter).
 
@@ -174,6 +174,6 @@ Tick as steps complete.
 - [x] Phase 3 small pages (3.1–3.4)
 - [x] Phase 4 user area (4.1–4.6)
 - [x] Phase 5 registration (5.1–5.5)
-- [ ] Phase 6 kiosk features (6.1–6.8)
+- [x] Phase 6 kiosk features (6.1–6.8)
 - [ ] Phase 7 AppContainer (7.1–7.5)
 - [ ] Phase 8 cleanup
