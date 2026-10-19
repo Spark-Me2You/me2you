@@ -26,6 +26,13 @@ Branch: `style/tailwind-migration` (branched from `dev`). Commit format per `GIT
 6. **Verify visually** against the `dev` branch in a second window (see "Verification" below). Stop here for sign-off before starting the next step.
 7. Commit: `style: migrate <Name> to Tailwind`.
 
+## Known gotchas
+
+- **Unlayered CSS beats Tailwind utilities.** `index.css` has unlayered element rules (`button`, `a`, `h1`, `body`), and CSS Modules are unlayered too. Layered utilities lose to both regardless of specificity. To make converted components behave, `src/styles/tailwind.css` imports utilities with `important` (found in step 2.2). **Phase 8 must remove `important`** once `index.css` and all modules are gone.
+- Consequence while `important` is on: a runtime `style={{}}` can't override a utility for the same property. Don't put both on one element.
+- `index.css` `button` also sets `padding: 0.6em 1.2em`, and with preflight off elements are `content-box`. Converted buttons keep that padding unless you set `p-*`; don't add `p-0` unless the old module did.
+- `button:hover { border-color: #646cff }` and `a:hover` in `index.css` used to beat module classes on specificity. Converted components don't pick these up; this is an intentional, expected difference (it was template leftover).
+
 ## Verification
 
 - For each step, compare the affected route(s) side by side with a second browser window running the `dev` branch, at the relevant viewport.
@@ -136,6 +143,7 @@ Prefer Tailwind arbitrary values (`left-[424px] top-[228px] w-[599px] rotate-[4.
 
 ## Phase 8: Cleanup
 
+0. Remove `important` from the utilities import in `src/styles/tailwind.css` (see Known gotchas).
 1. Move remaining global rules from `index.css` into `@layer base` in `src/styles/tailwind.css`; drop Vite-template leftovers (the global `button`, `h1`, `a`, `:root` color-scheme rules) after confirming nothing relies on them.
 2. Enable preflight (`@import "tailwindcss/preflight.css" layer(base);`) and fix any fallout on every route.
 3. Delete `index.css` (move the Google Fonts `@import` into `tailwind.css`/`index.html`).
@@ -157,7 +165,7 @@ Tick as steps complete.
 
 - [x] Phase 0 baseline (lint baseline: 53 problems, 50 errors, 3 warnings, all pre-existing)
 - [x] Phase 1 foundation
-- [ ] Phase 2 shared (2.1 done; 2.2–2.3 pending)
+- [ ] Phase 2 shared (2.1, 2.2 done; 2.3 pending)
 - [ ] Phase 3 small pages (3.1–3.4)
 - [ ] Phase 4 user area (4.1–4.6)
 - [ ] Phase 5 registration (5.1–5.5)

@@ -46,6 +46,7 @@ The repo is migrating from CSS Modules (`*.module.css`) to **Tailwind CSS v4** (
 - New and touched components use Tailwind utilities. Do not create new `.module.css` files.
 - Migrate a component fully (including deleting its `.module.css`) in one commit; never half-convert a file.
 - Keep inline `style={{}}` only for runtime-computed values (prefer CSS vars). Pixi code is not part of the migration.
+- Tailwind utilities are imported with `important` (so they beat the unlayered `index.css`/module rules); don't mix a utility and an inline `style` for the same property. See Known gotchas in the migration doc.
 - Until the migration finishes, un-migrated components still import their `.module.css`, and Tailwind preflight is not yet enabled.
 
 ---
