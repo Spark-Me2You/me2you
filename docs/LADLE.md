@@ -8,6 +8,8 @@ npm run ladle:build    # static build into build/
 npm run test:stories   # Playwright smoke test of every story (needs ladle:build first)
 ```
 
+New to this? Start with the walkthrough in `docs/LADLE_WORKFLOW.md`; this page is the reference.
+
 The first time you run the smoke test, install Chromium with `npx playwright install chromium`. On Linux, `npx playwright install --with-deps chromium` also installs the system libraries it needs.
 
 ## Layout
