@@ -110,11 +110,11 @@ Pixi preview containers (`UserMiiPixiPreview`, avatar canvases): only the wrappe
 
 | Step | Component | Notes |
 |---|---|---|
-| 5.1 | `SignUpStep` | |
-| 5.2 | `PhotoStep` | camera/face-crop states |
-| 5.3 | `ProfileStep` | |
-| 5.4 | `BobbleheadPreviewStep` | |
-| 5.5 | `GoBackWarning`, `SuccessStep` | Delete `RegistrationSteps.module.css`. Before this, if a rule is used by more than one step, convert it in the first step that uses it and keep it in the module until the last consumer is done |
+| 5.1 ✅ | `SignUpStep` | |
+| 5.2 ✅ | `PhotoStep` | camera/face-crop states |
+| 5.3 ✅ | `ProfileStep` | |
+| 5.4 ✅ | `BobbleheadPreviewStep` | |
+| 5.5 ✅ | `GoBackWarning`, `SuccessStep` | Delete `RegistrationSteps.module.css`. Before this, if a rule is used by more than one step, convert it in the first step that uses it and keep it in the module until the last consumer is done |
 
 ## Phase 6: Kiosk features
 
@@ -172,7 +172,7 @@ Tick as steps complete.
 - [x] Phase 2 shared (2.1–2.3)
 - [x] Phase 3 small pages (3.1–3.4)
 - [x] Phase 4 user area (4.1–4.6)
-- [ ] Phase 5 registration (5.1–5.5)
+- [x] Phase 5 registration (5.1–5.5)
 - [ ] Phase 6 kiosk features (6.1–6.8)
 - [ ] Phase 7 AppContainer (7.1–7.5)
 - [ ] Phase 8 cleanup
