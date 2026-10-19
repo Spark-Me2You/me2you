@@ -23,6 +23,11 @@
   /* Glass card */
   --color-glass: rgba(255, 255, 255, 0.13);
 
+  /* Glass card shadow (outer drop + inner glow + inner edge) */
+  --shadow-glass:
+    0px 4px 4px rgba(0, 0, 0, 0.25), inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
+
   /* Fonts */
   --font-condensed: "Barlow Condensed", sans-serif;
   --font-handwritten: "Caveat", cursive;

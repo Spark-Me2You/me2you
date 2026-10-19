@@ -95,7 +95,7 @@ Do these first since later pages depend on them. After each, spot-check 2–3 pa
 
 | Step | Route | Files |
 |---|---|---|
-| 4.1 | `/user` | `UserLandingPage`, `CreateAccountPrompt` |
+| 4.1 ✅ | `/user` | `UserLandingPage`, `CreateAccountPrompt` |
 | 4.2 | `/user/gallery` | `UserGalleryPage` |
 | 4.3 | `/user/game-scores` | `UserGameScoresPage` |
 | 4.4 | `/user/messages` | `MessagesView`, `MessageComposePage` |
