@@ -8,7 +8,18 @@ import type {
 } from '@/features/profile-editor/types/profileTypes';
 import { DEFAULT_ACCESSORY_SETTINGS } from '@/features/profile-editor/types/profileTypes';
 import { UserMiiPixiPreview } from './UserMiiPixiPreview';
-import styles from './UserProfileEditForm.module.css';
+
+const FIELD = 'flex flex-col gap-[6px]';
+const LABEL = 'font-jersey text-[20px] tracking-[1px] text-[#333] lowercase';
+const INPUT =
+  'box-border w-full rounded-[12px] border-2 border-solid border-[rgba(0,0,0,0.1)] bg-[rgba(255,255,255,0.9)] px-[14px] py-[10px] font-jersey text-[20px] text-[#111] transition-[border-color] duration-200 focus:border-[#e44805] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+const TAB =
+  'flex-1 cursor-pointer border-0 border-r-2 border-solid border-[#e44805] px-1 py-2 font-jersey text-[16px] tracking-[1px] lowercase [transition:background_0.2s,color_0.2s] last:border-r-0';
+const TAB_ACTIVE = 'bg-[#e44805] text-white';
+const TAB_IDLE = 'bg-[rgba(228,72,5,0.08)] text-[#e44805] hover:bg-[rgba(228,72,5,0.15)]';
+const HINT = 'font-jersey text-[14px]';
+const ACTION_BTN =
+  'flex-1 cursor-pointer rounded-[14px] p-3 font-jersey tracking-[1px] lowercase [transition:background_0.2s,transform_0.1s] active:enabled:[transform:scale(0.98)] disabled:cursor-not-allowed disabled:opacity-60';
 
 interface UserProfileEditFormProps {
   initialData: ProfileWithImage;
@@ -83,44 +94,44 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
   const displayError = localError || error;
 
   return (
-    <div className={styles.page}>
-      <img src={logo} alt="me2you" className={styles.logo} />
+    <div className="relative mx-auto flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+      <img src={logo} alt="me2you" className="pointer-events-none absolute top-[7px] left-1/2 z-20 w-[270px] origin-top -translate-x-1/2 rotate-[3.41deg] select-none" />
 
-      <div className={styles.content}>
-        <div className={styles.card}>
-          <h2 className={styles.title}>edit profile</h2>
+      <div className="flex min-h-0 flex-1 flex-col items-center overflow-x-hidden overflow-y-auto px-[30px] pt-[120px] pb-[40px] [-webkit-overflow-scrolling:touch]">
+        <div className="w-full max-w-[350px] shrink-0 rounded-[24px] bg-glass px-6 py-[30px] shadow-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105">
+          <h2 className="m-0 mb-6 text-center font-jersey text-[36px] tracking-[2px] text-[#e44805] lowercase">edit profile</h2>
 
-          <div className={styles.avatarCard}>
-            <div className={styles.tabBar}>
+          <div className="mx-auto mb-4 flex aspect-square w-full max-w-[260px] flex-col overflow-hidden rounded-[16px] border-[3px] border-solid border-[#e44805] bg-white">
+            <div className="flex w-full shrink-0 border-b-2 border-solid border-[#e44805]">
               <button
                 type="button"
-                className={`${styles.tab} ${activeTab === 'picture' ? styles.tabActive : ''}`}
+                className={`${TAB} ${activeTab === 'picture' ? TAB_ACTIVE : TAB_IDLE}`}
                 onClick={() => setActiveTab('picture')}
               >
                 my picture
               </button>
               <button
                 type="button"
-                className={`${styles.tab} ${activeTab === 'mii' ? styles.tabActive : ''}`}
+                className={`${TAB} ${activeTab === 'mii' ? TAB_ACTIVE : TAB_IDLE}`}
                 onClick={() => setActiveTab('mii')}
               >
                 my mii
               </button>
             </div>
-            <div className={styles.avatarStage}>
+            <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[linear-gradient(45deg,#eee_25%,transparent_25%),linear-gradient(-45deg,#eee_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#eee_75%),linear-gradient(-45deg,transparent_75%,#eee_75%)] [background-position:0_0,0_8px,8px_-8px,-8px_0] [background-size:16px_16px]">
               {activeTab === 'picture' ? (
                 gestureImageUrl || initialData.imageUrl ? (
                   <img
                     src={gestureImageUrl ?? initialData.imageUrl ?? ''}
                     alt="profile"
-                    className={styles.picture}
+                    className="block h-full w-full object-cover"
                   />
                 ) : (
-                  <div className={styles.pictureFallback}>no photo</div>
+                  <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#e44805,#d3e405)] font-jersey text-[18px] text-white lowercase">no photo</div>
                 )
               ) : (
                 <UserMiiPixiPreview
-                  className={styles.miiComposite}
+                  className="relative h-full w-full bg-[#fefffb]"
                   bobbleheadUrl={initialData.bobbleheadUrl}
                   accessorySettings={accessorySettings}
                   landmarks={bobbleheadLandmarks}
@@ -133,22 +144,22 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
             type="button"
             onClick={onChangePhoto}
             disabled={isSubmitting}
-            className={styles.changePhotoBtn}
+            className="mx-auto mb-2 block cursor-pointer rounded-[12px] border-2 border-solid border-[#e44805] bg-[rgba(228,72,5,0.1)] px-5 py-[10px] font-jersey text-[20px] tracking-[1px] text-[#e44805] lowercase [transition:background_0.2s,transform_0.1s] hover:enabled:bg-[rgba(228,72,5,0.2)] active:enabled:[transform:scale(0.98)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             change photo
           </button>
-          <p className={styles.photoHint}>
+          <p className="m-0 mb-5 text-center font-jersey text-[14px] text-[#777] italic">
             changing your photo also regenerates your bobblehead
           </p>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {displayError && (
-              <div className={styles.errorBanner}>{displayError}</div>
+              <div className="rounded-[10px] bg-[rgba(211,47,47,0.1)] px-[14px] py-[10px] text-center font-jersey text-[16px] text-[#d32f2f]">{displayError}</div>
             )}
 
-            <div className={styles.field}>
-              <label htmlFor="name" className={styles.label}>
-                name <span className={styles.required}>*</span>
+            <div className={FIELD}>
+              <label htmlFor="name" className={LABEL}>
+                name <span className="text-[#d32f2f]">*</span>
               </label>
               <input
                 id="name"
@@ -157,14 +168,14 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                 onChange={(e) => setName(e.target.value)}
                 maxLength={60}
                 disabled={isSubmitting}
-                className={styles.input}
+                className={INPUT}
                 placeholder="your name"
               />
-              <span className={styles.charCount}>{name.length}/60</span>
+              <span className={`${HINT} text-right text-[#888]`}>{name.length}/60</span>
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="status" className={styles.label}>
+            <div className={FIELD}>
+              <label htmlFor="status" className={LABEL}>
                 status
               </label>
               <textarea
@@ -173,15 +184,15 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                 onChange={(e) => setStatus(e.target.value)}
                 maxLength={150}
                 disabled={isSubmitting}
-                className={styles.textarea}
+                className={`${INPUT} min-h-[70px] resize-y`}
                 placeholder="what's on your mind?"
                 rows={3}
               />
-              <span className={styles.charCount}>{status.length}/150</span>
+              <span className={`${HINT} text-right text-[#888]`}>{status.length}/150</span>
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="pronouns" className={styles.label}>
+            <div className={FIELD}>
+              <label htmlFor="pronouns" className={LABEL}>
                 pronouns
               </label>
               <input
@@ -190,13 +201,13 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                 value={pronouns}
                 onChange={(e) => setPronouns(e.target.value)}
                 disabled={isSubmitting}
-                className={styles.input}
+                className={INPUT}
                 placeholder="she/her, he/him, they/them"
               />
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="major" className={styles.label}>
+            <div className={FIELD}>
+              <label htmlFor="major" className={LABEL}>
                 major
               </label>
               <input
@@ -205,13 +216,13 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
                 disabled={isSubmitting}
-                className={styles.input}
+                className={INPUT}
                 placeholder="computer science"
               />
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="interests" className={styles.label}>
+            <div className={FIELD}>
+              <label htmlFor="interests" className={LABEL}>
                 interests
               </label>
               <input
@@ -220,25 +231,25 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
                 value={interests}
                 onChange={(e) => setInterests(e.target.value)}
                 disabled={isSubmitting}
-                className={styles.input}
+                className={INPUT}
                 placeholder="art, music, coding"
               />
-              <span className={styles.hint}>separate with commas</span>
+              <span className={`${HINT} text-[#666] italic`}>separate with commas</span>
             </div>
 
-            <div className={styles.actions}>
+            <div className="mt-5 flex gap-[10px]">
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className={styles.cancelBtn}
+                className={`${ACTION_BTN} border-2 border-solid border-[rgba(0,0,0,0.15)] bg-[rgba(255,255,255,0.7)] text-[22px] text-[#666] hover:enabled:bg-[rgba(255,255,255,0.9)]`}
               >
                 cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={styles.saveBtn}
+                className={`${ACTION_BTN} border-0 bg-[#e44805] text-[24px] tracking-[2px] text-white hover:enabled:bg-[#cc4004]`}
               >
                 {isSubmitting ? 'saving...' : 'save'}
               </button>
