@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createHandLandmarker, closeHandLandmarker } from "./handLandmarkerLoader";
 import type { HandLandmarker, NormalizedLandmark } from "./handLandmarkerLoader";
 import { useSharedCamera } from "../SharedCameraProvider";
+import { useCvCursorEnabled } from "./CvCursorEnabledContext";
 
 export interface CvCursorState {
   x: number;
@@ -50,12 +51,20 @@ function isPointingPose(landmarks: NormalizedLandmark[]): boolean {
   return indexExtended && middleCurled && ringCurled && pinkyCurled;
 }
 
+/** Map a landmark to screen px: mirrored for the front camera, usable hand range → full screen. */
+function toScreen(landmark: NormalizedLandmark): { x: number; y: number } {
+  const normX = Math.min(1, Math.max(0, (landmark.x - HAND_X_MIN) / (HAND_X_MAX - HAND_X_MIN)));
+  const normY = Math.min(1, Math.max(0, (landmark.y - HAND_Y_MIN) / (HAND_Y_MAX - HAND_Y_MIN)));
+  return { x: (1 - normX) * window.innerWidth, y: normY * window.innerHeight };
+}
+
 function landmarkDistance(a: NormalizedLandmark, b: NormalizedLandmark): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
 export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef: React.RefObject<HTMLVideoElement | null> } {
   const { stream } = useSharedCamera();
+  const { handTrackRef } = useCvCursorEnabled();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const rafRef = useRef<number>(0);
@@ -95,6 +104,24 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
 
     const results = landmarker.detectForVideo(video, Date.now());
 
+    // Publish the raw sample before any pose gating so games get every hand.
+    const sample = handTrackRef.current;
+    const detectedLandmarks = results.landmarks?.[0];
+    sample.detected = !!detectedLandmarks;
+    sample.timestamp = performance.now();
+    sample.frameId++;
+    if (detectedLandmarks) {
+      const tip = toScreen(detectedLandmarks[8]);
+      sample.pointing = isPointingPose(detectedLandmarks);
+      sample.tipX = tip.x;
+      sample.tipY = tip.y;
+      sample.handScale = landmarkDistance(detectedLandmarks[0], detectedLandmarks[9]);
+      sample.wristX = detectedLandmarks[0].x;
+      sample.wristY = detectedLandmarks[0].y;
+    } else {
+      sample.pointing = false;
+    }
+
     if (!results.landmarks || results.landmarks.length === 0) {
       setState((prev) =>
         prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
@@ -115,10 +142,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
 
     // Cursor position from index finger tip (landmark 8), mirrored for front camera.
     // Remap the usable hand range to full screen so edges are reachable.
-    const normX = Math.min(1, Math.max(0, (landmarks[8].x - HAND_X_MIN) / (HAND_X_MAX - HAND_X_MIN)));
-    const normY = Math.min(1, Math.max(0, (landmarks[8].y - HAND_Y_MIN) / (HAND_Y_MAX - HAND_Y_MIN)));
-    const rawX = (1 - normX) * window.innerWidth;
-    const rawY = normY * window.innerHeight;
+    const { x: rawX, y: rawY } = toScreen(landmarks[8]);
 
     smoothXRef.current =
       SMOOTHING_ALPHA * rawX + (1 - SMOOTHING_ALPHA) * smoothXRef.current;
@@ -143,7 +167,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     setState({ x, y, visible: true, clicking, isPinched: isClicking, isReady: true, error: null });
 
     rafRef.current = requestAnimationFrame(processFrame);
-  }, []);
+  }, [handTrackRef]);
 
   // Attach shared stream to our hidden video element
   useEffect(() => {

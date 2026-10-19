@@ -1,0 +1,156 @@
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  font-family: var(--gs-font);
+  color: var(--gs-white);
+}
+
+/* ---- score (top left) ---- */
+
+.score {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 28px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.label {
+  font-size: 32px;
+  letter-spacing: 4px;
+  opacity: 0.8;
+}
+
+.value {
+  font-size: 96px;
+  line-height: 0.9;
+  letter-spacing: 4px;
+  color: var(--gs-gold);
+}
+
+/* ---- candy goal (top centre) ---- */
+
+.goal {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 40vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 24px 18px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.goalText {
+  font-size: 48px;
+  letter-spacing: 4px;
+  text-align: center;
+}
+
+.goalTrack {
+  height: 22px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.goalFill {
+  height: 100%;
+  border-radius: 11px;
+  background: var(--gs-magenta);
+  transition: width 200ms ease-out;
+}
+
+.goalMet .goalFill {
+  background: var(--gs-lime);
+}
+
+.goalMet .goalText {
+  color: var(--gs-lime);
+}
+
+/* ---- timer (top right), same treatment as DrawIt's timer ---- */
+
+.timer {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  min-width: 120px;
+  text-align: center;
+  font-size: 96px;
+  line-height: 1;
+  letter-spacing: 4px;
+  padding: 12px 28px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.pulse {
+  color: var(--gs-orange);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* ---- live combo counter ---- */
+
+.combo {
+  position: absolute;
+  top: 190px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 72px;
+  letter-spacing: 6px;
+  color: var(--gs-lime);
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+  animation: comboPop 220ms ease-out;
+}
+
+@keyframes comboPop {
+  0%   { transform: translateX(-50%) scale(0.6); }
+  60%  { transform: translateX(-50%) scale(1.2); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+/* ---- player missing warning ---- */
+
+.missing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 32px 56px;
+  border-radius: 46px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.7);
+  border: 3px solid var(--gs-orange);
+}
+
+.missingTitle {
+  font-size: 120px;
+  line-height: 1;
+  letter-spacing: 6px;
+  color: var(--gs-orange);
+  margin: 0;
+}
+
+.missingText {
+  font-size: 48px;
+  letter-spacing: 4px;
+  margin: 8px 0 0;
+}

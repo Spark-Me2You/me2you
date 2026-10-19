@@ -25,6 +25,13 @@ export const colors = {
   // --- Glass card ---
   glass: 'rgba(255, 255, 255, 0.13)',
 
+  // --- Games ---
+  gameNight:     '#1a1a2e',     // dark game backdrop (top), shared by FlapFlap and Gumball Slice
+  gameNightDeep: '#16213e',     // dark game backdrop (bottom)
+  gold:          '#ffd700',     // scores, trophies, golden candy
+  leafGreen:     '#47c52b',     // games-hub green; broccoli
+  leafGreenDark: '#2a7a18',     // shaded leafGreen
+
   // --- State ---
   error: '#b0003a',
   magentaDim: '#b0006a',        // magenta disabled/loading state

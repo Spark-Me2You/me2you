@@ -6,6 +6,7 @@
 import type { GameDefinition } from "../types/game";
 import { FlapFlapLauncher } from "../components/FlapFlapLauncher";
 import { DrawItGame } from "../drawit/components/DrawItGame";
+import { GumballSliceGame } from "../gumballslice/components/GumballSliceGame";
 
 export const GAMES_REGISTRY: GameDefinition[] = [
   {
@@ -19,5 +20,11 @@ export const GAMES_REGISTRY: GameDefinition[] = [
     name: "DrawIt",
     description: "Draw the word of the day!",
     component: DrawItGame,
+  },
+  {
+    id: "gumballslice",
+    name: "Gumball Slice",
+    description: "Slice the candy, dodge the broccoli!",
+    component: GumballSliceGame,
   },
 ];

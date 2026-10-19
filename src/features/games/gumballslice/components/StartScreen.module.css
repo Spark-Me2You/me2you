@@ -1,0 +1,112 @@
+.container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  z-index: 10;
+}
+
+.title {
+  font-family: var(--gs-font);
+  font-size: 160px;
+  color: var(--gs-white);
+  letter-spacing: 8px;
+  line-height: 1;
+  text-shadow:
+    4px 4px 0 rgba(0, 0, 0, 0.4),
+    0 6px 0 var(--gs-magenta);
+  margin: 0;
+}
+
+.legend {
+  display: flex;
+  gap: 64px;
+}
+
+.legendGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 28px;
+  border-radius: 46px;
+  background: var(--gs-glass);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.good,
+.bad {
+  font-family: var(--gs-font);
+  font-size: 44px;
+  letter-spacing: 4px;
+  margin-left: 8px;
+}
+
+.good {
+  color: var(--gs-white);
+}
+
+.bad {
+  color: var(--gs-orange);
+}
+
+/* Hold-to-start progress ring; --progress (0..1) is set every frame from JS */
+.ring {
+  --progress: 0;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(
+    var(--gs-accent) calc(var(--progress) * 1turn),
+    rgba(255, 255, 255, 0.15) 0
+  );
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.4);
+}
+
+.hand {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid var(--gs-bg-top);
+}
+
+.hint {
+  font-family: var(--gs-font);
+  font-size: 64px;
+  letter-spacing: 4px;
+  color: var(--gs-accent);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+  margin: 0;
+}
+
+.subhint {
+  font-family: var(--gs-font);
+  font-size: 36px;
+  letter-spacing: 3px;
+  color: var(--gs-white);
+  opacity: 0.8;
+  margin: 0;
+}
+
+.secondary {
+  font-family: var(--gs-font);
+  padding: 20px 60px;
+  font-size: 42px;
+  letter-spacing: 4px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 120ms ease;
+  background: transparent;
+  color: var(--gs-white);
+  border: 4px solid var(--gs-white);
+}
+
+.secondary:hover {
+  transform: scale(1.05);
+}

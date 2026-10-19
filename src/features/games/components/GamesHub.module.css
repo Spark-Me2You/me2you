@@ -54,7 +54,7 @@
 
 .gamesContainer {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 32px;
   width: min(92vw, 1400px);
   max-width: calc(100vw - 80px);
@@ -130,11 +130,12 @@
 
 .gameName {
   font-family: "Jersey 10", Arial, sans-serif;
-  font-size: clamp(60px, 8vw, 100px);
+  font-size: clamp(60px, 6vw, 100px);
   font-weight: 400;
   color: #ffffff;
   margin: 0;
-  letter-spacing: 16px;
+  letter-spacing: 12px;
+  text-align: center;
   text-shadow: 0px 4px 16px rgba(0, 0, 0, 0.4);
   line-height: 1;
   z-index: 10;
@@ -425,4 +426,61 @@
 .gameButton[data-game-id="drawit"] .decorativeImage7,
 .gameButton[data-game-id="drawit"] .decorativeImage8 {
   display: none;
+}
+
+/* ========================================
+   GUMBALL SLICE GAME BUTTON — gumball machine look
+   ======================================== */
+
+.gameButton[data-game-id="gumballslice"] {
+  background: rgba(228, 5, 172, 0.22);
+}
+
+.gameButton[data-game-id="gumballslice"]:hover {
+  background: rgba(228, 5, 172, 0.32);
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeBar1,
+.gameButton[data-game-id="gumballslice"] .decorativeBar2,
+.gameButton[data-game-id="gumballslice"] .decorativeBar3,
+.gameButton[data-game-id="gumballslice"] .decorativeBar4,
+.gameButton[data-game-id="gumballslice"] .decorativeBar5,
+.gameButton[data-game-id="gumballslice"] .decorativeBar6,
+.gameButton[data-game-id="gumballslice"] .decorativeBar7,
+.gameButton[data-game-id="gumballslice"] .decorativeBar8,
+.gameButton[data-game-id="gumballslice"] .decorativeBar9,
+.gameButton[data-game-id="gumballslice"] .decorativeBar10 {
+  display: none;
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeImage1,
+.gameButton[data-game-id="gumballslice"] .decorativeImage2,
+.gameButton[data-game-id="gumballslice"] .decorativeImage3,
+.gameButton[data-game-id="gumballslice"] .decorativeImage4,
+.gameButton[data-game-id="gumballslice"] .decorativeImage5,
+.gameButton[data-game-id="gumballslice"] .decorativeImage6,
+.gameButton[data-game-id="gumballslice"] .decorativeImage7,
+.gameButton[data-game-id="gumballslice"] .decorativeImage8 {
+  border: 5px solid #ffffff;
+  box-sizing: border-box;
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeImage1,
+.gameButton[data-game-id="gumballslice"] .decorativeImage5 {
+  background-color: #e405ac;
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeImage2,
+.gameButton[data-game-id="gumballslice"] .decorativeImage6 {
+  background-color: #58e7f7;
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeImage3,
+.gameButton[data-game-id="gumballslice"] .decorativeImage7 {
+  background-color: rgba(228, 72, 5, 0.93);
+}
+
+.gameButton[data-game-id="gumballslice"] .decorativeImage4,
+.gameButton[data-game-id="gumballslice"] .decorativeImage8 {
+  background-color: rgba(113, 5, 228, 0.93);
 }

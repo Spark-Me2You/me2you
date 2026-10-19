@@ -1,0 +1,11 @@
+.container {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--gs-bg-top) 0%, var(--gs-bg-bottom) 100%);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
