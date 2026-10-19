@@ -57,3 +57,7 @@ Thumbs.db
 # Claude Code personal files (keep .claude/ shareable)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Playwright
+test-results
+playwright-report

@@ -81,11 +81,16 @@ function AppContainerInner() {
   );
 }
 
-function AppContainer() {
+interface AppContainerProps {
+  /** Starting kiosk state; defaults to IDLE. */
+  initialState?: AppState;
+}
+
+function AppContainer({ initialState }: AppContainerProps = {}) {
   return (
     <CvCursorEnabledProvider>
       <SharedCameraProvider>
-        <StateProvider>
+        <StateProvider initialState={initialState}>
           <RegistrationQRProvider>
             <AppContainerInner />
           </RegistrationQRProvider>

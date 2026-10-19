@@ -1,0 +1,6 @@
+/*
+ * Ladle runs Vite from its own package root, so Tailwind's automatic source
+ * detection never sees the app. Point it at src/ explicitly.
+ */
+@import "../src/styles/tailwind.css";
+@source "../src";
