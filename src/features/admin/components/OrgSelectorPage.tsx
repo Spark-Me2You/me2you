@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { supabase } from '@/core/supabase';
 import { GlassCard } from '@/shared/components/GlassCard';
-import { colors } from '@/shared/theme/colors';
-import styles from './OrgSelectorPage.module.css';
 import pinkBackArrow from '@/assets/pink_back_arrow.svg';
 
 interface Organization {
@@ -63,8 +61,8 @@ export const OrgSelectorPage: React.FC = () => {
   if (isLoading) {
     return (
       <GlassCard>
-        <div className={styles.loadingWrapper}>
-          <span className={styles.loadingText}>loading...</span>
+        <div className="flex h-[400px] items-center justify-center">
+          <span className="font-averia text-[28px] tracking-[4px] text-white">loading...</span>
         </div>
       </GlassCard>
     );
@@ -74,17 +72,17 @@ export const OrgSelectorPage: React.FC = () => {
     <GlassCard>
 
       {/* "choose your organization" title — centered, absolute */}
-      <div className={styles.titleBox}>
-        <span className={styles.titleText}>choose your organization</span>
+      <div className="absolute top-10 left-1/2 flex h-[84px] w-[680px] -translate-x-1/2 items-center justify-center bg-magenta whitespace-nowrap">
+        <span className="font-averia text-[37px] font-light tracking-[6px] text-white lowercase">choose your organization</span>
       </div>
 
       {/* Org buttons */}
-      <div className={styles.orgList}>
+      <div className="flex flex-col items-center gap-4 pt-[260px]">
 
-        {error && <div className={styles.errorMsg}>{error}</div>}
+        {error && <div className="bg-[rgba(255,255,255,0.6)] px-5 py-2.5 font-averia text-[18px] tracking-[2px] text-error">{error}</div>}
 
         {orgs.length === 0 && !error && (
-          <span className={styles.noOrgs}>no organizations found</span>
+          <span className="font-averia text-[24px] tracking-[4px] text-white">no organizations found</span>
         )}
 
         {orgs.map((org) => (
@@ -92,27 +90,25 @@ export const OrgSelectorPage: React.FC = () => {
             key={org.id}
             onClick={() => handleOrgSelect(org.id)}
             disabled={isMinting}
-            className={styles.orgBtn}
-            style={{
-              backgroundColor: isMinting ? 'rgba(211,228,5,0.4)' : colors.btnYellowGreen,
-              cursor: isMinting ? 'not-allowed' : 'pointer',
-            }}
+            className={`h-[97px] w-[400px] rounded-[10px] border-0 font-averia text-[37px] font-light tracking-[6px] text-white lowercase shadow-[0px_4px_4px_rgba(0,0,0,0.25),inset_0px_0px_4px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)] ${
+              isMinting ? 'cursor-not-allowed bg-[rgba(211,228,5,0.4)]' : 'cursor-pointer bg-btn-yellow-green'
+            }`}
           >
             {org.name}
           </button>
         ))}
 
-        {isMinting && <span className={styles.mintingText}>starting kiosk mode...</span>}
+        {isMinting && <span className="mt-2 font-averia text-[20px] tracking-[3px] text-white">starting kiosk mode...</span>}
 
       </div>
 
       {/* Back to admin sign-in — absolute */}
       <div
-        className={styles.backContainer}
+        className="absolute top-[360px] left-[60px] flex cursor-pointer flex-col items-start select-none"
         onClick={async () => { await signOut(); navigate('/login', { replace: true }); }}
       >
-        <img src={pinkBackArrow} alt="" className={styles.backImage} />
-        <span className={styles.backText}>back to admin<br />sign-in</span>
+        <img src={pinkBackArrow} alt="" className="pointer-events-none w-[186px] rotate-[4.71deg]" />
+        <span className="mt-1 w-[200px] font-handwritten text-[18px] leading-[1.3] font-bold tracking-[3px] text-black">back to admin<br />sign-in</span>
       </div>
 
     </GlassCard>

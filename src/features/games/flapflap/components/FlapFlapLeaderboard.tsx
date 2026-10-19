@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import type { FlapFlapLeaderboardEntry } from "@/features/games/services/gameScoreService";
-import styles from "./FlapFlapLeaderboard.module.css";
 
 interface FlapFlapLeaderboardProps {
   entries: FlapFlapLeaderboardEntry[];
@@ -113,39 +112,39 @@ export const FlapFlapLeaderboard: React.FC<FlapFlapLeaderboardProps> = ({
   );
   const hasRows = rows.length > 0;
 
-  const cardClassName = className ? `${styles.card} ${className}` : styles.card;
+  const cardClassName = `box-border overflow-hidden rounded-[18px] border-[3px] border-solid border-[rgba(255,255,255,0.24)] bg-[rgba(7,15,30,0.72)] px-[18px] py-5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] backdrop-blur-[10px] ${className ?? "w-full max-w-[360px]"}`;
 
   return (
     <section className={cardClassName}>
-      <h2 className={styles.title}>{title}</h2>
+      <h2 className="m-0 mb-[14px] font-jersey text-[44px] tracking-[2px] text-[#ffe79d] lowercase [text-shadow:0_0_12px_rgba(255,215,0,0.45)]">{title}</h2>
 
       {!hasRows && isLoading ? (
-        <p className={styles.message}>loading leaderboard...</p>
+        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">loading leaderboard...</p>
       ) : !hasRows && error ? (
-        <p className={styles.message}>leaderboard unavailable</p>
+        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">leaderboard unavailable</p>
       ) : !hasRows ? (
-        <p className={styles.message}>be the first to claim a score</p>
+        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">be the first to claim a score</p>
       ) : (
         <>
-          <ol className={styles.list}>
+          <ol className="m-0 flex list-none flex-col gap-[9px] p-0">
             {rows.map((row, index) => (
               <li
                 key={`${row.label}-${row.score}-${index}`}
-                className={row.isCurrentRun ? styles.currentRunRow : styles.row}
+                className={row.isCurrentRun ? "grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-[#ffe79d] [text-shadow:0_0_8px_rgba(255,215,0,0.35)]" : "grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-white"}
               >
-                <span className={styles.rank}>{row.rank}.</span>
-                <span className={styles.name}>{row.label}</span>
-                <span className={styles.score}>{row.score}</span>
+                <span className="text-[rgba(255,255,255,0.82)]">{row.rank}.</span>
+                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{row.label}</span>
+                <span className="text-[rgba(255,255,255,0.94)]">{row.score}</span>
               </li>
             ))}
           </ol>
 
           {youOutsideTopFive && (
-            <div className={styles.youOutsideWrap}>
-              <p className={styles.ellipsis}>...</p>
-              <div className={styles.youOutsideRow}>
-                <span className={styles.youLabel}>you!</span>
-                <span className={styles.score}>{youOutsideTopFive.score}</span>
+            <div className="mt-[2px]">
+              <p className="m-0 font-jersey text-[30px] tracking-[2px] text-[rgba(255,255,255,0.7)]">...</p>
+              <div className="grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-[#ffe79d] [text-shadow:0_0_8px_rgba(255,215,0,0.35)]">
+                <span className="col-[1/3]">you!</span>
+                <span className="text-[rgba(255,255,255,0.94)]">{youOutsideTopFive.score}</span>
               </div>
             </div>
           )}

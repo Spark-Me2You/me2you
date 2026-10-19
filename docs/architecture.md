@@ -119,8 +119,16 @@ ONBOARDING → HUB
 | `components/` | `Button`, `Modal`, `LoadingSpinner`, `GlassCard`, `BadgeDisplay`, `ConfirmDialog`, `ExitButton`, and others |
 | `hooks/` | `useDebounce`, `useInterval`, `useKeyboardShortcut`, `useSessionStorage` |
 | `sound/` | `playClaimSound.ts` |
-| `theme/` | `colors.ts`, `spacing.ts`, `typography.ts` |
 | `utils/` | `accessoryLayout.ts`, `constants.ts`, `gestureConstants.ts` |
+
+## Styling
+
+Styling uses Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` for history and gotchas.
+
+- `src/styles/tailwind.css` — Tailwind entry (imported in `main.tsx`): preflight, Google Fonts, global `@layer base` rules
+- `src/styles/theme.css` — `@theme` tokens: colors, fonts, spacing, keyframes
+- Components use utility classes; there are no CSS Modules
+- Pixi rendering is unaffected; only the DOM wrappers around canvases are styled with Tailwind
 
 ## Supabase Edge Functions (`supabase/functions/`)
 

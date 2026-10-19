@@ -38,6 +38,17 @@ Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<
 
 ---
 
+## Styling
+
+The repo is styled with **Tailwind CSS v4** (via `@tailwindcss/vite`), migrated from CSS Modules. History and gotchas: `docs/TAILWIND_MIGRATION.md`.
+
+- Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
+- Components use Tailwind utilities. Do not create `.module.css` files.
+- Keep inline `style={{}}` only for runtime-computed values (prefer CSS vars). Pixi code is not part of the migration.
+- Preflight is enabled; app-wide defaults live in `@layer base` in `src/styles/tailwind.css`. A keyframe must not animate a property that a utility also sets, and don't mix a utility and an inline `style` for the same property.
+
+---
+
 ## Architecture
 
 This is a React + Vite + TypeScript SPA backed by Supabase (PostgreSQL, Auth, Storage, Edge Functions). It has **two distinct rendering contexts**:

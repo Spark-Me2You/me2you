@@ -8,7 +8,6 @@ import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { ExitButton } from "@/shared/components";
 import { PinnedRegistrationQR } from "@/features/kiosk";
 import type { BrushSize, Tool } from "../types/drawit";
-import styles from "./DrawingCanvas.module.css";
 
 interface Props {
   word: string;
@@ -61,16 +60,16 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
   };
 
   return (
-    <div className={styles.wrapper}>
+    <div className="absolute inset-0 box-border flex items-center justify-center pt-[90px] pr-[220px] pb-[40px] pl-[220px]">
       <ExitButton onClick={() => setConfirmingQuit(true)} compact />
-      <div className={styles.wordBanner}>Draw: {word}</div>
+      <div className="fixed top-5 left-1/2 z-[9999] -translate-x-1/2 rounded-[12px] bg-[rgba(0,0,0,0.6)] px-[30px] py-[10px] font-jersey text-[42px] tracking-[4px] text-white">Draw: {word}</div>
       <Timer onExpire={handleSubmit} />
 
       <canvas
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className={styles.canvas}
+        className="aspect-[16/10] h-auto max-h-full w-auto max-w-full border-4 border-solid border-[#404040] border-t-[#fff] border-l-[#fff] bg-white shadow-[4px_4px_0_rgba(0,0,0,0.3)]"
       />
 
       <Toolbox
@@ -88,7 +87,7 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
         canRedo={controller.canRedo}
       />
 
-      <button className={styles.submit} onClick={handleSubmit}>
+      <button className="fixed right-5 bottom-5 z-[10000] cursor-pointer rounded-[12px] border-[3px] border-solid border-[#fff] bg-[#00c000] px-9 py-[14px] font-jersey text-[32px] tracking-[4px] text-white" onClick={handleSubmit}>
         Submit
       </button>
 

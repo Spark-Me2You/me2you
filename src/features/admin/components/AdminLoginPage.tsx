@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
 import { LoginForm } from './LoginForm';
 import { GlassCard } from '@/shared/components/GlassCard';
-import styles from './AdminLoginPage.module.css';
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,12 +35,12 @@ export const AdminLoginPage: React.FC = () => {
     <GlassCard>
 
       {/* "admin sign in" title — independently positioned */}
-      <div className={styles.titleBox}>
-        <span className={styles.titleText}>admin sign in</span>
+      <div className="absolute top-[30px] left-0 box-border flex h-[80px] w-[400px] items-center bg-magenta pl-[70px]">
+        <span className="font-averia text-[37px] font-light tracking-[6px] text-white lowercase">admin sign in</span>
       </div>
 
       {/* Form fields */}
-      <div className={styles.formWrapper}>
+      <div className="flex w-full flex-col items-start pt-[90px] pb-10">
         <LoginForm onSubmit={handleSubmit} error={error} isLoading={isLoading} />
       </div>
 

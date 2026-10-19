@@ -1,0 +1,121 @@
+/*
+ * Design tokens, ported from src/shared/theme/*.ts.
+ * Spacing is not redefined: Tailwind's default scale (1 = 4px) already matches spacing.ts.
+ * Font sizes are not redefined: use text-[Npx] or add named tokens as pages need them.
+ * Google Fonts are loaded from tailwind.css.
+ */
+@theme {
+  /* Brand */
+  --color-magenta: #e405ac;
+  --color-magenta-dim: #b0006a;
+  --color-error: #b0003a;
+
+  /* Button palette */
+  --color-btn-yellow-green: rgba(211, 228, 5, 0.93);
+  --color-btn-orange: rgba(228, 72, 5, 0.93);
+  --color-btn-purple: rgba(113, 5, 228, 0.93);
+  --color-btn-pink: rgba(228, 5, 172, 0.93);
+
+  /* Page gradient stops */
+  --color-gradient-start: #58e7f7;
+  --color-gradient-end: #fefffb;
+
+  /* Glass card */
+  --color-glass: rgba(255, 255, 255, 0.13);
+
+  /* Glass card shadow (outer drop + inner glow + inner edge) */
+  --shadow-glass:
+    0px 4px 4px rgba(0, 0, 0, 0.25), inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
+
+  /* Pill-shaped glass cards (registration): same layers as shadow-glass, inner edge before glow */
+  --shadow-glass-card:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25), inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+
+  /* Fonts */
+  --font-condensed: "Barlow Condensed", sans-serif;
+  --font-handwritten: "Caveat", cursive;
+  --font-jersey: "Jersey 10", sans-serif;
+  --font-jersey-arial: "Jersey 10", Arial, sans-serif; /* user pages */
+  --font-averia: "Averia Libre", cursive;
+  --font-pixelify: "Pixelify Sans", sans-serif;
+
+  /* Animations (kiosk). Keyframes must not animate a property that a utility also sets:
+     !important utilities beat running animations. */
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-slide-in-right: slide-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-completion-flash: completion-flash 0.4s ease-out;
+  --animate-fade-in-fast: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 180ms ease-out;
+  --animate-pop: pop 700ms ease-out;
+  --animate-info-trace: info-trace 1400ms linear forwards;
+  --animate-timer-pulse: timer-pulse 2s infinite;
+  --animate-timer-flash: timer-flash 0.5s infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(40%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes info-trace {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.88); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    30% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes timer-pulse {
+    0%, 100% { transform: scale(1); background: rgba(0, 0, 0, 0.6); }
+    50% { transform: scale(1.08); background: rgba(120, 0, 0, 0.7); }
+  }
+  @keyframes timer-flash {
+    0%, 100% { background: rgba(0, 0, 0, 0.6); }
+    50% { background: rgba(255, 0, 0, 0.8); }
+  }
+  @keyframes completion-flash {
+    0% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0.8);
+    }
+    50% {
+      box-shadow: 0 0 40px 20px rgba(228, 72, 5, 0.6);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0);
+    }
+  }
+}
+
+/* Confetti on the DrawIt thanks screen. Duration and delay are set inline per piece, so this
+   is applied via animation-name utilities rather than an --animate-* token. */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(var(--rotate, 360deg));
+    opacity: 0.7;
+  }
+}

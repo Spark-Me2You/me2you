@@ -3,9 +3,14 @@
  */
 
 import React, { useState } from 'react';
-import styles from './RegistrationSteps.module.css';
 import nextButtonImg from '../../../assets/next_button.svg';
 import shanwImg from '../../../assets/shanw.png';
+
+const FIELD_BLOCK = 'mb-[18px] flex flex-col items-start';
+const FIELD_LABEL =
+  'mb-2 inline-block self-start rounded-[12px] border-2 border-solid border-current px-[14px] py-[6px] font-jersey text-[20px] font-normal tracking-[1px] lowercase';
+const FIELD_INPUT =
+  "box-border min-h-[44px] w-full rounded-[12px] border-2 border-solid border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.9)] px-[14px] py-3 font-jersey text-[20px] tracking-[1px] text-[#111] focus:border-[#e44805] focus:outline-none";
 
 interface SignUpStepProps {
   onSubmit: (email: string, password: string) => Promise<boolean>;
@@ -61,30 +66,30 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
   const displayError = localError || error;
 
   return (
-    <div className={styles.signupWrapper}>
-      <div className={styles.signupCard}>
-        <div className={styles.createTab}>
-          <p className={styles.createTabText}>create account</p>
+    <div className="flex min-h-screen flex-col items-center px-6 pt-[130px] pb-10">
+      <div className="w-full max-w-[350px] rounded-[24px] bg-glass px-[26px] pt-[30px] pb-9 shadow-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105">
+        <div className="mx-auto mb-[18px] block w-fit rounded-[14px] bg-[#e44805] px-8 py-[14px]">
+          <p className="m-0 font-jersey text-[36px] leading-none tracking-[3px] text-white lowercase">create account</p>
         </div>
 
-        <div className={styles.signupDescriptionWrap}>
-          <div className={styles.signupDescription}>
-            <p className={styles.signupDescriptionText}>
+        <div className="relative mx-0 mt-0 mb-7">
+          <div className="flex min-h-[120px] items-center justify-center rounded-[12px] border-2 border-solid border-[#58e7f7] bg-[rgba(88,231,247,0.25)] px-[18px] py-[26px]">
+            <p className="m-0 w-full text-center font-jersey text-[25px] leading-[1.35] tracking-[1px] text-[#111]">
               Create a Me2You account to connect with people around you!
             </p>
           </div>
-          <img src={shanwImg} alt="" className={styles.signupDescriptionMascot} />
+          <img src={shanwImg} alt="" className="pointer-events-none absolute -right-[120px] -bottom-[90px] z-[5] h-auto w-[400px] rotate-[8deg] select-none" />
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
           {displayError && (
-            <div className={styles.errorBanner}>{displayError}</div>
+            <div className="mb-[14px] rounded-[12px] border-2 border-solid border-[rgba(183,28,28,0.5)] bg-[rgba(183,28,28,0.1)] px-[14px] py-2 font-jersey text-[18px] tracking-[1px] text-[#b71c1c] lowercase">{displayError}</div>
           )}
 
-          <div className={styles.inputBlock}>
+          <div className={FIELD_BLOCK}>
             <label
               htmlFor="su-email"
-              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+              className={`${FIELD_LABEL} text-[#2e7d32] bg-[rgba(46,125,50,0.1)]`}
             >
               email:
             </label>
@@ -93,7 +98,7 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={styles.inputBlockField}
+              className={FIELD_INPUT}
               placeholder="type here"
               disabled={isSubmitting}
               autoComplete="email"
@@ -101,10 +106,10 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
             />
           </div>
 
-          <div className={styles.inputBlock}>
+          <div className={FIELD_BLOCK}>
             <label
               htmlFor="su-password"
-              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+              className={`${FIELD_LABEL} text-[#1e88e5] bg-[rgba(30,136,229,0.1)]`}
             >
               password:
             </label>
@@ -113,17 +118,17 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={styles.inputBlockField}
+              className={FIELD_INPUT}
               placeholder="type here"
               disabled={isSubmitting}
               autoComplete="new-password"
             />
           </div>
 
-          <div className={styles.inputBlock}>
+          <div className={FIELD_BLOCK}>
             <label
               htmlFor="su-confirm"
-              className={`${styles.inputLabelLime} ${styles.inputBlockLabel}`}
+              className={`${FIELD_LABEL} text-[#e91e63] bg-[rgba(233,30,99,0.1)]`}
             >
               confirm password:
             </label>
@@ -132,20 +137,20 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={styles.inputBlockField}
+              className={FIELD_INPUT}
               placeholder="type here"
               disabled={isSubmitting}
               autoComplete="new-password"
             />
           </div>
 
-          <div className={styles.nextBtnWrapper}>
+          <div className="mt-4 flex items-center justify-end">
             <button
               type="submit"
-              className={styles.nextBtn}
+              className="flex cursor-pointer appearance-none flex-col items-center gap-1 border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSubmitting}
             >
-              <img src={nextButtonImg} alt="next" className={styles.nextBtnImg} />
+              <img src={nextButtonImg} alt="next" className="block h-[51px] w-[55px]" />
             </button>
           </div>
         </form>
