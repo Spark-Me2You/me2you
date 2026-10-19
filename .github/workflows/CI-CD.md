@@ -4,7 +4,7 @@ This document provides a quick summary of the continuous integration and deploym
 
 ## Workflows
 
-- **ci.yml**: located at `.github/workflows/ci.yml`. It runs on pushes and pull requests targeting the `main` and `dev` branches. The job checks out the repo, sets up Node 20 with npm caching, and executes:
+- **ci.yml**: located at `.github/workflows/ci.yml`. It runs on pushes and pull requests targeting the `main` and `dev` branches. The job checks out the repo, sets up Node 22 with npm caching, and executes:
 
   ```yaml
   - run: npm ci
