@@ -123,9 +123,9 @@ Pixi preview containers (`UserMiiPixiPreview`, avatar canvases): only the wrappe
 |---|---|---|
 | 6.1 ✅ | Kiosk QR | `RegistrationQRDisplay`, `PinnedRegistrationQR` |
 | 6.2 ✅ | Discovery | `DiscoveryView`, `CameraView`, `PoseOverlay`, `RandomImageCard`, `HelpPopup` |
-| 6.3 | Games hub | `GamesHub` (428 lines), `CameraOverlay`, `FlapFlapLauncher` |
-| 6.4 | FlapFlap 1P | `FlapFlapGame`, `FlapFlapLeaderboard`, `GameOverClaim` |
-| 6.5 | FlapFlap 2P | `FlapFlap2PGame`, `SplitCameraPanel` |
+| 6.3 ✅ | Games hub | `GamesHub` (428 lines), `CameraOverlay`, `FlapFlapLauncher` |
+| 6.4 ✅ | FlapFlap 1P | `FlapFlapGame`, `FlapFlapLeaderboard`, `GameOverClaim` |
+| 6.5 ✅ | FlapFlap 2P | `FlapFlap2PGame`, `SplitCameraPanel` |
 | 6.6 | DrawIt (a) | `DrawItMenu`, `DailyPromptScreen`, `Countdown`, `Timer` |
 | 6.7 | DrawIt (b) | `DrawItGame`, `DrawingCanvas`, `Toolbox`, `ConfirmModal` |
 | 6.8 | DrawIt (c) | `ReviewScreen`, `Gallery`, `ThanksScreen` |

@@ -24,7 +24,6 @@ import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { ExitButton } from "@/shared/components";
 import type { GameProps } from "../../types/game";
 import { SplitCameraPanel } from "./SplitCameraPanel";
-import styles from "./FlapFlap2PGame.module.css";
 
 const NOT_READY: Record<PlayerId, boolean> = { P1: false, P2: false };
 const PRESENCE_POLL_MS = 250;
@@ -237,10 +236,10 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
       : "#ffffff";
 
   return (
-    <div ref={layoutRef} className={styles.container}>
-      <div className={styles.gameLayout}>
+    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-[linear-gradient(180deg,#1a1a2e_0%,#16213e_100%)] px-5 py-[28px]">
+      <div className="flex w-full max-w-[1700px] items-start justify-center gap-6 max-[700px]:flex-col max-[700px]:items-center">
         <div
-          className={styles.canvasOuter}
+          className="relative shrink-0 overflow-hidden rounded-[16px] border-4 border-solid border-[rgba(255,255,255,0.3)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           style={{
             width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
             height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,
@@ -248,17 +247,17 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
         >
           <div
             ref={containerRef}
-            className={styles.canvasInner}
+            className="relative h-[900px] w-[1200px] origin-top-left"
             style={{ transform: `scale(${canvasScale})` }}
           >
             {gameState === "GAME_OVER" && result && (
-              <div className={styles.overlay}>
-                <p className={styles.resultText} style={{ color: winnerColor }}>
+              <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-[rgba(10,10,20,0.88)] backdrop-blur-[6px]">
+                <p className="m-0 font-jersey text-[120px] tracking-[4px] [text-shadow:0_0_24px_rgba(0,0,0,0.6)]" style={{ color: winnerColor }}>
                   {result === "DRAW" ? "Draw!" : `${result} wins!`}
                 </p>
-                <p className={styles.subText}>pipes passed: {finalScore}</p>
+                <p className="m-0 font-jersey text-[36px] tracking-[2px] text-[rgba(255,255,255,0.7)]">pipes passed: {finalScore}</p>
                 <button
-                  className={styles.playAgainButton}
+                  className="mt-2 cursor-pointer rounded-[16px] border-[3px] border-solid border-[rgba(255,255,255,0.3)] bg-[rgba(255,255,255,0.1)] px-12 py-4 font-jersey text-[36px] tracking-[4px] text-white backdrop-blur-[10px] transition-all duration-200 ease-[ease] hover:border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.2)] hover:[transform:scale(1.05)]"
                   onClick={handlePlayAgain}
                 >
                   PLAY AGAIN
@@ -268,7 +267,7 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
           </div>
         </div>
 
-        <div className={styles.sidePanel}>
+        <div className="w-[420px] shrink-0 max-[700px]:w-[min(420px,100%)]">
           <SplitCameraPanel
             onVideoReady={handleVideoReady}
             present={present}
