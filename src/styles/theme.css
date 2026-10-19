@@ -1,0 +1,32 @@
+/*
+ * Design tokens, ported from src/shared/theme/*.ts.
+ * Spacing is not redefined: Tailwind's default scale (1 = 4px) already matches spacing.ts.
+ * Font sizes are not redefined: use text-[Npx] or add named tokens as pages need them.
+ * Google Fonts are still loaded from index.css until the final cleanup phase.
+ */
+@theme {
+  /* Brand */
+  --color-magenta: #e405ac;
+  --color-magenta-dim: #b0006a;
+  --color-error: #b0003a;
+
+  /* Button palette */
+  --color-btn-yellow-green: rgba(211, 228, 5, 0.93);
+  --color-btn-orange: rgba(228, 72, 5, 0.93);
+  --color-btn-purple: rgba(113, 5, 228, 0.93);
+  --color-btn-pink: rgba(228, 5, 172, 0.93);
+
+  /* Page gradient stops */
+  --color-gradient-start: #58e7f7;
+  --color-gradient-end: #fefffb;
+
+  /* Glass card */
+  --color-glass: rgba(255, 255, 255, 0.13);
+
+  /* Fonts */
+  --font-condensed: "Barlow Condensed", sans-serif;
+  --font-handwritten: "Caveat", cursive;
+  --font-jersey: "Jersey 10", sans-serif;
+  --font-averia: "Averia Libre", cursive;
+  --font-pixelify: "Pixelify Sans", sans-serif;
+}

@@ -1,0 +1,9 @@
+/*
+ * Tailwind entry. Preflight is intentionally NOT imported until the final
+ * migration phase (see docs/TAILWIND_MIGRATION.md) so unconverted CSS Module
+ * pages keep the browser defaults they were written against.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "./theme.css";
