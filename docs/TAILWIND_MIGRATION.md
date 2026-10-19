@@ -138,13 +138,15 @@ It styles several kiosk states at once with Figma-derived absolute positioning (
 
 | Step | Section |
 |---|---|
-| 7.1 | Shell + Idle screen (logo, power icon, otter, speech bubble) |
-| 7.2 | Menu buttons (Discover / Games / Network) |
-| 7.3 | Onboarding / "about" cork board and cards |
-| 7.4 | Info button + dwell-to-open ring (keyframes go in `@theme`) |
-| 7.5 | QR section, polaroid/label SVG frames, legacy/non-idle states |
+| 7.1 ✅ | Shell + Idle screen (logo, power icon, otter, speech bubble) |
+| 7.2 ✅ | Menu buttons (Discover / Games / Network) |
+| 7.3 ✅ | Onboarding / "about" cork board and cards |
+| 7.4 ✅ | Info button + dwell-to-open ring (keyframes go in `@theme`) |
+| 7.5 ✅ | QR section, polaroid/label SVG frames, legacy/non-idle states |
 
 Prefer Tailwind arbitrary values (`left-[424px] top-[228px] w-[599px] rotate-[4.26deg]`) here to preserve Figma numbers exactly. Compare the two windows at 1920×1080 and at a scaled-down window. Delete `AppContainer.module.css` at the end of 7.5.
+
+> Done as one batch: the idle screen moved to `features/kiosk/components/IdleScreen.tsx` and the about overlay to `InfoOverlay.tsx`; `AppContainer.tsx` is now only the state-machine switch.
 
 ## Phase 8: Cleanup
 
@@ -175,5 +177,5 @@ Tick as steps complete.
 - [x] Phase 4 user area (4.1–4.6)
 - [x] Phase 5 registration (5.1–5.5)
 - [x] Phase 6 kiosk features (6.1–6.8)
-- [ ] Phase 7 AppContainer (7.1–7.5)
+- [x] Phase 7 AppContainer (7.1–7.5)
 - [ ] Phase 8 cleanup
