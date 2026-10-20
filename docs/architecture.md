@@ -98,6 +98,8 @@ ONBOARDING → HUB
 
 ## Feature Layer (`src/features/`)
 
+New features style their UI per `BRAND_BOOK.md` (see its "Building a new page or feature" checklist).
+
 | Feature | Description |
 |---|---|
 | `discovery/` | Kiosk: gesture-based random profile reveal |
