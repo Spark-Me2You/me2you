@@ -17,7 +17,7 @@ CI (`.github/workflows/ci.yml`) runs `npm run build` (TypeScript errors surface 
 
 ### Unit tests
 
-Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`.
+Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/BRAND_BOOK.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`.
 
 ### Supabase
 
@@ -42,7 +42,8 @@ Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<
 
 The repo is styled with **Tailwind CSS v4** (via `@tailwindcss/vite`), migrated from CSS Modules. History and gotchas: `docs/TAILWIND_MIGRATION.md`.
 
-- Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
+- Follow `docs/BRAND_BOOK.md` (palette, roles, type, radii, shadows, motifs, voice). Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
+- Use tokens, not raw hex/rgba: semantic roles first (`bg-action-discover`, `bg-tape`, `bg-scrim`), palette second (`bg-orange`), opacity modifiers for translucency (`bg-magenta/93`). Brand headings use `tracking-brand` (0.17em) and lowercase copy.
 - Components use Tailwind utilities. Do not create `.module.css` files.
 - Keep inline `style={{}}` only for runtime-computed values (prefer CSS vars). Pixi code is not part of the migration.
 - Preflight is enabled; app-wide defaults live in `@layer base` in `src/styles/tailwind.css`. A keyframe must not animate a property that a utility also sets, and don't mix a utility and an inline `style` for the same property.

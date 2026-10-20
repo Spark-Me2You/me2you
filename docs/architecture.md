@@ -123,10 +123,10 @@ ONBOARDING → HUB
 
 ## Styling
 
-Styling uses Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` for history and gotchas.
+Styling uses Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` for history and gotchas, and `BRAND_BOOK.md` for the visual system and when to use each token.
 
 - `src/styles/tailwind.css` — Tailwind entry (imported in `main.tsx`): preflight, Google Fonts, global `@layer base` rules
-- `src/styles/theme.css` — `@theme` tokens: colors, fonts, spacing, keyframes
+- `src/styles/theme.css` — `@theme` tokens: palette and semantic color roles, fonts, type scale, tracking, radii, shadows, keyframes, plus the `bg-page-gradient` utility
 - Components use utility classes; there are no CSS Modules
 - Pixi rendering is unaffected; only the DOM wrappers around canvases are styled with Tailwind
 
