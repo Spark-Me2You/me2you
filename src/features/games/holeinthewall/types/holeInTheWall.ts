@@ -26,9 +26,23 @@ export interface JointTarget {
   tolerance: number;
 }
 
+/**
+ * The body shape a pose describes. Both the joint targets used for matching
+ * and the hole silhouette are derived from this, so they can't drift apart.
+ * Arms and legs are straight; angles are in degrees.
+ */
+export interface PoseFigure {
+  /** Shoulder angle of the person's left arm: 0 = hanging down, 90 = out to the side, 180 = straight up */
+  leftArm: number;
+  rightArm: number;
+  /** Angle of each leg away from vertical: 0 = feet together */
+  legSpread: number;
+}
+
 export interface PoseDefinition {
   id: string;
   label: string;
+  figure: PoseFigure;
   joints: JointTarget[];
 }
 

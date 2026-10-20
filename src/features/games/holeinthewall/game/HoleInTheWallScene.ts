@@ -8,15 +8,26 @@ import { Application, Container, Graphics } from "pixi.js";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { PoseLandmark as L } from "@/shared/utils/gestureConstants";
 import { HOLE_IN_THE_WALL_CONFIG } from "../config/holeInTheWallConfig";
-import type { PlayerId } from "../types/holeInTheWall";
+import type { PlayerId, PoseDefinition } from "../types/holeInTheWall";
 import type { WallSnapshot } from "./HoleInTheWallEngine";
 import type { PlayerPoses } from "../utils/assignPlayers";
+import {
+  figureShapes,
+  rowIntervals,
+  subtractIntervals,
+  type Interval,
+} from "../utils/silhouette";
 
 const PLAYERS: PlayerId[] = ["P1", "P2"];
 
 const PASS_COLOR = 0xd3e405; // lime
 const FAIL_COLOR = 0xe44805; // orange
 const MATCH_COLOR = 0xd3e405; // lime
+
+/** Raster cell for hole silhouettes, in stage px */
+const CELL = 4;
+/** Outline thickness around each hole, in stage px */
+const OUTLINE = 8;
 
 /** Landmark index pairs forming the drawn skeleton. */
 const BONES: [number, number][] = [
@@ -50,15 +61,10 @@ const JOINTS = [
   L.RIGHT_ANKLE,
 ];
 
-/** Wall-local hole for the T-pose: head, torso and an arms bar, centered on (cx, 0). */
-function tHolePath(g: Graphics, cx: number, w: number, h: number) {
-  const top = -h / 2;
-  const armsH = h * 0.2;
-  const torsoW = w * 0.3;
-  const headR = Math.min(w, h) * 0.11;
-  g.circle(cx, top + headR, headR);
-  g.rect(cx - w / 2, top + headR * 2.2, w, armsH);
-  g.rect(cx - torsoW / 2, top + headR * 2.2, torsoW, h - headR * 2.2);
+/** One raster row of the wall: where its y starts and the spans on it. */
+interface Row {
+  y: number;
+  spans: Interval[];
 }
 
 export class HoleInTheWallScene {
@@ -66,14 +72,17 @@ export class HoleInTheWallScene {
   private wallGfx = new Graphics();
   private outlineGfx = new Graphics();
   private skeletonGfx = new Graphics();
+
+  private poseId = "";
   private outlineKey = "";
+  /** Outline ring rows per player for the current pose */
+  private rings: Record<PlayerId, Row[]> = { P1: [], P2: [] };
 
   private readonly config = HOLE_IN_THE_WALL_CONFIG;
 
   constructor(app: Application) {
     const { GAME_WIDTH: W, GAME_HEIGHT: H } = this.config;
 
-    this.drawWall();
     this.wallLayer.addChild(this.wallGfx, this.outlineGfx);
     // Wall geometry is authored around (0,0) and scaled about the stage center.
     this.wallLayer.position.set(W / 2, H / 2);
@@ -82,27 +91,51 @@ export class HoleInTheWallScene {
     app.stage.addChild(this.wallLayer, this.skeletonGfx);
   }
 
-  private holeRects() {
-    const { GAME_WIDTH: W, GAME_HEIGHT: H, HOLE_WIDTH, HOLE_HEIGHT } =
-      this.config;
-    return {
-      // P1 is on the left of the mirrored screen
-      P1: { cx: -W / 4, w: (W / 2) * HOLE_WIDTH, h: H * HOLE_HEIGHT },
-      P2: { cx: W / 4, w: (W / 2) * HOLE_WIDTH, h: H * HOLE_HEIGHT },
-    };
+  /** Wall-local x center of each player's hole. P1 is on the left of the mirrored screen. */
+  private holeCenter(id: PlayerId) {
+    return (id === "P1" ? -1 : 1) * (this.config.GAME_WIDTH / 4);
   }
 
-  private drawWall() {
-    const { GAME_WIDTH: W, GAME_HEIGHT: H, WALL_COLOR } = this.config;
-    const holes = this.holeRects();
-    const g = this.wallGfx;
-    g.clear();
-    g.rect(-W / 2, -H / 2, W, H).fill(WALL_COLOR);
-    for (const id of PLAYERS) {
-      const { cx, w, h } = holes[id];
-      tHolePath(g, cx, w, h);
+  /** Rasterizes the pose's holes and redraws the wall as strips around them. */
+  private buildWall(pose: PoseDefinition) {
+    const { GAME_WIDTH: W, GAME_HEIGHT: H, HOLE_HEIGHT } = this.config;
+    const shapes = figureShapes(pose.figure, H * HOLE_HEIGHT);
+    const half = W / 4;
+
+    const wallRows: Row[] = [];
+    const rings: Record<PlayerId, Row[]> = { P1: [], P2: [] };
+
+    for (let y = -H / 2; y < H / 2; y += CELL) {
+      const yc = y + CELL / 2;
+      const holes: Interval[] = [];
+
+      for (const id of PLAYERS) {
+        const cx = this.holeCenter(id);
+        const scan = (grow: number) =>
+          rowIntervals(shapes, cx, yc, grow, cx - half, cx + half, CELL);
+        const hole = scan(0);
+        holes.push(...hole);
+        rings[id].push({
+          y,
+          spans: subtractIntervals(scan(OUTLINE), hole),
+        });
+      }
+
+      wallRows.push({ y, spans: subtractIntervals([[-W / 2, W / 2]], holes) });
     }
-    g.cut();
+
+    this.rings = rings;
+    this.wallGfx.clear();
+    for (const { y, spans } of wallRows) {
+      for (const [x0, x1] of spans) {
+        // +1 overlap hides hairline seams between rows when the wall is scaled
+        this.wallGfx.rect(x0, y, x1 - x0, CELL + 1);
+      }
+    }
+    this.wallGfx.fill(this.config.WALL_COLOR);
+
+    this.poseId = pose.id;
+    this.outlineKey = ""; // force outline redraw
   }
 
   private drawOutlines(outcome: WallSnapshot["outcome"]) {
@@ -110,11 +143,9 @@ export class HoleInTheWallScene {
     if (key === this.outlineKey) return;
     this.outlineKey = key;
 
-    const holes = this.holeRects();
     const g = this.outlineGfx;
     g.clear();
     for (const id of PLAYERS) {
-      const { cx, w, h } = holes[id];
       const verdict = outcome[id];
       const color =
         verdict === null
@@ -122,8 +153,10 @@ export class HoleInTheWallScene {
           : verdict
             ? PASS_COLOR
             : FAIL_COLOR;
-      tHolePath(g, cx, w, h);
-      g.stroke({ width: 8, color });
+      for (const { y, spans } of this.rings[id]) {
+        for (const [x0, x1] of spans) g.rect(x0, y, x1 - x0, CELL + 1);
+      }
+      g.fill(color);
     }
   }
 
@@ -140,10 +173,9 @@ export class HoleInTheWallScene {
   ) {
     this.wallLayer.visible = wall !== null;
     if (wall) {
+      if (wall.pose.id !== this.poseId) this.buildWall(wall.pose);
       this.wallLayer.scale.set(this.wallScale(wall.progress));
       this.drawOutlines(wall.outcome);
-    } else {
-      this.outlineKey = "";
     }
     this.drawSkeletons(poses, matched);
   }

@@ -9,13 +9,19 @@ import type {
   HoleInTheWallResult,
   HoleInTheWallState,
   PlayerId,
+  PoseDefinition,
 } from "../types/holeInTheWall";
+import { POSES } from "../utils/poses";
 
 const PLAYERS: PlayerId[] = ["P1", "P2"];
 
 /** What the CV pipeline reports for one player on a frame. */
 export interface PlayerInput {
+  /** Any pose detected for this player */
   present: boolean;
+  /** Head to toe inside the frame; required before the game (re)starts */
+  fullBody: boolean;
+  /** Holding the current wall's pose */
   matched: boolean;
 }
 
@@ -25,6 +31,8 @@ export type WallPhase = "APPROACH" | "RESOLVE";
 
 export interface WallSnapshot {
   phase: WallPhase;
+  /** The pose both players must strike for this wall */
+  pose: PoseDefinition;
   /** 0 = far away on the horizon, 1 = at the camera */
   progress: number;
   /** Per-player verdict; null until the wall arrives */
@@ -48,8 +56,19 @@ export class HoleInTheWallEngine {
   private result: HoleInTheWallResult | null = null;
 
   private readonly config = HOLE_IN_THE_WALL_CONFIG;
+  private readonly poses: PoseDefinition[];
+  private readonly random: () => number;
+  private lastPose: PoseDefinition | null = null;
   private onStateChange?: (state: HoleInTheWallState) => void;
   private onWallResolved?: (outcome: Record<PlayerId, boolean>) => void;
+
+  constructor(
+    poses: PoseDefinition[] = POSES,
+    random: () => number = Math.random,
+  ) {
+    this.poses = poses;
+    this.random = random;
+  }
 
   setCallbacks(
     onStateChange: (state: HoleInTheWallState) => void,
@@ -75,6 +94,7 @@ export class HoleInTheWallEngine {
     this.holdMs = perPlayer(0);
     this.presenceMs = 0;
     this.wall = null;
+    this.lastPose = null;
     this.result = null;
     this.setState("WAITING");
   }
@@ -93,12 +113,12 @@ export class HoleInTheWallEngine {
     }
   }
 
-  private bothPresent(input: PlayerInputs) {
-    return PLAYERS.every((p) => input[p].present);
+  private bothFullBody(input: PlayerInputs) {
+    return PLAYERS.every((p) => input[p].fullBody);
   }
 
   private updateWaiting(dtMs: number, input: PlayerInputs) {
-    this.presenceMs = this.bothPresent(input) ? this.presenceMs + dtMs : 0;
+    this.presenceMs = this.bothFullBody(input) ? this.presenceMs + dtMs : 0;
     if (this.presenceMs >= this.config.PRESENCE_MS) {
       this.countdownMs = this.config.COUNTDOWN_MS;
       this.setState("COUNTDOWN");
@@ -106,7 +126,7 @@ export class HoleInTheWallEngine {
   }
 
   private updateCountdown(dtMs: number, input: PlayerInputs) {
-    if (!this.bothPresent(input)) {
+    if (!this.bothFullBody(input)) {
       this.presenceMs = 0;
       this.setState("WAITING");
       return;
@@ -145,10 +165,20 @@ export class HoleInTheWallEngine {
     }
   }
 
+  /** First wall is poses[0]; after that a random pose that differs from the last. */
+  private nextPose(): PoseDefinition {
+    if (!this.lastPose) return this.poses[0];
+    const others = this.poses.filter((p) => p !== this.lastPose);
+    if (others.length === 0) return this.lastPose;
+    return others[Math.floor(this.random() * others.length)];
+  }
+
   private spawnWall() {
     this.holdMs = perPlayer(0);
+    this.lastPose = this.nextPose();
     this.wall = {
       phase: "APPROACH",
+      pose: this.lastPose,
       progress: 0,
       outcome: { P1: null, P2: null },
     };

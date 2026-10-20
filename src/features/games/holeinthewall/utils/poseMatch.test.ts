@@ -1,34 +1,15 @@
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
 import { describe, expect, it } from 'vitest'
 import { PoseLandmark as L } from '@/shared/utils/gestureConstants'
+import { isFullBodyInFrame } from './bodyCheck'
 import { jointAngle, matchPose } from './poseMatch'
-import { T_POSE } from './poses'
+import { bodyFromFigure } from './poseFixtures'
+import { POSES, STAR, T_POSE } from './poses'
 
 const lm = (x: number, y: number, visibility = 1): NormalizedLandmark => ({ x, y, z: 0, visibility })
 
 /** Square aspect so geometry in tests is exact. */
 const ASPECT = 1
-
-/** A front-facing body with both arms lifted `armDeg` above horizontal. */
-function body(armDeg: number, opts: { hideRightWrist?: boolean } = {}): NormalizedLandmark[] {
-  const out: NormalizedLandmark[] = []
-  const shoulderY = 0.3
-  out[L.LEFT_SHOULDER] = lm(0.45, shoulderY)
-  out[L.RIGHT_SHOULDER] = lm(0.55, shoulderY)
-  out[L.LEFT_HIP] = lm(0.46, 0.6)
-  out[L.RIGHT_HIP] = lm(0.54, 0.6)
-  const rad = (armDeg * Math.PI) / 180
-  const len = 0.1
-  out[L.LEFT_ELBOW] = lm(0.45 - Math.cos(rad) * len, shoulderY - Math.sin(rad) * len)
-  out[L.LEFT_WRIST] = lm(0.45 - Math.cos(rad) * len * 2, shoulderY - Math.sin(rad) * len * 2)
-  out[L.RIGHT_ELBOW] = lm(0.55 + Math.cos(rad) * len, shoulderY - Math.sin(rad) * len)
-  out[L.RIGHT_WRIST] = lm(
-    0.55 + Math.cos(rad) * len * 2,
-    shoulderY - Math.sin(rad) * len * 2,
-    opts.hideRightWrist ? 0.1 : 1,
-  )
-  return out
-}
 
 describe('jointAngle', () => {
   it('measures a right angle', () => {
@@ -49,35 +30,97 @@ describe('jointAngle', () => {
   })
 })
 
-describe('matchPose (T-pose)', () => {
-  it('matches arms straight out', () => {
-    const result = matchPose(body(0), T_POSE, ASPECT)
-    expect(result.matched).toBe(true)
-    expect(result.score).toBeGreaterThan(0.95)
+describe('matchPose', () => {
+  it('matches a body striking each pose, with a near-perfect score', () => {
+    for (const pose of POSES) {
+      const result = matchPose(bodyFromFigure(pose.figure), pose, ASPECT)
+      expect(result.failing, pose.id).toEqual([])
+      expect(result.matched, pose.id).toBe(true)
+      expect(result.score, pose.id).toBeGreaterThan(0.95)
+    }
+  })
+
+  it('never matches a body striking a different pose', () => {
+    for (const body of POSES) {
+      for (const target of POSES) {
+        if (body === target) continue
+        const result = matchPose(bodyFromFigure(body.figure), target, ASPECT)
+        expect(result.matched, `${body.id} should not match ${target.id}`).toBe(false)
+      }
+    }
   })
 
   it('tolerates small deviations', () => {
-    expect(matchPose(body(15), T_POSE, ASPECT).matched).toBe(true)
+    const figure = { ...T_POSE.figure, leftArm: 105 }
+    expect(matchPose(bodyFromFigure(figure), T_POSE, ASPECT).matched).toBe(true)
   })
 
-  it('rejects arms raised well above horizontal', () => {
-    const result = matchPose(body(60), T_POSE, ASPECT)
+  it('names the arm that is out of position', () => {
+    const figure = { ...T_POSE.figure, leftArm: 150 }
+    const result = matchPose(bodyFromFigure(figure), T_POSE, ASPECT)
     expect(result.matched).toBe(false)
     expect(result.failing).toContain('left shoulder')
-    expect(result.score).toBeLessThan(1)
+    expect(result.failing).not.toContain('right shoulder')
   })
 
   it('rejects arms hanging down', () => {
-    expect(matchPose(body(-80), T_POSE, ASPECT).matched).toBe(false)
+    const figure = { ...T_POSE.figure, leftArm: 10, rightArm: 10 }
+    expect(matchPose(bodyFromFigure(figure), T_POSE, ASPECT).matched).toBe(false)
+  })
+
+  it('checks the legs: feet together fails the star, a star fails the T-pose', () => {
+    const together = matchPose(bodyFromFigure({ ...STAR.figure, legSpread: 0 }), STAR, ASPECT)
+    expect(together.failing).toEqual(['left leg', 'right leg'])
+
+    const spread = matchPose(bodyFromFigure({ ...T_POSE.figure, legSpread: 25 }), T_POSE, ASPECT)
+    expect(spread.failing).toEqual(['left leg', 'right leg'])
+  })
+
+  it('checks bent knees', () => {
+    const body = bodyFromFigure(T_POSE.figure)
+    body[L.LEFT_ANKLE] = lm(body[L.LEFT_KNEE].x + 0.15, body[L.LEFT_KNEE].y)
+    expect(matchPose(body, T_POSE, ASPECT).failing).toContain('left knee')
   })
 
   it('fails joints whose landmarks are not visible', () => {
-    const result = matchPose(body(0, { hideRightWrist: true }), T_POSE, ASPECT)
+    const body = bodyFromFigure(T_POSE.figure)
+    body[L.RIGHT_WRIST] = lm(body[L.RIGHT_WRIST].x, body[L.RIGHT_WRIST].y, 0.1)
+    const result = matchPose(body, T_POSE, ASPECT)
     expect(result.matched).toBe(false)
     expect(result.failing).toEqual(['right elbow'])
   })
 
   it('does not match when there are no landmarks', () => {
     expect(matchPose(null, T_POSE, ASPECT)).toMatchObject({ matched: false, score: 0 })
+  })
+})
+
+describe('isFullBodyInFrame', () => {
+  const full = () => bodyFromFigure(T_POSE.figure)
+
+  it('accepts a head-to-toe body inside the frame', () => {
+    expect(isFullBodyInFrame(full())).toBe(true)
+  })
+
+  it('rejects no detection', () => {
+    expect(isFullBodyInFrame(null)).toBe(false)
+  })
+
+  it('rejects a body with low-visibility legs', () => {
+    const body = full()
+    body[L.LEFT_ANKLE] = lm(body[L.LEFT_ANKLE].x, body[L.LEFT_ANKLE].y, 0.2)
+    expect(isFullBodyInFrame(body)).toBe(false)
+  })
+
+  it('rejects a body with a joint outside the frame', () => {
+    const body = full()
+    body[L.RIGHT_ANKLE] = lm(0.55, 1.05)
+    expect(isFullBodyInFrame(body)).toBe(false)
+  })
+
+  it('rejects a body missing landmarks entirely', () => {
+    const body = full()
+    delete body[L.LEFT_KNEE]
+    expect(isFullBodyInFrame(body)).toBe(false)
   })
 })

@@ -24,8 +24,8 @@ import {
 } from "../game/HoleInTheWallEngine";
 import { HoleInTheWallScene } from "../game/HoleInTheWallScene";
 import { assignPosesToPlayers, type PlayerPoses } from "../utils/assignPlayers";
+import { isFullBodyInFrame } from "../utils/bodyCheck";
 import { matchPose } from "../utils/poseMatch";
-import { T_POSE } from "../utils/poses";
 import type {
   HoleInTheWallResult,
   HoleInTheWallState,
@@ -37,16 +37,16 @@ const NO_POSES: PlayerPoses = { P1: null, P2: null };
 const NO_FLAGS: Record<PlayerId, boolean> = { P1: false, P2: false };
 const HUD_POLL_MS = 100;
 
-/** The pose both players are aiming for (single pose for now). */
-const CURRENT_POSE = T_POSE;
-
 interface Hud {
   state: HoleInTheWallState;
   lives: Record<PlayerId, number>;
   passed: Record<PlayerId, number>;
   countdown: number;
   present: Record<PlayerId, boolean>;
+  fullBody: Record<PlayerId, boolean>;
   matched: Record<PlayerId, boolean>;
+  /** Label of the pose on the current wall, if any */
+  poseLabel: string | null;
 }
 
 const INITIAL_HUD: Hud = {
@@ -55,7 +55,9 @@ const INITIAL_HUD: Hud = {
   passed: { P1: 0, P2: 0 },
   countdown: 0,
   present: NO_FLAGS,
+  fullBody: NO_FLAGS,
   matched: NO_FLAGS,
+  poseLabel: null,
 };
 
 const hudKey = (h: Hud) => JSON.stringify(h);
@@ -80,6 +82,7 @@ export const HoleInTheWallGame: React.FC<GameProps> = ({ onExit }) => {
   const layoutRef = useRef<HTMLDivElement>(null);
   const posesRef = useRef<PlayerPoses>(NO_POSES);
   const matchedRef = useRef<Record<PlayerId, boolean>>(NO_FLAGS);
+  const fullBodyRef = useRef<Record<PlayerId, boolean>>(NO_FLAGS);
 
   const {
     allLandmarksRef,
@@ -148,32 +151,36 @@ export const HoleInTheWallGame: React.FC<GameProps> = ({ onExit }) => {
     engineRef.current = engine;
 
     let lastSequence = -1;
-    let inputs: PlayerInputs = {
-      P1: { present: false, matched: false },
-      P2: { present: false, matched: false },
-    };
 
     const tickerCallback = (time: Ticker) => {
       const dt = Math.min(time.deltaMS / 1000, 0.05);
 
-      // Re-run pose assignment/matching only when a new CV frame has landed.
+      // Re-assign players only when a new CV frame has landed.
       const sequence = frameSequenceRef.current;
       if (sequence !== lastSequence) {
         lastSequence = sequence;
         const poses = assignPosesToPlayers(allLandmarksRef.current);
         posesRef.current = poses;
-
-        const matched = { P1: false, P2: false };
-        for (const p of PLAYERS) {
-          matched[p] = matchPose(poses[p], CURRENT_POSE).matched;
-        }
-        matchedRef.current = matched;
-        inputs = {
-          P1: { present: poses.P1 !== null, matched: matched.P1 },
-          P2: { present: poses.P2 !== null, matched: matched.P2 },
+        fullBodyRef.current = {
+          P1: isFullBodyInFrame(poses.P1),
+          P2: isFullBodyInFrame(poses.P2),
         };
       }
 
+      // Match against the current wall's pose (it changes wall to wall).
+      const poses = posesRef.current;
+      const wall = engine.getWall();
+      const target = wall?.phase === "APPROACH" ? wall.pose : null;
+      const matched = { P1: false, P2: false };
+      for (const p of PLAYERS) {
+        matched[p] = !!target && matchPose(poses[p], target).matched;
+      }
+      matchedRef.current = matched;
+
+      const inputs: PlayerInputs = {
+        P1: { present: poses.P1 !== null, fullBody: fullBodyRef.current.P1, matched: matched.P1 },
+        P2: { present: poses.P2 !== null, fullBody: fullBodyRef.current.P2, matched: matched.P2 },
+      };
       engine.update(dt, inputs);
       scene.render(engine.getWall(), posesRef.current, matchedRef.current);
     };
@@ -209,7 +216,9 @@ export const HoleInTheWallGame: React.FC<GameProps> = ({ onExit }) => {
         passed: engine.getPassed(),
         countdown: engine.getCountdownSeconds(),
         present: { P1: poses.P1 !== null, P2: poses.P2 !== null },
+        fullBody: { ...fullBodyRef.current },
         matched: { ...matchedRef.current },
+        poseLabel: engine.getWall()?.pose.label ?? null,
       };
       setHud((prev) => (hudKey(prev) === hudKey(next) ? prev : next));
     }, HUD_POLL_MS);
@@ -231,8 +240,9 @@ export const HoleInTheWallGame: React.FC<GameProps> = ({ onExit }) => {
   }, []);
 
   const playerStatus = (id: PlayerId): string => {
+    if (gameState === "PLAYING") return hud.matched[id] ? "hold it!" : "";
     if (!hud.present[id]) return "step in";
-    if (gameState === "PLAYING") return hud.matched[id] ? "hold it!" : CURRENT_POSE.label;
+    if (!hud.fullBody[id]) return "show head to toe";
     return "ready";
   };
 
@@ -307,7 +317,15 @@ export const HoleInTheWallGame: React.FC<GameProps> = ({ onExit }) => {
         {gameState === "WAITING" && !cameraStatus && (
           <div className="pointer-events-none absolute inset-x-0 top-[45%] flex justify-center">
             <p className="m-0 font-jersey text-[56px] tracking-brand text-white [text-shadow:0_0_4px_#000,0_0_8px_#000]">
-              both players step in & strike a {CURRENT_POSE.label}
+              both players: step back until you're head to toe in frame
+            </p>
+          </div>
+        )}
+
+        {gameState === "PLAYING" && hud.poseLabel && (
+          <div className="pointer-events-none absolute inset-x-0 top-[40%] flex justify-center">
+            <p className="m-0 font-jersey text-[72px] leading-none tracking-brand text-white [text-shadow:0_0_4px_#000,0_0_8px_#000]">
+              {hud.poseLabel}
             </p>
           </div>
         )}

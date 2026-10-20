@@ -19,6 +19,8 @@ export const HOLE_IN_THE_WALL_CONFIG = {
   // Normalized x of the camera split line (raw, un-mirrored frame coordinates)
   SPLIT_X: 0.5,
   MIN_LANDMARK_VISIBILITY: 0.5,
+  /** Joints closer than this to the frame edge don't count as "in frame" */
+  FRAME_MARGIN: 0.02,
 
   // Rules
   LIVES: 3,
