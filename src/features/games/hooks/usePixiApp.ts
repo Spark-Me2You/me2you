@@ -10,6 +10,8 @@ interface UsePixiAppOptions {
   width: number;
   height: number;
   backgroundColor?: number;
+  /** 0 makes the canvas transparent (e.g. to draw over a video feed) */
+  backgroundAlpha?: number;
   resolution?: number;
 }
 
@@ -24,6 +26,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
     width,
     height,
     backgroundColor = 0x87ceeb,
+    backgroundAlpha = 1,
     resolution = window.devicePixelRatio,
   } = options;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +50,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
         width,
         height,
         backgroundColor,
+        backgroundAlpha,
         resolution,
         autoDensity: true,
       });
@@ -88,7 +92,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
         appRef.current = null;
       }
     };
-  }, [width, height, backgroundColor, resolution]);
+  }, [width, height, backgroundColor, backgroundAlpha, resolution]);
 
   return { app: appRef.current, containerRef, isReady };
 };

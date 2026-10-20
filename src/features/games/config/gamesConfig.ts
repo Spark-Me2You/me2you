@@ -6,6 +6,7 @@
 import type { GameDefinition } from "../types/game";
 import { FlapFlapLauncher } from "../components/FlapFlapLauncher";
 import { DrawItGame } from "../drawit/components/DrawItGame";
+import { HoleInTheWallGame } from "../holeinthewall/components/HoleInTheWallGame";
 
 export const GAMES_REGISTRY: GameDefinition[] = [
   {
@@ -19,5 +20,11 @@ export const GAMES_REGISTRY: GameDefinition[] = [
     name: "drawit",
     description: "draw the word of the day!",
     component: DrawItGame,
+  },
+  {
+    id: "holeinthewall",
+    name: "hole in the wall",
+    description: "strike the pose to fit through the wall — two players!",
+    component: HoleInTheWallGame,
   },
 ];
