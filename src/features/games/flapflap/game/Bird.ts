@@ -52,7 +52,7 @@ export class Bird {
     this.graphics.endFill();
 
     // Beak
-    this.graphics.beginFill(0xff6600);
+    this.graphics.beginFill(this.config.BEAK_COLOR);
     this.graphics.moveTo(25, 0);
     this.graphics.lineTo(35, 5);
     this.graphics.lineTo(25, 10);

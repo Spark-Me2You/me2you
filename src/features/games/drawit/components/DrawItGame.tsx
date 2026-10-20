@@ -30,7 +30,7 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
   };
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#008080_0%,#004040_100%)] font-jersey">
+    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-games-gradient font-jersey">
       {screen === "MENU" && (
         <DrawItMenu
           onStart={() => setScreen("PROMPT")}

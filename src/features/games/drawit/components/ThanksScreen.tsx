@@ -65,8 +65,8 @@ export const ThanksScreen: React.FC<Props> = ({ onDone, autoDismissMs = 6000 }) 
       <img src={otterImg} alt="" className="pointer-events-none absolute right-10 -bottom-[100px] z-[3] h-auto w-[520px]" aria-hidden="true" />
 
       <div className="relative z-[2] flex flex-col items-center gap-5 text-center">
-        <h1 className="m-0 text-[clamp(72px,12vw,100px)] tracking-[6px] text-white [text-shadow:4px_4px_0_rgba(0,0,0,0.35),0_0_20px_rgba(255,255,255,0.35)]">go check out the gallery!👀</h1>
-        <p className="m-0 text-[clamp(28px,3.5vw,44px)] tracking-[4px] text-[#ffff80] [text-shadow:0_3px_0_rgba(0,0,0,0.3)]"> thanks!</p>
+        <h1 className="m-0 text-[clamp(72px,12vw,100px)] tracking-brand text-white text-shadow-pop">go check out the gallery!👀</h1>
+        <p className="m-0 text-[clamp(28px,3.5vw,44px)] tracking-brand text-lime text-shadow-pop">thanks!</p>
       </div>
     </div>
   );

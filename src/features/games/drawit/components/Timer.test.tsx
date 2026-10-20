@@ -46,8 +46,8 @@ describe('ConfirmModal', () => {
     render(<ConfirmModal message="Quit?" onYes={onYes} onNo={onNo} />)
     expect(screen.getByText('Quit?')).toBeInTheDocument()
 
-    screen.getByRole('button', { name: 'Yes' }).click()
-    screen.getByRole('button', { name: 'No' }).click()
+    screen.getByRole('button', { name: 'yes' }).click()
+    screen.getByRole('button', { name: 'no' }).click()
     expect(onYes).toHaveBeenCalledTimes(1)
     expect(onNo).toHaveBeenCalledTimes(1)
   })

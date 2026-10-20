@@ -1,6 +1,15 @@
 import React from "react";
 import { BRUSH_PX, PALETTE } from "../config/drawitConfig";
 import type { BrushSize, Tool } from "../types/drawit";
+import { GAME_PANEL } from "../../components/gameUi";
+
+const DIVIDER = "my-[2px] h-[2px] rounded-full bg-white/40";
+const SELECTED = "outline-[3px] outline-offset-2 outline-lime outline-solid";
+// White chip on the glass panel; selected tools turn lime
+const TOOL_BTN =
+  "flex w-full cursor-pointer items-center justify-center rounded-tag p-0 text-ink shadow-drop transition-[scale,background-color] duration-80 ease-out";
+const TOOL_IDLE = "bg-white/85 hover:bg-white";
+const TOOL_ACTIVE = `bg-lime ${SELECTED}`;
 
 interface Props {
   tool: Tool;
@@ -31,14 +40,14 @@ export const Toolbox: React.FC<Props> = ({
   canUndo,
   canRedo,
 }) => (
-  <div className="fixed top-[calc(90px_+_var(--canvas-gap))] bottom-[calc(40px_+_var(--canvas-gap))] left-4 z-[10001] box-border flex w-[170px] flex-col gap-[10px] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] bg-[#c0c0c0] px-[10px] py-3 font-jersey shadow-[3px_3px_0_#000] [--canvas-gap:calc((100vh_-_130px_-_var(--canvas-h))_/_2)] [--canvas-h:min(calc(100vh_-_130px),calc((100vw_-_440px)_*_10_/_16))]">
+  <div className={`fixed top-[calc(90px_+_var(--canvas-gap))] bottom-[calc(40px_+_var(--canvas-gap))] left-4 z-[10001] box-border flex w-[170px] flex-col gap-[10px] overflow-y-auto rounded-[24px] px-[10px] py-3 font-jersey ${GAME_PANEL} [--canvas-gap:calc((100vh_-_130px_-_var(--canvas-h))_/_2)] [--canvas-h:min(calc(100vh_-_130px),calc((100vw_-_440px)_*_10_/_16))]`}>
     <div className="grid grid-cols-[48px_48px] justify-center gap-x-2 gap-y-[6px]">
       {PALETTE.map((hex) => (
         <button
           key={hex}
           type="button"
           aria-label={`color ${hex}`}
-          className={`size-12 cursor-pointer border-[3px] border-solid border-[#404040] border-t-[#fff] border-l-[#fff] p-0 [transition:transform_80ms_ease] hover:[transform:scale(1.08)] ${color === hex && tool !== "eraser" ? "outline-[3px] outline-offset-2 outline-[#ff0] outline-solid" : ""}`}
+          className={`size-12 cursor-pointer rounded-tag border-2 border-solid border-white/70 p-0 shadow-drop transition-[scale] duration-80 ease-out hover:scale-108 ${color === hex && tool !== "eraser" ? SELECTED : ""}`}
           style={{ background: hex }}
           onClick={() => {
             onColor(hex);
@@ -48,57 +57,57 @@ export const Toolbox: React.FC<Props> = ({
       ))}
     </div>
 
-    <div className="my-[2px] h-[2px] border-t border-b border-solid border-t-[#404040] border-b-[#fff] bg-[#808080]" />
+    <div className={DIVIDER} />
 
     <div className="grid grid-cols-[repeat(3,1fr)] items-center gap-[6px]">
       {(Object.keys(BRUSH_PX) as BrushSize[]).map((b) => (
         <button
           key={b}
           type="button"
-          className={`flex h-[42px] w-full cursor-pointer items-center justify-center p-0 border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] ${brushSize === b ? "bg-white outline-[3px] outline-offset-1 outline-[#ff0] outline-solid" : "bg-[#dcdcdc]"}`}
+          className={`h-[42px] ${TOOL_BTN} ${brushSize === b ? TOOL_ACTIVE : TOOL_IDLE}`}
           onClick={() => onBrush(b)}
           aria-label={`brush ${b}`}
         >
           <span
-            className="block rounded-full bg-black"
+            className="block rounded-full bg-ink"
             style={{ width: BRUSH_PX[b], height: BRUSH_PX[b] }}
           />
         </button>
       ))}
     </div>
 
-    <div className="my-[2px] h-[2px] border-t border-b border-solid border-t-[#404040] border-b-[#fff] bg-[#808080]" />
+    <div className={DIVIDER} />
 
     <div className="flex flex-col gap-2">
       <button
         type="button"
-        className={`flex h-[50px] w-full cursor-pointer items-center justify-center p-0 font-jersey text-[22px] tracking-[3px] text-[#101010] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] [transition:transform_80ms_ease,background_80ms_ease] hover:[transform:scale(1.03)] ${tool === "eraser" ? "bg-white outline-[3px] outline-offset-1 outline-[#ff0] outline-solid" : "bg-[#dcdcdc] hover:bg-[#e8e8e8]"}`}
+        className={`h-[50px] text-[22px] tracking-brand hover:scale-103 ${TOOL_BTN} ${tool === "eraser" ? TOOL_ACTIVE : TOOL_IDLE}`}
         onClick={() => onTool("eraser")}
       >
-        Eraser
+        eraser
       </button>
       <button
         type="button"
-        className={`flex h-[50px] w-full cursor-pointer items-center justify-center p-0 font-jersey text-[22px] tracking-[3px] text-[#101010] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] [transition:transform_80ms_ease,background_80ms_ease] hover:[transform:scale(1.03)] ${tool === "bucket" ? "bg-white outline-[3px] outline-offset-1 outline-[#ff0] outline-solid" : "bg-[#dcdcdc] hover:bg-[#e8e8e8]"}`}
+        className={`h-[50px] text-[22px] tracking-brand hover:scale-103 ${TOOL_BTN} ${tool === "bucket" ? TOOL_ACTIVE : TOOL_IDLE}`}
         onClick={() => onTool(tool === "bucket" ? "brush" : "bucket")}
       >
-        Fill
+        fill
       </button>
       <button
         type="button"
-        className={`flex h-[50px] w-full cursor-pointer items-center justify-center p-0 font-jersey text-[22px] tracking-[3px] text-[#101010] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] [transition:transform_80ms_ease,background_80ms_ease] hover:[transform:scale(1.03)] ${clearActive ? "bg-white outline-[3px] outline-offset-1 outline-[#ff0] outline-solid" : "bg-[#dcdcdc] hover:bg-[#e8e8e8]"}`}
+        className={`h-[50px] text-[22px] tracking-brand hover:scale-103 ${TOOL_BTN} ${clearActive ? TOOL_ACTIVE : TOOL_IDLE}`}
         onClick={onClear}
       >
-        Clear
+        clear
       </button>
     </div>
 
     <div className="mt-auto flex flex-col gap-2">
-      <div className="my-[2px] h-[2px] border-t border-b border-solid border-t-[#404040] border-b-[#fff] bg-[#808080]" />
+      <div className={DIVIDER} />
       <div className="grid grid-cols-[1fr_1fr] gap-[6px]">
         <button
           type="button"
-          className="flex h-[44px] w-full cursor-pointer items-center justify-center bg-[#dcdcdc] p-0 text-[#101010] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] [transition:transform_80ms_ease,background_80ms_ease] hover:enabled:bg-[#e8e8e8] hover:enabled:[transform:scale(1.03)] disabled:cursor-not-allowed disabled:opacity-45"
+          className={`h-[44px] ${TOOL_BTN} bg-white/85 hover:enabled:bg-white hover:enabled:scale-103 disabled:cursor-not-allowed disabled:opacity-45`}
           onClick={onUndo}
           disabled={!canUndo}
           aria-label="undo"
@@ -125,7 +134,7 @@ export const Toolbox: React.FC<Props> = ({
         </button>
         <button
           type="button"
-          className="flex h-[44px] w-full cursor-pointer items-center justify-center bg-[#dcdcdc] p-0 text-[#101010] border-[3px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] [transition:transform_80ms_ease,background_80ms_ease] hover:enabled:bg-[#e8e8e8] hover:enabled:[transform:scale(1.03)] disabled:cursor-not-allowed disabled:opacity-45"
+          className={`h-[44px] ${TOOL_BTN} bg-white/85 hover:enabled:bg-white hover:enabled:scale-103 disabled:cursor-not-allowed disabled:opacity-45`}
           onClick={onRedo}
           disabled={!canRedo}
           aria-label="redo"

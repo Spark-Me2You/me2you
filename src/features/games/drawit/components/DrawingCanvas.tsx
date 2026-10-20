@@ -8,6 +8,7 @@ import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { ExitButton } from "@/shared/components";
 import { PinnedRegistrationQR } from "@/features/kiosk";
 import type { BrushSize, Tool } from "../types/drawit";
+import { BTN_MD, BTN_PRIMARY } from "../../components/gameUi";
 
 interface Props {
   word: string;
@@ -62,14 +63,14 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
   return (
     <div className="absolute inset-0 box-border flex items-center justify-center pt-[90px] pr-[220px] pb-[40px] pl-[220px]">
       <ExitButton onClick={() => setConfirmingQuit(true)} compact />
-      <div className="fixed top-5 left-1/2 z-[9999] -translate-x-1/2 rounded-[12px] bg-[rgba(0,0,0,0.6)] px-[30px] py-[10px] font-jersey text-[42px] tracking-[4px] text-white">Draw: {word}</div>
+      <div className="fixed top-5 left-1/2 z-[9999] -translate-x-1/2 rounded-tag bg-scrim px-[30px] py-[10px] font-jersey text-[42px] tracking-brand text-white">draw: {word}</div>
       <Timer onExpire={handleSubmit} />
 
       <canvas
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        className="aspect-[16/10] h-auto max-h-full w-auto max-w-full border-4 border-solid border-[#404040] border-t-[#fff] border-l-[#fff] bg-white shadow-[4px_4px_0_rgba(0,0,0,0.3)]"
+        className="aspect-[16/10] h-auto max-h-full w-auto max-w-full rounded-tag border-4 border-solid border-white bg-white shadow-drop"
       />
 
       <Toolbox
@@ -87,15 +88,15 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
         canRedo={controller.canRedo}
       />
 
-      <button className="fixed right-5 bottom-5 z-[10000] cursor-pointer rounded-[12px] border-[3px] border-solid border-[#fff] bg-[#00c000] px-9 py-[14px] font-jersey text-[32px] tracking-[4px] text-white" onClick={handleSubmit}>
-        Submit
+      <button className={`fixed right-5 bottom-5 z-[10000] ${BTN_MD} ${BTN_PRIMARY}`} onClick={handleSubmit}>
+        submit
       </button>
 
       <PinnedRegistrationQR side="right" top={145} qrSize={150} />
 
       {confirmingClear && (
         <ConfirmModal
-          message="Clear drawing?"
+          message="clear drawing?"
           onYes={() => {
             controller.clear();
             setConfirmingClear(false);
@@ -106,7 +107,7 @@ export const DrawingCanvas: React.FC<Props> = ({ word, onSubmit, onQuit }) => {
 
       {confirmingQuit && (
         <ConfirmModal
-          message="Stop drawing?"
+          message="stop drawing?"
           onYes={onQuit}
           onNo={() => setConfirmingQuit(false)}
         />

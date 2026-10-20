@@ -14,7 +14,8 @@ interface GamesHubProps {
   onSelectGame: (gameId: string) => void;
 }
 
-const BAR = "pointer-events-none absolute z-[1] w-[80px] bg-[#47c52b]";
+// FlapFlap card art: pipes and birds in the in-game colors (see flapflapConfig)
+const BAR = "pointer-events-none absolute z-[1] w-[80px] rounded-tag bg-action-games";
 const BARS = [
   "h-[180px] left-[10%] -top-[50px]",
   "h-[200px] left-[10%] -bottom-[50px]",
@@ -28,8 +29,8 @@ const BARS = [
   "h-[180px] right-[5%] -top-[50px]",
 ];
 
-const IMG = "pointer-events-none absolute z-[2] size-[80px] rounded-full bg-[rgba(255,215,0,0.8)] object-cover";
-const IMGS = [
+const BIRD = "pointer-events-none absolute z-[2] h-[56px] w-[80px] rounded-full bg-magenta shadow-drop";
+const BIRDS = [
   "left-[3%] top-[35%]",
   "left-[18%] top-[60%]",
   "left-[30%] top-[38%]",
@@ -41,21 +42,22 @@ const IMGS = [
 ];
 
 const GAME_BUTTON =
-  "relative m-0 box-border flex size-full min-h-[60vh] cursor-pointer flex-col items-center justify-center gap-5 overflow-hidden border border-solid text-left [font:inherit] text-[color:inherit] transition-all duration-300 ease-[ease] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-solid focus-visible:outline-[rgba(255,255,255,0.8)] max-[900px]:min-h-0";
-const GAME_BUTTON_GLASS =
-  "rounded-[46px] border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.13)] px-10 py-8 backdrop-blur-[10px] [box-shadow:0px_4px_4px_0px_rgba(0,0,0,0.25),inset_0px_0px_4px_0px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.2)] hover:[transform:translateY(-8px)] hover:[box-shadow:0px_12px_40px_rgba(0,0,0,0.3),inset_0px_0px_4px_0px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.25)] active:[transform:translateY(-4px)] max-[900px]:px-7 max-[900px]:py-6";
+  "relative m-0 box-border flex size-full min-h-[60vh] cursor-pointer flex-col items-center justify-center gap-5 overflow-hidden rounded-glass border border-solid border-white/20 text-left [font:inherit] text-[color:inherit] shadow-glass-card transition-all duration-300 ease-[ease] hover:-translate-y-2 active:-translate-y-1 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-solid focus-visible:outline-white/80 max-[900px]:min-h-0";
+// Glass pill with a sky "level" behind the pipes
+const GAME_BUTTON_FLAPFLAP =
+  "bg-sky/45 px-10 py-8 backdrop-blur-[10px] hover:bg-sky/55 max-[900px]:px-7 max-[900px]:py-6";
+// Glass pill holding a white canvas well, taped down, with the paintbrush on top
 const GAME_BUTTON_DRAWIT =
-  "rounded-[46px] border-[6px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] bg-[#c0c0c0] p-8 [box-shadow:6px_6px_0_#000] hover:bg-[#c8c8c8] hover:[transform:translateY(-4px)] hover:[box-shadow:6px_10px_0_#000] active:[transform:translateY(-4px)] before:absolute before:inset-6 before:z-0 before:rounded-[32px] before:border-4 before:border-solid before:border-[#404040] before:border-t-[#fff] before:border-l-[#fff] before:bg-[#fff] before:content-[''] after:pointer-events-none after:absolute after:right-[10%] after:bottom-[18%] after:z-[1] after:h-[45%] after:w-[45%] after:[transform:rotate(-20deg)] after:bg-[image:var(--paintbrush)] after:bg-contain after:bg-center after:bg-no-repeat after:[filter:drop-shadow(3px_3px_0_rgba(0,0,0,0.25))] after:content-['']";
+  "bg-glass p-8 backdrop-blur-[10px] hover:bg-white/20 before:absolute before:inset-6 before:z-0 before:rounded-[32px] before:bg-white before:shadow-well before:content-[''] after:pointer-events-none after:absolute after:right-[10%] after:bottom-[18%] after:z-[1] after:h-[45%] after:w-[45%] after:rotate-[-20deg] after:bg-[image:var(--paintbrush)] after:bg-contain after:bg-center after:bg-no-repeat after:drop-shadow-[3px_3px_0_rgba(0,0,0,0.25)] after:content-['']";
+const TAPE = "pointer-events-none absolute z-[2] h-[22px] w-[110px] shadow-tape";
+
 export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
   const { transitionTo } = useAppState();
 
   return (
-    <div className="relative box-border flex h-screen w-full flex-col items-center justify-start overflow-hidden bg-[linear-gradient(180deg,#58e7f7_0%,#fefffb_100%)] px-10 pt-[3vh] pb-20 max-[900px]:px-5">
-      {/* Background overlay for gradient effect */}
-      <div className="pointer-events-none absolute top-0 left-0 z-0 h-full w-full bg-[linear-gradient(180deg,rgba(20,5,228,0.93)_0%,#fefffb_100%)]" />
-
-      {/* Title with Pixelify Sans */}
-      <h1 className="relative z-10 m-0 font-pixelify text-[clamp(80px,12vw,150px)] leading-none font-normal tracking-[9px] text-white [text-shadow:0px_8px_4px_rgba(0,0,0,0.31),0px_4px_0px_rgba(211,228,5,0.68),2px_0px_0px_#e405ac] [transform:translateY(-2vh)_rotate(3.41deg)] max-[900px]:[transform:translateY(-3vh)_rotate(3.41deg)]">games</h1>
+    <div className="relative box-border flex h-screen w-full flex-col items-center justify-start overflow-hidden bg-games-gradient px-10 pt-[3vh] pb-20 max-[900px]:px-5">
+      {/* Title with Pixelify Sans (the one games-only font) */}
+      <h1 className="relative z-10 m-0 font-pixelify text-[clamp(80px,12vw,150px)] leading-none font-normal tracking-[9px] text-white text-shadow-games [transform:translateY(-2vh)_rotate(3.41deg)] max-[900px]:[transform:translateY(-3vh)_rotate(3.41deg)]">games</h1>
 
       {/* Games container - vertical stack */}
       <div className="relative z-10 mt-[2vh] mb-0 grid w-[min(92vw,1400px)] max-w-[calc(100vw-80px)] flex-[1_1_auto] grid-cols-[1fr_1fr] content-stretch gap-8 max-[900px]:w-[min(92vw,720px)] max-[900px]:max-w-[calc(100vw-40px)] max-[900px]:grid-cols-[1fr] max-[900px]:auto-rows-[1fr] max-[900px]:gap-5">
@@ -65,34 +67,40 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
             <button
               key={game.id}
               data-game-id={game.id}
-              className={`${GAME_BUTTON} ${isDrawIt ? GAME_BUTTON_DRAWIT : GAME_BUTTON_GLASS}`}
+              className={`${GAME_BUTTON} ${isDrawIt ? GAME_BUTTON_DRAWIT : GAME_BUTTON_FLAPFLAP}`}
               style={isDrawIt ? ({ "--paintbrush": `url(${paintbrush})` } as React.CSSProperties) : undefined}
               onClick={() => onSelectGame(game.id)}
             >
-              {!isDrawIt && (
+              {isDrawIt ? (
                 <>
-                  {/* Decorative green bars */}
+                  {/* Tape holding the canvas down */}
+                  <div className={`${TAPE} top-3 left-[12%] rotate-[-6deg] bg-tape/90`} aria-hidden="true" />
+                  <div className={`${TAPE} top-3 right-[12%] rotate-[5deg] bg-tape-alt/90`} aria-hidden="true" />
+                </>
+              ) : (
+                <>
+                  {/* Decorative pipes */}
                   {BARS.map((pos) => (
                     <div key={pos} className={`${BAR} ${pos}`} />
                   ))}
-                  {/* Decorative circular elements */}
-                  {IMGS.map((pos) => (
-                    <div key={pos} className={`${IMG} ${pos}`} aria-hidden="true" />
+                  {/* Decorative birds */}
+                  {BIRDS.map((pos) => (
+                    <div key={pos} className={`${BIRD} ${pos}`} aria-hidden="true" />
                   ))}
                 </>
               )}
 
               {/* Game content */}
               <h2
-                className={`relative z-10 m-0 font-jersey text-[clamp(60px,8vw,100px)] leading-none font-normal tracking-[16px] ${
-                  isDrawIt ? "text-[#111] [text-shadow:4px_4px_0_rgba(0,0,0,0.15)]" : "text-white [text-shadow:0px_4px_16px_rgba(0,0,0,0.4)]"
+                className={`relative z-10 m-0 font-jersey text-[clamp(60px,8vw,100px)] leading-none font-normal tracking-brand lowercase ${
+                  isDrawIt ? "text-ink" : "text-white text-shadow-pop"
                 }`}
               >
                 {game.name}
               </h2>
               <p
-                className={`relative z-10 m-0 font-jersey text-[clamp(24px,3vw,36px)] leading-none font-normal tracking-[6px] ${
-                  isDrawIt ? "text-[#333]" : "text-white [text-shadow:0px_2px_8px_rgba(0,0,0,0.3)]"
+                className={`relative z-10 m-0 font-averia text-[clamp(24px,3vw,35px)] leading-none font-normal ${
+                  isDrawIt ? "text-ink-soft" : "text-white text-shadow-pop"
                 }`}
               >
                 {game.description}

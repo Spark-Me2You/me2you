@@ -31,9 +31,10 @@ export const FLAPFLAP_CONFIG = {
   // Game states
   COUNTDOWN_SECONDS: 3,
 
-  // Colors
-  SKY_COLOR: 0x87ceeb,
-  GROUND_COLOR: 0x8b4513,
-  PIPE_COLOR: 0x228b22,
-  BIRD_COLOR: 0xffd700,
+  // Colors: Pixi can't read CSS tokens, so these mirror docs/BRAND_BOOK.md
+  SKY_COLOR: 0x58e7f7, // sky
+  GROUND_COLOR: 0xd3e405, // lime
+  PIPE_COLOR: 0x7105e4, // purple (action-games)
+  BIRD_COLOR: 0xe405ac, // magenta
+  BEAK_COLOR: 0xe44805, // orange
 } as const;
