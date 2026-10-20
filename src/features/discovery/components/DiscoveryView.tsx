@@ -241,7 +241,7 @@ export const DiscoveryView: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 m-0 grid h-screen w-screen grid-cols-[1fr_1fr] overflow-hidden bg-[linear-gradient(180deg,#58e7f7_0%,#fefffb_100%)]">
+    <div className="fixed inset-0 m-0 grid h-screen w-screen grid-cols-[1fr_1fr] overflow-hidden bg-page-gradient">
       {/* Left side: Camera feed */}
       <div className="relative flex items-center justify-center bg-white">
         <CameraView onGestureDetected={setDetectedGesture} />
@@ -275,7 +275,7 @@ export const DiscoveryView: React.FC = () => {
 
       <button
         type="button"
-        className="fixed top-4 right-4 z-[100] flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-0 bg-[#d3e405] font-jersey text-[40px] leading-none text-black shadow-[0_4px_4px_rgba(0,0,0,0.25),inset_0_0_4px_rgba(0,0,0,0.25),inset_1px_1px_20px_6px_rgba(255,255,255,0.35)] [transition:transform_120ms_ease,background-color_120ms_ease] hover:bg-[#b8c704] hover:[transform:scale(1.06)] active:[transform:scale(0.96)]"
+        className="fixed top-4 right-4 z-[100] flex h-16 w-16 cursor-pointer items-center justify-center rounded-full border-0 bg-action-help font-jersey text-[40px] leading-none text-ink shadow-[0_4px_4px_rgba(0,0,0,0.25),inset_0_0_4px_rgba(0,0,0,0.25),inset_1px_1px_20px_6px_rgba(255,255,255,0.35)] [transition:transform_120ms_ease,background-color_120ms_ease] hover:bg-lime-dark hover:[transform:scale(1.06)] active:[transform:scale(0.96)]"
         onClick={() => setShowHelp(true)}
         aria-label="open help"
       >
