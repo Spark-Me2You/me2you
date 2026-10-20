@@ -245,7 +245,28 @@ cursor fires synthetic mouse events, so hover feedback driven by React state (se
 
 ---
 
-## 10. Migration status
+## 10. Building a new page or feature
+
+Go through this before writing any styles, and again before opening the PR.
+
+1. **Pick the context.** Kiosk (1920×1080, CV cursor, read from across the room) or mobile
+   (single column, touch)? Follow the matching layout rules in §7.
+2. **Pick the hue.** If the page belongs to a Home destination, use its `action-*` role for
+   its key surfaces. New top-level destination? Propose a role and add it to §2.
+3. **Start from existing pieces.** Reuse the components in §6 (`ExitButton`, `PinnedRegistrationQR`,
+   `HelpPopup`...) and the motifs in §5 before building new ones.
+4. **Use tokens only.** No hex or `rgba()` in `className` or `style` when a token exists. Missing a
+   value? Add it to `theme.css` and to the tables here in the same PR (§9).
+5. **Type.** Jersey for display, Averia for body, mono for user-typed text. Use `tracking-brand`
+   on headings and buttons, scale steps from §3, and lowercase copy in the brand voice (§1).
+6. **Kiosk inputs.** Hit targets large enough for the hand cursor. Hover feedback through React
+   state where it matters (§8). Every screen has an exit and a QR tab.
+7. **Check it.** Look at it on the real screen size (kiosk at 1920×1080 and scaled down, mobile at
+   ~390px) and put screenshots in the PR.
+
+---
+
+## 11. Migration status
 
 Migrated onto these tokens: Home (`IdleScreen`, `InfoOverlay`), Discovery (`DiscoveryView`,
 `PoseOverlay`, `HelpPopup`, `CameraView`, `RandomImageCard`, `BorderProgress`), the profile

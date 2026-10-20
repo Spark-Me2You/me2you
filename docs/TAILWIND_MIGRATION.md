@@ -1,5 +1,7 @@
 # Tailwind Migration Plan
 
+> **Historical.** This records how the repo moved from CSS Modules to Tailwind; the gotchas below still apply. For how new UI should look and which tokens to use, follow [`BRAND_BOOK.md`](BRAND_BOOK.md). The `text-display-*` / `text-body-*` scale tokens added there don't set a line-height, so they are safe to use despite the `text-[Npx]` rule below.
+
 Migrating every `*.module.css` file (58 files, ~7.5k lines) plus `src/index.css` to **Tailwind CSS v4**, one page/feature at a time. Each step is a separate commit (and ideally a separate PR into `dev`) so it can be verified and reverted in isolation.
 
 Branch: `style/tailwind-migration` (branched from `dev`). Commit format per `GIT_CONVENTIONS.md`, e.g. `style: migrate UserLandingPage to Tailwind`.

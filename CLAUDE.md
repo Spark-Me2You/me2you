@@ -48,6 +48,8 @@ Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/
 
 The repo is styled with **Tailwind CSS v4** (via `@tailwindcss/vite`), migrated from CSS Modules. History and gotchas: `docs/TAILWIND_MIGRATION.md`.
 
+**Before styling any new page, feature, component or game UI, read `docs/BRAND_BOOK.md`** and build from its tokens, motifs and existing components (see its "Building a new page or feature" checklist). If a design needs a value the book doesn't cover, add a token to `theme.css` and document it in the book in the same PR instead of hard-coding it.
+
 - Follow `docs/BRAND_BOOK.md` (palette, roles, type, radii, shadows, motifs, voice). Design tokens (colors, fonts, spacing, keyframes) live in `@theme` in `src/styles/theme.css`, not in `src/shared/theme/*.ts`.
 - Use tokens, not raw hex/rgba: semantic roles first (`bg-action-discover`, `bg-tape`, `bg-scrim`), palette second (`bg-orange`), opacity modifiers for translucency (`bg-magenta/93`). Brand headings use `tracking-brand` (0.17em) and lowercase copy.
 - Components use Tailwind utilities. Do not create `.module.css` files.
@@ -128,7 +130,7 @@ BrowserRouter
 
 ### Games (`src/features/games/`)
 
-Games are registered in `config/gamesConfig.ts` via `GAMES_REGISTRY` — add new games there. Shared rendering pattern: a PixiJS `Application` managed by `usePixiApp`, a game-loop hook (`useGameLoop`), and a self-contained engine class under `<game>/game/`.
+Games are registered in `config/gamesConfig.ts` via `GAMES_REGISTRY` — add new games there. Style a game's DOM UI (menus, HUD, results) per `docs/BRAND_BOOK.md`; Pixi drawing mirrors brand hex values (brand book §9, "Rules for contributors"). Shared rendering pattern: a PixiJS `Application` managed by `usePixiApp`, a game-loop hook (`useGameLoop`), and a self-contained engine class under `<game>/game/`.
 
 | Game | Input mechanic | Engine |
 |---|---|---|
