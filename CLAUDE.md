@@ -17,7 +17,7 @@ CI (`.github/workflows/ci.yml`) runs `npm run build` (TypeScript errors surface 
 
 ### Unit tests
 
-Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`.
+Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/CONFIG.md`, `docs/HUB.md`, `.github/workflows/CI-CD.md`.
 
 ### Supabase
 
@@ -109,7 +109,7 @@ BrowserRouter
 | Feature | Description |
 |---|---|
 | `discovery/` | Kiosk mode: gesture-based random profile reveal |
-| `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
+| `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`) across five rooms joined by doors, with walker collision and a paired-interaction scheduler (see `docs/HUB.md`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
 | `games/` | Kiosk mode: mini-games (see Games section below) |
 | `registration/` | Mobile: new user sign-up with QR-code entry; `faceCropService.ts` runs MediaPipe face detection to produce cropped avatar images |
 | `profile-editor/` | Mobile: edit profile, retake photo, manage accessories; `accessoryService.ts`, `profileService.ts` |
