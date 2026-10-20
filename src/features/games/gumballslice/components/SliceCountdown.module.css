@@ -12,7 +12,7 @@
 
 .number {
   font-family: var(--gs-font);
-  font-size: 320px;
+  font-size: clamp(160px, 38vh, 320px);
   line-height: 1;
   color: var(--gs-gold);
   text-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
@@ -26,73 +26,9 @@
   100% { transform: scale(1);   opacity: 1; }
 }
 
-/* ---- slash demo ---- */
-
-.demo {
-  position: relative;
-  width: 360px;
-  height: 160px;
-}
-
-.candy {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 110px;
-  height: 110px;
-  margin: -55px 0 0 -55px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 32% 30%, var(--gs-white) 0 12%, var(--gs-magenta) 13%);
-  border: 6px solid var(--gs-white);
-  box-sizing: border-box;
-  animation-duration: var(--step-ms);
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
-}
-
-.left {
-  clip-path: inset(0 50% 0 0);
-  animation-name: splitLeft;
-}
-
-.right {
-  clip-path: inset(0 0 0 50%);
-  animation-name: splitRight;
-}
-
-@keyframes splitLeft {
-  0%, 45% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100%    { transform: translate(-70px, 40px) rotate(-25deg); opacity: 0; }
-}
-
-@keyframes splitRight {
-  0%, 45% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100%    { transform: translate(70px, 40px) rotate(25deg); opacity: 0; }
-}
-
-.slash {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 220px;
-  height: 14px;
-  margin: -7px 0 0 -110px;
-  border-radius: 7px;
-  background: linear-gradient(90deg, transparent, var(--gs-accent) 60%, var(--gs-white));
-  box-shadow: 0 0 18px var(--gs-accent);
-  animation: slash var(--step-ms) ease-in both;
-}
-
-@keyframes slash {
-  0%   { transform: rotate(80deg) translateX(-160px); opacity: 0; }
-  15%  { opacity: 1; }
-  55%  { transform: rotate(80deg) translateX(160px); opacity: 1; }
-  100% { transform: rotate(80deg) translateX(200px); opacity: 0; }
-}
-
 .caption {
   font-family: var(--gs-font);
-  font-size: 56px;
+  font-size: clamp(32px, 5.5vh, 56px);
   letter-spacing: 4px;
   color: var(--gs-white);
   text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);

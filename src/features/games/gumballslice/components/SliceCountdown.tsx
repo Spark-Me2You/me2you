@@ -1,8 +1,7 @@
 /**
  * Slice Countdown
- * 3-2-1-GO over the live canvas, with a short demo of a slash cutting a
- * gumball on every beat. The player's own trail is already live underneath,
- * so they can practise.
+ * 3-2-1-GO over the live canvas. The player's own trail is already live
+ * underneath, so they can practise.
  */
 
 import React, { useEffect, useState } from "react";
@@ -28,17 +27,9 @@ export const SliceCountdown: React.FC<Props> = ({ onDone }) => {
   if (idx >= C.COUNTDOWN_STEPS.length) return null;
 
   return (
-    <div
-      className={styles.container}
-      style={{ ["--step-ms" as string]: `${C.COUNTDOWN_STEP_MS}ms` }}
-    >
+    <div className={styles.container}>
       <div key={idx} className={styles.number}>
         {C.COUNTDOWN_STEPS[idx]}
-      </div>
-      <div key={`demo-${idx}`} className={styles.demo} aria-hidden="true">
-        <div className={`${styles.candy} ${styles.left}`} />
-        <div className={`${styles.candy} ${styles.right}`} />
-        <div className={styles.slash} />
       </div>
       <p className={styles.caption}>swipe fast through the candy!</p>
     </div>

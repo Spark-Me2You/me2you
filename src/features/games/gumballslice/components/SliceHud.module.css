@@ -23,13 +23,13 @@
 }
 
 .label {
-  font-size: 32px;
+  font-size: clamp(20px, 3vh, 32px);
   letter-spacing: 4px;
   opacity: 0.8;
 }
 
 .value {
-  font-size: 96px;
+  font-size: clamp(52px, 9vh, 96px);
   line-height: 0.9;
   letter-spacing: 4px;
   color: var(--gs-gold);
@@ -53,7 +53,7 @@
 }
 
 .goalText {
-  font-size: 48px;
+  font-size: clamp(28px, 4.5vh, 48px);
   letter-spacing: 4px;
   text-align: center;
 }
@@ -88,7 +88,7 @@
   right: 20px;
   min-width: 120px;
   text-align: center;
-  font-size: 96px;
+  font-size: clamp(52px, 9vh, 96px);
   line-height: 1;
   letter-spacing: 4px;
   padding: 12px 28px;
@@ -111,10 +111,10 @@
 
 .combo {
   position: absolute;
-  top: 190px;
+  top: clamp(120px, 19vh, 190px);
   left: 50%;
   transform: translateX(-50%);
-  font-size: 72px;
+  font-size: clamp(40px, 7vh, 72px);
   letter-spacing: 6px;
   color: var(--gs-lime);
   text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
@@ -142,7 +142,7 @@
 }
 
 .missingTitle {
-  font-size: 120px;
+  font-size: clamp(64px, 12vh, 120px);
   line-height: 1;
   letter-spacing: 6px;
   color: var(--gs-orange);
@@ -150,7 +150,7 @@
 }
 
 .missingText {
-  font-size: 48px;
+  font-size: clamp(28px, 4.5vh, 48px);
   letter-spacing: 4px;
   margin: 8px 0 0;
 }

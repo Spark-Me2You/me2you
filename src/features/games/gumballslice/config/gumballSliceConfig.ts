@@ -42,9 +42,14 @@ export const GUMBALL_SLICE_CONFIG = {
   CANDY_SPEED_MULTIPLIER: envNumber("VITE_GUMBALL_CANDY_SPEED", 1),
   CANDY_RADIUS: 0.08,
   GRAVITY: 1.5, // screen heights / s²
-  APEX_MIN: 0.45, // apex height above the bottom edge
-  APEX_MAX: 0.85,
-  LAUNCH_X_MARGIN: 0.15, // fraction of screen width kept clear at each side
+  // Reach zone: every arc peaks inside this box (fractions of the screen,
+  // y measured from the top). Keeps items out of the hard-to-reach corners,
+  // from under the HUD, and off the very bottom.
+  REACH_X_MIN: 0.25,
+  REACH_X_MAX: 0.75,
+  REACH_Y_MIN: 0.3, // highest an item's centre peaks
+  REACH_Y_MAX: 0.55, // lowest an item's centre peaks
+  LAUNCH_X_SPREAD: 0.15, // items enter up to this far left/right of their peak
 
   // Waves (grow in count and speed)
   FIRST_WAVE_SIZE: 1,
@@ -98,9 +103,6 @@ export const GUMBALL_SLICE_CONFIG = {
 
   // Tracking / player lock
   SAMPLE_STALE_MS: 200, // a sample older than this means the hand is gone
-  START_HOLD_MS: 2000,
-  START_DROPOUT_GRACE_MS: 300,
-  START_MIN_HAND_SCALE: 0.045, // nearest player only; bystanders' hands read smaller
   LOCK_MIN_SCALE_RATIO: 0.55, // reject hands much smaller than the locked player's
   LOCK_MAX_JUMP: 0.3, // reject wrist jumps larger than this (normalized camera units)…
   LOCK_JUMP_WINDOW_MS: 500, // …within this window since the last accepted sample
@@ -144,15 +146,15 @@ export type GumballSliceConfig = typeof GUMBALL_SLICE_CONFIG;
  */
 export const GUMBALL_SLICE_CSS_VARS = {
   "--gs-font": typography.font.jersey,
-  "--gs-bg-top": colors.gameNight,
-  "--gs-bg-bottom": colors.gameNightDeep,
   "--gs-accent": colors.gradient.start,
   "--gs-magenta": colors.magenta,
   "--gs-gold": colors.gold,
   "--gs-lime": colors.btnYellowGreen,
   "--gs-orange": colors.btnOrange,
-  "--gs-purple": colors.btnPurple,
   "--gs-white": colors.white,
-  "--gs-black": colors.black,
   "--gs-glass": colors.glass,
+  "--gs-wood-light": colors.woodLight,
+  "--gs-wood-mid": colors.woodMid,
+  "--gs-wood-dark": colors.woodDark,
+  "--gs-wood-seam": colors.woodSeam,
 } as CSSProperties;

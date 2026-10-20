@@ -112,14 +112,11 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     sample.frameId++;
     if (detectedLandmarks) {
       const tip = toScreen(detectedLandmarks[8]);
-      sample.pointing = isPointingPose(detectedLandmarks);
       sample.tipX = tip.x;
       sample.tipY = tip.y;
       sample.handScale = landmarkDistance(detectedLandmarks[0], detectedLandmarks[9]);
       sample.wristX = detectedLandmarks[0].x;
       sample.wristY = detectedLandmarks[0].y;
-    } else {
-      sample.pointing = false;
     }
 
     if (!results.landmarks || results.landmarks.length === 0) {

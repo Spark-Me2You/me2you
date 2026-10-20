@@ -7,7 +7,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Assets, type Texture } from "pixi.js";
 import broccoliImg from "../../../../assets/Broccoli_PNG_Picture.png";
-import { useCvCursorEnabled, type HandTrackSample } from "@/core/cv/cursor";
+import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import type { GameProps } from "../../types/game";
 import { GUMBALL_SLICE_CONFIG, GUMBALL_SLICE_CSS_VARS } from "../config/gumballSliceConfig";
@@ -105,11 +105,16 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
 
   useEffect(() => () => setCursorVariant("default"), [setCursorVariant]);
 
-  const handleStart = useCallback((hand: HandTrackSample) => {
-    engineRef.current?.lockPlayer(hand);
+  const handleReady = useCallback(() => {
+    // Lock onto the hand that just tapped Ready (if it's still in view).
+    const hand = handTrackRef.current;
+    const fresh =
+      hand.detected &&
+      performance.now() - hand.timestamp <= GUMBALL_SLICE_CONFIG.SAMPLE_STALE_MS;
+    engineRef.current?.lockPlayer(fresh ? { ...hand } : null);
     sessionRef.current = crypto.randomUUID();
     setScreen("COUNTDOWN");
-  }, []);
+  }, [handTrackRef]);
 
   const handleCountdownDone = useCallback(() => {
     engineRef.current?.startRound();
@@ -123,10 +128,10 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   }, []);
 
   return (
-    <div className={styles.container} style={GUMBALL_SLICE_CSS_VARS}>
+    <div className={`${styles.container} ${styles.wood}`} style={GUMBALL_SLICE_CSS_VARS}>
       <div ref={containerRef} className={styles.canvas} />
 
-      {screen === "START" && <StartScreen onStart={handleStart} onBack={onExit} />}
+      {screen === "START" && <StartScreen onReady={handleReady} onBack={onExit} />}
 
       {screen === "COUNTDOWN" && <SliceCountdown onDone={handleCountdownDone} />}
 

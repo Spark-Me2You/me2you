@@ -26,10 +26,12 @@ export const colors = {
   glass: 'rgba(255, 255, 255, 0.13)',
 
   // --- Games ---
-  gameNight:     '#1a1a2e',     // dark game backdrop (top), shared by FlapFlap and Gumball Slice
-  gameNightDeep: '#16213e',     // dark game backdrop (bottom)
   gold:          '#ffd700',     // scores, trophies, golden candy
   leafGreen:     '#47c52b',     // games-hub green; broccoli
+  woodLight:     '#a0673a',     // Gumball Slice wooden table: plank highlight
+  woodMid:       '#7a4a26',     // plank body
+  woodDark:      '#4e2c14',     // grain + plank shadow
+  woodSeam:      '#2e1909',     // gaps between planks
 
   // --- State ---
   error: '#b0003a',

@@ -2,7 +2,38 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--gs-bg-top) 0%, var(--gs-bg-bottom) 100%);
+}
+
+/*
+ * Wooden table: vertical planks with seams, fine grain and a dark vignette
+ * (keeps the bright slash trail and candy readable on top).
+ */
+.wood {
+  --plank: clamp(140px, 14vw, 220px);
+  background-color: var(--gs-wood-mid);
+  background-image:
+    radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.5) 100%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(var(--plank) - 5px),
+      var(--gs-wood-seam) calc(var(--plank) - 5px) var(--plank)
+    ),
+    repeating-linear-gradient(
+      89deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--gs-wood-dark) 35%, transparent) 7px 9px,
+      transparent 9px 23px,
+      color-mix(in srgb, var(--gs-wood-dark) 22%, transparent) 23px 24px,
+      transparent 24px 41px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--gs-wood-mid) 0,
+      var(--gs-wood-light) calc(var(--plank) * 0.3),
+      var(--gs-wood-mid) calc(var(--plank) * 0.55),
+      var(--gs-wood-dark) calc(var(--plank) * 0.85),
+      var(--gs-wood-mid) var(--plank)
+    );
 }
 
 .canvas {

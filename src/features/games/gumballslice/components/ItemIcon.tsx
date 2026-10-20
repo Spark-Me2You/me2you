@@ -12,21 +12,20 @@ type IconKind = "gumball" | "golden" | "broccoli";
 
 interface Props {
   kind: IconKind;
-  size: number;
+  className?: string;
 }
 
-export const ItemIcon: React.FC<Props> = ({ kind, size }) =>
+export const ItemIcon: React.FC<Props> = ({ kind, className }) =>
   kind === "broccoli" ? (
     <img
       src={broccoliImg}
       alt=""
       aria-hidden="true"
-      width={size}
-      height={size}
+      className={className}
       style={{ objectFit: "contain", transform: `rotate(${C.BROCCOLI_ROTATION_DEG}deg)` }}
     />
   ) : (
-    <svg width={size} height={size} viewBox="-50 -50 100 100" aria-hidden="true">
+    <svg className={className} viewBox="-50 -50 100 100" aria-hidden="true">
       {kind === "gumball" && (
         <>
           <circle r="34" fill={C.CANDY_COLORS[0]} stroke={C.OUTLINE_GOOD} strokeWidth="4" />

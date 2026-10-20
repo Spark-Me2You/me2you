@@ -19,8 +19,6 @@ export interface SharedCursorState {
 export interface HandTrackSample {
   /** A hand (any pose) was detected in this inference */
   detected: boolean;
-  /** Hand is in the cursor's pointing pose */
-  pointing: boolean;
   /** Index fingertip in screen px (mirrored + remapped like the cursor, no EMA) */
   tipX: number;
   tipY: number;
@@ -60,7 +58,6 @@ const defaultCursorState: SharedCursorState = {
 
 const createHandTrackSample = (): HandTrackSample => ({
   detected: false,
-  pointing: false,
   tipX: 0,
   tipY: 0,
   handScale: 0,

@@ -16,6 +16,7 @@ import { ComboTracker } from "../logic/ComboTracker";
 import { PlayerLock } from "../logic/PlayerLock";
 import { SlashTrail, type TrailPoint } from "../logic/SlashTrail";
 import { segmentHitsCircle, segmentSpeed } from "../logic/sliceGeometry";
+import { planArc } from "../logic/trajectory";
 import { isBadItem, isSuspenseWave, pickItemKind, pickSuspenseKind, planWave } from "../logic/waves";
 import type { HudSnapshot, ItemKind, RoundEndReason, RoundStats } from "../types/gumballSlice";
 import { buildArt, destroyArt, type ArtSet, type ItemArt } from "./candyArt";
@@ -111,6 +112,7 @@ export class GumballSliceEngine {
   private readonly combo: ComboTracker;
   private readonly lock: PlayerLock;
   private locked = false;
+  private lockOnNextHand = false;
 
   // Latest accepted fingertip sample (raw)
   private lastFrameId = -1;
@@ -202,10 +204,14 @@ export class GumballSliceEngine {
     if (!visible) this.trail.clear();
   }
 
-  /** Lock input to the hand that started the round. */
-  lockPlayer(hand: HandTrackSample): void {
-    this.lock.lock(hand);
-    this.locked = true;
+  /**
+   * Lock input to the hand that started the round (the one that tapped Ready).
+   * With no hand in view yet, the first hand seen is locked instead.
+   */
+  lockPlayer(hand: HandTrackSample | null): void {
+    this.locked = hand !== null;
+    this.lockOnNextHand = hand === null;
+    if (hand) this.lock.lock(hand);
   }
 
   startRound(): void {
@@ -227,6 +233,7 @@ export class GumballSliceEngine {
   reset(): void {
     this.state = "IDLE";
     this.locked = false;
+    this.lockOnNextHand = false;
     this.playerMissing = false;
     this.elapsed = 0;
     this.combo.end();
@@ -268,6 +275,11 @@ export class GumballSliceEngine {
 
     if (sample.frameId !== this.lastFrameId) {
       this.lastFrameId = sample.frameId;
+      if (this.lockOnNextHand && sample.detected) {
+        this.lock.lock(sample);
+        this.locked = true;
+        this.lockOnNextHand = false;
+      }
       const accepted =
         sample.detected &&
         now - sample.timestamp <= c.SAMPLE_STALE_MS &&
@@ -342,8 +354,8 @@ export class GumballSliceEngine {
     }
 
     if (this.revealAt >= 0 && this.elapsed >= this.revealAt) {
-      // High, slow-motion arc so the mystery item hangs in the air.
-      this.launch(pickSuspenseKind(c), c.SUSPENSE_SLOWMO, this.suspenseX, c.APEX_MAX);
+      // Slow-motion, straight up from the glow, so the mystery item hangs in the air.
+      this.launch(pickSuspenseKind(c), c.SUSPENSE_SLOWMO, this.suspenseX);
       this.teaseAt = -1;
       this.revealAt = -1;
     }
@@ -429,11 +441,11 @@ export class GumballSliceEngine {
   // Items & slicing
   // ---------------------------------------------------------------------------
 
-  private launch(kind: ItemKind, waveSpeed: number, x?: number, apexFraction?: number): void {
+  /** Launch an item; with `straightUpX` it rises vertically from that point. */
+  private launch(kind: ItemKind, waveSpeed: number, straightUpX?: number): void {
     const item = this.items.find((i) => !i.active);
     if (!item) return;
     const c = this.config;
-    const W = this.width;
     const H = this.height;
 
     const variants = this.art.variants[kind];
@@ -441,14 +453,13 @@ export class GumballSliceEngine {
     item.kind = kind;
     item.view.show(item.art.whole);
 
+    const arc = planArc(c, this.width, H, Math.random, straightUpX);
     const startY = H + this.radius * 1.4;
-    const apex = H * (apexFraction ?? c.APEX_MIN + Math.random() * (c.APEX_MAX - c.APEX_MIN));
-    item.x = x ?? W * (c.LAUNCH_X_MARGIN + Math.random() * (1 - 2 * c.LAUNCH_X_MARGIN));
+    item.x = arc.launchX;
     item.y = startY;
-    item.vy = -Math.sqrt(2 * this.gravity * (apex + this.radius * 1.4));
-    // Land somewhere in the middle of the screen so items never fly off the sides.
-    const landX = W * (0.2 + Math.random() * 0.6);
-    item.vx = (landX - item.x) / ((2 * -item.vy) / this.gravity);
+    item.vy = -Math.sqrt(2 * this.gravity * (startY - arc.apexY));
+    // Reach the planned peak exactly at the top of the arc.
+    item.vx = (arc.apexX - arc.launchX) / (-item.vy / this.gravity);
     item.timeScale = waveSpeed * this.speedScale;
     if (isBadItem(kind)) {
       // Broccoli stays upright-ish so it's recognisable at a glance.
