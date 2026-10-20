@@ -62,11 +62,11 @@ export const SplitCameraPanel: React.FC<SplitCameraPanelProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[16px] border-4 border-solid border-[rgba(255,255,255,0.3)] bg-black shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-tag border-4 border-solid border-white/40 bg-ink shadow-drop">
         {error ? (
-          <div className="flex h-full w-full items-center justify-center text-[14px] text-white">Camera unavailable</div>
+          <div className="flex h-full w-full items-center justify-center font-averia text-[14px] text-white">camera unavailable</div>
         ) : isLoading ? (
-          <div className="flex h-full w-full items-center justify-center text-[14px] text-white">Loading camera...</div>
+          <div className="flex h-full w-full items-center justify-center font-averia text-[14px] text-white">loading camera...</div>
         ) : (
           <video
             ref={videoRef}
@@ -77,7 +77,7 @@ export const SplitCameraPanel: React.FC<SplitCameraPanelProps> = ({
           />
         )}
 
-        <div className="absolute top-0 bottom-0 left-1/2 w-1 -translate-x-1/2 bg-[rgba(255,255,255,0.85)] shadow-[0_0_8px_rgba(0,0,0,0.6)]" />
+        <div className="absolute top-0 bottom-0 left-1/2 w-1 -translate-x-1/2 bg-white/85 shadow-drop" />
 
         {PLAYERS.map((id) => {
           const color = FLAPFLAP_2P_CONFIG.PLAYERS[id].CSS_COLOR;
@@ -89,15 +89,15 @@ export const SplitCameraPanel: React.FC<SplitCameraPanelProps> = ({
                 borderColor: present[id] ? color : "transparent",
               }}
             >
-              <span className="font-jersey tracking-[2px] [text-shadow:0_0_4px_#000,0_0_8px_#000] text-[40px] leading-none" style={{ color }}>
-                {id}
+              <span className="font-jersey tracking-brand [text-shadow:0_0_4px_#000,0_0_8px_#000] text-[40px] leading-none" style={{ color }}>
+                {id.toLowerCase()}
               </span>
-              <span className="font-jersey tracking-[2px] [text-shadow:0_0_4px_#000,0_0_8px_#000] text-[26px] text-white">{getStatus(id)}</span>
+              <span className="font-jersey tracking-brand [text-shadow:0_0_4px_#000,0_0_8px_#000] text-[26px] text-white">{getStatus(id)}</span>
             </div>
           );
         })}
       </div>
-      <p className="m-0 text-center font-jersey text-[24px] tracking-[2px] text-[rgba(255,255,255,0.7)]">stand on your side & flap your arms</p>
+      <p className="m-0 text-center font-averia text-body-lg text-white/80">stand on your side & flap your arms</p>
     </div>
   );
 };

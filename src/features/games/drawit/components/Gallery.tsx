@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/core/auth";
 import { fetchOrgDrawings, type DrawingEntry } from "@/core/supabase/drawingsGallery";
+import { BTN_MD, BTN_SECONDARY } from "../../components/gameUi";
+
+const MESSAGE = "font-averia text-body-xl text-white/85";
+// Polaroids on the wall sit a little crooked
+const TILTS = ["rotate-[-2deg]", "rotate-[1.5deg]", "rotate-[-1deg]", "rotate-[2deg]"];
 
 interface Props {
   onBack: () => void;
@@ -30,26 +35,30 @@ export const Gallery: React.FC<Props> = ({ onBack }) => {
   }, [kioskOrgId]);
 
   return (
-    <div className="box-border h-screen w-full overflow-y-auto bg-[linear-gradient(180deg,#e6f2ff_0%,#c4dff5_100%)] p-10 font-jersey">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="m-0 text-[52px] tracking-[6px] text-[#036]">Community Gallery</h2>
-        <button className="cursor-pointer rounded-[8px] border-2 border-solid border-[#a7d1f5] bg-white px-7 py-[10px] font-jersey text-[26px] tracking-[3px] text-[#036]" onClick={onBack}>
-          Back
+    <div className="box-border h-screen w-full overflow-y-auto bg-games-gradient p-10 font-jersey">
+      <div className="mb-10 flex items-center justify-between">
+        <h2 className="m-0 font-jersey text-display-xl leading-none tracking-brand text-white lowercase text-shadow-pop">community gallery</h2>
+        <button className={`${BTN_MD} ${BTN_SECONDARY}`} onClick={onBack}>
+          back
         </button>
       </div>
 
-      {error && <p className="text-[28px] tracking-[2px] text-[#a00]">{error}</p>}
-      {!error && items === null && <p className="text-[28px] tracking-[2px] text-[#036]">Loading...</p>}
+      {error && <p className={MESSAGE}>{error}</p>}
+      {!error && items === null && <p className={MESSAGE}>loading...</p>}
       {items && items.length === 0 && (
-        <p className="text-[28px] tracking-[2px] text-[#036]">No drawings claimed yet. Be the first!</p>
+        <p className={MESSAGE}>no drawings claimed yet. be the first!</p>
       )}
 
       {items && items.length > 0 && (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
-          {items.map((it) => (
-            <div key={it.id} className="rounded-[6px] border border-solid border-[#a7d1f5] bg-white p-[10px] shadow-[0_2px_6px_rgba(0,0,0,0.1)] [transition:transform_150ms_ease,box-shadow_150ms_ease] hover:backdrop-blur-[4px] hover:[transform:scale(1.03)] hover:shadow-[0_4px_14px_rgba(0,80,160,0.25)]">
-              <img src={it.imageUrl} alt={it.prompt ?? "drawing"} className="aspect-[16/10] w-full border border-solid border-[#a7d1f5] bg-white object-cover" />
-              <p className="m-0 mt-2 text-center text-[22px] tracking-[2px] text-[#036]">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-6 gap-y-10">
+          {items.map((it, i) => (
+            <div
+              key={it.id}
+              className={`relative rounded-[6px] bg-polaroid p-[10px] pb-3 shadow-note transition-[scale] duration-150 ease-out hover:scale-103 ${TILTS[i % TILTS.length]}`}
+            >
+              <div className={`pointer-events-none absolute -top-3 left-1/2 h-[22px] w-[90px] -translate-x-1/2 shadow-tape ${i % 2 ? "rotate-[4deg] bg-tape-alt/80" : "rotate-[-4deg] bg-tape/80"}`} aria-hidden="true" />
+              <img src={it.imageUrl} alt={it.prompt ?? "drawing"} className="aspect-[16/10] w-full bg-white object-cover shadow-well" />
+              <p className="m-0 mt-2 text-center text-[22px] tracking-brand text-ink">
                 {it.prompt ?? "untitled"}
                 {it.ownerName ? ` — ${it.ownerName}` : ""}
               </p>

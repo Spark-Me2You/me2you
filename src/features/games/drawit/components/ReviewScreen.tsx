@@ -5,6 +5,9 @@ import type { ClaimPayload } from "@/features/claim";
 import { uploadTempDrawing } from "../utils/gallerySupabase";
 import nextButton from "../../../../assets/next_button.svg";
 import { PinnedRegistrationQR } from "@/features/kiosk/components/PinnedRegistrationQR";
+import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY } from "../../components/gameUi";
+
+const MODAL_TEXT = "m-0 max-w-[360px] text-center font-averia text-[22px] leading-[1.2] text-white";
 
 interface Props {
   imageDataUrl: string;
@@ -62,45 +65,45 @@ export const ReviewScreen: React.FC<Props> = ({
 
   return (
     <div className="flex max-h-screen flex-col items-center gap-6 overflow-y-auto p-10">
-      <h2 className="m-0 font-jersey text-[48px] tracking-[4px] text-white">Your drawing of "{word}"</h2>
-      <img src={imageDataUrl} alt={`Drawing of ${word}`} className="max-h-[60vh] max-w-[60vw] border-4 border-solid border-[#404040] bg-white shadow-[4px_4px_0_rgba(0,0,0,0.3)]" />
+      <h2 className="m-0 font-jersey text-[48px] tracking-brand text-white">your drawing of "{word}"</h2>
+      <img src={imageDataUrl} alt={`Drawing of ${word}`} className="max-h-[60vh] max-w-[60vw] rounded-tag border-4 border-solid border-white bg-white shadow-drop" />
 
       <div className="flex flex-wrap justify-center gap-5">
         <button
           type="button"
-          className="cursor-pointer rounded-[12px] border-4 border-solid border-white px-9 py-4 font-jersey text-[30px] tracking-[4px] text-white bg-[#00c000]"
+          className={`${BTN_MD} ${BTN_PRIMARY}`}
           onClick={handleClaim}
           disabled={stage.kind === "uploading" || stage.kind === "ready"}
         >
-          Claim & Send to Gallery
+          claim & send to gallery
         </button>
-        <button type="button" className="cursor-pointer rounded-[12px] border-4 border-solid border-white px-9 py-4 font-jersey text-[30px] tracking-[4px] text-white bg-transparent" onClick={onDiscard}>
-          Discard
+        <button type="button" className={`${BTN_MD} ${BTN_SECONDARY}`} onClick={onDiscard}>
+          discard
         </button>
       </div>
 
       <PinnedRegistrationQR side="right" top={145} qrSize={150} />
 
       {showModal && (
-        <div className="animate-fade-in-fast fixed inset-0 z-[11000] flex items-center justify-center bg-[rgba(0,0,0,0.55)] backdrop-blur-[3px]">
-          <div className="animate-pop-in relative flex max-w-[680px] min-w-[500px] flex-col items-center gap-[18px] rounded-[20px] border-[3px] border-solid border-[#ff0] bg-[rgba(10,10,20,0.88)] px-[72px] pt-12 pb-[110px] font-jersey shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-            <h3 className="m-0 text-center text-[46px] tracking-[6px] text-[#ff0]">Scan to Claim</h3>
+        <div className="animate-fade-in-fast fixed inset-0 z-[11000] flex items-center justify-center bg-scrim backdrop-blur-[3px]">
+          <div className="animate-pop-in relative flex max-w-[680px] min-w-[500px] flex-col items-center gap-[18px] rounded-glass border-[3px] border-solid border-lime bg-action-games/90 px-[72px] pt-12 pb-[110px] font-jersey shadow-glass-card">
+            <h3 className="m-0 text-center text-display-md tracking-brand text-lime">scan to claim</h3>
 
             {stage.kind === "uploading" && (
-              <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">Preparing your QR code…</p>
+              <p className={MODAL_TEXT}>preparing your qr code…</p>
             )}
 
             {stage.kind === "ready" && (
               <>
-                <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">
-                  Scan with your phone to save this drawing to your gallery.
+                <p className={MODAL_TEXT}>
+                  scan with your phone to save this drawing to your gallery!
                 </p>
                 <ClaimSection payload={stage.payload} onClaimed={onClaimed} />
               </>
             )}
 
             {stage.kind === "error" && (
-              <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">{stage.message}</p>
+              <p className={MODAL_TEXT}>{stage.message}</p>
             )}
 
             <button

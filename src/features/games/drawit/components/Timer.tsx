@@ -29,10 +29,10 @@ export const Timer: React.FC<Props> = ({ onExpire }) => {
 
   const cls =
     sec <= TIMER_FLASH_THRESHOLD_SEC
-      ? "animate-timer-flash text-[#f00]"
+      ? "animate-timer-flash text-red"
       : sec <= TIMER_PULSE_THRESHOLD_SEC
-        ? "animate-timer-pulse text-[#f44]"
-        : "bg-[rgba(0,0,0,0.6)] text-white";
+        ? "animate-timer-pulse text-white"
+        : "bg-scrim text-white";
 
-  return <div className={`fixed top-5 right-5 z-[9999] rounded-[12px] border-[3px] border-solid border-[rgba(255,255,255,0.4)] px-6 py-[10px] font-jersey text-[52px] tracking-[4px] ${cls}`}>{fmt(Math.max(0, sec))}</div>;
+  return <div className={`fixed top-5 right-5 z-[9999] rounded-tag border-[3px] border-solid border-white/40 px-6 py-[10px] font-jersey text-[52px] tracking-brand ${cls}`}>{fmt(Math.max(0, sec))}</div>;
 };

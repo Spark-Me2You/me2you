@@ -24,6 +24,7 @@ import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { ExitButton } from "@/shared/components";
 import type { GameProps } from "../../types/game";
 import { SplitCameraPanel } from "./SplitCameraPanel";
+import { BTN_MD, BTN_PRIMARY, GAME_OVER_SCRIM } from "../../components/gameUi";
 
 const NOT_READY: Record<PlayerId, boolean> = { P1: false, P2: false };
 const PRESENCE_POLL_MS = 250;
@@ -233,13 +234,13 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
   const winnerColor =
     result && result !== "DRAW"
       ? FLAPFLAP_2P_CONFIG.PLAYERS[result].CSS_COLOR
-      : "#ffffff";
+      : "var(--color-cream)";
 
   return (
-    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-[linear-gradient(180deg,#1a1a2e_0%,#16213e_100%)] px-5 py-[28px]">
+    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-games-gradient px-5 py-[28px]">
       <div className="flex w-full max-w-[1700px] items-start justify-center gap-6 max-[700px]:flex-col max-[700px]:items-center">
         <div
-          className="relative shrink-0 overflow-hidden rounded-[16px] border-4 border-solid border-[rgba(255,255,255,0.3)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+          className="relative shrink-0 overflow-hidden rounded-tag border-4 border-solid border-white/40 shadow-drop"
           style={{
             width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
             height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,
@@ -251,16 +252,13 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
             style={{ transform: `scale(${canvasScale})` }}
           >
             {gameState === "GAME_OVER" && result && (
-              <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-[rgba(10,10,20,0.88)] backdrop-blur-[6px]">
-                <p className="m-0 font-jersey text-[120px] tracking-[4px] [text-shadow:0_0_24px_rgba(0,0,0,0.6)]" style={{ color: winnerColor }}>
-                  {result === "DRAW" ? "Draw!" : `${result} wins!`}
+              <div className={`absolute inset-0 z-[100] flex flex-col items-center justify-center gap-6 ${GAME_OVER_SCRIM}`}>
+                <p className="m-0 font-jersey text-[120px] tracking-brand text-shadow-pop" style={{ color: winnerColor }}>
+                  {result === "DRAW" ? "draw!" : `${result.toLowerCase()} wins!`}
                 </p>
-                <p className="m-0 font-jersey text-[36px] tracking-[2px] text-[rgba(255,255,255,0.7)]">pipes passed: {finalScore}</p>
-                <button
-                  className="mt-2 cursor-pointer rounded-[16px] border-[3px] border-solid border-[rgba(255,255,255,0.3)] bg-[rgba(255,255,255,0.1)] px-12 py-4 font-jersey text-[36px] tracking-[4px] text-white backdrop-blur-[10px] transition-all duration-200 ease-[ease] hover:border-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.2)] hover:[transform:scale(1.05)]"
-                  onClick={handlePlayAgain}
-                >
-                  PLAY AGAIN
+                <p className="m-0 font-averia text-body-xl text-white/80">pipes passed: {finalScore}</p>
+                <button className={`mt-2 ${BTN_MD} ${BTN_PRIMARY}`} onClick={handlePlayAgain}>
+                  play again
                 </button>
               </div>
             )}

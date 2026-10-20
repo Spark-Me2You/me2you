@@ -89,6 +89,9 @@ background through.
 `bg-page-gradient` (sky → cream, top to bottom). `body` already has it, so full-screen views
 only need it when they paint their own opaque layer.
 
+Game screens use `bg-games-gradient` instead (`action-games` purple → `blue`), which stays dark
+enough for white text from top to bottom.
+
 ### Accessibility
 
 White text on `orange`, `purple`, `blue`, `magenta` and `red` is fine at kiosk sizes. On `lime`,
@@ -106,7 +109,7 @@ White text on `orange`, `purple`, `blue`, `magenta` and `red` is fine at kiosk s
 
 Exceptions that are allowed but should not spread:
 
-- `font-pixelify` (Pixelify Sans): games only (the `games` title).
+- `font-pixelify` (Pixelify Sans): the `games` menu title only.
 - `font-jersey-arial`: mobile user pages (Jersey with an Arial fallback).
 - `font-handwritten` (Caveat): one label on the admin org selector.
 
@@ -121,6 +124,13 @@ values; user-typed mono text uses `tracking-[-0.72px]`.
 ### Kiosk type scale
 
 Sizes are in design pixels on the 1920×1080 kiosk canvas.
+
+### Text shadows
+
+| Token | Use |
+|---|---|
+| `text-shadow-games` | The Pixelify `games` title: soft drop + lime and magenta offsets |
+| `text-shadow-pop` | Hard 4px offset under big game text (titles, countdown, scores) |
 
 | Token | Size | Use |
 |---|---|---|
@@ -177,6 +187,27 @@ Reach for a scale step first in new work. Fluid sizes on non-scaled views use
 | **QR tab** | `PinnedRegistrationQR`: `bg-magenta/93 shadow-glass-card`, half-rounded on the inner edge |
 | **Ozzy** | `otter_default_rough_draft.png` (full) and `hand.png` (pointing at the QR) |
 | **Arrows** | `arrow2.svg` and `pink_back_arrow.svg`, rotated to point at the target |
+
+### Game screens
+
+Recipes live in `src/features/games/components/gameUi.ts`; import them rather than restyling.
+
+| Piece | Recipe |
+|---|---|
+| Background | `bg-games-gradient` |
+| Title (`GAME_TITLE`) | `font-jersey text-[160px] tracking-brand lowercase text-white text-shadow-pop` |
+| Buttons (`BTN_LG` / `BTN_MD`) | Glass-card pills, `tracking-brand lowercase`, `hover:scale-105` |
+| Primary (`BTN_PRIMARY`) | `bg-lime text-ink`: the one main action per screen (start, submit, claim) |
+| Secondary (`BTN_SECONDARY`) | `bg-glass` + white/40 border, white text: back, discard, gallery |
+| Panel (`GAME_PANEL`) | Glass panel with blur: leaderboards, the DrawIt toolbox |
+| Game over (`GAME_OVER_SCRIM`) | `bg-action-games/85` + blur over the frozen canvas |
+| Highlights | `lime` for the current run, selected tool, word of the day, countdown |
+| Confirm dialog | `bg-scrim` + `bg-cream rounded-glass` card, `action-exit` yes, white no |
+| Gallery cards | Polaroids (`bg-polaroid shadow-note`), small alternating tilt, tape on top |
+
+Pixi art in FlapFlap mirrors the palette: `sky` background, `purple` pipes, `lime` ground,
+`magenta` bird (P1) with an `orange` beak, `orange` bird for P2. The DrawIt brush palette is
+the brand palette plus white and brown.
 
 Rotations are part of the look: keep them small and use them on decorative pieces and panels,
 not on running text inside a panel.
@@ -271,9 +302,10 @@ Go through this before writing any styles, and again before opening the PR.
 Migrated onto these tokens: Home (`IdleScreen`, `InfoOverlay`), Discovery (`DiscoveryView`,
 `PoseOverlay`, `HelpPopup`, `CameraView`, `RandomImageCard`, `BorderProgress`), the profile
 view used by Discovery and Hub (`ProfileCardView`, `SendMessageButton`), `ExitButton` and
-`PinnedRegistrationQR`.
+`PinnedRegistrationQR`. Games: the games menu, FlapFlap 1P/2P (launcher, leaderboard, game
+over, split camera, Pixi colors) and every DrawIt screen.
 
-Not yet migrated (still uses raw hex values): games, registration, mobile user pages, admin,
+Not yet migrated (still uses raw hex values): registration, mobile user pages, admin,
 claim. The mobile pages use their own blue palette (`#003366`, `#a7d1f5`, `#e6f2ff`→`#c4dff5`
 gradient) and Material reds (`#d32f2f`, `#b71c1c`). Decide whether that becomes a documented
 "mobile" palette or folds into this one before migrating them.

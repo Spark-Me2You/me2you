@@ -288,10 +288,10 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, [canvasScale]);
 
   return (
-    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-[linear-gradient(180deg,#1a1a2e_0%,#16213e_100%)] px-5 py-[28px]">
+    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-games-gradient px-5 py-[28px]">
       <div className="flex w-full max-w-[1650px] items-start justify-center gap-6 max-[700px]:flex-col max-[700px]:items-center">
         <div
-          className="relative shrink-0 overflow-hidden rounded-[16px] border-4 border-solid border-[rgba(255,255,255,0.3)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+          className="relative shrink-0 overflow-hidden rounded-tag border-4 border-solid border-white/40 shadow-drop"
           style={{
             width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
             height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import type { FlapFlapLeaderboardEntry } from "@/features/games/services/gameScoreService";
+import { GAME_PANEL } from "../../components/gameUi";
 
 interface FlapFlapLeaderboardProps {
   entries: FlapFlapLeaderboardEntry[];
@@ -25,6 +26,9 @@ interface DisplayYouRow {
 }
 
 const MAX_ROWS = 5;
+
+const ROW = "grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[0.05em]";
+const MESSAGE = "m-0 font-averia text-body-lg text-white/80 lowercase";
 
 function buildDisplayRows(
   entries: FlapFlapLeaderboardEntry[],
@@ -112,39 +116,39 @@ export const FlapFlapLeaderboard: React.FC<FlapFlapLeaderboardProps> = ({
   );
   const hasRows = rows.length > 0;
 
-  const cardClassName = `box-border overflow-hidden rounded-[18px] border-[3px] border-solid border-[rgba(255,255,255,0.24)] bg-[rgba(7,15,30,0.72)] px-[18px] py-5 shadow-[0_12px_28px_rgba(0,0,0,0.35)] backdrop-blur-[10px] ${className ?? "w-full max-w-[360px]"}`;
+  const cardClassName = `box-border overflow-hidden rounded-glass px-7 py-6 ${GAME_PANEL} ${className ?? "w-full max-w-[360px]"}`;
 
   return (
     <section className={cardClassName}>
-      <h2 className="m-0 mb-[14px] font-jersey text-[44px] tracking-[2px] text-[#ffe79d] lowercase [text-shadow:0_0_12px_rgba(255,215,0,0.45)]">{title}</h2>
+      <h2 className="m-0 mb-[14px] font-jersey text-[44px] tracking-brand text-lime lowercase text-shadow-pop">{title}</h2>
 
       {!hasRows && isLoading ? (
-        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">loading leaderboard...</p>
+        <p className={MESSAGE}>loading leaderboard...</p>
       ) : !hasRows && error ? (
-        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">leaderboard unavailable</p>
+        <p className={MESSAGE}>leaderboard unavailable</p>
       ) : !hasRows ? (
-        <p className="m-0 font-jersey text-[30px] tracking-[1px] text-[rgba(255,255,255,0.76)] lowercase">be the first to claim a score</p>
+        <p className={MESSAGE}>be the first to claim a score</p>
       ) : (
         <>
           <ol className="m-0 flex list-none flex-col gap-[9px] p-0">
             {rows.map((row, index) => (
               <li
                 key={`${row.label}-${row.score}-${index}`}
-                className={row.isCurrentRun ? "grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-[#ffe79d] [text-shadow:0_0_8px_rgba(255,215,0,0.35)]" : "grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-white"}
+                className={`${ROW} ${row.isCurrentRun ? "text-lime" : "text-white"}`}
               >
-                <span className="text-[rgba(255,255,255,0.82)]">{row.rank}.</span>
+                <span className="text-white/80">{row.rank}.</span>
                 <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{row.label}</span>
-                <span className="text-[rgba(255,255,255,0.94)]">{row.score}</span>
+                <span className="text-white">{row.score}</span>
               </li>
             ))}
           </ol>
 
           {youOutsideTopFive && (
             <div className="mt-[2px]">
-              <p className="m-0 font-jersey text-[30px] tracking-[2px] text-[rgba(255,255,255,0.7)]">...</p>
-              <div className="grid grid-cols-[44px_1fr_auto] items-center gap-[10px] font-jersey text-[34px] tracking-[1px] text-[#ffe79d] [text-shadow:0_0_8px_rgba(255,215,0,0.35)]">
+              <p className="m-0 font-jersey text-[30px] text-white/70">...</p>
+              <div className={`${ROW} text-lime`}>
                 <span className="col-[1/3]">you!</span>
-                <span className="text-[rgba(255,255,255,0.94)]">{youOutsideTopFive.score}</span>
+                <span className="text-white">{youOutsideTopFive.score}</span>
               </div>
             </div>
           )}
