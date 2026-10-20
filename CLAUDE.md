@@ -99,7 +99,7 @@ BrowserRouter
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
 - **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
-- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), and detects thumb-curl clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
+- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the index knuckle to screen coords (EMA-smoothed), and detects thumb-curl clicks (gesture math in `cursor/handGesture.ts`). `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
 - **`monitoring/`** — `ErrorBoundary` component.
@@ -147,6 +147,6 @@ Sequential numbered migrations (001–024). Current schema includes: `users`, `a
 
 `useCvCursor` detects two states used throughout the kiosk:
 - **Hover** (pointing pose): index extended, other fingers curled → moves cursor
-- **Click** (pinch): thumb-tip to index-tip normalized distance < `0.06` → fires click with 300 ms cooldown
+- **Click** (thumb curl): thumb-tip to index-knuckle distance, in palm lengths from 3D world landmarks, drops below `THUMB_PRESS_RATIO` for 2 frames → one click; the thumb must open past `THUMB_RELEASE_RATIO` before the next. A newly acquired hand can't click for its first few frames. Thresholds live in `cv/cursor/handGesture.ts`
 
 Games access the raw `isPinched` field (no cooldown) for continuous paint/drag interactions.
