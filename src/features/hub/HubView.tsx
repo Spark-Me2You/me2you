@@ -13,11 +13,14 @@ import { PinnedRegistrationQR } from '@/features/kiosk';
 import { hubService } from './services/hubService';
 import { storageService } from '@/core/supabase/storage';
 import type { RandomImageData } from '@/features/discovery/types/image';
+import { MAIN_ROOM, type RoomId } from './rooms/rooms';
 
 export const HubView: React.FC = () => {
   const { transitionTo } = useAppState();
   const { kioskOrgId } = useAuth();
   const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
+  // Lives here, not in PixiHub, so returning from a profile lands back in the same room.
+  const [roomId, setRoomId] = useState<RoomId>(MAIN_ROOM);
 
   const handleCharacterClick = useCallback(
     async (data: CharacterClickData) => {
@@ -86,7 +89,12 @@ export const HubView: React.FC = () => {
 
   return (
     <>
-      <PixiHub onCharacterClick={handleCharacterClick} orgId={kioskOrgId || ''} />
+      <PixiHub
+        onCharacterClick={handleCharacterClick}
+        orgId={kioskOrgId || ''}
+        roomId={roomId}
+        onRoomChange={setRoomId}
+      />
       <PinnedRegistrationQR />
     </>
   );
