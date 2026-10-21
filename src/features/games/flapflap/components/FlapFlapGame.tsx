@@ -10,6 +10,7 @@ import React, {
   useCallback,
   useState,
 } from "react";
+import type { Ticker } from "pixi.js";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import {
   usePoseDetection,
@@ -165,7 +166,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
     // Use PixiJS ticker for game loop (single unified animation system)
     const ticker = app.ticker;
-    const tickerCallback = (time: any) => {
+    const tickerCallback = (time: Ticker) => {
       const deltaTime = Math.min(time.deltaMS / 1000, 0.05);
       accumulator += deltaTime;
 

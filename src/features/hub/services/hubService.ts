@@ -190,7 +190,8 @@ export const hubService = {
                 pronouns: user.pronouns,
                 major: user.major,
                 interests: user.interests,
-                created_at: user.created_at,
+                // Column is nullable; fall back to the epoch so these sort last
+                created_at: user.created_at ?? new Date(0).toISOString(),
                 accessory: (user.accessory as 'sunglasses' | 'hat' | 'balloon' | null) ?? null,
               },
               profileImageUrl: null,
