@@ -1,0 +1,59 @@
+name: Feature request
+description: New user-facing functionality
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write this so someone (or an agent) with no extra context can build it. See docs/AGENT_WORKFLOW.md.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the app is affected? (Triage adds the matching `area:*` label.)
+      multiple: true
+      options:
+        - kiosk (state machine, idle/auth/onboarding)
+        - hub
+        - discovery
+        - games
+        - cv (camera, hand tracking, pose)
+        - mobile (user pages, registration, claim, messages)
+        - auth
+        - db (migrations, RLS, edge functions)
+        - ci / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: Who is this for and why do they need it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: A checklist that defines done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Related things this issue should not change.
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Code pointers
+      description: Files, components or existing patterns to follow, if known.

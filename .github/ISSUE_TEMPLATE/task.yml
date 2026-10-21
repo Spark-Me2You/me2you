@@ -1,0 +1,43 @@
+name: Task
+description: Refactor, tests, docs, tooling or other non-feature work
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Triage adds the `type:*` label (refactor, test, docs, chore, perf, style). See docs/AGENT_WORKFLOW.md.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the app is affected? (Triage adds the matching `area:*` label.)
+      multiple: true
+      options:
+        - kiosk (state machine, idle/auth/onboarding)
+        - hub
+        - discovery
+        - games
+        - cv (camera, hand tracking, pose)
+        - mobile (user pages, registration, claim, messages)
+        - auth
+        - db (migrations, RLS, edge functions)
+        - ci / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: What needs doing
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Code pointers
