@@ -128,9 +128,7 @@ export const GUMBALL_SLICE_CONFIG = {
   // Colors (theme tokens only)
   TRAIL_GLOW_COLOR: colors.gradient.start,
   TRAIL_CORE_COLOR: colors.white,
-  CANDY_COLORS: [colors.magenta, colors.gradient.start, colors.btnOrange],
-  WRAPPED_COLOR: colors.btnPink,
-  SWIRL_COLOR: colors.btnPurple,
+  CANDY_IMAGE_SCALE: 1, // candy image diameter ÷ (2 × CANDY_RADIUS)
   GOLDEN_COLOR: colors.gold,
   BROCCOLI_COLOR: colors.leafGreen, // broccoli crumbs
   BROCCOLI_SIZE: 2.6, // sprite's longest side ÷ candy radius

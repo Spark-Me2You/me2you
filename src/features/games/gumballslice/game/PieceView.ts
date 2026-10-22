@@ -25,6 +25,7 @@ export class PieceView extends Container {
       this.gfx.context = look.context;
     } else {
       this.sprite.texture = look.texture;
+      this.sprite.anchor.set(look.anchorX, 0.5);
       this.sprite.scale.set(look.scale);
       this.sprite.rotation = look.rotation;
     }

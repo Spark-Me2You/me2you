@@ -26,32 +26,41 @@
   margin: 0;
 }
 
-/* ---- prize ---- */
+/* ---- the real candy machine (prize), standing bottom-left ---- */
 
-.prize {
+.machine {
+  position: absolute;
+  left: clamp(8px, 3vw, 64px);
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(2px, 0.6vh, 8px);
-  text-align: center;
+  pointer-events: none;
 }
 
-.prizeRule {
+.machineCaption {
   font-family: var(--gs-font);
-  font-size: clamp(24px, 4vh, 42px);
-  letter-spacing: 3px;
-  color: var(--gs-white);
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
-  margin: 0;
+  font-size: clamp(32px, 6vh, 64px);
+  line-height: 1;
+  letter-spacing: 4px;
+  color: var(--gs-gold);
+  text-shadow:
+    4px 4px 0 rgba(0, 0, 0, 0.45),
+    0 0 20px var(--gs-gold);
+  transform: rotate(-4deg);
+  margin: 0 0 clamp(4px, 1vh, 12px);
+  animation: captionBob 1.8s ease-in-out infinite;
 }
 
-.strikeRule {
-  font-family: var(--gs-font);
-  font-size: clamp(22px, 3.6vh, 38px);
-  letter-spacing: 3px;
-  color: var(--gs-orange);
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
-  margin: 0;
+@keyframes captionBob {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(-4deg) translateY(-6px); }
+}
+
+.machineImg {
+  height: min(62vh, 44vw);
+  width: auto;
+  filter: drop-shadow(8px 10px 0 rgba(0, 0, 0, 0.35));
 }
 
 .legend {

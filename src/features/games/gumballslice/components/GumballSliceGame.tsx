@@ -6,12 +6,13 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Assets, type Texture } from "pixi.js";
-import broccoliImg from "../../../../assets/Broccoli_PNG_Picture.png";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import type { GameProps } from "../../types/game";
 import { GUMBALL_SLICE_CONFIG, GUMBALL_SLICE_CSS_VARS } from "../config/gumballSliceConfig";
+import type { ItemTextures } from "../game/candyArt";
 import { GumballSliceEngine } from "../game/GumballSliceEngine";
+import { BROCCOLI_IMAGE, CANDY_IMAGES } from "../game/itemImages";
 import { buildRoundResult } from "../logic/roundResult";
 import { onRoundComplete } from "../services/roundCompleteService";
 import type {
@@ -42,7 +43,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   const [hud, setHud] = useState<HudSnapshot>(INITIAL_HUD);
   const [result, setResult] = useState<RoundResult | null>(null);
   const [size] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
-  const [broccoliTexture, setBroccoliTexture] = useState<Texture | null>(null);
+  const [textures, setTextures] = useState<ItemTextures | null>(null);
   const engineRef = useRef<GumballSliceEngine | null>(null);
   const sessionRef = useRef("");
 
@@ -69,8 +70,12 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
 
   useEffect(() => {
     let cancelled = false;
-    Assets.load<Texture>(broccoliImg).then((texture) => {
-      if (!cancelled) setBroccoliTexture(texture);
+    Assets.load<Texture>([BROCCOLI_IMAGE, ...CANDY_IMAGES.map((c) => c.url)]).then((loaded) => {
+      if (cancelled) return;
+      setTextures({
+        broccoli: loaded[BROCCOLI_IMAGE],
+        candies: CANDY_IMAGES.map((c) => ({ texture: loaded[c.url], particleColor: c.particleColor })),
+      });
     });
     return () => {
       cancelled = true;
@@ -78,21 +83,21 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   }, []);
 
   useEffect(() => {
-    if (!app || !isReady || !broccoliTexture) return;
+    if (!app || !isReady || !textures) return;
 
     // Engine callbacks fire inside the Pixi ticker (RAF); defer React updates
     // out of it, as FlapFlap does.
     const engine = new GumballSliceEngine(app, () => handTrackRef.current, {
       onHud: (next) => setTimeout(() => setHud(next), 0),
       onRoundEnd: (stats, reason) => setTimeout(() => handleRoundEnd(stats, reason), 0),
-    }, broccoliTexture);
+    }, textures);
     engineRef.current = engine;
 
     return () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [app, isReady, broccoliTexture, handTrackRef, handleRoundEnd]);
+  }, [app, isReady, textures, handTrackRef, handleRoundEnd]);
 
   // Trail + fingertip dot replace the global cursor while slicing; the normal
   // cursor comes back for the start / results buttons.
@@ -100,7 +105,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
     const slicing = screen === "COUNTDOWN" || screen === "PLAYING";
     engineRef.current?.setTrailVisible(slicing);
     setCursorVariant(slicing ? "hidden" : "default");
-  }, [screen, isReady, broccoliTexture, setCursorVariant]);
+  }, [screen, isReady, textures, setCursorVariant]);
 
   useEffect(() => () => setCursorVariant("default"), [setCursorVariant]);
 

@@ -8,7 +8,7 @@
  * refresh rate; the trail head is always the latest raw fingertip.
  */
 
-import { Application, Container, Graphics, Text, TextStyle, type Texture, type Ticker } from "pixi.js";
+import { Application, Container, Graphics, Text, TextStyle, type Ticker } from "pixi.js";
 import type { HandTrackSample } from "@/core/cv/cursor";
 import { typography } from "@/shared/theme/typography";
 import { GUMBALL_SLICE_CONFIG } from "../config/gumballSliceConfig";
@@ -19,7 +19,7 @@ import { segmentHitsCircle, segmentSpeed } from "../logic/sliceGeometry";
 import { planArc } from "../logic/trajectory";
 import { isBadItem, isSuspenseWave, pickItemKind, pickSuspenseKind, planWave } from "../logic/waves";
 import type { HudSnapshot, ItemKind, RoundEndReason, RoundStats } from "../types/gumballSlice";
-import { buildArt, destroyArt, type ArtSet, type ItemArt } from "./candyArt";
+import { buildArt, destroyArt, type ArtSet, type ItemArt, type ItemTextures } from "./candyArt";
 import { PieceView } from "./PieceView";
 
 export interface GumballSliceCallbacks {
@@ -157,7 +157,7 @@ export class GumballSliceEngine {
     app: Application,
     getSample: () => HandTrackSample,
     callbacks: GumballSliceCallbacks,
-    broccoliTexture: Texture,
+    textures: ItemTextures,
   ) {
     const c = this.config;
     this.app = app;
@@ -180,7 +180,7 @@ export class GumballSliceEngine {
       jumpWindowMs: c.LOCK_JUMP_WINDOW_MS,
       scaleAdapt: c.LOCK_SCALE_ADAPT,
     });
-    this.art = buildArt(this.radius, c, broccoliTexture);
+    this.art = buildArt(this.radius, c, textures);
 
     this.buildPools();
 
@@ -605,8 +605,8 @@ export class GumballSliceEngine {
       itemLayer.addChild(view);
       this.items.push({
         ...body(view),
-        kind: "gumball",
-        art: this.art.variants.gumball[0],
+        kind: "candy",
+        art: this.art.variants.candy[0],
         timeScale: 1,
       });
     }
@@ -654,8 +654,16 @@ export class GumballSliceEngine {
     for (const side of [1, -1]) {
       const half = this.halves[this.halfCursor];
       this.halfCursor = (this.halfCursor + 1) % this.halves.length;
-      half.view.show(item.art.halves[side === 1 ? 0 : 1]);
-      half.view.rotation = side === 1 ? angle : angle + Math.PI;
+      const whole = item.art.whole;
+      if (whole.type === "sprite") {
+        // Turn the image so its vertical cut lines up with the slash; its
+        // right half then sits on the outward (side 1) side.
+        half.view.show(item.art.halves[side === 1 ? 1 : 0]);
+        half.view.rotation = angle - Math.PI / 2 - whole.rotation;
+      } else {
+        half.view.show(item.art.halves[side === 1 ? 0 : 1]);
+        half.view.rotation = side === 1 ? angle : angle + Math.PI;
+      }
       half.x = item.x;
       half.y = item.y;
       half.vx = item.vx * item.timeScale * 0.4 + ox * side * separation;

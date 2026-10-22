@@ -1,6 +1,6 @@
 /**
  * Slice Demo
- * Looping animation of a slash cutting a gumball in two, showing how to play.
+ * Looping animation of a slash cutting a candy in two, showing how to play.
  */
 
 import React from "react";

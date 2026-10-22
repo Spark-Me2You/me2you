@@ -1,16 +1,17 @@
 /**
  * Start Screen
- * Title, item legend, how-to-play demo, win + strike rules and a Ready
- * button. The hand that taps Ready becomes the locked player.
+ * Title, item legend, how-to-play demo and a Ready button, with the real
+ * Spark candy machine (the prize) standing bottom-left. The hand that taps
+ * Ready becomes the locked player.
  */
 
 import React from "react";
 import { PinnedRegistrationQR } from "@/features/kiosk";
 import { ExitButton } from "@/shared/components";
+import candyMachineImg from "../../../../assets/candymachine.png";
 import { GUMBALL_SLICE_CONFIG as C } from "../config/gumballSliceConfig";
 import { ItemIcon } from "./ItemIcon";
 import { SliceDemo } from "./SliceDemo";
-import { STRIKE_RULE_TEXT, WIN_RULE_TEXT } from "./winRuleText";
 import styles from "./StartScreen.module.css";
 
 interface Props {
@@ -22,12 +23,16 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
   <div className={styles.container}>
     <ExitButton onClick={onBack} label="back" />
 
+    <div className={styles.machine}>
+      <p className={styles.machineCaption}>win real candy!</p>
+      <img src={candyMachineImg} alt="The Spark candy machine" className={styles.machineImg} />
+    </div>
+
     <h1 className={styles.title}>Gumball Slice</h1>
 
     <div className={styles.legend}>
       <div className={styles.legendGroup}>
-        <ItemIcon kind="gumball" className={styles.icon} />
-        <ItemIcon kind="golden" className={styles.icon} />
+        <ItemIcon kind="candy" className={styles.icon} />
         <span className={styles.good}>slice candy!</span>
       </div>
       <div className={styles.legendGroup}>
@@ -37,11 +42,6 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
     </div>
 
     <SliceDemo />
-
-    <div className={styles.prize}>
-      <p className={styles.prizeRule}>{WIN_RULE_TEXT} to win</p>
-      <p className={styles.strikeRule}>{STRIKE_RULE_TEXT}</p>
-    </div>
 
     <p className={styles.subhint}>
       slice as many candies as you can in {C.ROUND_SECONDS} seconds!

@@ -28,8 +28,6 @@ export function planWave(index: number, config: GumballSliceConfig): WavePlan {
   };
 }
 
-const CANDY_KINDS: readonly ItemKind[] = ["gumball", "gumball", "wrapped", "swirl"];
-
 /** Pick what to launch. The first wave is always candy so new players warm up. */
 export function pickItemKind(
   waveIndex: number,
@@ -38,7 +36,7 @@ export function pickItemKind(
 ): ItemKind {
   if (waveIndex > 0 && random() < config.BAD_ITEM_FREQUENCY) return "broccoli";
   if (random() < config.GOLDEN_CHANCE) return "golden";
-  return CANDY_KINDS[Math.floor(random() * CANDY_KINDS.length)];
+  return "candy";
 }
 
 export function isSuspenseWave(waveIndex: number, config: GumballSliceConfig): boolean {
@@ -53,7 +51,7 @@ export function pickSuspenseKind(
   const roll = random();
   if (roll < config.SUSPENSE_GOLDEN_CHANCE) return "golden";
   if (roll < config.SUSPENSE_GOLDEN_CHANCE + config.SUSPENSE_BAD_CHANCE) return "broccoli";
-  return CANDY_KINDS[Math.floor(random() * CANDY_KINDS.length)];
+  return "candy";
 }
 
 export const isBadItem = (kind: ItemKind): boolean => kind === "broccoli";
