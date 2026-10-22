@@ -12,7 +12,7 @@ import type { GameProps } from "../../types/game";
 import { GUMBALL_SLICE_CONFIG, GUMBALL_SLICE_CSS_VARS } from "../config/gumballSliceConfig";
 import type { ItemTextures } from "../game/candyArt";
 import { GumballSliceEngine } from "../game/GumballSliceEngine";
-import { BROCCOLI_IMAGE, CANDY_IMAGES } from "../game/itemImages";
+import { BROCCOLI_IMAGE, CANDY_IMAGES, RAINBOW_IMAGE } from "../game/itemImages";
 import { buildRoundResult } from "../logic/roundResult";
 import { onRoundComplete } from "../services/roundCompleteService";
 import type {
@@ -70,10 +70,12 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
 
   useEffect(() => {
     let cancelled = false;
-    Assets.load<Texture>([BROCCOLI_IMAGE, ...CANDY_IMAGES.map((c) => c.url)]).then((loaded) => {
+    const urls = [BROCCOLI_IMAGE, RAINBOW_IMAGE.url, ...CANDY_IMAGES.map((c) => c.url)];
+    Assets.load<Texture>(urls).then((loaded) => {
       if (cancelled) return;
       setTextures({
         broccoli: loaded[BROCCOLI_IMAGE],
+        rainbow: { texture: loaded[RAINBOW_IMAGE.url], particleColor: RAINBOW_IMAGE.particleColor },
         candies: CANDY_IMAGES.map((c) => ({ texture: loaded[c.url], particleColor: c.particleColor })),
       });
     });

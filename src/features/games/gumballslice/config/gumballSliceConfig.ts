@@ -71,23 +71,22 @@ export const GUMBALL_SLICE_CONFIG = {
   LAUNCH_STAGGER_SEC: 0.3,
   NO_LAUNCH_FINAL_SEC: 1.2, // no new launches this close to the buzzer
 
-  // Suspense beats: a lull, a glowing tease at the launch spot, then one
-  // mystery item that floats up in slow motion
+  // Suspense beats: a quiet pause, then one mystery item that floats up in
+  // slow motion
   SUSPENSE_EVERY_WAVES: 4, // every Nth wave is a suspense beat (never the first)
-  SUSPENSE_LULL_SEC: 1.2, // quiet time before the tease
-  SUSPENSE_TEASE_SEC: 1.4, // glow builds at the launch spot
+  SUSPENSE_LULL_SEC: 2.6, // quiet time before the mystery item
   SUSPENSE_AFTER_SEC: 1.6, // gap before the next normal wave
   SUSPENSE_SLOWMO: 0.55, // flight time-scale of the mystery item
-  SUSPENSE_GOLDEN_CHANCE: 0.35,
+  SUSPENSE_RAINBOW_CHANCE: 0.15,
   SUSPENSE_BAD_CHANCE: 0.3,
 
   // Item mix
   BAD_ITEM_FREQUENCY: envNumber("VITE_GUMBALL_BAD_ITEM_FREQUENCY", 0.15), // broccoli chance per item, from wave 2
-  GOLDEN_CHANCE: 0.04,
+  RAINBOW_CHANCE: 0.015, // the rainbow swirl candy: a rare secret bonus worth RAINBOW_POINTS
 
   // Scoring
   CANDY_POINTS: 10,
-  GOLDEN_POINTS: 50,
+  RAINBOW_POINTS: 50,
   BAD_POINTS: -25,
   COMBO_MIN: 3, // good candies in one swipe for a combo bonus
   COMBO_POINTS_PER_CANDY: 10,
@@ -129,15 +128,13 @@ export const GUMBALL_SLICE_CONFIG = {
   TRAIL_GLOW_COLOR: colors.gradient.start,
   TRAIL_CORE_COLOR: colors.white,
   CANDY_IMAGE_SCALE: 1, // candy image diameter ÷ (2 × CANDY_RADIUS)
-  GOLDEN_COLOR: colors.gold,
   BROCCOLI_COLOR: colors.leafGreen, // broccoli crumbs
   BROCCOLI_SIZE: 2.6, // sprite's longest side ÷ candy radius
   BROCCOLI_ROTATION_DEG: 58, // stands the side-lying PNG upright (stem down)
   BROCCOLI_WOBBLE: 0.8, // max spin (rad/s) so it stays upright-ish in flight
-  OUTLINE_GOOD: colors.white,
   OUTLINE_BAD: colors.black,
   POPUP_GOOD_COLOR: colors.white,
-  POPUP_GOLDEN_COLOR: colors.gold,
+  POPUP_BONUS_COLOR: colors.gold, // "+50" for the rainbow candy
   POPUP_BAD_COLOR: colors.btnOrange,
   POPUP_COMBO_COLOR: colors.btnYellowGreen,
 } as const;

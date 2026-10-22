@@ -10,6 +10,7 @@ import creamGreenBallImg from "@/assets/candy_03_cream_green_ball.png";
 import greenWhiteSwirlImg from "@/assets/candy_07_green_white_swirl.png";
 import pinkCreamSpiralImg from "@/assets/candy_10_pink_cream_spiral.png";
 import orangeBallImg from "@/assets/candy_11_orange_ball.png";
+import rainbowSwirlImg from "@/assets/candy_08_rainbow_swirl.png";
 import { colors } from "@/shared/theme/colors";
 
 export interface CandyImage {
@@ -24,6 +25,9 @@ export const CANDY_IMAGES: readonly CandyImage[] = [
   { url: pinkCreamSpiralImg, particleColor: colors.btnPink },
   { url: orangeBallImg, particleColor: colors.btnOrange },
 ];
+
+/** The secret bonus candy; never part of the regular mix. */
+export const RAINBOW_IMAGE: CandyImage = { url: rainbowSwirlImg, particleColor: colors.magenta };
 
 export const BROCCOLI_IMAGE = broccoliImg;
 

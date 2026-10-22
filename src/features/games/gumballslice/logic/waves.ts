@@ -35,7 +35,7 @@ export function pickItemKind(
   random: () => number = Math.random,
 ): ItemKind {
   if (waveIndex > 0 && random() < config.BAD_ITEM_FREQUENCY) return "broccoli";
-  if (random() < config.GOLDEN_CHANCE) return "golden";
+  if (random() < config.RAINBOW_CHANCE) return "rainbow";
   return "candy";
 }
 
@@ -43,14 +43,14 @@ export function isSuspenseWave(waveIndex: number, config: GumballSliceConfig): b
   return waveIndex > 0 && waveIndex % config.SUSPENSE_EVERY_WAVES === 0;
 }
 
-/** The mystery item: much more likely to be golden (or broccoli) than a normal launch. */
+/** The mystery item: much more likely to be the rainbow bonus (or broccoli) than a normal launch. */
 export function pickSuspenseKind(
   config: GumballSliceConfig,
   random: () => number = Math.random,
 ): ItemKind {
   const roll = random();
-  if (roll < config.SUSPENSE_GOLDEN_CHANCE) return "golden";
-  if (roll < config.SUSPENSE_GOLDEN_CHANCE + config.SUSPENSE_BAD_CHANCE) return "broccoli";
+  if (roll < config.SUSPENSE_RAINBOW_CHANCE) return "rainbow";
+  if (roll < config.SUSPENSE_RAINBOW_CHANCE + config.SUSPENSE_BAD_CHANCE) return "broccoli";
   return "candy";
 }
 

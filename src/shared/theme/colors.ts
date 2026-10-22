@@ -26,7 +26,7 @@ export const colors = {
   glass: 'rgba(255, 255, 255, 0.13)',
 
   // --- Games ---
-  gold:          '#ffd700',     // scores, trophies, golden candy
+  gold:          '#ffd700',     // scores, trophies
   leafGreen:     '#47c52b',     // games-hub green; broccoli
   woodLight:     '#a0673a',     // Gumball Slice wooden table: plank highlight
   woodMid:       '#7a4a26',     // plank body

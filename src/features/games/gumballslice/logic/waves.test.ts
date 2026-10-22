@@ -27,9 +27,9 @@ describe("suspense beats", () => {
     expect(isSuspenseWave(C.SUSPENSE_EVERY_WAVES + 1, C)).toBe(false);
   });
 
-  it("reveal golden, broccoli or candy by roll", () => {
-    expect(pickSuspenseKind(C, () => 0)).toBe("golden");
-    expect(pickSuspenseKind(C, () => C.SUSPENSE_GOLDEN_CHANCE + 0.01)).toBe("broccoli");
-    expect(pickSuspenseKind(C, () => 0.99)).not.toMatch(/golden|broccoli/);
+  it("reveal rainbow, broccoli or candy by roll", () => {
+    expect(pickSuspenseKind(C, () => 0)).toBe("rainbow");
+    expect(pickSuspenseKind(C, () => C.SUSPENSE_RAINBOW_CHANCE + 0.01)).toBe("broccoli");
+    expect(pickSuspenseKind(C, () => 0.99)).not.toMatch(/rainbow|broccoli/);
   });
 });

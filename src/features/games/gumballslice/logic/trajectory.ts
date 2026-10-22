@@ -13,25 +13,16 @@ export interface ArcPlan {
   apexY: number; // px from the top of the screen
 }
 
-/**
- * Pick an arc. With `fixedX` the item rises straight up from that point
- * (still clamped into the reach zone).
- */
+/** Pick an arc that peaks somewhere inside the reach zone. */
 export function planArc(
   config: GumballSliceConfig,
   width: number,
   height: number,
   random: () => number = Math.random,
-  fixedX?: number,
 ): ArcPlan {
   const minX = width * config.REACH_X_MIN;
   const maxX = width * config.REACH_X_MAX;
   const apexY = height * (config.REACH_Y_MIN + random() * (config.REACH_Y_MAX - config.REACH_Y_MIN));
-
-  if (fixedX !== undefined) {
-    const x = Math.min(maxX, Math.max(minX, fixedX));
-    return { launchX: x, apexX: x, apexY };
-  }
 
   const apexX = minX + random() * (maxX - minX);
   // Enter a little to either side of the apex, so arcs lean but stay central.

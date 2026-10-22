@@ -4,7 +4,7 @@
 
 export type ScreenState = "START" | "COUNTDOWN" | "PLAYING" | "RESULTS" | "LOST";
 
-export type ItemKind = "candy" | "golden" | "broccoli";
+export type ItemKind = "candy" | "rainbow" | "broccoli";
 
 export type RoundEndReason = "TIME_UP" | "STRUCK_OUT" | "PLAYER_LOST";
 

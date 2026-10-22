@@ -36,11 +36,4 @@ describe("planArc", () => {
       }
     }
   });
-
-  it("rises straight up from a fixed point, clamped into the zone", () => {
-    const arc = planArc(C, W, H, Math.random, W * 0.5);
-    expect(arc.launchX).toBe(W * 0.5);
-    expect(arc.apexX).toBe(W * 0.5);
-    expect(planArc(C, W, H, Math.random, 0).apexX).toBe(W * C.REACH_X_MIN);
-  });
 });
