@@ -6,13 +6,14 @@ export type ScreenState = "START" | "COUNTDOWN" | "PLAYING" | "RESULTS" | "LOST"
 
 export type ItemKind = "gumball" | "wrapped" | "swirl" | "golden" | "broccoli";
 
-export type RoundEndReason = "TIME_UP" | "PLAYER_LOST";
+export type RoundEndReason = "TIME_UP" | "STRUCK_OUT" | "PLAYER_LOST";
 
 /** Live values shown in the HUD; pushed by the engine only when they change. */
 export interface HudSnapshot {
   score: number;
   secondsLeft: number;
   slicedCount: number;
+  broccoliHits: number;
   comboCount: number;
   playerMissing: boolean;
 }
@@ -22,6 +23,7 @@ export interface RoundStats {
   score: number;
   slicedCount: number;
   missedCount: number;
+  broccoliHits: number;
   bestCombo: number;
   durationMs: number;
 }
@@ -32,6 +34,7 @@ export interface RoundResult {
   score: number;
   slicedCount: number;
   accuracy: number; // 0..1
+  broccoliHits: number;
   bestCombo: number;
   fullRound: boolean;
   qualifies: boolean;

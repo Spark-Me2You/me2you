@@ -1,6 +1,7 @@
 /**
  * Slice HUD
- * Score, timer, candy-goal bar, live combo counter and the "come back" warning.
+ * Score, timer, candy-goal bar, broccoli strikes (X X X), live combo counter
+ * and the "come back" warning.
  */
 
 import React from "react";
@@ -31,6 +32,17 @@ export const SliceHud: React.FC<Props> = ({ hud }) => {
         </span>
         <div className={styles.goalTrack}>
           <div className={styles.goalFill} style={{ width: `${goalProgress * 100}%` }} />
+        </div>
+        <div className={styles.strikes}>
+          <span className={styles.strikesLabel}>broccoli</span>
+          {Array.from({ length: C.BROCCOLI_STRIKES }, (_, i) => (
+            <span
+              key={i}
+              className={`${styles.strike} ${i < hud.broccoliHits ? styles.strikeHit : ""}`}
+            >
+              X
+            </span>
+          ))}
         </div>
       </div>
 

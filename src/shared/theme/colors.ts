@@ -35,6 +35,7 @@ export const colors = {
 
   // --- State ---
   error: '#b0003a',
+  red:   '#ff0000',               // exit button; Gumball Slice broccoli strikes
   magentaDim: '#b0006a',        // magenta disabled/loading state
 
 };

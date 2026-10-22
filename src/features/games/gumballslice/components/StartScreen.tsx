@@ -1,7 +1,7 @@
 /**
  * Start Screen
- * Title, how-to-play demo, item legend and a Ready button. The hand that taps
- * Ready becomes the locked player for the round.
+ * Title, item legend, how-to-play demo, win + strike rules and a Ready
+ * button. The hand that taps Ready becomes the locked player.
  */
 
 import React from "react";
@@ -10,6 +10,7 @@ import { ExitButton } from "@/shared/components";
 import { GUMBALL_SLICE_CONFIG as C } from "../config/gumballSliceConfig";
 import { ItemIcon } from "./ItemIcon";
 import { SliceDemo } from "./SliceDemo";
+import { STRIKE_RULE_TEXT, WIN_RULE_TEXT } from "./winRuleText";
 import styles from "./StartScreen.module.css";
 
 interface Props {
@@ -23,8 +24,6 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
 
     <h1 className={styles.title}>Gumball Slice</h1>
 
-    <SliceDemo />
-
     <div className={styles.legend}>
       <div className={styles.legendGroup}>
         <ItemIcon kind="gumball" className={styles.icon} />
@@ -35,6 +34,13 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
         <ItemIcon kind="broccoli" className={styles.icon} />
         <span className={styles.bad}>avoid broccoli</span>
       </div>
+    </div>
+
+    <SliceDemo />
+
+    <div className={styles.prize}>
+      <p className={styles.prizeRule}>{WIN_RULE_TEXT} to win</p>
+      <p className={styles.strikeRule}>{STRIKE_RULE_TEXT}</p>
     </div>
 
     <p className={styles.subhint}>

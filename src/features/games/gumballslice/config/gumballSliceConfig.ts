@@ -29,7 +29,13 @@ const envFlag = (key: string, fallback: boolean): boolean => {
 export const GUMBALL_SLICE_CONFIG = {
   // Round
   ROUND_SECONDS: envNumber("VITE_GUMBALL_ROUND_SECONDS", 60),
-  MIN_SLICES: envNumber("VITE_GUMBALL_MIN_SLICES", 25), // candy goal + reward qualification
+  // Winning real candy: play the full round, slice at least MIN_SLICES
+  // candies, and slice no more than MAX_BROCCOLI_HITS broccoli.
+  // Slicing BROCCOLI_STRIKES broccoli ends the round early ("you're out").
+  MIN_SLICES: envNumber("VITE_GUMBALL_MIN_SLICES", 20),
+  MAX_BROCCOLI_HITS: envNumber("VITE_GUMBALL_MAX_BROCCOLI_HITS", 2),
+  BROCCOLI_STRIKES: envNumber("VITE_GUMBALL_BROCCOLI_STRIKES", 3),
+  STRIKEOUT_DELAY_SEC: 0.9, // let the last X and broccoli burst land before results
   COUNTDOWN_STEPS: ["3", "2", "1", "GO!"],
   COUNTDOWN_STEP_MS: 800,
 
@@ -151,6 +157,7 @@ export const GUMBALL_SLICE_CSS_VARS = {
   "--gs-gold": colors.gold,
   "--gs-lime": colors.btnYellowGreen,
   "--gs-orange": colors.btnOrange,
+  "--gs-red": colors.red,
   "--gs-white": colors.white,
   "--gs-glass": colors.glass,
   "--gs-wood-light": colors.woodLight,

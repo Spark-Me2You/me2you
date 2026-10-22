@@ -134,6 +134,8 @@ export class GumballSliceEngine {
   private score = 0;
   private sliced = 0;
   private missed = 0;
+  private broccoliHits = 0;
+  private strikeOutAt = -1; // round seconds; -1 until the last strike
   private bestCombo = 0;
   private lastSliceX = 0;
   private lastSliceY = 0;
@@ -224,6 +226,8 @@ export class GumballSliceEngine {
     this.score = 0;
     this.sliced = 0;
     this.missed = 0;
+    this.broccoliHits = 0;
+    this.strikeOutAt = -1;
     this.bestCombo = 0;
     this.playerMissing = false;
     this.lock.touch(performance.now());
@@ -317,6 +321,12 @@ export class GumballSliceEngine {
     const c = this.config;
     this.elapsed += dt;
 
+    // Struck out: hold briefly so the last X and broccoli burst are seen.
+    if (this.strikeOutAt >= 0) {
+      if (this.elapsed >= this.strikeOutAt) this.endRound("STRUCK_OUT");
+      return;
+    }
+
     const missingMs = this.lock.msSinceSeen(now);
     this.playerMissing = missingMs >= c.PLAYER_LOST_WARNING_MS;
     if (missingMs >= c.PLAYER_LOST_TIMEOUT_MS) {
@@ -407,6 +417,7 @@ export class GumballSliceEngine {
         score: this.score,
         slicedCount: this.sliced,
         missedCount: this.missed,
+        broccoliHits: this.broccoliHits,
         bestCombo: this.bestCombo,
         durationMs: Math.round(this.elapsed * 1000),
       },
@@ -419,6 +430,7 @@ export class GumballSliceEngine {
       score: this.score,
       secondsLeft: Math.ceil(Math.max(0, this.config.ROUND_SECONDS - this.elapsed)),
       slicedCount: this.sliced,
+      broccoliHits: this.broccoliHits,
       comboCount: this.combo.current,
       playerMissing: this.playerMissing,
     };
@@ -428,6 +440,7 @@ export class GumballSliceEngine {
       prev.score === next.score &&
       prev.secondsLeft === next.secondsLeft &&
       prev.slicedCount === next.slicedCount &&
+      prev.broccoliHits === next.broccoliHits &&
       prev.comboCount === next.comboCount &&
       prev.playerMissing === next.playerMissing
     ) {
@@ -496,6 +509,7 @@ export class GumballSliceEngine {
   private sliceAlong(ax: number, ay: number, bx: number, by: number): void {
     const angle = Math.atan2(by - ay, bx - ax);
     for (const item of this.items) {
+      if (this.strikeOutAt >= 0) return;
       if (item.active && segmentHitsCircle(ax, ay, bx, by, item.x, item.y, this.hitRadius)) {
         this.slice(item, angle);
       }
@@ -510,9 +524,16 @@ export class GumballSliceEngine {
     this.burst(item.x, item.y, item.art.particleColor, item.kind === "golden" ? 2 : 1);
 
     if (isBadItem(item.kind)) {
+      this.broccoliHits += 1;
       this.score = Math.max(0, this.score + c.BAD_POINTS);
       this.popup(`${c.BAD_POINTS}`, item.x, item.y, c.POPUP_BAD_COLOR, 1.1);
-      this.shake(0.6);
+      if (this.broccoliHits >= c.BROCCOLI_STRIKES) {
+        this.strikeOutAt = this.elapsed + c.STRIKEOUT_DELAY_SEC;
+        this.pending = [];
+        this.shake(1.2);
+      } else {
+        this.shake(0.6);
+      }
       return;
     }
 

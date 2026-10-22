@@ -31,6 +31,7 @@ const INITIAL_HUD: HudSnapshot = {
   score: 0,
   secondsLeft: GUMBALL_SLICE_CONFIG.ROUND_SECONDS,
   slicedCount: 0,
+  broccoliHits: 0,
   comboCount: 0,
   playerMissing: false,
 };
@@ -58,12 +59,10 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
       setScreen("LOST");
       return;
     }
-    const roundResult = buildRoundResult(
-      stats,
-      sessionRef.current,
-      true,
-      GUMBALL_SLICE_CONFIG.MIN_SLICES,
-    );
+    const roundResult = buildRoundResult(stats, sessionRef.current, reason === "TIME_UP", {
+      minSlices: GUMBALL_SLICE_CONFIG.MIN_SLICES,
+      maxBroccoliHits: GUMBALL_SLICE_CONFIG.MAX_BROCCOLI_HITS,
+    });
     setResult(onRoundComplete(roundResult));
     setScreen("RESULTS");
   }, []);

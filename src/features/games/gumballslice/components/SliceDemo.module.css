@@ -1,5 +1,5 @@
 .demo {
-  --size: clamp(80px, 15vh, 140px);
+  --size: clamp(64px, 11vh, 120px);
   --loop: 1800ms;
   position: relative;
   width: calc(var(--size) * 3.2);

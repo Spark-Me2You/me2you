@@ -9,6 +9,7 @@ import React from "react";
 import { GUMBALL_SLICE_CONFIG as C } from "../config/gumballSliceConfig";
 import type { RoundResult } from "../types/gumballSlice";
 import styles from "./ResultsScreen.module.css";
+import { STRIKE_RULE_TEXT, WIN_RULE_TEXT, tooMuchBroccoli } from "./winRuleText";
 
 interface ActionsProps {
   onPlayAgain: () => void;
@@ -30,9 +31,16 @@ interface ResultsProps extends ActionsProps {
   result: RoundResult;
 }
 
+function outcomeText(result: RoundResult): string {
+  if (result.qualifies) return "you won real candy!";
+  if (!result.fullRound) return `${STRIKE_RULE_TEXT} no candy this time`;
+  if (tooMuchBroccoli(result.broccoliHits)) return "you sliced broccoli, so no candy this time";
+  return `${WIN_RULE_TEXT} to win candy`;
+}
+
 export const ResultsScreen: React.FC<ResultsProps> = ({ result, onPlayAgain, onMenu }) => (
   <div className={styles.overlay}>
-    <h1 className={styles.title}>time's up!</h1>
+    <h1 className={styles.title}>{result.fullRound ? "time's up!" : "you're out!"}</h1>
     <p className={styles.score}>{result.score} points</p>
 
     <div className={styles.stats}>
@@ -50,13 +58,15 @@ export const ResultsScreen: React.FC<ResultsProps> = ({ result, onPlayAgain, onM
         </span>
         <span className={styles.statLabel}>candy goal</span>
       </div>
+      <div className={styles.stat}>
+        <span className={styles.statValue}>{result.broccoliHits}</span>
+        <span className={styles.statLabel}>broccoli</span>
+      </div>
     </div>
 
     <div className={styles.rewardRow}>
       <p className={result.qualifies ? styles.qualified : styles.notQualified}>
-        {result.qualifies
-          ? "goal reached, this run qualifies!"
-          : `slice ${C.MIN_SLICES} candies to qualify`}
+        {outcomeText(result)}
       </p>
       <div className={styles.qrPlaceholder} aria-label="reward claim QR placeholder">
         claim QR

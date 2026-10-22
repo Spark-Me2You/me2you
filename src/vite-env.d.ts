@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   // Gumball Slice (all optional — see gumballSliceConfig.ts for defaults)
   readonly VITE_GUMBALL_ROUND_SECONDS?: string;
   readonly VITE_GUMBALL_MIN_SLICES?: string;
+  readonly VITE_GUMBALL_MAX_BROCCOLI_HITS?: string;
+  readonly VITE_GUMBALL_BROCCOLI_STRIKES?: string;
   readonly VITE_GUMBALL_CANDY_SPEED?: string;
   readonly VITE_GUMBALL_BAD_ITEM_FREQUENCY?: string;
   readonly VITE_GUMBALL_SLICE_SPEED?: string;
