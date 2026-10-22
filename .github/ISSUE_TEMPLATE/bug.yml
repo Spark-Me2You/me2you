@@ -1,0 +1,59 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: ["type:fix"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write this so someone (or an agent) with no extra context can fix it. See docs/AGENT_WORKFLOW.md.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the app is affected? (Triage adds the matching `area:*` label.)
+      multiple: true
+      options:
+        - kiosk (state machine, idle/auth/onboarding)
+        - hub
+        - discovery
+        - games
+        - cv (camera, hand tracking, pose)
+        - mobile (user pages, registration, claim, messages)
+        - auth
+        - db (migrations, RLS, edge functions)
+        - ci / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: Observed behaviour, including any error messages or console output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open /user/customize on a phone
+        2. Add the hat accessory
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: pointers
+    attributes:
+      label: Code pointers
+      description: Files, components or functions you suspect, if known.
+  - type: textarea
+    id: verify
+    attributes:
+      label: How to verify the fix
+      description: A unit test that should pass, or a manual check. Say if it needs kiosk hardware.

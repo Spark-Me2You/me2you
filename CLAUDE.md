@@ -19,7 +19,7 @@ CI (`.github/workflows/ci.yml`) runs `npm run lint`, `npm run build` (TypeScript
 
 ### Unit tests
 
-Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`.
+Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`, `docs/AGENT_WORKFLOW.md`.
 
 ### Supabase
 
@@ -39,6 +39,8 @@ Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required
 ## Git Conventions
 
 Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<kebab-name>` (e.g. `feature/hub-realtime`, `fix/hub-style`), commit as `<type>: <imperative summary>` (e.g. `fix: prevent accessory clipping`), and open PRs into `dev` titled the same way. Never commit directly to `main` or `dev`.
+
+Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/workflows/agent.yml`, which has Claude implement it and opens a draft PR from an `agent/<issue>-<slug>` branch. See `docs/AGENT_WORKFLOW.md`.
 
 ---
 

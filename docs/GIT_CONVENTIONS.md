@@ -23,6 +23,7 @@ docs/git-conventions
 - Lowercase, hyphen-separated, 2-5 words, describing the change (not the person or ticket-less "wip").
 - If useful, append an issue number: `fix/123-avatar-accessory-display`.
 - One purpose per branch. Delete the branch after it is merged.
+- `agent/<issue>-<slug>` is reserved for branches created by the agent workflow (`docs/AGENT_WORKFLOW.md`).
 
 ### Types
 
