@@ -31,15 +31,6 @@
     0 6px 0 var(--gs-magenta);
 }
 
-.score {
-  font-size: clamp(56px, 11vh, 120px);
-  line-height: 1;
-  letter-spacing: 4px;
-  color: var(--gs-gold);
-  text-shadow: 0 0 24px var(--gs-gold);
-  margin: 0;
-}
-
 .message {
   font-size: clamp(30px, 5vh, 52px);
   letter-spacing: 3px;
@@ -48,50 +39,60 @@
   margin: 0;
 }
 
-/* ---- stats ---- */
+/* ---- receipt (left) + outcome/claim (right) ---- */
 
-.stats {
+.body {
   display: flex;
-  gap: clamp(16px, 3vh, 32px);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(32px, 6vw, 96px);
+  max-width: 100%;
 }
 
-.stat {
+.receipt {
+  width: clamp(280px, 30vw, 440px);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vh, 10px);
+}
+
+.line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: clamp(24px, 4vh, 40px);
+  letter-spacing: 3px;
+}
+
+.line dt,
+.line dd {
+  margin: 0;
+}
+
+.leader {
+  flex: 1;
+  border-bottom: 3px dotted rgba(255, 255, 255, 0.4);
+  transform: translateY(-6px);
+}
+
+.lineHighlight {
+  font-size: clamp(32px, 5.5vh, 56px);
+  color: var(--gs-gold);
+}
+
+.reward {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: clamp(160px, 20vw, 240px);
-  padding: clamp(8px, 1.6vh, 16px) clamp(16px, 3vw, 32px);
-  border-radius: 46px;
-  background: var(--gs-glass);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow:
-    0 4px 4px rgba(0, 0, 0, 0.25),
-    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.1);
-}
-
-.statValue {
-  font-size: clamp(48px, 9vh, 96px);
-  line-height: 1;
-  letter-spacing: 4px;
-}
-
-.statLabel {
-  font-size: clamp(22px, 3.5vh, 36px);
-  letter-spacing: 4px;
-  opacity: 0.8;
-}
-
-/* ---- reward / claim QR ---- */
-
-.rewardRow {
-  display: flex;
-  align-items: center;
-  gap: 40px;
+  gap: clamp(10px, 2vh, 20px);
+  max-width: clamp(320px, 38vw, 600px);
+  text-align: center;
 }
 
 .qualified,
 .notQualified {
-  font-size: clamp(28px, 5vh, 52px);
+  font-size: clamp(26px, 4.5vh, 48px);
   letter-spacing: 4px;
   margin: 0;
 }
@@ -103,20 +104,6 @@
 .notQualified {
   color: var(--gs-white);
   opacity: 0.8;
-}
-
-/* Reserved for the reward claim QR (see services/roundCompleteService.ts) */
-.qrPlaceholder {
-  width: clamp(100px, 17vh, 180px);
-  height: clamp(100px, 17vh, 180px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  border: 4px dashed rgba(255, 255, 255, 0.4);
-  font-size: clamp(20px, 3vh, 32px);
-  letter-spacing: 3px;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 /* ---- buttons (same as the DrawIt / FlapFlap menus) ---- */

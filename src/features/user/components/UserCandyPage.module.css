@@ -1,0 +1,202 @@
+/* Same page shell as UserGameScoresPage; candy accents in orange. */
+.page {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 16px 48px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #e6f2ff 0%, #c4dff5 100%);
+  font-family: "Jersey 10", Arial, sans-serif;
+}
+
+.header {
+  position: sticky;
+  top: -24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -24px -16px 20px;
+  padding: 16px;
+  background: #e6f2ff;
+}
+
+.title {
+  font-size: 36px;
+  color: #003366;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.back {
+  font-family: "Jersey 10", Arial, sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  background: white;
+  border: 2px solid #a7d1f5;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #003366;
+}
+
+.status,
+.error {
+  font-size: 18px;
+  color: #003366;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.error {
+  color: #aa0000;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* ---- "you won" banner after a claim ---- */
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: rgba(228, 72, 5, 0.12);
+  border: 2px solid #e44805;
+  animation: bannerIn 400ms ease-out;
+}
+
+@keyframes bannerIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.bannerTitle {
+  font-size: 28px;
+  color: #e44805;
+  letter-spacing: 2px;
+}
+
+.bannerText {
+  font-size: 18px;
+  color: #003366;
+  letter-spacing: 1px;
+}
+
+/* ---- sections ---- */
+
+.sectionTitle {
+  font-size: 24px;
+  color: #003366;
+  letter-spacing: 2px;
+  margin: 8px 0 10px;
+  font-weight: 400;
+}
+
+.empty,
+.howTo {
+  font-size: 18px;
+  color: #5a7a99;
+  letter-spacing: 1px;
+  margin: 0 0 12px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* ---- live badge (anti-screenshot) ---- */
+
+.live {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.liveCandy {
+  width: 32px;
+  height: 32px;
+  animation: bob 1.2s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-6px) rotate(20deg); }
+}
+
+.liveClock {
+  font-size: 22px;
+  color: #003366;
+  letter-spacing: 2px;
+}
+
+/* ---- ready voucher ---- */
+
+.voucher {
+  background: #ffffff;
+  border: 3px solid #e44805;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 18px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.fresh {
+  animation: freshPulse 1.4s ease-in-out 3;
+}
+
+@keyframes freshPulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
+  50%      { box-shadow: 0 0 0 6px rgba(228, 72, 5, 0.3); }
+}
+
+.code {
+  font-size: 64px;
+  line-height: 1;
+  color: #e44805;
+  letter-spacing: 12px;
+  /* letter-spacing adds trailing space; nudge back to visually centre */
+  margin-right: -12px;
+}
+
+.meta {
+  font-size: 16px;
+  color: #5a7a99;
+  letter-spacing: 1px;
+  text-transform: lowercase;
+}
+
+/* ---- history ---- */
+
+.historyRow {
+  background: #ffffff;
+  border: 1px solid #a7d1f5;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0.75;
+}
+
+.historyCode {
+  font-size: 22px;
+  color: #003366;
+  letter-spacing: 4px;
+  text-decoration: line-through;
+}

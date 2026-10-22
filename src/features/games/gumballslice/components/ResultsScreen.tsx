@@ -1,13 +1,14 @@
 /**
  * Results Screen
- * End-of-round summary (score, accuracy, best combo, goal) plus the reserved
- * spot for the reward claim QR. PlayerLostScreen is shown instead when the
- * round was abandoned and its score discarded.
+ * End-of-round receipt (score, accuracy, best combo, goal, broccoli) beside
+ * the outcome and, for winning rounds, the candy claim QR. PlayerLostScreen is shown instead when
+ * the round was abandoned and its score discarded.
  */
 
 import React from "react";
 import { GUMBALL_SLICE_CONFIG as C } from "../config/gumballSliceConfig";
-import type { RoundResult } from "../types/gumballSlice";
+import type { RoundOutcome, RoundResult } from "../types/gumballSlice";
+import { CandyClaim } from "./CandyClaim";
 import styles from "./ResultsScreen.module.css";
 import { STRIKE_RULE_TEXT, WIN_RULE_TEXT, tooMuchBroccoli } from "./winRuleText";
 
@@ -27,49 +28,52 @@ const Actions: React.FC<ActionsProps> = ({ onPlayAgain, onMenu }) => (
   </div>
 );
 
+/** One receipt line: label ....... value */
+const ReceiptLine: React.FC<{ label: string; value: string; highlight?: boolean }> = ({
+  label,
+  value,
+  highlight = false,
+}) => (
+  <div className={`${styles.line} ${highlight ? styles.lineHighlight : ""}`}>
+    <dt>{label}</dt>
+    <span className={styles.leader} aria-hidden="true" />
+    <dd>{value}</dd>
+  </div>
+);
+
 interface ResultsProps extends ActionsProps {
-  result: RoundResult;
+  outcome: RoundOutcome;
 }
 
 function outcomeText(result: RoundResult): string {
-  if (result.qualifies) return "you won real candy!";
+  if (result.qualifies) return "claim your candy at the gumball machine!";
   if (!result.fullRound) return `${STRIKE_RULE_TEXT} no candy this time`;
   if (tooMuchBroccoli(result.broccoliHits)) return "you sliced broccoli, so no candy this time";
   return `${WIN_RULE_TEXT} to win candy`;
 }
 
-export const ResultsScreen: React.FC<ResultsProps> = ({ result, onPlayAgain, onMenu }) => (
+export const ResultsScreen: React.FC<ResultsProps> = ({
+  outcome: { result, claimPayload },
+  onPlayAgain,
+  onMenu,
+}) => (
   <div className={styles.overlay}>
     <h1 className={styles.title}>{result.fullRound ? "time's up!" : "you're out!"}</h1>
-    <p className={styles.score}>{result.score} points</p>
 
-    <div className={styles.stats}>
-      <div className={styles.stat}>
-        <span className={styles.statValue}>{Math.round(result.accuracy * 100)}%</span>
-        <span className={styles.statLabel}>accuracy</span>
-      </div>
-      <div className={styles.stat}>
-        <span className={styles.statValue}>×{result.bestCombo}</span>
-        <span className={styles.statLabel}>best combo</span>
-      </div>
-      <div className={styles.stat}>
-        <span className={styles.statValue}>
-          {result.slicedCount}/{C.MIN_SLICES}
-        </span>
-        <span className={styles.statLabel}>candy goal</span>
-      </div>
-      <div className={styles.stat}>
-        <span className={styles.statValue}>{result.broccoliHits}</span>
-        <span className={styles.statLabel}>broccoli</span>
-      </div>
-    </div>
+    <div className={styles.body}>
+      <dl className={styles.receipt}>
+        <ReceiptLine label="score" value={`${result.score}`} highlight />
+        <ReceiptLine label="candy" value={`${result.slicedCount}/${C.MIN_SLICES}`} />
+        <ReceiptLine label="broccoli" value={`${result.broccoliHits}`} />
+        <ReceiptLine label="accuracy" value={`${Math.round(result.accuracy * 100)}%`} />
+        <ReceiptLine label="best combo" value={`×${result.bestCombo}`} />
+      </dl>
 
-    <div className={styles.rewardRow}>
-      <p className={result.qualifies ? styles.qualified : styles.notQualified}>
-        {outcomeText(result)}
-      </p>
-      <div className={styles.qrPlaceholder} aria-label="reward claim QR placeholder">
-        claim QR
+      <div className={styles.reward}>
+        <p className={result.qualifies ? styles.qualified : styles.notQualified}>
+          {outcomeText(result)}
+        </p>
+        {claimPayload && <CandyClaim payload={claimPayload} />}
       </div>
     </div>
 

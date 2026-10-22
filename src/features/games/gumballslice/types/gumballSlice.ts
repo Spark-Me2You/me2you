@@ -2,6 +2,8 @@
  * Gumball Slice Types
  */
 
+import type { ClaimPayload } from "@/features/claim";
+
 export type ScreenState = "START" | "COUNTDOWN" | "PLAYING" | "RESULTS" | "LOST";
 
 export type ItemKind = "candy" | "rainbow" | "broccoli";
@@ -39,4 +41,11 @@ export interface RoundResult {
   fullRound: boolean;
   qualifies: boolean;
   durationMs: number;
+}
+
+/** What the results screen gets back from onRoundComplete. */
+export interface RoundOutcome {
+  result: RoundResult;
+  /** Candy-reward claim for a winning round; null when the round didn't win. */
+  claimPayload: ClaimPayload | null;
 }

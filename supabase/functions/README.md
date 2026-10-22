@@ -23,6 +23,18 @@ Generates a signed JWT token for QR-code based registration. The token is displa
 }
 ```
 
+### `claim-candy-reward`
+
+Claims a Gumball Slice win (a claim token with `payload.type = 'candy_reward'`) for the signed-in user. All logic runs in one transaction in `public.issue_candy_voucher()` (`025_candy_rewards.sql`): token checks, a server-side re-check of the win rule, claiming the token, saving the score to `game_score`, the daily cap (`reward_config.daily_cap_per_user`, default 1 per local day, America/New_York) and creating a `candy_voucher` with a 4-character code. `execute-claim` refuses candy tokens so a win can't be claimed without a voucher.
+
+**Authentication Required:** Regular user session JWT
+
+**Request:** `POST { "token_id": "<uuid>" }`
+
+**Success Response (200):** `{ "success": true, "token_id", "payload" }` — `payload.data.status` is `issued` (with `code`, `voucher_id`, `won_on`), `capped` (with `resets_at`) or `disabled`; `payload.display` is what the phone's success page shows.
+
+**Errors:** 400 (bad body / not a candy token), 401, 403 (no user row or wrong org), 404, 409 (already claimed, or round already claimed), 410 (expired), 422 (round doesn't meet the win rule), 500.
+
 ### `delete-user-images`
 
 Deletes all gesture and cropped image records (DB rows + storage objects) for the calling user. The user's account, profile, and profile photo (`image` table) remain intact. Intended as a "clear my photos / start fresh" operation.

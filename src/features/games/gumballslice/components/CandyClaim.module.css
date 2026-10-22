@@ -1,0 +1,43 @@
+/* Same treatment as FlapFlap's "claim my score" button, in theme colours. */
+.claimButton {
+  font-family: var(--gs-font);
+  padding: clamp(10px, 2vh, 18px) clamp(32px, 4vw, 52px);
+  font-size: clamp(28px, 4.5vh, 42px);
+  letter-spacing: 4px;
+  background: color-mix(in srgb, var(--gs-gold) 15%, transparent);
+  border: 3px solid color-mix(in srgb, var(--gs-gold) 60%, transparent);
+  border-radius: 16px;
+  color: var(--gs-white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claimButton:hover {
+  background: color-mix(in srgb, var(--gs-gold) 25%, transparent);
+  border-color: var(--gs-gold);
+  transform: scale(1.05);
+}
+
+.qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.instruction {
+  font-family: var(--gs-font);
+  font-size: clamp(22px, 3.5vh, 34px);
+  letter-spacing: 3px;
+  color: var(--gs-white);
+  margin: 0;
+}
+
+.claimed {
+  font-family: var(--gs-font);
+  font-size: clamp(36px, 6vh, 60px);
+  letter-spacing: 4px;
+  color: var(--gs-lime);
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  margin: 0;
+}

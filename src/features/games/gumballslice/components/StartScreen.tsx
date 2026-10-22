@@ -1,7 +1,8 @@
 /**
  * Start Screen
  * Title, item legend, how-to-play demo and a Ready button, with the real
- * Spark candy machine (the prize) standing bottom-left. The hand that taps
+ * Spark candy machine (the prize) in a framed tab pinned to the left edge,
+ * mirroring the registration QR tab on the right. The hand that taps
  * Ready becomes the locked player.
  */
 
@@ -23,9 +24,11 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
   <div className={styles.container}>
     <ExitButton onClick={onBack} label="back" />
 
-    <div className={styles.machine}>
+    <div className={styles.machinePanel}>
       <p className={styles.machineCaption}>win real candy!</p>
-      <img src={candyMachineImg} alt="The Spark candy machine" className={styles.machineImg} />
+      <div className={styles.photoFrame}>
+        <img src={candyMachineImg} alt="The Spark candy machine" className={styles.machineImg} />
+      </div>
     </div>
 
     <h1 className={styles.title}>Gumball Slice</h1>

@@ -18,7 +18,7 @@ import { onRoundComplete } from "../services/roundCompleteService";
 import type {
   HudSnapshot,
   RoundEndReason,
-  RoundResult,
+  RoundOutcome,
   RoundStats,
   ScreenState,
 } from "../types/gumballSlice";
@@ -41,7 +41,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   const { handTrackRef, setCursorVariant } = useCvCursorEnabled();
   const [screen, setScreen] = useState<ScreenState>("START");
   const [hud, setHud] = useState<HudSnapshot>(INITIAL_HUD);
-  const [result, setResult] = useState<RoundResult | null>(null);
+  const [outcome, setOutcome] = useState<RoundOutcome | null>(null);
   const [size] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [textures, setTextures] = useState<ItemTextures | null>(null);
   const engineRef = useRef<GumballSliceEngine | null>(null);
@@ -64,7 +64,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
       minSlices: GUMBALL_SLICE_CONFIG.MIN_SLICES,
       maxBroccoliHits: GUMBALL_SLICE_CONFIG.MAX_BROCCOLI_HITS,
     });
-    setResult(onRoundComplete(roundResult));
+    setOutcome(onRoundComplete(roundResult));
     setScreen("RESULTS");
   }, []);
 
@@ -129,7 +129,7 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
 
   const handlePlayAgain = useCallback(() => {
     engineRef.current?.reset();
-    setResult(null);
+    setOutcome(null);
     setScreen("START");
   }, []);
 
@@ -143,8 +143,8 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
 
       {(screen === "PLAYING" || screen === "RESULTS") && <SliceHud hud={hud} />}
 
-      {screen === "RESULTS" && result && (
-        <ResultsScreen result={result} onPlayAgain={handlePlayAgain} onMenu={onExit} />
+      {screen === "RESULTS" && outcome && (
+        <ResultsScreen outcome={outcome} onPlayAgain={handlePlayAgain} onMenu={onExit} />
       )}
 
       {screen === "LOST" && <PlayerLostScreen onPlayAgain={handlePlayAgain} onMenu={onExit} />}

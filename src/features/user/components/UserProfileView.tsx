@@ -529,6 +529,12 @@ export const UserProfileView: React.FC = () => {
               >
                 customize avatar
               </button>
+              <button
+                onClick={() => navigate("/user/candy")}
+                className={styles.candyButton}
+              >
+                my candy
+              </button>
             </div>
 
             <div className={styles.buttonRowMid}>

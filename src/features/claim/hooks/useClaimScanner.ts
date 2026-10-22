@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { Html5Qrcode } from 'html5-qrcode';
 import { claimService } from '@/core/supabase/claimService';
+import { supabase } from '@/core/supabase/client';
 import type { ClaimPayload } from '../types';
 
 const CLAIM_TOKEN_PATTERN = /\/claim\/([0-9a-f-]{36})(?:[?#].*)?$/;
@@ -78,7 +79,16 @@ export function useClaimScanner({
           }
 
           try {
-            const result = await claimService.executeClaim(tokenId);
+            // Candy rewards have their own claim function (voucher + daily cap).
+            const { data: token } = await supabase
+              .from('claim_tokens')
+              .select('payload')
+              .eq('id', tokenId)
+              .single();
+            const isCandy = (token?.payload as { type?: string } | null)?.type === 'candy_reward';
+            const result = isCandy
+              ? await claimService.executeCandyClaim(tokenId)
+              : await claimService.executeClaim(tokenId);
             if (mountedRef.current) callbacksRef.current.onSuccess(result.payload);
           } catch (err) {
             const msg = err instanceof Error ? err.message : 'Claim failed';

@@ -91,6 +91,31 @@ export const claimService = {
     };
   },
 
+  // Same result shape as executeClaim: the edge function returns a payload
+  // whose display describes the outcome (voucher issued, daily cap, paused).
+  executeCandyClaim: async (tokenId: string): Promise<ClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ExecuteClaimResponse>(
+      'claim-candy-reward',
+      { body: { token_id: tokenId } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-candy-reward error:', error);
+      throw new Error(error.message || 'Failed to claim candy');
+    }
+
+    if (!data?.success || !data.token_id || !data.payload) {
+      console.error('[claimService] claim-candy-reward returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to claim candy');
+    }
+
+    return {
+      success: true,
+      token_id: data.token_id,
+      payload: data.payload,
+    };
+  },
+
   executeDrawingClaim: async (tokenId: string): Promise<DrawingClaimResult> => {
     const { data, error } = await supabase.functions.invoke<ClaimDrawingResponse>(
       'claim-drawing',

@@ -154,7 +154,6 @@ export const GUMBALL_SLICE_CSS_VARS = {
   "--gs-orange": colors.btnOrange,
   "--gs-red": colors.red,
   "--gs-white": colors.white,
-  "--gs-glass": colors.glass,
   "--gs-wood-light": colors.woodLight,
   "--gs-wood-mid": colors.woodMid,
   "--gs-wood-dark": colors.woodDark,

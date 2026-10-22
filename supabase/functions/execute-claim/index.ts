@@ -110,6 +110,15 @@ serve(async (req) => {
       );
     }
 
+    // Candy rewards need the voucher + daily-cap logic in claim-candy-reward;
+    // claiming them here would use up the win without issuing a voucher.
+    if (token.payload?.type === 'candy_reward') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Candy rewards must be claimed through claim-candy-reward' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (token.status !== 'pending') {
       return new Response(
         JSON.stringify({ success: false, error: 'Token has already been claimed or expired' }),
