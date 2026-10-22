@@ -27,6 +27,3 @@ export const TIMER_FLASH_THRESHOLD_SEC = 10;
 
 export const COUNTDOWN_STEPS = ["3", "2", "1", "GO!"] as const;
 export const COUNTDOWN_STEP_MS = 800;
-
-export const GALLERY_BUCKET = "drawit-gallery";
-export const GALLERY_TABLE = "drawit_submissions";

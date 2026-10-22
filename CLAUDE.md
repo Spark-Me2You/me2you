@@ -7,13 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 npm run dev       # start Vite dev server
 npm run build     # tsc -b && vite build
-npm run lint      # ESLint
+npm run lint      # ESLint (errors fail CI; warnings don't)
+npm run typecheck # tsc -b only, faster than a full build
+npm run gen:types # regenerate src/core/supabase/database.types.ts from the remote schema
 npm test                  # Vitest unit tests (single run)
 npm run test:watch        # Vitest in watch mode
 npm run test:coverage     # unit tests + v8 coverage report in coverage/
 ```
 
-CI (`.github/workflows/ci.yml`) runs `npm run build` (TypeScript errors surface here) and `npm test`.
+CI (`.github/workflows/ci.yml`) runs `npm run lint`, `npm run build` (TypeScript errors surface here) and `npm test`. Run `npm run typecheck` and `npm run lint` before finishing a change.
 
 ### Unit tests
 
@@ -25,6 +27,8 @@ Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extend
 supabase functions deploy <function-name>   # deploy a single edge function
 supabase db push                            # apply migrations to remote
 ```
+
+The client is typed with the generated `Database` type (`src/core/supabase/database.types.ts`), so table and column names are checked by `tsc`. After a migration is applied, run `npm run gen:types` and commit the result with the migration. Don't hand-edit the generated file.
 
 ### Environment
 

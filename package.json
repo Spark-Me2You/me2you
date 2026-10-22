@@ -10,6 +10,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "gen:types": "npx --yes supabase@2 gen types typescript --project-id hgjybsryjxbmohbncvmc --schema public > src/core/supabase/database.types.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

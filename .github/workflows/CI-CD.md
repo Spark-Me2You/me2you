@@ -8,10 +8,11 @@ This document provides a quick summary of the continuous integration and deploym
 
   ```yaml
   - run: npm ci
+  - run: npm run lint
   - run: npm run build
   - run: npm test
   ```
 
-  This ensures that every commit or PR builds and passes unit tests before being merged.
+  This ensures that every commit or PR lints cleanly (warnings allowed, errors fail), builds and passes unit tests before being merged.
 
 - **deploy.yml**: a template workflow in `.github/workflows/deploy.yml`. Triggered only on pushes to `main`. It currently contains a `build` job that mirrors the CI build and a placeholder `deploy` job. No actual deployment commands are present until hosting/platform details are added.
