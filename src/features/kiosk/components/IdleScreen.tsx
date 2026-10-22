@@ -14,10 +14,10 @@ import { InfoOverlay } from "./InfoOverlay";
 const INFO_DWELL_MS = 1400;
 
 const MENU_BUTTON =
-  "absolute z-[2] flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[46px] border-0 text-white shadow-glass-card";
-const BTN_TITLE = "font-jersey text-[78px] leading-none tracking-[13.26px] lowercase";
-const BTN_SUBTITLE = "font-averia text-[35px] leading-none font-bold tracking-[5.95px] lowercase";
-const TAPE = "absolute left-1/2 bg-[#e405ac]";
+  "absolute z-[2] flex cursor-pointer flex-col items-center justify-center gap-1 rounded-glass border-0 text-white shadow-glass-card";
+const BTN_TITLE = "font-jersey text-display-xl leading-none tracking-brand lowercase";
+const BTN_SUBTITLE = "font-averia text-body-xl leading-none font-bold tracking-brand lowercase";
+const TAPE = "absolute left-1/2 bg-tape";
 
 /** Simple power icon SVG, white, 48px */
 function PowerIcon() {
@@ -98,7 +98,7 @@ export function IdleScreen() {
   return (
     <div className="relative h-[1080px] w-[1920px] origin-top-left [transform:scale(min(calc(100vw_/_1920),calc(100vh_/_1080)))]">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]" />
+      <div className="absolute inset-0 bg-page-gradient" />
 
       {/* Logo */}
       <img
@@ -118,7 +118,7 @@ export function IdleScreen() {
 
       {/* ===== Main glass container (left side) ===== */}
       <div className="absolute top-[10.5%] -left-[18.77%] z-[1] flex items-center justify-center">
-        <div className="relative h-[711px] w-[1511px] rounded-[40px] bg-[rgba(255,255,255,0.13)] shadow-glass-card [transform:scale(0.7)_rotate(-2.05deg)]">
+        <div className="relative h-[711px] w-[1511px] rounded-[40px] bg-glass shadow-glass-card [transform:scale(0.7)_rotate(-2.05deg)]">
           {/* Otter mascot */}
           <img
             src={otterImage}
@@ -129,7 +129,7 @@ export function IdleScreen() {
           {/* Discover button */}
           <button
             onClick={() => transitionTo(AppState.DISCOVERY)}
-            className={`${MENU_BUTTON} inset-[7.2%_12.96%_68.18%_50.97%] bg-[#e44805]`}
+            className={`${MENU_BUTTON} inset-[7.2%_12.96%_68.18%_50.97%] bg-action-discover`}
           >
             <span className={BTN_TITLE}>discover</span>
             <span className={BTN_SUBTITLE}>pose. match. connect</span>
@@ -138,7 +138,7 @@ export function IdleScreen() {
           {/* Games button */}
           <button
             onClick={() => transitionTo(AppState.GAMES)}
-            className={`${MENU_BUTTON} inset-[37.67%_2.45%_37.71%_61.48%] bg-[#7105e4]`}
+            className={`${MENU_BUTTON} inset-[37.67%_2.45%_37.71%_61.48%] bg-action-games`}
           >
             <span className={BTN_TITLE}>games</span>
             <span className={BTN_SUBTITLE}>compete & earn badges</span>
@@ -147,17 +147,17 @@ export function IdleScreen() {
           {/* Network button */}
           <button
             onClick={() => transitionTo(AppState.HUB)}
-            className={`${MENU_BUTTON} inset-[66.56%_12.38%_8.82%_51.55%] bg-[rgba(20,5,228,0.93)]`}
+            className={`${MENU_BUTTON} inset-[66.56%_12.38%_8.82%_51.55%] bg-action-network/93`}
           >
             <span className={BTN_TITLE}>network</span>
             <span className={BTN_SUBTITLE}>see yourself & others!</span>
           </button>
 
           {/* Welcome speech bubble */}
-          <div className="absolute inset-[39.03%_42.08%_37.34%_10.01%] z-[3] flex flex-col items-center justify-center rounded-[46px] bg-[#d3e405] text-center font-averia text-[35px] leading-[1.4] tracking-[5.95px] text-black shadow-glass-card">
+          <div className="absolute inset-[39.03%_42.08%_37.34%_10.01%] z-[3] flex flex-col items-center justify-center rounded-glass bg-lime text-center font-averia text-body-xl leading-[1.4] tracking-brand text-ink shadow-glass-card">
             <p className="m-0 leading-[1.4]">welcome to me2you!</p>
             <p className="m-0 leading-[1.4]">
-              i'm <span className="font-averia font-bold text-[#d12aa7]">ozzy</span>! nice2meetu ;)
+              i'm <span className="font-averia font-bold text-magenta">ozzy</span>! nice2meetu ;)
             </p>
           </div>
         </div>
@@ -168,20 +168,20 @@ export function IdleScreen() {
         <img src={corkboardImage} alt="" className="h-[103%] w-[103%]" />
 
         {/* Corner title (top-left of corkboard) */}
-        <div className="pointer-events-none absolute right-0 bottom-[5%] z-[3] w-[500px] origin-center text-center font-jersey text-[60px] leading-[normal] font-normal tracking-[6.97px] text-white not-italic [transform:rotate(180.591deg)]">
+        <div className="pointer-events-none absolute right-0 bottom-[5%] z-[3] w-[500px] origin-center text-center font-jersey text-display-lg leading-[normal] font-normal tracking-[6.97px] text-white not-italic [transform:rotate(180.591deg)]">
           MOUSE TUTORIAL
         </div>
 
         {/* Gesture demo gif (with pink tape on top) */}
         <div className="pointer-events-none absolute right-[4%] bottom-[20%] z-[5] h-[35%] w-[40%] [transform:rotate(175deg)]">
           <img src={cvMouseGif} alt="Hover and click gesture demo" className="block h-full w-full object-contain" />
-          <div className={`${TAPE} -top-[10px] z-[6] h-6 w-[110px] shadow-[0px_2px_4px_rgba(0,0,0,0.2)] [transform:translateX(-50%)_rotate(6deg)]`} />
+          <div className={`${TAPE} -top-[10px] z-[6] h-6 w-[110px] shadow-tape [transform:translateX(-50%)_rotate(6deg)]`} />
         </div>
 
         {/* Pink-tape label below gif */}
-        <div className="absolute right-[42%] bottom-[20%] z-[4] box-content flex h-[375px] w-[200px] items-start justify-start overflow-visible rounded-[6px] bg-[#ffeeb0] pt-[22px] pr-6 pb-6 pl-6 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25),inset_0px_0px_4px_0px_rgba(0,0,0,0.15)] [transform:rotate(184deg)]">
+        <div className="absolute right-[42%] bottom-[20%] z-[4] box-content flex h-[375px] w-[200px] items-start justify-start overflow-visible rounded-[6px] bg-note pt-[22px] pr-6 pb-6 pl-6 shadow-note [transform:rotate(184deg)]">
           <div className={`${TAPE} -top-3 z-[5] h-[22px] w-[90px] [transform:translateX(-50%)_rotate(-4deg)]`} />
-          <ul className="m-0 list-disc py-0 pr-0 pl-[1.2em] text-left font-averia text-[22px] tracking-[2px] text-black">
+          <ul className="m-0 list-disc py-0 pr-0 pl-[1.2em] text-left font-averia text-[22px] tracking-[2px] text-ink">
             <li className="mb-2 leading-[1.2] last:mb-0">use your pointer finger to move the mouse!</li>
             <li className="mb-2 leading-[1.2] last:mb-0">curve your thumb in like this to click!</li>
             <li className="mb-2 leading-[1.2] last:mb-0">now practice by clicking this button!</li>
@@ -194,7 +194,7 @@ export function IdleScreen() {
         <div className="absolute top-[20%] right-[8%] z-[4] h-[108px] w-[273px] [transform:rotate(187deg)]">
           <button
             ref={infoButtonRef}
-            className="absolute top-0 left-0 z-[1] m-0 box-border flex h-[108px] w-[273px] cursor-pointer items-center justify-center rounded-[46px] border-[7px] border-solid border-[#d3e405] bg-[#e405ac] p-0 font-jersey text-[46px] tracking-[7.82px] text-[#f5f5f5] lowercase shadow-glass-card"
+            className="absolute top-0 left-0 z-[1] m-0 box-border flex h-[108px] w-[273px] cursor-pointer items-center justify-center rounded-glass border-[7px] border-solid border-lime bg-magenta p-0 font-jersey text-display-md tracking-brand text-[#f5f5f5] lowercase shadow-glass-card"
             onClick={() => setShowInfo(true)}
           >
             info!!
@@ -217,7 +217,7 @@ export function IdleScreen() {
               pathLength={100}
               strokeDasharray={100}
               strokeDashoffset={100}
-              className={`fill-none stroke-[#7c5cff] [stroke-linecap:butt] [stroke-linejoin:miter] [stroke-width:8] [filter:drop-shadow(0_0_6px_rgba(124,92,255,0.65))] ${
+              className={`fill-none stroke-violet [stroke-linecap:butt] [stroke-linejoin:miter] [stroke-width:8] [filter:drop-shadow(0_0_6px_rgba(124,92,255,0.65))] ${
                 infoArming ? "animate-info-trace opacity-100" : "opacity-0"
               }`}
             />
@@ -228,14 +228,14 @@ export function IdleScreen() {
       {/* ===== QR code section (bottom right) ===== */}
       <div className="pointer-events-none fixed right-4 bottom-0 z-10 h-[15rem] w-[30rem]">
         <div className="absolute top-0 left-4 z-[4] flex origin-top-left scale-[0.65] items-center justify-center">
-          <RegistrationQRDisplay className="box-content h-[277px] w-[277px] rounded-[46px] bg-[rgba(228,5,172,0.93)] p-6 shadow-glass-card [transform:rotate(-7.2deg)]" />
+          <RegistrationQRDisplay className="box-content h-[277px] w-[277px] rounded-glass bg-magenta/93 p-6 shadow-glass-card [transform:rotate(-7.2deg)]" />
         </div>
 
         {/* Otter hand */}
         <img src={otterHandImage} alt="" className="pointer-events-none absolute bottom-0 left-0 z-[6] w-[120px] scale-[1.2] object-contain select-none" />
 
         {/* Text + arrow */}
-        <p className="absolute top-4 right-0 z-[4] m-0 w-[15rem] text-center font-averia text-[32px] leading-[1.1] tracking-[5.44px] text-black [transform:rotate(5.04deg)]">
+        <p className="absolute top-4 right-0 z-[4] m-0 w-[15rem] text-center font-averia text-[32px] leading-[1.1] tracking-brand text-ink [transform:rotate(5.04deg)]">
           scan here to create and edit your profile!
         </p>
         <img src={arrow2} alt="" className="pointer-events-none absolute top-[11rem] right-[8rem] z-[4] h-4 w-[34px] [transform:rotate(171.44deg)]" />

@@ -135,11 +135,11 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
         <div className="text-center">
-          <h3 className="mb-4 font-averia text-[24px] text-[#d32f2f]">
+          <h3 className="mb-4 font-averia text-[24px] text-error">
             {error ? 'Camera Error' : 'Gesture Recognition Error'}
           </h3>
-          <p className="font-averia text-[18px] text-[#666]">{combinedError}</p>
-          <p className="font-averia text-[18px] text-[#666]">
+          <p className="font-averia text-[18px] text-ink-muted">{combinedError}</p>
+          <p className="font-averia text-[18px] text-ink-muted">
             {error
               ? 'Please ensure camera permissions are granted and try again.'
               : 'Please ensure the gesture recognizer model is downloaded.'}
@@ -152,7 +152,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
   if (isLoading || !isInitialized) {
     return (
       <div className="flex h-full w-full items-center justify-center p-8">
-        <p className="font-averia text-[24px] text-[#666]">
+        <p className="font-averia text-[24px] text-ink-muted">
           {isLoading
             ? 'Loading camera...'
             : 'Initializing gesture recognition...'}

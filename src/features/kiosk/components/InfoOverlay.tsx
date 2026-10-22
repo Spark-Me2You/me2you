@@ -3,12 +3,12 @@ import corkboardImage from "@/assets/corkboard.png";
 import polaroidFrame1 from "@/assets/polaroid_frame1.svg";
 import pinkBackArrow from "@/assets/pink_back_arrow.svg";
 
-const CARD = "absolute z-[2] overflow-visible rounded-[4px] bg-[#ede8d0]";
+const CARD = "absolute z-[2] overflow-visible rounded-[4px] bg-polaroid";
 const CARD_FRAME = "pointer-events-none absolute -inset-[2%] z-0 h-[104%] w-[104%]";
 const CARD_TAPE =
-  "absolute -top-[10px] left-1/2 z-[2] h-[22px] w-[90px] bg-[#e405ac] [transform:translateX(-50%)_rotate(-3deg)]";
-const CARD_TEXT = "absolute z-[1] font-averia text-black";
-const CARD_HEADING = "m-0 text-[33px] tracking-[5.61px]";
+  "absolute -top-[10px] left-1/2 z-[2] h-[22px] w-[90px] bg-tape [transform:translateX(-50%)_rotate(-3deg)]";
+const CARD_TEXT = "absolute z-[1] font-averia text-ink";
+const CARD_HEADING = "m-0 text-[33px] tracking-brand";
 
 interface InfoOverlayProps {
   onClose: () => void;
@@ -19,7 +19,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
   return (
     <>
       {/* Dark background: unscaled, covers full screen */}
-      <div className="absolute inset-0 z-20 bg-[rgba(80,100,110,0.78)]" />
+      <div className="absolute inset-0 z-20 bg-scrim-slate" />
 
       {/* Cork board: unscaled, full size */}
       <img
@@ -29,7 +29,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
       />
 
       <div className="absolute inset-0 z-[22] h-[1080px] w-[1920px] origin-top-left overflow-hidden [transform:scale(0.7)]">
-        <p className="absolute top-[130px] left-[420px] z-[3] m-0 font-jersey text-[78px] tracking-[13.26px] text-white">
+        <p className="absolute top-[130px] left-[420px] z-[3] m-0 font-jersey text-display-xl tracking-brand text-white">
           about
         </p>
 
@@ -37,7 +37,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
         <div className={`${CARD} top-[228px] left-[424px] h-[274px] w-[599px] [transform:rotate(-3.26deg)]`}>
           <img src={polaroidFrame1} alt="" className={CARD_FRAME} />
           <div className={CARD_TAPE} />
-          <div className={`${CARD_TEXT} inset-[4%_9%_0_7%] text-[33px] leading-[1.4] tracking-[5.61px]`}>
+          <div className={`${CARD_TEXT} inset-[4%_9%_0_7%] text-[33px] leading-[1.4] tracking-brand`}>
             <p>
               <strong className="font-bold">me2you</strong> is...
               <br />a digital installation meant for light-hearted community interaction!
@@ -49,7 +49,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
         <div className={`${CARD} top-[205px] left-[1094px] h-[590px] w-[440px] [transform:rotate(8.71deg)]`}>
           <img src={polaroidFrame1} alt="" className={CARD_FRAME} />
           <div className={CARD_TAPE} />
-          <div className={`${CARD_TEXT} inset-[3%_8%_5%_19%] text-[25px] leading-[1.5] tracking-[4.25px]`}>
+          <div className={`${CARD_TEXT} inset-[3%_8%_5%_19%] text-body-lg leading-[1.5] tracking-brand`}>
             <p className={`${CARD_HEADING} mb-2`}>
               <strong className="font-bold">you can...</strong>
             </p>
@@ -65,7 +65,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
         <div className={`${CARD} top-[532px] left-[482px] h-[376px] w-[541px] [transform:rotate(2.94deg)]`}>
           <img src={polaroidFrame1} alt="" className={CARD_FRAME} />
           <div className={CARD_TAPE} />
-          <div className={`${CARD_TEXT} inset-[3%_13%_10%_8%] text-[25px] leading-[1.5] tracking-[4.25px]`}>
+          <div className={`${CARD_TEXT} inset-[3%_13%_10%_8%] text-body-lg leading-[1.5] tracking-brand`}>
             <p className={`${CARD_HEADING} mb-3`}>
               <strong className="font-bold">concerned about privacy?</strong>
             </p>
@@ -83,7 +83,7 @@ export function InfoOverlay({ onClose }: InfoOverlayProps) {
           alt=""
           className="pointer-events-none absolute top-[750px] left-[1150px] z-[3] h-[294px] w-[421px] object-contain"
         />
-        <p className="absolute top-[720px] left-[1300px] z-[3] m-0 font-averia text-[25px] tracking-[4.25px] text-black">
+        <p className="absolute top-[720px] left-[1300px] z-[3] m-0 font-averia text-body-lg tracking-brand text-ink">
           have fun!
         </p>
 

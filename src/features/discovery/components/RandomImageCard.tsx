@@ -54,13 +54,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white">
-        <p
-          style={{
-            fontFamily: "Averia Libre, cursive",
-            fontSize: "24px",
-            color: "#666",
-          }}
-        >
+        <p className="font-averia text-[24px] text-ink-muted">
           Loading...
         </p>
       </div>
@@ -71,15 +65,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
   if (error) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white">
-        <p
-          style={{
-            fontFamily: "Averia Libre, cursive",
-            fontSize: "20px",
-            color: "#d32f2f",
-            textAlign: "center",
-            padding: "2rem",
-          }}
-        >
+        <p className="p-8 text-center font-averia text-[20px] text-error">
           {error}
         </p>
       </div>
@@ -99,7 +85,7 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
           <BorderProgress
             key={imageData.image.id}
             progress={timerProgress}
-            color="#22c55e"
+            color="var(--color-success)"
             strokeWidth={7}
           />
         )}
@@ -122,20 +108,20 @@ export const RandomImageCard: React.FC<RandomImageCardProps> = ({
 
         {/* Orange namecard overlay (clickable) */}
         <button
-          className="absolute right-0 bottom-[4%] z-10 flex min-h-[15%] w-[60%] cursor-pointer flex-col items-start gap-[0.3rem] overflow-hidden rounded-[10px] border-0 bg-[rgba(228,72,5,0.92)] px-4 py-[0.9rem] text-left shadow-[0px_4px_8px_rgba(0,0,0,0.3),inset_0px_0px_4px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)]"
+          className="absolute right-0 bottom-[4%] z-10 flex min-h-[15%] w-[60%] cursor-pointer flex-col items-start gap-[0.3rem] overflow-hidden rounded-tag border-0 bg-orange/92 px-4 py-[0.9rem] text-left shadow-[0px_4px_8px_rgba(0,0,0,0.3),inset_0px_0px_4px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)]"
           onClick={() => onViewProfile?.(imageData)}
           type="button"
         >
-          <p className="m-0 mb-[0.15rem] font-jersey text-[28px] leading-[1.1] tracking-[3px] text-[#fff5f5]">hi! i'm {owner.name}!</p>
+          <p className="m-0 mb-[0.15rem] font-jersey text-[28px] leading-[1.1] tracking-[3px] text-snow">hi! i'm {owner.name}!</p>
           {owner.pronouns && (
-            <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-[#fff5f5]">{owner.pronouns}</p>
+            <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-snow">{owner.pronouns}</p>
           )}
-          {owner.major && <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-[#fff5f5]">{owner.major}</p>}
+          {owner.major && <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-snow">{owner.major}</p>}
 
           <div className="mb-2 flex w-full flex-col items-start gap-[0.15rem]">
-            <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-[#fff5f5] mt-2 self-start text-left uppercase">status:</p>
-            <div className="mt-[0.3rem] ml-0 flex h-[1.8rem] w-[65%] items-center self-start rounded-[10px] bg-white px-[0.9rem] py-[0.35rem] shadow-[inset_-1px_-1px_4px_0px_rgba(0,0,0,0.25),inset_0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-              <p className="m-0 font-jersey text-[18px] leading-[1.2] text-black [word-wrap:break-word]">
+            <p className="m-0 font-jersey text-[17px] leading-[0.5] tracking-[4px] text-snow mt-2 self-start text-left uppercase">status:</p>
+            <div className="mt-[0.3rem] ml-0 flex h-[1.8rem] w-[65%] items-center self-start rounded-tag bg-white px-[0.9rem] py-[0.35rem] shadow-well">
+              <p className="m-0 font-jersey text-body-md leading-[1.2] text-ink [word-wrap:break-word]">
                 {owner.status || "No status set"}
               </p>
             </div>

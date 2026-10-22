@@ -91,7 +91,7 @@ export const OrgSelectorPage: React.FC = () => {
             onClick={() => handleOrgSelect(org.id)}
             disabled={isMinting}
             className={`h-[97px] w-[400px] rounded-[10px] border-0 font-averia text-[37px] font-light tracking-[6px] text-white lowercase shadow-[0px_4px_4px_rgba(0,0,0,0.25),inset_0px_0px_4px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)] ${
-              isMinting ? 'cursor-not-allowed bg-[rgba(211,228,5,0.4)]' : 'cursor-pointer bg-btn-yellow-green'
+              isMinting ? 'cursor-not-allowed bg-[rgba(211,228,5,0.4)]' : 'cursor-pointer bg-lime/93'
             }`}
           >
             {org.name}

@@ -11,8 +11,8 @@ import thumbsUpIcon from '@/assets/thumbsUP.png';
 
 export const PoseOverlay: React.FC = () => {
   return (
-    <div className="absolute inset-x-[20%] top-0 z-50 flex h-32 items-center gap-10 rounded-[46px] bg-[rgba(113,5,228,0.57)] px-[35px] shadow-glass-card backdrop-blur-[4px]">
-      <p className="m-0 font-averia text-[53px] font-normal tracking-[9.01px] whitespace-nowrap text-white">choose a pose:</p>
+    <div className="absolute inset-x-[20%] top-0 z-50 flex h-32 items-center gap-10 rounded-glass bg-purple/57 px-[35px] shadow-glass-card backdrop-blur-[4px]">
+      <p className="m-0 font-averia text-[53px] font-normal tracking-brand whitespace-nowrap text-white">choose a pose:</p>
       <div className="flex flex-1 items-center justify-center gap-5">
         <img
           src={peaceIcon}

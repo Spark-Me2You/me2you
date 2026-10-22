@@ -29,7 +29,7 @@ export const PinnedRegistrationQR: React.FC<PinnedRegistrationQRProps> = ({
 
   return (
     <div
-      className={`pointer-events-auto fixed z-[1000] flex flex-col items-center gap-2 bg-btn-pink px-4 py-[14px] shadow-glass-card ${side === 'left' ? 'rounded-r-[18px]' : 'rounded-l-[18px]'}`}
+      className={`pointer-events-auto fixed z-[1000] flex flex-col items-center gap-2 bg-magenta/93 px-4 py-[14px] shadow-glass-card ${side === 'left' ? 'rounded-r-[18px]' : 'rounded-l-[18px]'}`}
       style={{ ...horizontalStyle, ...verticalStyle }}
     >
       <RegistrationQRDisplay size={qrSize} />
