@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { COUNTDOWN_STEPS, COUNTDOWN_STEP_MS } from "../config/drawitConfig";
-import styles from "./Countdown.module.css";
 
 interface Props {
   onDone: () => void;
@@ -21,8 +20,8 @@ export const Countdown: React.FC<Props> = ({ onDone }) => {
   if (idx >= COUNTDOWN_STEPS.length) return null;
 
   return (
-    <div className={styles.container}>
-      <div key={idx} className={styles.number}>
+    <div className="flex items-center justify-center">
+      <div key={idx} className="animate-pop font-jersey text-[320px] tracking-[8px] text-[#ff0] [text-shadow:6px_6px_0_rgba(0,0,0,0.5)]">
         {COUNTDOWN_STEPS[idx]}
       </div>
     </div>

@@ -98,6 +98,8 @@ ONBOARDING → HUB
 
 ## Feature Layer (`src/features/`)
 
+New features style their UI per `BRAND_BOOK.md` (see its "Building a new page or feature" checklist).
+
 | Feature | Description |
 |---|---|
 | `discovery/` | Kiosk: gesture-based random profile reveal |
@@ -119,8 +121,16 @@ ONBOARDING → HUB
 | `components/` | `Button`, `Modal`, `LoadingSpinner`, `GlassCard`, `BadgeDisplay`, `ConfirmDialog`, `ExitButton`, and others |
 | `hooks/` | `useDebounce`, `useInterval`, `useKeyboardShortcut`, `useSessionStorage` |
 | `sound/` | `playClaimSound.ts` |
-| `theme/` | `colors.ts`, `spacing.ts`, `typography.ts` |
 | `utils/` | `accessoryLayout.ts`, `constants.ts`, `gestureConstants.ts` |
+
+## Styling
+
+Styling uses Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` for history and gotchas, and `BRAND_BOOK.md` for the visual system and when to use each token.
+
+- `src/styles/tailwind.css` — Tailwind entry (imported in `main.tsx`): preflight, Google Fonts, global `@layer base` rules
+- `src/styles/theme.css` — `@theme` tokens: palette and semantic color roles, fonts, type scale, tracking, radii, shadows, keyframes, plus the `bg-page-gradient` utility
+- Components use utility classes; there are no CSS Modules
+- Pixi rendering is unaffected; only the DOM wrappers around canvases are styled with Tailwind
 
 ## Supabase Edge Functions (`supabase/functions/`)
 

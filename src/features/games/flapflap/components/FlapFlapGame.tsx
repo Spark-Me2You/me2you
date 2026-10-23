@@ -10,6 +10,7 @@ import React, {
   useCallback,
   useState,
 } from "react";
+import type { Ticker } from "pixi.js";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import {
   usePoseDetection,
@@ -31,7 +32,6 @@ import {
   type FlapFlapLeaderboardEntry,
 } from "@/features/games/services/gameScoreService";
 import { PinnedRegistrationQR } from "@/features/kiosk";
-import styles from "./FlapFlapGame.module.css";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
   onExit,
@@ -166,7 +166,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
 
     // Use PixiJS ticker for game loop (single unified animation system)
     const ticker = app.ticker;
-    const tickerCallback = (time: any) => {
+    const tickerCallback = (time: Ticker) => {
       const deltaTime = Math.min(time.deltaMS / 1000, 0.05);
       accumulator += deltaTime;
 
@@ -289,10 +289,10 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, [canvasScale]);
 
   return (
-    <div ref={layoutRef} className={styles.container}>
-      <div className={styles.gameLayout}>
+    <div ref={layoutRef} className="relative box-border flex h-screen w-full items-start justify-center overflow-hidden bg-[linear-gradient(180deg,#1a1a2e_0%,#16213e_100%)] px-5 py-[28px]">
+      <div className="flex w-full max-w-[1650px] items-start justify-center gap-6 max-[700px]:flex-col max-[700px]:items-center">
         <div
-          className={styles.canvasOuter}
+          className="relative shrink-0 overflow-hidden rounded-[16px] border-4 border-solid border-[rgba(255,255,255,0.3)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           style={{
             width: FLAPFLAP_CONFIG.GAME_WIDTH * canvasScale,
             height: FLAPFLAP_CONFIG.GAME_HEIGHT * canvasScale,
@@ -300,7 +300,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
         >
           <div
             ref={containerRef}
-            className={styles.canvasInner}
+            className="relative h-[900px] w-[1200px] origin-top-left"
             style={{ transform: `scale(${canvasScale})` }}
           >
             {gameState === "GAME_OVER" && (
@@ -316,7 +316,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
           </div>
         </div>
 
-        <div ref={leaderboardPanelRef} className={styles.leaderboardPanel}>
+        <div ref={leaderboardPanelRef} className="w-[360px] pr-6 max-[700px]:w-[min(900px,100%)]">
           <FlapFlapLeaderboard
             entries={leaderboardEntries}
             isLoading={isLeaderboardLoading}

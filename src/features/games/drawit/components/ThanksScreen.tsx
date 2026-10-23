@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { PALETTE } from "../config/drawitConfig";
 import otterImg from "../../../../assets/otter_default_rough_draft.png";
-import styles from "./ThanksScreen.module.css";
 
 interface Props {
   onDone: () => void;
@@ -43,12 +42,12 @@ export const ThanksScreen: React.FC<Props> = ({ onDone, autoDismissMs = 6000 }) 
   }, [autoDismissMs, onDone]);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.confetti} aria-hidden="true">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden font-jersey">
+      <div className="pointer-events-none absolute inset-0 z-[1]" aria-hidden="true">
         {pieces.map((p, i) => (
           <span
             key={i}
-            className={styles.piece}
+            className="absolute -top-10 block rounded-[2px] will-change-transform [animation-iteration-count:infinite] [animation-name:confetti-fall] [animation-timing-function:linear]"
             style={{
               left: `${p.left}%`,
               background: p.color,
@@ -63,11 +62,11 @@ export const ThanksScreen: React.FC<Props> = ({ onDone, autoDismissMs = 6000 }) 
         ))}
       </div>
 
-      <img src={otterImg} alt="" className={styles.otter} aria-hidden="true" />
+      <img src={otterImg} alt="" className="pointer-events-none absolute right-10 -bottom-[100px] z-[3] h-auto w-[520px]" aria-hidden="true" />
 
-      <div className={styles.content}>
-        <h1 className={styles.title}>go check out the gallery!👀</h1>
-        <p className={styles.subtitle}> thanks!</p>
+      <div className="relative z-[2] flex flex-col items-center gap-5 text-center">
+        <h1 className="m-0 text-[clamp(72px,12vw,100px)] tracking-[6px] text-white [text-shadow:4px_4px_0_rgba(0,0,0,0.35),0_0_20px_rgba(255,255,255,0.35)]">go check out the gallery!👀</h1>
+        <p className="m-0 text-[clamp(28px,3.5vw,44px)] tracking-[4px] text-[#ffff80] [text-shadow:0_3px_0_rgba(0,0,0,0.3)]"> thanks!</p>
       </div>
     </div>
   );

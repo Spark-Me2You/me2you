@@ -4,7 +4,6 @@ import { useAuth } from '@/core/auth';
 import { supabase } from '@/core/supabase/client';
 import { claimService } from '@/core/supabase/claimService';
 import { MessageComposePage } from '@/features/messages';
-import styles from './ClaimPage.module.css';
 
 interface ComposeContext {
   tokenId: string;
@@ -86,9 +85,9 @@ export function ClaimPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.content}>
-        <span className={styles.text}>claiming...</span>
+    <div className="mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+      <div className="flex flex-col items-center gap-4">
+        <span className="font-jersey text-[32px] tracking-[2px] text-[#555] lowercase">claiming...</span>
       </div>
     </div>
   );

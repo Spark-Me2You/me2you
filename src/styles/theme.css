@@ -1,0 +1,192 @@
+/*
+ * Design tokens. docs/BRAND_BOOK.md explains when to use each one.
+ *
+ * Two tiers of color:
+ *   1. Palette: raw brand hues, named for what they look like (bg-orange, text-lime).
+ *   2. Roles: semantic aliases that point at the palette (bg-action-discover, bg-tape).
+ * Components should reach for a role first and the palette only when no role fits.
+ * Use opacity modifiers for translucent variants (bg-blue/93, bg-purple/57) rather than
+ * adding new rgba tokens.
+ *
+ * Spacing is not redefined: Tailwind's default scale (1 = 4px) is the spacing system.
+ * Google Fonts are loaded from tailwind.css.
+ */
+@theme {
+  /* ---- Palette ---- */
+  --color-orange: #e44805;
+  --color-orange-dark: #b8360a;
+  --color-purple: #7105e4;
+  --color-blue: #1405e4;
+  --color-lime: #d3e405;
+  --color-lime-dark: #b8c704;
+  --color-magenta: #e405ac;
+  --color-magenta-dim: #b0006a;
+  --color-sky: #58e7f7;
+  --color-cream: #fefffb;
+  --color-red: #ff0000;
+  --color-violet: #7c5cff;
+  --color-snow: #fff5f5;
+  --color-note: #ffeeb0;
+  --color-polaroid: #ede8d0;
+  --color-ink: #000000;
+  --color-ink-soft: #1a1a1a;
+  --color-ink-muted: #666666;
+  --color-green: #22c55e;
+
+  /* ---- Roles ---- */
+  /* Kiosk hub actions: each top-level destination owns one hue. */
+  --color-action-discover: var(--color-orange);
+  --color-action-games: var(--color-purple);
+  --color-action-network: var(--color-blue);
+  --color-action-help: var(--color-lime);
+  --color-action-exit: var(--color-red);
+
+  /* Decorative scrapbook pieces */
+  --color-tape: var(--color-magenta);
+  --color-tape-alt: var(--color-lime);
+
+  /* Surfaces */
+  --color-glass: rgba(255, 255, 255, 0.13);
+  --color-scrim: rgba(0, 0, 0, 0.6);
+  --color-scrim-slate: rgba(80, 100, 110, 0.78);
+  --color-gradient-start: var(--color-sky);
+  --color-gradient-end: var(--color-cream);
+
+  /* Feedback */
+  --color-error: #b0003a;
+  --color-success: var(--color-green);
+
+  /* ---- Shadows ---- */
+  /* Glass card (outer drop + inner glow + inner edge) */
+  --shadow-glass:
+    0px 4px 4px rgba(0, 0, 0, 0.25), inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2),
+    inset 0px 0px 4px rgba(0, 0, 0, 0.25);
+
+  /* Pill-shaped glass cards: same layers as shadow-glass, inner edge before glow */
+  --shadow-glass-card:
+    0px 4px 4px 0px rgba(0, 0, 0, 0.25), inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25),
+    inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+
+  /* Glass sheen without the outer drop, for an overlay on top of a card that already has one */
+  --shadow-glass-inset:
+    inset 0px 0px 4px 0px rgba(0, 0, 0, 0.25), inset 1px 1px 49.9px 14px rgba(255, 255, 255, 0.2);
+
+  /* Plain drop shadow (buttons, envelopes) */
+  --shadow-drop: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+  /* Recessed white "well" that holds a photo or a typed value */
+  --shadow-well: inset -1px -1px 4px 0px rgba(0, 0, 0, 0.25), inset 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+  /* Sticky note / paper on the corkboard */
+  --shadow-note: 0px 4px 4px 0px rgba(0, 0, 0, 0.25), inset 0px 0px 4px 0px rgba(0, 0, 0, 0.15);
+
+  /* Strip of tape */
+  --shadow-tape: 0px 2px 4px rgba(0, 0, 0, 0.2);
+
+  /* ---- Radii ---- */
+  --radius-glass: 46px; /* pill cards, menu buttons, QR frames */
+  --radius-btn: 13px; /* rectangular buttons (exit) */
+  --radius-tag: 10px; /* small chips, inputs, namecards */
+
+  /* ---- Typography ---- */
+  /* The brand's signature wide, lowercase tracking: 0.17em at every size. */
+  --tracking-brand: 0.17em;
+
+  /* Kiosk type scale, in 1920x1080 design pixels */
+  --text-display-xl: 78px; /* menu titles, page titles */
+  --text-display-lg: 60px; /* corkboard and popup titles */
+  --text-display-md: 46px; /* pill buttons */
+  --text-body-xl: 35px; /* speech bubbles, button subtitles */
+  --text-body-lg: 25px; /* corkboard card copy */
+  --text-body-md: 18px; /* notes, help bullets, typed values */
+
+  --font-jersey: "Jersey 10", sans-serif; /* display: titles, labels, buttons */
+  --font-averia: "Averia Libre", cursive; /* body: friendly copy, instructions */
+  --font-mono: "Andale Mono", ui-monospace, monospace; /* text a user typed (status, interests) */
+  --font-jersey-arial: "Jersey 10", Arial, sans-serif; /* mobile user pages */
+  --font-pixelify: "Pixelify Sans", sans-serif; /* games only */
+  --font-handwritten: "Caveat", cursive; /* one-off: admin org selector */
+
+  /* Animations (kiosk). Keyframes must not animate a property that a utility also sets:
+     !important utilities beat running animations. */
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-slide-in-right: slide-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-completion-flash: completion-flash 0.4s ease-out;
+  --animate-fade-in-fast: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 180ms ease-out;
+  --animate-pop: pop 700ms ease-out;
+  --animate-info-trace: info-trace 1400ms linear forwards;
+  --animate-timer-pulse: timer-pulse 2s infinite;
+  --animate-timer-flash: timer-flash 0.5s infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(40%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes info-trace {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.88); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    30% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes timer-pulse {
+    0%, 100% { transform: scale(1); background: rgba(0, 0, 0, 0.6); }
+    50% { transform: scale(1.08); background: rgba(120, 0, 0, 0.7); }
+  }
+  @keyframes timer-flash {
+    0%, 100% { background: rgba(0, 0, 0, 0.6); }
+    50% { background: rgba(255, 0, 0, 0.8); }
+  }
+  @keyframes completion-flash {
+    0% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0.8);
+    }
+    50% {
+      box-shadow: 0 0 40px 20px rgba(228, 72, 5, 0.6);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(228, 72, 5, 0);
+    }
+  }
+}
+
+/* Confetti on the DrawIt thanks screen. Duration and delay are set inline per piece, so this
+   is applied via animation-name utilities rather than an --animate-* token. */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(var(--rotate, 360deg));
+    opacity: 0.7;
+  }
+}
+
+/* Page background: sky at the top fading to cream. */
+@utility bg-page-gradient {
+  background-image: linear-gradient(180deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+}

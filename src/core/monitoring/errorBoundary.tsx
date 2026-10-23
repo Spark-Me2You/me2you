@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div>
           {/* TODO: Implement error recovery UI */}
-          <h1>Something went wrong.</h1>
+          <h1 className="text-[3.2em] leading-[1.1]">Something went wrong.</h1>
           <p>{this.state.error?.message}</p>
         </div>
       );

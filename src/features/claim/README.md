@@ -56,15 +56,10 @@ src/features/claim/
 │   └── useClaimScanner.ts      # Mobile: in-app camera scanner
 └── components/
     ├── ClaimQR.tsx             # Kiosk QR display + countdown
-    ├── ClaimQR.module.css
     ├── ClaimScanner.tsx        # Mobile in-app scanner modal
-    ├── ClaimScanner.module.css
     ├── ClaimPage.tsx           # Route handler at /claim/:tokenId
-    ├── ClaimPage.module.css
     ├── ClaimSuccessPage.tsx    # Success display driven by payload.display
-    ├── ClaimSuccessPage.module.css
     ├── ClaimErrorPage.tsx      # Error display with reason string
-    └── ClaimErrorPage.module.css
 ```
 
 Backend:
