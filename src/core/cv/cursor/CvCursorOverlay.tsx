@@ -39,10 +39,10 @@ interface CvCursorOverlayProps {
 }
 
 export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
-  const { x, y, visible, clicking, isPinched, videoRef } = useCvCursor(enabled);
+  const { x, y, visible, clicking, clickId, clickX, clickY, isPinched, videoRef } = useCvCursor(enabled);
   const { notifyCursorVisible, updateCursorState, cursorVariant } = useCvCursorEnabled();
   const prevTargetRef = useRef<Element | null>(null);
-  const prevClickingRef = useRef(false);
+  const prevClickIdRef = useRef(0);
   const [clickAnimKey, setClickAnimKey] = useState(0);
 
   // Trigger click burst animation on each new click
@@ -118,14 +118,14 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
     target.dispatchEvent(new PointerEvent("pointermove", pointerCommon));
   }, [x, y, visible]);
 
-  // Handle click events
+  // Handle click events — one per new clickId, at the pre-press position.
   useEffect(() => {
-    if (clicking && !prevClickingRef.current && visible) {
-      const target = document.elementFromPoint(x, y);
+    if (clickId !== prevClickIdRef.current && visible) {
+      const target = document.elementFromPoint(clickX, clickY);
       if (target) {
         const common = {
-          clientX: x,
-          clientY: y,
+          clientX: clickX,
+          clientY: clickY,
           bubbles: true,
           cancelable: true,
           button: 0,
@@ -147,8 +147,8 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
         }, 50);
       }
     }
-    prevClickingRef.current = clicking;
-  }, [clicking, visible, x, y]);
+    prevClickIdRef.current = clickId;
+  }, [clickId, clickX, clickY, visible]);
 
   const isClick = clicking || isPinched;
   const cursorSrc = isClick ? clickCursorSrc : hoverCursorSrc;
