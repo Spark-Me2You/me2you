@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 interface BorderProgressProps {
   /** Progress from 0-100 */
   progress: number;
-  /** Border color (default: orange theme color) */
+  /** Border color (default: --color-success) */
   color?: string;
   /** Border thickness in pixels (default: 6) */
   strokeWidth?: number;
@@ -25,12 +25,12 @@ interface BorderProgressProps {
  *
  * @example
  * ```tsx
- * <BorderProgress progress={75} color="#e44805" strokeWidth={6} />
+ * <BorderProgress progress={75} color="var(--color-orange)" strokeWidth={6} />
  * ```
  */
 export const BorderProgress: React.FC<BorderProgressProps> = ({
   progress,
-  color = "#22c55e", // Green for countdown visibility
+  color = "var(--color-success)",
   strokeWidth = 6,
   borderRadius = 0,
 }) => {

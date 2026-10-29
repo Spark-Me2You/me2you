@@ -8,7 +8,6 @@ import { DrawingCanvas } from "./DrawingCanvas";
 import { ReviewScreen } from "./ReviewScreen";
 import { ThanksScreen } from "./ThanksScreen";
 import { Gallery } from "./Gallery";
-import styles from "./DrawItGame.module.css";
 
 export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
   const [screen, setScreen] = useState<ScreenState>("MENU");
@@ -31,7 +30,7 @@ export const DrawItGame: React.FC<GameProps> = ({ onExit }) => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#008080_0%,#004040_100%)] font-jersey">
       {screen === "MENU" && (
         <DrawItMenu
           onStart={() => setScreen("PROMPT")}

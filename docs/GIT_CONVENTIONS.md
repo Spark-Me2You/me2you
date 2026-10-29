@@ -23,6 +23,7 @@ docs/git-conventions
 - Lowercase, hyphen-separated, 2-5 words, describing the change (not the person or ticket-less "wip").
 - If useful, append an issue number: `fix/123-avatar-accessory-display`.
 - One purpose per branch. Delete the branch after it is merged.
+- `agent/<issue>-<slug>` is reserved for branches created by the agent workflow (`docs/AGENT_WORKFLOW.md`).
 
 ### Types
 
@@ -95,6 +96,7 @@ Prefer `--force-with-lease` over `--force` when force-pushing, and only rewrite 
 - Target `dev` (releases target `main`).
 - Keep PRs small and focused; split unrelated changes.
 - `npm run build` and `npm run lint` pass; CI is green.
+- UI changes follow `docs/BRAND_BOOK.md`: tokens instead of raw hex/rgba, and any new token is documented in the book in the same PR.
 - Request a review from a teammate; approval and resolved comments are encouraged but not enforced by GitHub.
 - Author merges once CI is green. Prefer squash merge for small feature/fix branches so history stays one commit per change; use a merge commit for `dev` → `main` releases.
 - Database changes: add a new numbered migration in `supabase/migrations/`, never edit an applied one.

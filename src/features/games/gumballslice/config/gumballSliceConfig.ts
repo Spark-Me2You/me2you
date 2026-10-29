@@ -7,9 +7,24 @@
  * any kiosk resolution; times are ms unless the name says otherwise.
  */
 
-import type { CSSProperties } from "react";
-import { colors } from "@/shared/theme/colors";
-import { typography } from "@/shared/theme/typography";
+/**
+ * Brand colours for the Pixi canvas, which can't read CSS tokens. Each mirrors
+ * the named token in src/styles/theme.css (see docs/BRAND_BOOK.md); gold and
+ * leaf green are game-only.
+ */
+export const GUMBALL_PALETTE = {
+  sky: "#58e7f7", // --color-sky
+  white: "#ffffff",
+  ink: "#000000", // --color-ink
+  magenta: "#e405ac", // --color-magenta
+  magenta93: "rgba(228, 5, 172, 0.93)", // magenta/93
+  orange93: "rgba(228, 72, 5, 0.93)", // orange/93
+  lime93: "rgba(211, 228, 5, 0.93)", // lime/93
+  gold: "#ffd700", // scores, the bonus candy
+  leafGreen: "#47c52b", // games-hub green; broccoli
+} as const;
+
+const P = GUMBALL_PALETTE;
 
 const env = import.meta.env;
 
@@ -125,37 +140,19 @@ export const GUMBALL_SLICE_CONFIG = {
   SHAKE_AMPLITUDE: 0.018,
 
   // Colors (theme tokens only)
-  TRAIL_GLOW_COLOR: colors.gradient.start,
-  TRAIL_CORE_COLOR: colors.white,
+  TRAIL_GLOW_COLOR: P.sky,
+  TRAIL_CORE_COLOR: P.white,
   CANDY_IMAGE_SCALE: 1, // candy image diameter ÷ (2 × CANDY_RADIUS)
-  BROCCOLI_COLOR: colors.leafGreen, // broccoli crumbs
+  BROCCOLI_COLOR: P.leafGreen, // broccoli crumbs
   BROCCOLI_SIZE: 2.6, // sprite's longest side ÷ candy radius
   BROCCOLI_ROTATION_DEG: 58, // stands the side-lying PNG upright (stem down)
   BROCCOLI_WOBBLE: 0.8, // max spin (rad/s) so it stays upright-ish in flight
-  OUTLINE_BAD: colors.black,
-  POPUP_GOOD_COLOR: colors.white,
-  POPUP_BONUS_COLOR: colors.gold, // "+50" for the rainbow candy
-  POPUP_BAD_COLOR: colors.btnOrange,
-  POPUP_COMBO_COLOR: colors.btnYellowGreen,
+  OUTLINE_BAD: P.ink,
+  POPUP_GOOD_COLOR: P.white,
+  POPUP_BONUS_COLOR: P.gold, // "+50" for the rainbow candy
+  POPUP_BAD_COLOR: P.orange93,
+  POPUP_COMBO_COLOR: P.lime93,
 } as const;
 
 export type GumballSliceConfig = typeof GUMBALL_SLICE_CONFIG;
 
-/**
- * Theme tokens exposed to the game's CSS modules as custom properties, so the
- * stylesheets reference the shared palette instead of hard-coding colours.
- */
-export const GUMBALL_SLICE_CSS_VARS = {
-  "--gs-font": typography.font.jersey,
-  "--gs-accent": colors.gradient.start,
-  "--gs-magenta": colors.magenta,
-  "--gs-gold": colors.gold,
-  "--gs-lime": colors.btnYellowGreen,
-  "--gs-orange": colors.btnOrange,
-  "--gs-red": colors.red,
-  "--gs-white": colors.white,
-  "--gs-wood-light": colors.woodLight,
-  "--gs-wood-mid": colors.woodMid,
-  "--gs-wood-dark": colors.woodDark,
-  "--gs-wood-seam": colors.woodSeam,
-} as CSSProperties;

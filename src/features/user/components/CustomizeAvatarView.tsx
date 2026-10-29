@@ -11,7 +11,6 @@ import type {
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
 import { UserMiiPixiPreview } from "./UserMiiPixiPreview";
-import styles from "./CustomizeAvatarView.module.css";
 
 const ACCESSORY_LABELS: { key: Accessory | null; label: string }[] = [
   { key: null, label: "none" },
@@ -20,7 +19,7 @@ const ACCESSORY_LABELS: { key: Accessory | null; label: string }[] = [
   { key: "balloon", label: "balloon" },
 ];
 
-// Preview container size in CSS pixels (matches .previewStage in CSS)
+// Preview container size in CSS pixels (matches the preview stage's w/h-[220px] classes)
 const PREVIEW_SIZE_PX = 220;
 
 const clamp = (v: number, min: number, max: number) =>
@@ -174,26 +173,26 @@ export const CustomizeAvatarView: React.FC = () => {
   const hasAccessory = settings.selected_accessory !== null;
 
   return (
-    <div className={styles.page}>
-      <img src={logo} alt="me2you" className={styles.logo} />
+    <div className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+      <img src={logo} alt="me2you" className="pointer-events-none absolute top-[7px] left-1/2 z-[100] w-[270px] origin-top -translate-x-1/2 rotate-[3.41deg] select-none" />
 
-      <div className={styles.content}>
-        <div className={styles.card}>
-          <h2 className={styles.title}>customize avatar</h2>
+      <div className="block min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 pt-24 pb-8 [-webkit-overflow-scrolling:touch]">
+        <div className="mx-auto flex w-full max-w-[350px] flex-col items-center gap-5 rounded-[24px] bg-glass px-[28px] py-8 shadow-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105">
+          <h2 className="m-0 text-center font-jersey text-[36px] tracking-[2px] text-[#e44805] lowercase">customize avatar</h2>
 
           {/* Mii preview with accessory overlay + drag + scale slider */}
-          <div className={styles.previewRow}>
+          <div className="flex items-center gap-3">
             <div
               ref={previewRef}
-              className={`${styles.previewStage} ${hasAccessory ? styles.previewDraggable : ""}`}
+              className={`h-[220px] w-[220px] shrink-0 overflow-hidden rounded-[16px] border-[3px] border-solid border-[#e44805] bg-[#fefffb] ${hasAccessory ? "cursor-grab touch-none active:cursor-grabbing" : ""}`}
               onMouseDown={hasAccessory ? handleMouseDown : undefined}
               onTouchStart={hasAccessory ? handleTouchStart : undefined}
             >
               {isDataLoading ? (
-                <div className={styles.previewLoading}>loading</div>
+                <div className="flex h-full w-full items-center justify-center font-jersey text-[16px] text-[#999]">loading</div>
               ) : (
                 <UserMiiPixiPreview
-                  className={styles.miiComposite}
+                  className="relative h-full w-full bg-[#fefffb]"
                   bobbleheadUrl={bobbleheadUrl}
                   accessorySettings={settings}
                   landmarks={bobbleheadLandmarks}
@@ -203,8 +202,8 @@ export const CustomizeAvatarView: React.FC = () => {
 
             {/* Vertical scale slider */}
             {hasAccessory && (
-              <div className={styles.scaleSliderWrapper}>
-                <span className={styles.scaleLabel}>big</span>
+              <div className="flex h-[220px] flex-col items-center justify-center gap-[6px]">
+                <span className="text-center font-jersey text-[13px] leading-none text-[#e44805] select-none">big</span>
                 <input
                   type="range"
                   min={0.5}
@@ -217,21 +216,21 @@ export const CustomizeAvatarView: React.FC = () => {
                       scale: parseFloat(e.target.value),
                     }))
                   }
-                  className={styles.scaleSlider}
+                  className="h-[140px] w-8 shrink-0 cursor-pointer [direction:rtl] [writing-mode:vertical-lr] accent-[#e44805] [appearance:slider-vertical] [-webkit-appearance:slider-vertical]"
                   aria-label="Accessory size"
                 />
-                <span className={styles.scaleLabel}>small</span>
+                <span className="text-center font-jersey text-[13px] leading-none text-[#e44805] select-none">small</span>
               </div>
             )}
           </div>
 
           {/* Drag hint */}
           {hasAccessory && (
-            <p className={styles.dragHint}>drag to reposition</p>
+            <p className="m-0 mt-[-8px] text-center font-jersey text-[14px] text-[#999] select-none">drag to reposition</p>
           )}
 
           {/* Accessory chip selector */}
-          <div className={styles.chipRow}>
+          <div className="flex w-full flex-wrap justify-center gap-2">
             {ACCESSORY_LABELS.map(({ key, label }) => (
               <button
                 key={label}
@@ -239,7 +238,7 @@ export const CustomizeAvatarView: React.FC = () => {
                 onClick={() =>
                   setSettings((prev) => ({ ...prev, selected_accessory: key }))
                 }
-                className={`${styles.chip} ${settings.selected_accessory === key ? styles.chipActive : ""}`}
+                className={`cursor-pointer rounded-[20px] border-2 border-solid border-[#e44805] px-4 py-[10px] font-jersey text-[18px] tracking-[1px] lowercase [transition:background_0.15s,color_0.15s,transform_0.1s] active:[transform:scale(0.96)] ${settings.selected_accessory === key ? "bg-[#e44805] text-white hover:bg-[#c53d04]" : "bg-[rgba(228,72,5,0.08)] text-[#e44805] hover:bg-[rgba(228,72,5,0.16)]"}`}
               >
                 {label}
               </button>
@@ -251,19 +250,19 @@ export const CustomizeAvatarView: React.FC = () => {
             <button
               type="button"
               onClick={handleReset}
-              className={styles.resetButton}
+              className="cursor-pointer rounded-[10px] border border-dashed border-[#e44805] bg-transparent px-[18px] py-2 font-jersey text-[16px] tracking-[1px] text-[#e44805] lowercase transition-[background] duration-150 hover:bg-[rgba(228,72,5,0.07)]"
             >
               reset position
             </button>
           )}
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && <p className="m-0 text-center font-jersey text-[15px] text-[#d32f2f]">{error}</p>}
 
-          <div className={styles.buttonRow}>
+          <div className="flex w-full gap-[10px]">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className={styles.cancelButton}
+              className="flex-1 border-[#ccc] bg-[rgba(0,0,0,0.05)] text-[#666] hover:bg-[rgba(0,0,0,0.1)] cursor-pointer rounded-[14px] border-2 border-solid px-[14px] py-[18px] font-jersey text-[22px] tracking-[1px] lowercase [transition:background_0.2s,transform_0.1s] active:enabled:[transform:scale(0.98)]"
             >
               cancel
             </button>
@@ -271,7 +270,7 @@ export const CustomizeAvatarView: React.FC = () => {
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className={styles.saveButton}
+              className="flex-2 border-[#e44805] bg-[#e44805] text-white hover:enabled:bg-[#c53d04] disabled:cursor-not-allowed disabled:border-[#c8a090] disabled:bg-[#c8a090] cursor-pointer rounded-[14px] border-2 border-solid px-[14px] py-[18px] font-jersey text-[22px] tracking-[1px] lowercase [transition:background_0.2s,transform_0.1s] active:enabled:[transform:scale(0.98)]"
             >
               {isSaving ? "saving..." : "save"}
             </button>

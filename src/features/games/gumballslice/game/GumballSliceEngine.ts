@@ -10,7 +10,6 @@
 
 import { Application, Container, Graphics, Text, TextStyle, type Ticker } from "pixi.js";
 import type { HandTrackSample } from "@/core/cv/cursor";
-import { typography } from "@/shared/theme/typography";
 import { GUMBALL_SLICE_CONFIG } from "../config/gumballSliceConfig";
 import { ComboTracker } from "../logic/ComboTracker";
 import { PlayerLock } from "../logic/PlayerLock";
@@ -591,7 +590,7 @@ export class GumballSliceEngine {
     }
 
     const style = new TextStyle({
-      fontFamily: typography.font.jersey,
+      fontFamily: "'Jersey 10', sans-serif", // --font-jersey
       fontSize: Math.round(this.height * 0.07),
       fill: c.POPUP_GOOD_COLOR,
       stroke: { width: Math.max(4, Math.round(this.height * 0.008)), color: c.OUTLINE_BAD },

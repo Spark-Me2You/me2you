@@ -1,0 +1,189 @@
+# Issue agent: adding the `agent:ready` label to an issue runs Claude Code
+# against it and opens a draft PR into dev. See docs/AGENT_WORKFLOW.md.
+#
+# Claude only edits, builds, tests and commits locally. Branching, pushing,
+# the PR and label changes are done by the plain shell steps below, so Claude
+# never holds a GitHub token with push rights.
+name: Agent
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: agent-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  work:
+    if: github.event.label.name == 'agent:ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: write # dispatch CI on the agent branch
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE: ${{ github.event.issue.number }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check who labeled and what the issue touches
+        id: gate
+        env:
+          ACTOR: ${{ github.event.sender.login }}
+          # Runs bill the owner's Claude subscription, so only these users may
+          # start them. Override with the AGENT_ALLOWLIST repo variable.
+          ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
+        run: |
+          if [[ ! ",${ALLOWLIST// /}," == *",$ACTOR,"* ]]; then
+            gh issue edit "$ISSUE" --remove-label agent:ready
+            gh issue comment "$ISSUE" --body "Agent not started: @$ACTOR is not on the agent allowlist. Ask a maintainer to add \`agent:ready\`."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          labels=$(gh issue view "$ISSUE" --json labels --jq '[.labels[].name] | join(",")')
+          if [[ ",$labels," =~ ,(type:db|area:db), ]]; then
+            gh issue edit "$ISSUE" --remove-label agent:ready --add-label agent:needs-human
+            gh issue comment "$ISSUE" --body "Agent not started: database work (migrations, RLS, edge functions) is reserved for humans."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+      - name: Claim issue
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:needs-human --add-label agent:in-progress
+          gh issue comment "$ISSUE" --body "Agent started working on this issue. [Run log]($RUN_URL)"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          ref: dev
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create branch and write issue context
+        if: steps.gate.outputs.skip != 'true'
+        id: branch
+        run: |
+          slug=$(gh issue view "$ISSUE" --json title --jq .title \
+            | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//' | cut -c1-40 | sed -E 's/-+$//')
+          branch="agent/$ISSUE-$slug"
+          git switch -c "$branch"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir -p .agent
+          echo ".agent/" >> .git/info/exclude
+          gh issue view "$ISSUE" --json number,title,body,labels,comments --jq '
+            "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
+            + (.comments | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/issue.md
+
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Run Claude
+        if: steps.gate.outputs.skip != 'true'
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You are working on GitHub issue #${{ github.event.issue.number }} in ${{ github.repository }}.
+            The issue, its labels and comments are in `.agent/issue.md`. Read it first, then read
+            CLAUDE.md and docs/GIT_CONVENTIONS.md and follow them.
+
+            You are already on branch `${{ steps.branch.outputs.name }}`, created from `dev`.
+
+            Rules:
+            - Implement what the issue asks, nothing more. Keep the diff focused.
+            - Do not modify `supabase/`, `.github/`, `.env*`, or `package.json` dependencies.
+            - Add or update unit tests for logic you change, where practical.
+            - `npm run build` and `npm test` must both pass before you finish. Run `npm run lint` too.
+            - Commit your work with `git add` / `git commit` using `<type>: <imperative summary>`
+              messages. No Co-Authored-By trailers or any other AI attribution in commits.
+            - Do not switch branches or push. A later workflow step pushes and opens the PR.
+            - The runner has no camera, MediaPipe, WebGL or Supabase. If behaviour can only be
+              confirmed on the kiosk hardware, say so in the PR body under "Manual verification".
+            - If the issue is ambiguous, needs database changes, or you cannot make build and tests
+              pass, stop and return status `needs_human` with a short explanation and the specific
+              questions a human should answer. Do not guess at requirements.
+
+            Finish with structured output:
+            - `status`: `done` or `needs_human`
+            - `pr_title`: `<type>: <imperative summary>` (72 chars max), following GIT_CONVENTIONS
+            - `pr_body`: markdown with "Summary", "Changes", "Testing" and, if relevant,
+              "Manual verification" sections. No AI attribution.
+            - `reason`: one or two sentences for the issue comment
+          claude_args: |
+            --max-turns 80
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm run build),Bash(npm test),Bash(npm run lint),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
+            --disallowedTools "Edit(supabase/**),Write(supabase/**),Edit(.github/**),Write(.github/**)"
+            --json-schema '{"type":"object","properties":{"status":{"type":"string","enum":["done","needs_human"]},"pr_title":{"type":"string"},"pr_body":{"type":"string"},"reason":{"type":"string"}},"required":["status","reason"]}'
+
+      - name: Push branch and open draft PR
+        if: steps.gate.outputs.skip != 'true' && steps.claude.outcome == 'success'
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
+          RESULT: ${{ steps.claude.outputs.structured_output }}
+        run: |
+          status=$(jq -r '.status // "needs_human"' <<<"$RESULT")
+          reason=$(jq -r '.reason // "No explanation returned."' <<<"$RESULT")
+
+          needs_human() {
+            gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:needs-human
+            gh issue comment "$ISSUE" --body "Agent needs a human: $1
+
+          [Run log]($RUN_URL)"
+            exit 0
+          }
+
+          [[ "$status" == "done" ]] || needs_human "$reason"
+          [[ $(git rev-list --count origin/dev..HEAD) -gt 0 ]] || needs_human "No commits were made. $reason"
+          if git diff --name-only origin/dev...HEAD | grep -qE '^(supabase/|\.github/)'; then
+            needs_human "The change touches \`supabase/\` or \`.github/\`, which agents may not modify."
+          fi
+
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "HEAD:refs/heads/$BRANCH"
+
+          title=$(jq -r '.pr_title // empty' <<<"$RESULT")
+          [[ -n "$title" ]] || title=$(gh issue view "$ISSUE" --json title --jq .title)
+          {
+            jq -r '.pr_body // ""' <<<"$RESULT"
+            printf '\n\nCloses #%s\n\n---\nAutomated PR from the agent workflow. [Run log](%s)\n' "$ISSUE" "$RUN_URL"
+          } > "$RUNNER_TEMP/pr-body.md"
+
+          pr=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url')
+          if [[ -z "$pr" ]]; then
+            pr=$(gh pr create --draft --base dev --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/pr-body.md")
+          else
+            gh pr edit "$pr" --title "$title" --body-file "$RUNNER_TEMP/pr-body.md"
+          fi
+
+          # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows,
+          # so dispatch CI on the branch to produce the required `ci` check.
+          gh workflow run ci.yml --ref "$BRANCH"
+
+          gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:review
+          gh issue comment "$ISSUE" --body "Agent opened $pr for review. $reason"
+
+      - name: Report failure
+        if: failure() && steps.gate.outputs.skip != 'true'
+        run: |
+          gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:needs-human
+          gh issue comment "$ISSUE" --body "Agent run failed. [Run log]($RUN_URL)"

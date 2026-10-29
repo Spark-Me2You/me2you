@@ -4,7 +4,6 @@ import { ClaimSection } from "@/features/claim";
 import type { ClaimPayload } from "@/features/claim";
 import { uploadTempDrawing } from "../utils/gallerySupabase";
 import nextButton from "../../../../assets/next_button.svg";
-import styles from "./ReviewScreen.module.css";
 import { PinnedRegistrationQR } from "@/features/kiosk/components/PinnedRegistrationQR";
 
 interface Props {
@@ -62,20 +61,20 @@ export const ReviewScreen: React.FC<Props> = ({
   const showModal = stage.kind !== "idle";
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.heading}>Your drawing of "{word}"</h2>
-      <img src={imageDataUrl} alt={`Drawing of ${word}`} className={styles.preview} />
+    <div className="flex max-h-screen flex-col items-center gap-6 overflow-y-auto p-10">
+      <h2 className="m-0 font-jersey text-[48px] tracking-[4px] text-white">Your drawing of "{word}"</h2>
+      <img src={imageDataUrl} alt={`Drawing of ${word}`} className="max-h-[60vh] max-w-[60vw] border-4 border-solid border-[#404040] bg-white shadow-[4px_4px_0_rgba(0,0,0,0.3)]" />
 
-      <div className={styles.buttons}>
+      <div className="flex flex-wrap justify-center gap-5">
         <button
           type="button"
-          className={styles.primary}
+          className="cursor-pointer rounded-[12px] border-4 border-solid border-white px-9 py-4 font-jersey text-[30px] tracking-[4px] text-white bg-[#00c000]"
           onClick={handleClaim}
           disabled={stage.kind === "uploading" || stage.kind === "ready"}
         >
           Claim & Send to Gallery
         </button>
-        <button type="button" className={styles.secondary} onClick={onDiscard}>
+        <button type="button" className="cursor-pointer rounded-[12px] border-4 border-solid border-white px-9 py-4 font-jersey text-[30px] tracking-[4px] text-white bg-transparent" onClick={onDiscard}>
           Discard
         </button>
       </div>
@@ -83,17 +82,17 @@ export const ReviewScreen: React.FC<Props> = ({
       <PinnedRegistrationQR side="right" top={145} qrSize={150} />
 
       {showModal && (
-        <div className={styles.modalBackdrop}>
-          <div className={styles.modalCard}>
-            <h3 className={styles.modalTitle}>Scan to Claim</h3>
+        <div className="animate-fade-in-fast fixed inset-0 z-[11000] flex items-center justify-center bg-[rgba(0,0,0,0.55)] backdrop-blur-[3px]">
+          <div className="animate-pop-in relative flex max-w-[680px] min-w-[500px] flex-col items-center gap-[18px] rounded-[20px] border-[3px] border-solid border-[#ff0] bg-[rgba(10,10,20,0.88)] px-[72px] pt-12 pb-[110px] font-jersey shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+            <h3 className="m-0 text-center text-[46px] tracking-[6px] text-[#ff0]">Scan to Claim</h3>
 
             {stage.kind === "uploading" && (
-              <p className={styles.modalSubtitle}>Preparing your QR code…</p>
+              <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">Preparing your QR code…</p>
             )}
 
             {stage.kind === "ready" && (
               <>
-                <p className={styles.modalSubtitle}>
+                <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">
                   Scan with your phone to save this drawing to your gallery.
                 </p>
                 <ClaimSection payload={stage.payload} onClaimed={onClaimed} />
@@ -101,16 +100,16 @@ export const ReviewScreen: React.FC<Props> = ({
             )}
 
             {stage.kind === "error" && (
-              <p className={styles.modalSubtitle}>{stage.message}</p>
+              <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">{stage.message}</p>
             )}
 
             <button
               type="button"
-              className={styles.nextArrow}
+              className="absolute right-[18px] bottom-[18px] flex size-24 cursor-pointer items-center justify-center border-0 bg-transparent p-0 [transition:transform_120ms_ease] hover:[transform:translateY(-2px)_scale(1.03)] active:[transform:translateY(1px)_scale(0.98)]"
               aria-label="Continue"
               onClick={onContinue}
             >
-              <img src={nextButton} alt="" />
+              <img src={nextButton} alt="" className="pointer-events-none block size-full" />
             </button>
           </div>
         </div>

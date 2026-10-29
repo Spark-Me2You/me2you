@@ -239,20 +239,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Sign in admin with email and password
    */
   const signIn = async (email: string, password: string) => {
-    try {
-      const result = await adminAuthService.signInWithEmail(email, password);
+    // Errors propagate to the login page
+    const result = await adminAuthService.signInWithEmail(email, password);
 
-      // Update local state with authenticated admin
-      console.log('[AuthProvider] Admin signed in:', result.admin.email);
-      setUser(result.user);
-      setAdmin(result.admin);
-      setSession(result.session);
-      setAuthMode('admin');
-      setKioskOrgId(null);
-    } catch (error) {
-      // Re-throw error to be handled by the login page
-      throw error;
-    }
+    // Update local state with authenticated admin
+    console.log('[AuthProvider] Admin signed in:', result.admin.email);
+    setUser(result.user);
+    setAdmin(result.admin);
+    setSession(result.session);
+    setAuthMode('admin');
+    setKioskOrgId(null);
   };
 
   /**

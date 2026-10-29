@@ -6,7 +6,6 @@
 
 import React, { useEffect, useState } from "react";
 import { GUMBALL_SLICE_CONFIG as C } from "../config/gumballSliceConfig";
-import styles from "./SliceCountdown.module.css";
 import { WIN_RULE_TEXT } from "./winRuleText";
 
 interface Props {
@@ -28,11 +27,11 @@ export const SliceCountdown: React.FC<Props> = ({ onDone }) => {
   if (idx >= C.COUNTDOWN_STEPS.length) return null;
 
   return (
-    <div className={styles.container}>
-      <div key={idx} className={styles.number}>
+    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-6">
+      <div key={idx} className="animate-pop font-jersey text-[clamp(160px,38vh,320px)] leading-none tracking-[8px] text-[#ffd700] [text-shadow:6px_6px_0_rgba(0,0,0,0.5)]">
         {C.COUNTDOWN_STEPS[idx]}
       </div>
-      <p className={styles.caption}>{WIN_RULE_TEXT} to win!</p>
+      <p className="m-0 font-jersey text-[clamp(32px,5.5vh,56px)] tracking-[4px] text-white [text-shadow:3px_3px_0_rgba(0,0,0,0.45)]">{WIN_RULE_TEXT} to win!</p>
     </div>
   );
 };

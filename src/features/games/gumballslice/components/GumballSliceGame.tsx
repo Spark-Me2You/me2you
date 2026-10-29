@@ -9,7 +9,7 @@ import { Assets, type Texture } from "pixi.js";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
 import { usePixiApp } from "../../hooks/usePixiApp";
 import type { GameProps } from "../../types/game";
-import { GUMBALL_SLICE_CONFIG, GUMBALL_SLICE_CSS_VARS } from "../config/gumballSliceConfig";
+import { GUMBALL_SLICE_CONFIG } from "../config/gumballSliceConfig";
 import type { ItemTextures } from "../game/candyArt";
 import { GumballSliceEngine } from "../game/GumballSliceEngine";
 import { BROCCOLI_IMAGE, CANDY_IMAGES, RAINBOW_IMAGE } from "../game/itemImages";
@@ -26,7 +26,13 @@ import { PlayerLostScreen, ResultsScreen } from "./ResultsScreen";
 import { SliceCountdown } from "./SliceCountdown";
 import { SliceHud } from "./SliceHud";
 import { StartScreen } from "./StartScreen";
-import styles from "./GumballSliceGame.module.css";
+
+/*
+ * Wooden table: vertical planks with seams, fine grain and a dark vignette
+ * (keeps the bright slash trail and candy readable on top).
+ */
+const WOOD =
+  "bg-[#7a4a26] [--plank:clamp(140px,14vw,220px)] bg-[image:radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.5)_100%),repeating-linear-gradient(90deg,transparent_0_calc(var(--plank)_-_5px),#2e1909_calc(var(--plank)_-_5px)_var(--plank)),repeating-linear-gradient(89deg,transparent_0_7px,rgba(78,44,20,0.35)_7px_9px,transparent_9px_23px,rgba(78,44,20,0.22)_23px_24px,transparent_24px_41px),repeating-linear-gradient(90deg,#7a4a26_0,#a0673a_calc(var(--plank)*0.3),#7a4a26_calc(var(--plank)*0.55),#4e2c14_calc(var(--plank)*0.85),#7a4a26_var(--plank))]";
 
 const INITIAL_HUD: HudSnapshot = {
   score: 0,
@@ -134,8 +140,8 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   }, []);
 
   return (
-    <div className={`${styles.container} ${styles.wood}`} style={GUMBALL_SLICE_CSS_VARS}>
-      <div ref={containerRef} className={styles.canvas} />
+    <div className={`fixed inset-0 overflow-hidden ${WOOD}`}>
+      <div ref={containerRef} className="absolute inset-0" />
 
       {screen === "START" && <StartScreen onReady={handleReady} onBack={onExit} />}
 

@@ -15,7 +15,6 @@ import {
   getAccessoryPlacement,
   getBalloonCenterFromHandAnchor,
 } from "@/shared/utils";
-import styles from "./UserMiiPixiPreview.module.css";
 
 const ACCESSORY_TEXTURES: Record<Accessory, string> = {
   sunglasses: "/accessories/sunglasses.svg",
@@ -267,29 +266,29 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
   }, [applyLayout]);
 
   return (
-    <div className={`${styles.root} ${className ?? ""}`}>
-      <div className={styles.frame}>
+    <div className={`relative flex h-full w-full items-center justify-center ${className ?? ""}`}>
+      <div className="relative aspect-square w-[min(100%,220px)] flex-none">
         <div
           ref={containerRef}
-          className={styles.canvasHost}
+          className="h-full w-full [&_canvas]:block [&_canvas]:!h-full [&_canvas]:!w-full"
           style={isSceneLoading ? { visibility: "hidden" } : undefined}
         />
         {isSceneLoading && (
-          <div className={styles.loadingText}>loading</div>
+          <div className="absolute inset-0 flex items-center justify-center font-jersey text-[16px] text-[#999]">loading</div>
         )}
       </div>
 
       {!bobbleheadUrl && !isSceneLoading && (
-        <div className={styles.overlayText}>no face yet</div>
+        <div className="absolute top-[12%] left-1/2 -translate-x-1/2 text-center font-jersey text-[14px] text-[#999]">no face yet</div>
       )}
 
       {selectedAccessory && !hasAccessoryLandmarks && bobbleheadUrl && !isSceneLoading && (
-        <div className={styles.overlayHint}>
+        <div className="absolute bottom-[10px] left-1/2 w-[calc(100%-20px)] -translate-x-1/2 rounded-[8px] bg-[rgba(255,255,255,0.82)] px-[6px] py-1 text-center font-jersey text-[12px] leading-[1.15] text-[#666]">
           accessory preview appears after landmarks are generated
         </div>
       )}
 
-      {renderError && <div className={styles.overlayHint}>{renderError}</div>}
+      {renderError && <div className="absolute bottom-[10px] left-1/2 w-[calc(100%-20px)] -translate-x-1/2 rounded-[8px] bg-[rgba(255,255,255,0.82)] px-[6px] py-1 text-center font-jersey text-[12px] leading-[1.15] text-[#666]">{renderError}</div>}
     </div>
   );
 };

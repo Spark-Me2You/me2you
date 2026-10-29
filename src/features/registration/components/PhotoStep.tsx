@@ -5,7 +5,6 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import styles from './RegistrationSteps.module.css';
 import { useGestureRecognition } from '../../discovery/hooks/useGestureRecognition';
 import { getCategoryFromGesture } from '../../discovery/config/gestureMapping';
 import pinkBackArrowImg from '../../../assets/pink_back_arrow.svg';
@@ -235,57 +234,57 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const isBusy = isSubmitting || isProcessing;
 
   return (
-    <div className={styles.photoStepWrapper}>
-      <div className={styles.poseBanner}>
-        <p className={styles.poseBannerText}>choose a pose!</p>
-        <p className={styles.poseBannerText}>*do not put hands over face*</p>
+    <div className="relative flex min-h-screen flex-col pt-[112px]">
+      <div className="mb-3 bg-magenta px-5 py-3 text-center">
+        <p className="m-0 font-averia text-[22px] leading-[1.4] font-normal tracking-[3.74px] text-white">choose a pose!</p>
+        <p className="m-0 font-averia text-[22px] leading-[1.4] font-normal tracking-[3.74px] text-white">*do not put hands over face*</p>
       </div>
 
       {/* Decorative hands */}
-      <div className={styles.handsRow}>
-        <img src={peaceImg} alt="peace" className={styles.handPeace} />
-        <img src={waveImg} alt="wave" className={styles.handWave} />
-        <img src={thumbsUpImg} alt="thumbs up" className={styles.handThumb} />
+      <div className="relative z-[5] -mb-8 h-[110px]">
+        <img src={peaceImg} alt="peace" className="absolute top-[-10px] left-7 w-[58px] origin-bottom rotate-[38.55deg]" />
+        <img src={waveImg} alt="wave" className="absolute top-[25px] left-1/2 w-[80px] origin-bottom -translate-x-1/2" />
+        <img src={thumbsUpImg} alt="thumbs up" className="absolute top-10 right-7 w-[80px] origin-bottom" />
       </div>
 
-      <div className={styles.cameraCard}>
+      <div className="mx-[6px] box-border flex h-[420px] flex-col rounded-[46px] bg-glass px-5 pt-[44px] pb-[10px] shadow-glass-card">
         {displayError && (
-          <div className={styles.photoErrorBanner}>{displayError}</div>
+          <div className="mb-3 rounded-[10px] border border-solid border-[rgba(255,60,60,0.35)] bg-[rgba(255,60,60,0.12)] px-[14px] py-2 text-center font-averia text-[13px] tracking-[0.5px] text-[#b00]">{displayError}</div>
         )}
 
         {/* Camera / preview area */}
-        <div className={styles.cameraArea}>
+        <div className="relative mb-4 w-full flex-1 overflow-hidden rounded-[8px] bg-[#d9d9d9]">
           {previewUrl && (
-            <img src={previewUrl} alt="Profile preview" className={styles.cameraPreview} />
+            <img src={previewUrl} alt="Profile preview" className="h-full w-full object-cover" />
           )}
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className={styles.cameraFeed}
+            className="h-full w-full -scale-x-100 object-cover"
             style={{ display: previewUrl ? 'none' : undefined }}
           />
           {!previewUrl && isCameraReady && (
-            <div className={styles.poseGuide} aria-hidden="true">
-              <div className={styles.poseHeadGuide}>
-                <span className={styles.poseGuideLabel}>head</span>
+            <div className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true">
+              <div className="absolute top-1/2 left-[34%] flex aspect-[3/4] w-[44%] -translate-x-1/2 -translate-y-1/2 items-end justify-center rounded-full border-[3px] border-dashed border-[rgba(255,255,255,0.9)] pb-[6px] shadow-[0_0_0_9999px_rgba(0,0,0,0.15)]">
+                <span className="font-jersey text-[14px] tracking-[2px] text-white lowercase [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">head</span>
               </div>
-              <div className={styles.poseHandGuide}>
-                <span className={styles.poseGuideLabel}>hand</span>
+              <div className="absolute top-1/2 right-[5%] flex h-[46%] w-[24%] -translate-y-1/2 items-end justify-center rounded-[12px] border-[3px] border-dashed border-[rgba(255,255,255,0.9)] pb-[6px]">
+                <span className="font-jersey text-[14px] tracking-[2px] text-white lowercase [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]">hand</span>
               </div>
             </div>
           )}
           {!previewUrl && !isCameraReady && !cameraError && (
-            <div className={styles.cameraLoadingOverlay}>starting camera...</div>
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.5)] font-['Andale_Mono','Courier_New',monospace] text-[12px] tracking-[1px] text-white">starting camera...</div>
           )}
           {!previewUrl && isCameraReady && !isGestureRecognizerReady && (
-            <div className={styles.cameraLoadingOverlay}>loading gesture detection...</div>
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.5)] font-['Andale_Mono','Courier_New',monospace] text-[12px] tracking-[1px] text-white">loading gesture detection...</div>
           )}
 
           {/* Gesture status — small text, bottom-right of frame */}
           {previewUrl && (
-            <div className={styles.gestureOverlay}>
+            <div className="pointer-events-none absolute right-[10px] bottom-2 rounded-[4px] bg-[rgba(0,0,0,0.35)] px-[7px] py-[2px] font-['Andale_Mono','Courier_New',monospace] text-[10px] tracking-[0.4px] text-[rgba(255,255,255,0.95)]">
               {detectedGestureName
                 ? `✓ ${detectedGestureName.replace(/_/g, ' ')}`
                 : 'detecting...'}
@@ -298,10 +297,10 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
         {/* Bottom controls */}
         {!previewUrl ? (
           /* No photo yet — centered capture button */
-          <div className={styles.captureCenter}>
+          <div className="flex justify-center pt-[10px]">
             <button
               type="button"
-              className={styles.captureBtn}
+              className="block h-16 w-16 cursor-pointer rounded-full border-4 border-solid border-[rgba(255,255,255,0.85)] bg-[rgba(255,255,255,0.55)] shadow-[0_0_0_4px_#e405ac] [transition:transform_0.1s,background_0.1s] active:bg-[rgba(255,255,255,0.85)] active:[transform:scale(0.91)] disabled:cursor-not-allowed disabled:opacity-35"
               onClick={capturePhoto}
               disabled={isBusy || !isCameraReady || !isGestureRecognizerReady}
               aria-label="Capture photo"
@@ -309,26 +308,26 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
           </div>
         ) : (
           /* Photo taken — retake (left, pink) | looks good (right, lime) */
-          <div className={styles.photoActionRow}>
+          <div className="flex items-start justify-between pt-[10px]">
             {/* Retake — pink back arrow */}
             <button
               type="button"
-              className={styles.photoActionBtn}
+              className="flex cursor-pointer flex-col items-center gap-1 border-0 bg-transparent px-2 py-1 text-center font-jersey text-[16px] leading-[1.2] tracking-[2.72px] text-black disabled:cursor-not-allowed disabled:opacity-35"
               onClick={handleRetake}
               disabled={isBusy}
             >
-              <img src={pinkBackArrowImg} alt="" className={styles.retakeFinger} />
+              <img src={pinkBackArrowImg} alt="" className="w-[56px] rotate-[-4.71deg]" />
               retake please!
             </button>
 
             {/* Looks good — lime next arrow */}
             <button
               type="button"
-              className={styles.photoActionBtn}
+              className="flex cursor-pointer flex-col items-center gap-1 border-0 bg-transparent px-2 py-1 text-center font-jersey text-[16px] leading-[1.2] tracking-[2.72px] text-black disabled:cursor-not-allowed disabled:opacity-35"
               onClick={handleLooksGood}
               disabled={isBusy || !detectedCategory}
             >
-              <img src={nextButtonImg} alt="" className={styles.looksGoodFinger} />
+              <img src={nextButtonImg} alt="" className="w-[56px] rotate-[5deg]" />
               {isSubmitting ? '...' : 'looks good!'}
             </button>
           </div>
@@ -338,12 +337,11 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
       {/* Go back */}
       <button
         type="button"
-        className={styles.photoStepBackBtn}
+        className="mt-[30px] flex cursor-pointer flex-col items-center gap-1 border-0 bg-transparent px-[18px] pt-3 pb-2 font-jersey text-[24px] tracking-[4.08px] text-black disabled:cursor-not-allowed disabled:opacity-40"
         onClick={onBack}
         disabled={isBusy}
-        style={{ marginTop: '30px' }}
       >
-        <img src={pinkBackArrowImg} alt="" className={styles.photoStepBackFinger} />
+        <img src={pinkBackArrowImg} alt="" className="w-[80px] rotate-[-4.71deg]" />
         go back
       </button>
     </div>

@@ -4,7 +4,6 @@
  */
 
 import { RegistrationQRDisplay } from './RegistrationQRDisplay';
-import styles from './PinnedRegistrationQR.module.css';
 
 interface PinnedRegistrationQRProps {
   side?: 'left' | 'right';
@@ -30,11 +29,11 @@ export const PinnedRegistrationQR: React.FC<PinnedRegistrationQRProps> = ({
 
   return (
     <div
-      className={`${styles.container} ${side === 'left' ? styles.left : styles.right}`}
+      className={`pointer-events-auto fixed z-[1000] flex flex-col items-center gap-2 bg-magenta/93 px-4 py-[14px] shadow-glass-card ${side === 'left' ? 'rounded-r-[18px]' : 'rounded-l-[18px]'}`}
       style={{ ...horizontalStyle, ...verticalStyle }}
     >
       <RegistrationQRDisplay size={qrSize} />
-      <p className={styles.label}>{label}</p>
+      <p className="m-0 text-center font-jersey text-[16px] tracking-[2px] text-white lowercase select-none">{label}</p>
     </div>
   );
 };

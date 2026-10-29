@@ -66,6 +66,7 @@ After playing DrawIt on the kiosk, users scan a claim QR code to link their draw
 - **MediaPipe FaceDetector** for face cropping during registration
 - **React Router v6** for client-side routing
 - **React Context** for auth state, app state machine, camera stream, and CV cursor
+- **Tailwind CSS v4** for styling, with design tokens in `src/styles/theme.css`. All UI follows the [brand book](docs/BRAND_BOOK.md).
 
 ### Backend & Services
 

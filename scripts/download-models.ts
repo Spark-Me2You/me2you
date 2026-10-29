@@ -60,7 +60,7 @@ async function downloadModel(
   }
 
   const fileStream = createWriteStream(filePath);
-  // @ts-ignore - Node 18+ supports web streams
+  // @ts-expect-error - Node 18+ supports web streams
   await finished(Readable.fromWeb(response.body).pipe(fileStream));
 
   console.log(`  ✓ Downloaded ${modelName}`);
@@ -128,7 +128,7 @@ async function main() {
   // Summary
   console.log("\nSummary:");
   console.log(`  Downloaded: ${downloadedCount}`);
-  console.log("  Skipped: ${skippedCount}");
+  console.log(`  Skipped: ${skippedCount}`);
   if (failedCount > 0) {
     console.log(`  Failed: ${failedCount}`);
   }

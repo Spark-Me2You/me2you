@@ -29,8 +29,8 @@ export interface PaginationMeta {
   offset: number;
 }
 
-function parsePoint(raw: string | null): { x: number; y: number } | null {
-  if (!raw) return null;
+function parsePoint(raw: unknown): { x: number; y: number } | null {
+  if (typeof raw !== 'string' || !raw) return null;
   const parts = raw.replace(/[()]/g, '').split(',');
   return {
     x: parseFloat(parts[0]),
@@ -55,7 +55,7 @@ export const croppedImageService = {
 
     if (error || !data) return null;
 
-    const ownerIds = [data.owner_id as string];
+    const ownerIds = [data.owner_id];
     const settingsMap = await accessoryService.getSettingsForOwners(ownerIds);
 
     return {
@@ -109,10 +109,10 @@ export const croppedImageService = {
       const rawRows = data || [];
 
       // Fetch accessory settings for all owners in this batch from the accessories table
-      const ownerIds = rawRows.map((r: any) => r.owner_id as string);
+      const ownerIds = rawRows.map((r) => r.owner_id);
       const settingsMap = await accessoryService.getSettingsForOwners(ownerIds);
 
-      const rows: CroppedImageRow[] = rawRows.map((row: any) => ({
+      const rows: CroppedImageRow[] = rawRows.map((row) => ({
         id: row.id,
         storage_path: row.storage_path,
         owner_id: row.owner_id,

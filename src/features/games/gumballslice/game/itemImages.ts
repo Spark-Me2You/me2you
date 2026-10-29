@@ -11,7 +11,7 @@ import greenWhiteSwirlImg from "@/assets/candy_07_green_white_swirl.png";
 import pinkCreamSpiralImg from "@/assets/candy_10_pink_cream_spiral.png";
 import orangeBallImg from "@/assets/candy_11_orange_ball.png";
 import rainbowSwirlImg from "@/assets/candy_08_rainbow_swirl.png";
-import { colors } from "@/shared/theme/colors";
+import { GUMBALL_PALETTE as P } from "../config/gumballSliceConfig";
 
 export interface CandyImage {
   url: string;
@@ -19,15 +19,15 @@ export interface CandyImage {
 }
 
 export const CANDY_IMAGES: readonly CandyImage[] = [
-  { url: pinkSpiralImg, particleColor: colors.magenta },
-  { url: creamGreenBallImg, particleColor: colors.leafGreen },
-  { url: greenWhiteSwirlImg, particleColor: colors.leafGreen },
-  { url: pinkCreamSpiralImg, particleColor: colors.btnPink },
-  { url: orangeBallImg, particleColor: colors.btnOrange },
+  { url: pinkSpiralImg, particleColor: P.magenta },
+  { url: creamGreenBallImg, particleColor: P.leafGreen },
+  { url: greenWhiteSwirlImg, particleColor: P.leafGreen },
+  { url: pinkCreamSpiralImg, particleColor: P.magenta93 },
+  { url: orangeBallImg, particleColor: P.orange93 },
 ];
 
 /** The secret bonus candy; never part of the regular mix. */
-export const RAINBOW_IMAGE: CandyImage = { url: rainbowSwirlImg, particleColor: colors.magenta };
+export const RAINBOW_IMAGE: CandyImage = { url: rainbowSwirlImg, particleColor: P.magenta };
 
 export const BROCCOLI_IMAGE = broccoliImg;
 

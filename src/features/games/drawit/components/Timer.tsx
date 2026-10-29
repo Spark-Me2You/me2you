@@ -4,7 +4,6 @@ import {
   TIMER_FLASH_THRESHOLD_SEC,
   TIMER_PULSE_THRESHOLD_SEC,
 } from "../config/drawitConfig";
-import styles from "./Timer.module.css";
 
 interface Props {
   onExpire: () => void;
@@ -30,10 +29,10 @@ export const Timer: React.FC<Props> = ({ onExpire }) => {
 
   const cls =
     sec <= TIMER_FLASH_THRESHOLD_SEC
-      ? styles.flash
+      ? "animate-timer-flash text-[#f00]"
       : sec <= TIMER_PULSE_THRESHOLD_SEC
-        ? styles.pulse
-        : styles.normal;
+        ? "animate-timer-pulse text-[#f44]"
+        : "bg-[rgba(0,0,0,0.6)] text-white";
 
-  return <div className={`${styles.timer} ${cls}`}>{fmt(Math.max(0, sec))}</div>;
+  return <div className={`fixed top-5 right-5 z-[9999] rounded-[12px] border-[3px] border-solid border-[rgba(255,255,255,0.4)] px-6 py-[10px] font-jersey text-[52px] tracking-[4px] ${cls}`}>{fmt(Math.max(0, sec))}</div>;
 };
