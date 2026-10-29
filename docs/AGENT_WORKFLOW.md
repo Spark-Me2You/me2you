@@ -58,7 +58,7 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 
 1. **Claude token.** On a machine with a Claude Pro/Max subscription, run `claude setup-token`, then store the token:
    ```bash
-   gh secret set CLAUDE_CODE_OAUTH_TOKEN -R Spark-Me2You/me2you
+   gh secret set CLAUDE_CODE_OAUTH_TOKEN --env agent -R Spark-Me2You/me2you
    ```
    Every agent run uses that account's subscription limits. The token lasts about a year; regenerate it before it expires, or when the owner leaves the project.
 2. **Labels.** `scripts/setup-agent-labels.sh`
@@ -73,4 +73,4 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 - The repo is public, so GitHub-hosted runner minutes are free. Jobs are capped at 60 minutes by the workflow, and Claude at 80 turns.
 - Runs are serialized per issue (`concurrency`), but different issues run in parallel. Each one draws on the same subscription.
 - Only allowlisted users can start a run (default `clow427,amernor`). To change the list without a PR, set the `AGENT_ALLOWLIST` repo variable to a comma-separated list of usernames: `gh variable set AGENT_ALLOWLIST -b "clow427,amernor"`. If anyone else adds `agent:ready`, the label is removed and a comment explains why. This also limits prompt-injection exposure from public issues: the person who adds the label is vouching for the issue content.
-- The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets. To stop that, move the token into an `agent` Environment that only `main` can use.
+- The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets. The token is therefore stored in the `agent` Environment (the `work` job sets `environment: agent`), which is limited to `main` and requires a reviewer to approve each run. Don't also keep a repo-level copy.
