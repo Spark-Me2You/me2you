@@ -10,7 +10,7 @@ issue labeled agent:ready  (by an allowlisted user)
         ▼
 .github/workflows/agent.yml
   1. gate: labeler on the allowlist? issue not type:db / area:db?
-  2. label agent:in-progress, comment with run link
+  2. pick model from the model:* label, label agent:in-progress, comment with model and run link
   3. checkout dev → branch agent/<issue>-<slug>
   4. Claude reads the issue, edits code, runs build/test/lint, commits locally
   5. workflow checks the diff (no supabase/ or .github/), pushes, opens a draft PR
@@ -33,6 +33,7 @@ Created by `scripts/setup-agent-labels.sh`.
 |---|---|---|
 | `type:*` | feature, fix, refactor, style, docs, chore, db, perf, test | Matches the commit types in `GIT_CONVENTIONS.md`. Bug and feature templates apply theirs automatically. |
 | `area:*` | kiosk, hub, discovery, games, cv, mobile, auth, db, ci | Added at triage from the template's Area field. |
+| `model:*` | sonnet (default), opus | Optional. Picks the model for the run: `claude-sonnet-5-5` or `claude-opus-5-5`. Only one allowed; with two the run is refused. |
 | `agent:*` | ready → in-progress → review, or needs-human | `ready` is the only one humans add; the workflow manages the rest. |
 
 Issues labeled `type:db` or `area:db` are refused: migrations, RLS policies and edge functions stay with humans.
