@@ -52,7 +52,7 @@ const ALERT_AFTER_FAILURES = 10;
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Candy desk')
-    .addItem('Sync now', 'sync')
+    .addItem('Sync now', 'syncNow')
     .addItem('Set up / repair sheet', 'setUp')
     .addToUi();
 }
@@ -83,8 +83,12 @@ function setUp() {
   ScriptApp.newTrigger('sync').timeBased().everyMinutes(1).create();
   ScriptApp.newTrigger('handleEdit').forSpreadsheet(ss).onEdit().create();
 
-  sync();
-  ui.alert('Candy desk is set up', 'New wins will appear within a minute.', ui.ButtonSet.OK);
+  const result = sync();
+  if (result.error) {
+    ui.alert('Set up, but the first sync failed', result.error, ui.ButtonSet.OK);
+  } else {
+    ui.alert('Candy desk is set up', 'New wins will appear within a minute.', ui.ButtonSet.OK);
+  }
 }
 
 /** Headers, formats, dropdown, colours and protection over every row. Re-run when the sheet grows. */
@@ -195,12 +199,26 @@ function handleEdit(e) {
 }
 
 // ------------------------------------------------------------
-// Sync (time-driven trigger, every minute, and the menu)
+// Sync (time-driven trigger every minute; "Sync now" in the menu)
 // ------------------------------------------------------------
 
+/** The menu's "Sync now": like the minute trigger, but says what happened. */
+function syncNow() {
+  const ui = SpreadsheetApp.getUi();
+  const result = sync();
+  if (result.error) {
+    ui.alert('Sync failed', result.error, ui.ButtonSet.OK);
+  } else if (result.busy) {
+    toast_('Another sync is running. Try again in a moment.');
+  } else {
+    toast_(`Synced ${result.count} voucher${result.count === 1 ? '' : 's'}.`);
+  }
+}
+
+/** Returns { count } on success, { error } on failure, or { busy } if another sync holds the lock. */
 function sync() {
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(30 * 1000)) return;
+  if (!lock.tryLock(30 * 1000)) return { busy: true };
 
   const props = PropertiesService.getScriptProperties();
   try {
@@ -252,11 +270,13 @@ function sync() {
     }
 
     if (props.getProperty('FAILURES')) props.deleteProperty('FAILURES');
+    return { count: vouchers.length };
   } catch (err) {
     const failures = Number(props.getProperty('FAILURES') || 0) + 1;
     props.setProperty('FAILURES', String(failures));
     console.error(`Candy desk sync failed (${failures} in a row): ${err.message}`);
     if (failures === ALERT_AFTER_FAILURES) alertOwner_(err);
+    return { error: err.message };
   } finally {
     lock.releaseLock();
   }
