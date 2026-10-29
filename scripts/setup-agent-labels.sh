@@ -30,6 +30,9 @@ labels=(
   "agent:in-progress|fbca04|An agent is working on this"
   "agent:review|5319e7|Agent opened a draft PR; needs human review"
   "agent:needs-human|d93f0b|Agent stopped; needs clarification or human work"
+
+  "model:sonnet|bfdadc|Agent runs on Sonnet 5.5 (default)"
+  "model:opus|bfdadc|Agent runs on Opus 5.5"
 )
 
 for entry in "${labels[@]}"; do
