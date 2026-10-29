@@ -35,9 +35,9 @@ function buildCandyRewardPayload(result: RoundResult): ClaimPayload {
 }
 
 export function onRoundComplete(result: RoundResult): RoundOutcome {
-  // TODO(rewards): vouchers + the daily cap are issued server-side by
-  // claim-candy-reward and listed on the phone's "my candy" page; still to
-  // come: the Google Sheet front-desk sync and redemption.
+  // Vouchers + the daily cap are issued server-side by claim-candy-reward,
+  // listed on the phone's "my candy" page and redeemed at the front desk via
+  // the candy desk Google Sheet (scripts/candy-desk-sheet).
   console.info("[GumballSlice] round complete", result);
   return { result, claimPayload: result.qualifies ? buildCandyRewardPayload(result) : null };
 }

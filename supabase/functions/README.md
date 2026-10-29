@@ -35,6 +35,18 @@ Claims a Gumball Slice win (a claim token with `payload.type = 'candy_reward'`) 
 
 **Errors:** 400 (bad body / not a candy token), 401, 403 (no user row or wrong org), 404, 409 (already claimed, or round already claimed), 410 (expired), 422 (round doesn't meet the win rule), 500.
 
+### `candy-desk`
+
+The front-desk Google Sheet's endpoint (`scripts/candy-desk-sheet/`). Lists an organization's candy vouchers for the sheet, and redeems or un-redeems one when staff change its status. Logic lives in `candy_desk_vouchers()` and `set_candy_voucher_redeemed()` (`026_candy_desk.sql`); un-redeeming is only allowed within 15 minutes of redeeming.
+
+**Authentication Required:** `x-candy-desk-secret` header matching `CANDY_DESK_SECRET` (no JWT; deploy with `--no-verify-jwt`). Scoped to the single org in `CANDY_DESK_ORG_ID`.
+
+**Request:** `POST { "action": "list" }` or `POST { "action": "redeem" | "unredeem", "voucher_id": "<uuid>" }`
+
+**Success Response (200):** `{ "success": true, "vouchers": [...] }` (list: `voucher_id`, `code`, `status`, `issued_at`, `redeemed_at`, `player_name`, `player_email`) or `{ "success": true, "voucher": { "voucher_id", "status", "redeemed_at" } }`.
+
+**Errors:** 400 (bad body / unknown action), 401 (bad secret), 404 (voucher not in this org), 409 (cancelled, or past the undo window), 500 (including missing secrets).
+
 ### `delete-user-images`
 
 Deletes all gesture and cropped image records (DB rows + storage objects) for the calling user. The user's account, profile, and profile photo (`image` table) remain intact. Intended as a "clear my photos / start fresh" operation.
@@ -321,6 +333,7 @@ supabase functions deploy generate-claim-token --no-verify-jwt
 supabase functions deploy execute-claim --no-verify-jwt
 supabase functions deploy delete-user-images --no-verify-jwt
 supabase functions deploy delete-user-account --no-verify-jwt
+supabase functions deploy candy-desk --no-verify-jwt
 ```
 
 ### View function logs:
