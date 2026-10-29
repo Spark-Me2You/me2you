@@ -10,7 +10,7 @@ issue labeled agent:ready  (by an allowlisted user)
         ▼
 .github/workflows/agent.yml
   1. gate: labeler on the allowlist? issue not type:db / area:db?
-  2. label agent:in-progress, comment with run link
+  2. pick model from the model:* label, label agent:in-progress, comment with model and run link
   3. checkout dev → branch agent/<issue>-<slug>
   4. Claude reads the issue, edits code, runs build/test/lint, commits locally
   5. workflow checks the diff (no supabase/ or .github/), pushes, opens a draft PR
@@ -33,6 +33,7 @@ Created by `scripts/setup-agent-labels.sh`.
 |---|---|---|
 | `type:*` | feature, fix, refactor, style, docs, chore, db, perf, test | Matches the commit types in `GIT_CONVENTIONS.md`. Bug and feature templates apply theirs automatically. |
 | `area:*` | kiosk, hub, discovery, games, cv, mobile, auth, db, ci | Added at triage from the template's Area field. |
+| `model:*` | sonnet (default), opus | Optional. Picks the model for the run: `claude-sonnet-5-5` or `claude-opus-5-5`. Only one allowed; with two the run is refused. |
 | `agent:*` | ready → in-progress → review, or needs-human | `ready` is the only one humans add; the workflow manages the rest. |
 
 Issues labeled `type:db` or `area:db` are refused: migrations, RLS policies and edge functions stay with humans.
@@ -57,7 +58,7 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 
 1. **Claude token.** On a machine with a Claude Pro/Max subscription, run `claude setup-token`, then store the token:
    ```bash
-   gh secret set CLAUDE_CODE_OAUTH_TOKEN -R Spark-Me2You/me2you
+   gh secret set CLAUDE_CODE_OAUTH_TOKEN --env agent -R Spark-Me2You/me2you
    ```
    Every agent run uses that account's subscription limits. The token lasts about a year; regenerate it before it expires, or when the owner leaves the project.
 2. **Labels.** `scripts/setup-agent-labels.sh`
@@ -72,4 +73,4 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 - The repo is public, so GitHub-hosted runner minutes are free. Jobs are capped at 60 minutes by the workflow, and Claude at 80 turns.
 - Runs are serialized per issue (`concurrency`), but different issues run in parallel. Each one draws on the same subscription.
 - Only allowlisted users can start a run (default `clow427,amernor`). To change the list without a PR, set the `AGENT_ALLOWLIST` repo variable to a comma-separated list of usernames: `gh variable set AGENT_ALLOWLIST -b "clow427,amernor"`. If anyone else adds `agent:ready`, the label is removed and a comment explains why. This also limits prompt-injection exposure from public issues: the person who adds the label is vouching for the issue content.
-- The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets. To stop that, move the token into an `agent` Environment that only `main` can use.
+- The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets. The token is therefore stored in the `agent` Environment (the `work` job sets `environment: agent`), which is limited to `main` and requires a reviewer to approve each run. Don't also keep a repo-level copy.
