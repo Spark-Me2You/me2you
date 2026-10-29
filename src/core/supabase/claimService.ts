@@ -16,6 +16,23 @@ interface ExecuteClaimResponse {
   error?: string;
 }
 
+/**
+ * functions.invoke reports any 4xx/5xx as a generic "non-2xx status code"
+ * error; the function's own `{ error }` message is in the response body.
+ */
+async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const response = (error as { context?: unknown })?.context;
+  if (response instanceof Response) {
+    try {
+      const body = await response.clone().json();
+      if (typeof body?.error === 'string') return body.error;
+    } catch {
+      // Not JSON; fall through.
+    }
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 interface ClaimDrawingResponse {
   success: boolean;
   token_id?: string;
@@ -101,7 +118,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] claim-candy-reward error:', error);
-      throw new Error(error.message || 'Failed to claim candy');
+      throw new Error(await functionErrorMessage(error, 'Failed to claim candy'));
     }
 
     if (!data?.success || !data.token_id || !data.payload) {
