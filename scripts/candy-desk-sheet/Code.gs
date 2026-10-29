@@ -59,6 +59,8 @@ function onOpen() {
 
 /** Builds the sheet, its formatting and protection, and installs the triggers. Safe to re-run. */
 function setUp() {
+  // Google lets people approve only some permissions; the triggers need all of them.
+  ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);
   const ui = SpreadsheetApp.getUi();
   const props = PropertiesService.getScriptProperties();
   if (!props.getProperty('CANDY_DESK_URL') || !props.getProperty('CANDY_DESK_SECRET')) {
@@ -204,6 +206,7 @@ function handleEdit(e) {
 
 /** The menu's "Sync now": like the minute trigger, but says what happened. */
 function syncNow() {
+  ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);
   const ui = SpreadsheetApp.getUi();
   const result = sync();
   if (result.error) {
