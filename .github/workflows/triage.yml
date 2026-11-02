@@ -1,0 +1,61 @@
+# Issue triage: when an issue is opened, add the `area:*` labels from the
+# template's Area field and a `type:*` label from the title prefix if the
+# template did not already set one. Deterministic, no model call.
+# See docs/AGENT_WORKFLOW.md.
+name: Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE: ${{ github.event.issue.number }}
+      TITLE: ${{ github.event.issue.title }}
+      BODY: ${{ github.event.issue.body }}
+    steps:
+      - name: Add area and type labels
+        run: |
+          labels=()
+
+          # "### Area" section of the issue form: one comma-separated line.
+          # Some option names contain other area names (kiosk mentions "auth"),
+          # so match whole items: bare names between separators, the rest by prefix.
+          area=$(awk '/^### Area/{f=1; next} /^### /{f=0} f' <<<"$BODY" | tr '\n' ' ' | sed -E 's/^ +| +$//g')
+          bare()   { [[ "$area" =~ (^|,\ )$1(,\ |$) ]] && labels+=("area:$1"); return 0; }
+          prefix() { [[ "$area" == *"$1"* ]] && labels+=("area:$2"); return 0; }
+          prefix "kiosk (state"   kiosk
+          bare   hub
+          bare   discovery
+          bare   games
+          prefix "cv (camera"     cv
+          prefix "mobile (user"   mobile
+          bare   auth
+          prefix "db (migrations" db
+          prefix "ci / tooling"   ci
+
+          # Templates that already set a type:* label (feature, bug) win.
+          existing=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
+          if ! grep -q '^type:' <<<"$existing"; then
+            prefix=$(sed -nE 's/^([a-z]+)(\([^)]*\))?!?:.*/\1/p' <<<"$TITLE")
+            case "$prefix" in
+              feat)                                  labels+=("type:feature") ;;
+              fix)                                   labels+=("type:fix") ;;
+              refactor|style|docs|chore|perf|test|db) labels+=("type:$prefix") ;;
+            esac
+          fi
+
+          if [[ ${#labels[@]} -eq 0 ]]; then
+            echo "Nothing to add."
+            exit 0
+          fi
+          printf 'Adding: %s\n' "${labels[@]}"
+          args=()
+          for l in "${labels[@]}"; do args+=(--add-label "$l"); done
+          gh issue edit "$ISSUE" "${args[@]}"
