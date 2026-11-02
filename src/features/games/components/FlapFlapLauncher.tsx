@@ -7,19 +7,21 @@ import React, { useState } from "react";
 import type { GameProps } from "../types/game";
 import { FlapFlapGame } from "../flapflap/components/FlapFlapGame";
 import { FlapFlap2PGame } from "../flapflap2p/components/FlapFlap2PGame";
+import { FlapFlap4PGame } from "../flapflap4p/components/FlapFlap4PGame";
 
 const BTN =
   "cursor-pointer rounded-[14px] border-4 border-solid px-[60px] py-5 font-jersey text-[42px] leading-[normal] tracking-[4px] [transition:transform_120ms_ease] hover:[transform:scale(1.05)]";
 const PRIMARY = `${BTN} border-white bg-white text-[#008080]`;
 const SECONDARY = `${BTN} border-white bg-transparent text-white`;
 
-type Mode = "SELECT" | "ONE_PLAYER" | "TWO_PLAYER";
+type Mode = "SELECT" | "ONE_PLAYER" | "TWO_PLAYER" | "FOUR_PLAYER";
 
 export const FlapFlapLauncher: React.FC<GameProps> = (props) => {
   const [mode, setMode] = useState<Mode>("SELECT");
 
   if (mode === "ONE_PLAYER") return <FlapFlapGame {...props} />;
   if (mode === "TWO_PLAYER") return <FlapFlap2PGame {...props} />;
+  if (mode === "FOUR_PLAYER") return <FlapFlap4PGame {...props} />;
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center gap-[60px] bg-[#008080]">
@@ -30,6 +32,9 @@ export const FlapFlapLauncher: React.FC<GameProps> = (props) => {
         </button>
         <button className={PRIMARY} onClick={() => setMode("TWO_PLAYER")}>
           2 Player
+        </button>
+        <button className={PRIMARY} onClick={() => setMode("FOUR_PLAYER")}>
+          4 Player
         </button>
         <button className={SECONDARY} onClick={props.onExit}>
           Back
