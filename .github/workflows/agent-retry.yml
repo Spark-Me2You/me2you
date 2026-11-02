@@ -73,4 +73,4 @@ jobs:
           } > "$RUNNER_TEMP/retry-comment.md"
           gh issue comment "$issue" --body-file "$RUNNER_TEMP/retry-comment.md"
 
-          gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH"
+          gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci
