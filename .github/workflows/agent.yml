@@ -9,16 +9,21 @@ name: Agent
 on:
   issues:
     types: [labeled]
-  # Used by agent-retry.yml to re-run on an existing agent branch after CI fails.
-  # A label added by GITHUB_TOKEN would not trigger the `issues` event.
+  # Used by agent-retry.yml (CI failed) and agent-feedback.yml (a human ran
+  # /agent) to re-run on an existing agent branch. A label added by GITHUB_TOKEN
+  # would not trigger the `issues` event.
   workflow_dispatch:
     inputs:
       issue:
         description: Issue number
         required: true
       branch:
-        description: Existing agent/<issue>-<slug> branch to continue on
-        required: true
+        description: Existing agent/<issue>-<slug> branch to continue on (empty for a fresh run)
+        required: false
+      reason:
+        description: Why this run was dispatched, `ci` or `feedback`
+        required: false
+        default: ci
 
 concurrency:
   group: agent-issue-${{ inputs.issue || github.event.issue.number }}
@@ -41,6 +46,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
       ISSUE: ${{ inputs.issue || github.event.issue.number }}
       RETRY_BRANCH: ${{ inputs.branch }}
+      REASON: ${{ inputs.reason }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Check who labeled and what the issue touches
@@ -52,11 +58,13 @@ jobs:
           # start them. Override with the AGENT_ALLOWLIST repo variable.
           ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
         run: |
-          # Retries are dispatched by agent-retry.yml as the Actions bot; only
-          # that exact shape is accepted, and the branch must belong to the issue.
+          # Retries and feedback runs are dispatched by agent-retry.yml and
+          # agent-feedback.yml as the Actions bot; only that exact shape is
+          # accepted, and a branch, if given, must belong to the issue.
           if [[ "$EVENT" == "workflow_dispatch" && "$ACTOR" == "github-actions[bot]" ]]; then
             ALLOWLIST="$ALLOWLIST,github-actions[bot]"
-            if [[ ! "$ISSUE" =~ ^[0-9]+$ || ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]*$ ]]; then
+            if [[ ! "$ISSUE" =~ ^[0-9]+$ || ! "$REASON" =~ ^(ci|feedback)$ ||
+                  ( -n "$RETRY_BRANCH" && ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]*$ ) ]]; then
               gh issue comment "$ISSUE" --body "Agent not started: invalid retry request." || true
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -119,6 +127,8 @@ jobs:
       - name: Create branch and write issue context
         if: steps.gate.outputs.skip != 'true' && steps.model.outputs.skip != 'true'
         id: branch
+        env:
+          ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
         run: |
           if [[ -n "$RETRY_BRANCH" ]]; then
             # Retry: continue on the existing branch so earlier commits are kept.
@@ -135,9 +145,30 @@ jobs:
 
           mkdir -p .agent
           echo ".agent/" >> .git/info/exclude
-          gh issue view "$ISSUE" --json number,title,body,labels,comments --jq '
+
+          # Only comments from allowlisted users and the Actions bot reach the
+          # prompt; the issue body is vouched for by whoever added agent:ready.
+          allow="${ALLOWLIST// /}"
+          trusted='def ok($l): any(($allow | split(","))[]; . == $l) or $l == "github-actions";'
+          gh issue view "$ISSUE" --json number,title,body,labels,comments | jq -r --arg allow "$allow" "$trusted"'
             "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
-            + (.comments | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/issue.md
+            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/issue.md
+
+          # On a revision, add the PR's review feedback (same trust filter).
+          if [[ -n "$RETRY_BRANCH" ]]; then
+            pr=$(gh pr list --head "$RETRY_BRANCH" --state open --json number --jq '.[0].number // empty')
+            if [[ -n "$pr" ]]; then
+              {
+                printf '\n\n## PR #%s feedback\n\n' "$pr"
+                gh pr view "$pr" --json reviews,comments | jq -r --arg allow "$allow" "$trusted"'
+                  ((.reviews | map(select(ok(.author.login) and .body != "")) | map("### Review by @\(.author.login) (\(.state))\n\n\(.body)")) +
+                   (.comments | map(select(ok(.author.login))) | map("### PR comment by @\(.author.login)\n\n\(.body)"))) | join("\n\n")'
+                printf '\n\n### Inline review comments\n\n'
+                gh api "repos/$GH_REPO/pulls/$pr/comments" --paginate | jq -r --arg allow "$allow" "$trusted"'
+                  map(select(ok(.user.login)) | "#### @\(.user.login) on `\(.path)` line \(.line // .original_line // "?")\n\n\(.body)\n\n```diff\n\(.diff_hunk)\n```") | join("\n\n")'
+              } >> .agent/issue.md
+            fi
+          fi
 
           echo "name=$branch" >> "$GITHUB_OUTPUT"
 
@@ -164,7 +195,9 @@ jobs:
             CLAUDE.md and docs/GIT_CONVENTIONS.md and follow them.
 
             You are already on branch `${{ steps.branch.outputs.name }}`, created from `dev`.
-            ${{ inputs.branch && 'This is a retry: the branch already holds your earlier commits and CI failed on them. The latest issue comment has the failing output. Fix that failure with the smallest change, and do not redo finished work.' || '' }}
+            ${{ inputs.reason == 'ci' && inputs.branch && 'This is a retry: the branch already holds your earlier commits and CI failed on them. The latest issue comment has the failing output. Fix that failure with the smallest change, and do not redo finished work.' || '' }}
+            ${{ inputs.reason == 'feedback' && 'This is a revision: a human reviewed your previous attempt and left feedback in the issue comments and PR sections of .agent/issue.md. Address that feedback, the newest comments first. Keep finished work that was not criticised. If the feedback conflicts with the issue, follow the feedback and say so in pr_body. pr_title and pr_body must describe the whole PR, not only this revision.' || '' }}
+            ${{ inputs.reason == 'feedback' && inputs.branch && 'The branch already holds your earlier commits.' || '' }}
 
             Rules:
             - Implement what the issue asks, nothing more. Keep the diff focused.
