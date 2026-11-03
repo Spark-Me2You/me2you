@@ -3,8 +3,10 @@
 # acceptance criteria, out of scope, code pointers). The issue then waits for a
 # human on `spec:review`; this workflow never adds `agent:ready`. The one
 # exception to waiting for review: a spec whose type is in AGENT_AUTO_TYPES
-# (default docs,test) and that needs no db/ci work starts the agent directly via
-# workflow_dispatch of agent.yml (labels added by GITHUB_TOKEN would not trigger it).
+# (default docs,test) and that needs no db/ci work, by the model's areas or the
+# issue's existing labels, starts the agent directly via workflow_dispatch of
+# agent.yml (labels added by GITHUB_TOKEN would not trigger it). Because that
+# path skips human review, only comments from allowlisted users reach the model.
 # Claude has read-only tools. Editing the issue and labels is done by plain
 # shell steps below. See docs/AGENT_WORKFLOW.md.
 name: Spec
@@ -33,13 +35,13 @@ jobs:
       GH_REPO: ${{ github.repository }}
       ISSUE: ${{ github.event.issue.number }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # Same allowlist as agent.yml: runs bill the owner's Claude subscription.
+      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
     steps:
       - name: Check who labeled
         id: gate
         env:
           ACTOR: ${{ github.actor }}
-          # Same allowlist as agent.yml: runs bill the owner's Claude subscription.
-          ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
         run: |
           if [[ ! ",${ALLOWLIST// /}," == *",$ACTOR,"* ]]; then
             gh issue edit "$ISSUE" --remove-label spec:request
@@ -62,9 +64,14 @@ jobs:
           echo ".agent/" >> .git/info/exclude
           gh issue view "$ISSUE" --json title,body --jq '.title' > .agent/title.txt
           gh issue view "$ISSUE" --json title,body --jq '.body' > .agent/original-body.md
-          gh issue view "$ISSUE" --json number,title,body,labels,comments --jq '
+          # Same trust filter as agent.yml: the issue body is vouched for by whoever
+          # added spec:request, but anyone can comment on a public issue, and a
+          # low-risk spec goes straight to the agent without a human reading it.
+          allow="${ALLOWLIST// /}"
+          gh issue view "$ISSUE" --json number,title,body,labels,comments | jq -r --arg allow "$allow" '
+            def ok($l): any(($allow | split(","))[]; . == $l) or $l == "github-actions";
             "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
-            + (.comments | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/request.md
+            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/request.md
 
       - name: Draft spec with Claude
         if: steps.gate.outputs.skip != 'true'
@@ -141,7 +148,8 @@ jobs:
           # Only labels from these fixed sets are applied.
           args=()
           t=$(jq -r '.type // empty' <<<"$RESULT")
-          existing=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name' | grep -m1 '^type:' || true)
+          labels=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
+          existing=$(grep -m1 '^type:' <<<"$labels" || true)
           if [[ -n "$t" && -z "$existing" ]]; then
             args+=(--add-label "type:$t")
           fi
@@ -152,10 +160,14 @@ jobs:
             [[ -n "$a" ]] && args+=(--add-label "area:$a")
           done < <(jq -r '.areas // [] | .[]' <<<"$RESULT")
 
+          # Areas from the model plus any area:* labels the issue already has
+          # (from triage or a human), so a guess can't drop an existing db/ci label.
+          areas=$( { jq -r '.areas // [] | .[]' <<<"$RESULT"; sed -n 's/^area://p' <<<"$labels"; } | sort -u)
+
           # Low-risk specs skip review. Anything touching db or ci never does.
           auto=false
-          if [[ -n "$effective" && ",${AUTO_TYPES// /}," == *",$effective,"* ]] \
-            && ! jq -e '.areas // [] | any(. == "db" or . == "ci")' <<<"$RESULT" >/dev/null; then
+          if [[ -n "$effective" && "$effective" != db && ",${AUTO_TYPES// /}," == *",$effective,"* ]] \
+            && ! grep -qxE 'db|ci' <<<"$areas"; then
             auto=true
           fi
 
@@ -171,7 +183,7 @@ jobs:
             --remove-label spec:request --add-label spec:review "${args[@]}"
 
           note=""
-          if jq -e '.areas // [] | index("db")' <<<"$RESULT" >/dev/null; then
+          if grep -qx db <<<"$areas" || [[ "$effective" == db ]]; then
             note=" This needs database work, so the agent will refuse it; a human should take it."
           fi
           gh issue comment "$ISSUE" --body "Spec drafted. The original request is kept at the bottom of the description. Review and edit it, then add \`agent:ready\` to start the agent.$note [Run log]($RUN_URL)"
