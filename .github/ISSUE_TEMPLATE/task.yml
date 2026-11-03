@@ -1,25 +1,27 @@
 name: Task
-description: Refactor, tests, docs, tooling or other non-feature work
+description: Refactor, style, performance, tests, docs, tooling or other non-feature work
+title: "chore: "
 body:
   - type: markdown
     attributes:
       value: |
-        Triage adds the `type:*` label (refactor, test, docs, chore, perf, style). See docs/AGENT_WORKFLOW.md.
+        Triage adds the `type:*` label from the title prefix. Change `chore:` to `refactor:`, `style:`, `perf:`, `test:` or `docs:` if one fits better. See docs/AGENT_WORKFLOW.md.
   - type: dropdown
     id: area
     attributes:
       label: Area
       description: Which part of the app is affected? (Triage adds the matching `area:*` label.)
       multiple: true
+      # triage.yml labels each selected item by its first word: no commas in option text.
       options:
-        - kiosk (state machine, idle/auth/onboarding)
+        - kiosk (state machine / idle / auth / onboarding)
         - hub
         - discovery
         - games
-        - cv (camera, hand tracking, pose)
-        - mobile (user pages, registration, claim, messages)
+        - cv (camera / hand tracking / pose)
+        - mobile (user pages / registration / claim / messages)
         - auth
-        - db (migrations, RLS, edge functions)
+        - db (migrations / RLS / edge functions)
         - ci / tooling
     validations:
       required: true
