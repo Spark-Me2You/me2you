@@ -1,11 +1,5 @@
-# Agent retry: when the CI run the agent dispatched on its `agent/<issue>-<slug>`
-# branch fails, post the failing output on the issue and re-run the agent on the
-# same branch, at most MAX_RETRIES times per attempt (a fresh agent:ready or
-# /agent revision resets the count). After that the issue goes to
-# `agent:needs-human`. See docs/AGENT_WORKFLOW.md.
-#
-# Only runs dispatched by agent.yml are considered (event workflow_dispatch), so
-# CI failures on commits a human pushed to the branch never trigger a retry.
+# Agent retry: when a CI run dispatched by agent.yml fails, re-run the agent on
+# the same branch, up to MAX_RETRIES times. See docs/AGENT_WORKFLOW.md.
 name: Agent retry
 
 on:

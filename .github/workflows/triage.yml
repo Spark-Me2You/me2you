@@ -1,7 +1,5 @@
-# Issue triage: when an issue is opened, add the `area:*` labels from the
-# template's Area field and a `type:*` label from the title prefix if the
-# template did not already set one. Deterministic, no model call.
-# See docs/AGENT_WORKFLOW.md.
+# Issue triage: label new issues from the Area field and title prefix, with no
+# model call. See docs/AGENT_WORKFLOW.md.
 name: Triage
 
 on:
