@@ -1,6 +1,7 @@
 # Agent retry: when the CI run the agent dispatched on its `agent/<issue>-<slug>`
 # branch fails, post the failing output on the issue and re-run the agent on the
-# same branch, at most MAX_RETRIES times. After that the issue goes to
+# same branch, at most MAX_RETRIES times per attempt (a fresh agent:ready or
+# /agent revision resets the count). After that the issue goes to
 # `agent:needs-human`. See docs/AGENT_WORKFLOW.md.
 #
 # Only runs dispatched by agent.yml are considered (event workflow_dispatch), so
@@ -50,8 +51,13 @@ jobs:
             exit 0
           fi
 
-          attempts=$(gh issue view "$issue" --json comments \
-            --jq '[.comments[] | select(.author.login == "github-actions" and (.body | contains("<!-- agent-retry -->")))] | length')
+          # Count retries since the latest attempt a human started (agent.yml
+          # marks those start comments with <!-- agent-run -->), so a /agent
+          # revision or a fresh agent:ready gets its own MAX_RETRIES.
+          attempts=$(gh issue view "$issue" --json comments --jq '
+            [.comments[] | select(.author.login == "github-actions")] as $c
+            | ([$c | to_entries[] | select(.value.body | contains("<!-- agent-run -->")) | .key] | max // -1) as $start
+            | [$c[$start + 1:][] | select(.body | contains("<!-- agent-retry -->"))] | length')
 
           if (( attempts >= MAX_RETRIES )); then
             gh issue edit "$issue" --remove-label agent:review --add-label agent:needs-human
