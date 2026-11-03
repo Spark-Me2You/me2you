@@ -40,7 +40,7 @@ Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required
 
 Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<kebab-name>` (e.g. `feature/hub-realtime`, `fix/hub-style`), commit as `<type>: <imperative summary>` (e.g. `fix: prevent accessory clipping`), and open PRs into `dev` titled the same way. Never commit directly to `main` or `dev`.
 
-Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/workflows/agent.yml`, which has Claude implement it and opens a draft PR from an `agent/<issue>-<slug>` branch. See `docs/AGENT_WORKFLOW.md`.
+Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/workflows/agent.yml`, which has Claude implement it and opens a draft PR from an `agent/<issue>-<slug>` branch. See `docs/AGENT_WORKFLOW.md`. To file an issue, use the `raise-issue` skill (`.claude/skills/raise-issue/`): it writes the body in the agent-ready format, or applies `spec:request` to have `spec.yml` draft the spec from a rough idea. Don't add `agent:ready` unless asked.
 
 ---
 
