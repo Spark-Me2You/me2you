@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { claimService } from '@/core/supabase/claimService'
+import { queryResult, resetSupabaseMock, supabaseMock } from '@/test/supabaseMock'
 import { useClaimScanner } from './useClaimScanner'
 
 const scanner = vi.hoisted(() => ({
@@ -9,7 +10,8 @@ const scanner = vi.hoisted(() => ({
 }))
 
 vi.mock('html5-qrcode', () => ({ Html5Qrcode: vi.fn(function () { return scanner }) }))
-vi.mock('@/core/supabase/claimService', () => ({ claimService: { executeClaim: vi.fn() } }))
+vi.mock('@/core/supabase/client', () => import('@/test/supabaseMockModule'))
+vi.mock('@/core/supabase/claimService', () => ({ claimService: { executeClaim: vi.fn(), executeCandyClaim: vi.fn() } }))
 
 const TOKEN = '123e4567-e89b-12d3-a456-426614174000'
 
@@ -21,6 +23,9 @@ describe('useClaimScanner', () => {
     scanner.start.mockReset().mockResolvedValue(undefined)
     scanner.stop.mockReset().mockResolvedValue(undefined)
     vi.mocked(claimService.executeClaim).mockReset()
+    vi.mocked(claimService.executeCandyClaim).mockReset()
+    resetSupabaseMock()
+    supabaseMock.from.mockReturnValue(queryResult({ data: { payload: { type: 'message' } } }))
     onSuccess.mockReset()
     onError.mockReset()
   })
@@ -60,6 +65,20 @@ describe('useClaimScanner', () => {
     expect(onSuccess).toHaveBeenCalledWith({ type: 'message' })
     expect(result.current.isScanning).toBe(false)
     expect(result.current.isProcessing).toBe(false)
+  })
+
+  it('routes candy reward tokens to the candy claim', async () => {
+    supabaseMock.from.mockReturnValue(queryResult({ data: { payload: { type: 'candy_reward' } } }))
+    vi.mocked(claimService.executeCandyClaim).mockResolvedValue({ payload: { type: 'candy_reward' } } as never)
+    const { result } = setup()
+    await act(async () => { await result.current.start() })
+
+    await decode(`/claim/${TOKEN}`)
+
+    expect(supabaseMock.from).toHaveBeenCalledWith('claim_tokens')
+    expect(claimService.executeCandyClaim).toHaveBeenCalledWith(TOKEN)
+    expect(claimService.executeClaim).not.toHaveBeenCalled()
+    expect(onSuccess).toHaveBeenCalledWith({ type: 'candy_reward' })
   })
 
   it('ignores QR codes that are not claim links', async () => {
