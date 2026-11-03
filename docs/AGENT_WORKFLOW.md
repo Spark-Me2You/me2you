@@ -25,7 +25,7 @@ Claude never holds a token with push rights. It can only read and edit files, ru
 
 If CI fails on the agent's branch, `agent-retry.yml` posts the failing output on the issue and re-runs the agent on the same branch (see "Automation around the agent" below).
 
-If the agent can't finish (the issue is ambiguous, build or tests fail, or the change needs out-of-scope files), it labels the issue `agent:needs-human` and comments why. Answer in a comment, then re-add `agent:ready` to retry. A retry starts from fresh `dev` and force-pushes the same `agent/` branch, updating the existing PR.
+If the agent can't finish (the issue is ambiguous, build or tests fail, or the change needs out-of-scope files), it labels the issue `agent:needs-human` and comments why. Answer in a comment that starts with `/agent` (see "Giving the agent feedback"). Re-adding `agent:ready` also works, but it starts from fresh `dev` and force-pushes the same `agent/` branch, updating the existing PR.
 
 ## Labels
 
@@ -49,9 +49,29 @@ Three small workflows sit around `agent.yml`. None of them add `agent:ready`: a 
 |---|---|---|
 | `triage.yml` | issue opened | Adds `area:*` from the template's Area field and `type:*` from a `feat:`/`fix:`/`docs:` title prefix when the template didn't set one. Deterministic, no model call. |
 | `spec.yml` | label `spec:request` | Claude (read-only tools) rewrites a rough issue into the agent-ready format, keeps the original text in a collapsed block at the bottom, applies labels, and swaps `spec:request` for `spec:review`. If the idea is too vague it asks questions in a comment instead; answer, then re-add `spec:request`. Same allowlist as the agent. |
+| `agent-feedback.yml` | comment or review starting with `/agent` | Re-runs the agent on the existing branch with your feedback. See below. |
 | `agent-retry.yml` | CI fails on a run the agent dispatched | Posts the failing output on the issue and re-runs `agent.yml` on the same `agent/` branch (earlier commits are kept), at most twice. After that the issue goes to `agent:needs-human`. CI failures on commits a human pushed to the branch are ignored. |
 
 Typical flow: file a one-line issue, add `spec:request`, read and edit the spec, add `agent:ready`, review the draft PR.
+
+## Giving the agent feedback
+
+Once the agent has handed an issue over (`agent:review` or `agent:needs-human`), start a comment or review with `/agent` and say what to change:
+
+- on the issue, e.g. `/agent use the existing SplitCameraPanel instead of a new component`
+- in the draft PR's conversation
+- as the body of a PR review, with inline comments attached to it
+- as a single inline review comment
+
+The agent restarts **on the same branch**, keeping its earlier commits, with the issue thread, the PR conversation, review bodies and inline comments (with their diff hunks) in its context. It updates the existing PR and goes back to `agent:review`. Answering an `agent:needs-human` question works the same way; if no branch exists yet it starts fresh.
+
+- Only allowlisted users can use `/agent`. A comment from anyone else is treated as ordinary discussion and ignored.
+- `/agent` must be the first word. Comments without it never start a run, so humans can discuss freely.
+- While a run is in progress the command is declined; send it again when the agent finishes.
+- Only comments and reviews from allowlisted users (and the Actions bot, for CI failure output) are included in the agent's context. Other people's comments are not shown to it.
+- `/agent` is not limited like the CI retries: each revision needs a person to ask for it. If CI then fails on the revision, the usual two automatic retries apply.
+
+Review events (`pull_request_review`, `pull_request_review_comment`) run the copy of `agent-feedback.yml` from the PR's merge ref, which for an agent PR is the one on `dev`. That workflow holds no secrets and only checks the allowlist before dispatching `agent.yml`.
 
 ## Writing an agent-ready issue
 
