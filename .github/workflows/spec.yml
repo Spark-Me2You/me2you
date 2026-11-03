@@ -1,7 +1,10 @@
 # Spec drafting: adding the `spec:request` label to a rough issue has Claude
 # read the repo and rewrite the issue as an agent-ready spec (problem, behaviour,
 # acceptance criteria, out of scope, code pointers). The issue then waits for a
-# human on `spec:review`; this workflow never adds `agent:ready`.
+# human on `spec:review`; this workflow never adds `agent:ready`. The one
+# exception to waiting for review: a spec whose type is in AGENT_AUTO_TYPES
+# (default docs,test) and that needs no db/ci work starts the agent directly via
+# workflow_dispatch of agent.yml (labels added by GITHUB_TOKEN would not trigger it).
 # Claude has read-only tools. Editing the issue and labels is done by plain
 # shell steps below. See docs/AGENT_WORKFLOW.md.
 name: Spec
@@ -23,6 +26,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      actions: write # dispatch agent.yml for low-risk specs
       id-token: write
     env:
       GH_TOKEN: ${{ github.token }}
@@ -104,9 +108,12 @@ jobs:
             --json-schema '{"type":"object","properties":{"status":{"type":"string","enum":["drafted","needs_input"]},"title":{"type":"string"},"type":{"type":"string","enum":["feature","fix","refactor","style","docs","chore","perf","test"]},"areas":{"type":"array","items":{"type":"string","enum":["kiosk","hub","discovery","games","cv","mobile","auth","db","ci"]}},"body":{"type":"string"},"questions":{"type":"string"}},"required":["status"]}'
 
       - name: Apply spec to the issue
+        id: apply
         if: steps.gate.outputs.skip != 'true' && steps.claude.outcome == 'success'
         env:
           RESULT: ${{ steps.claude.outputs.structured_output }}
+          # Types the agent may start on without a human reading the spec first.
+          AUTO_TYPES: ${{ vars.AGENT_AUTO_TYPES || 'docs,test' }}
         run: |
           status=$(jq -r '.status // "needs_input"' <<<"$RESULT")
 
@@ -134,12 +141,31 @@ jobs:
           # Only labels from these fixed sets are applied.
           args=()
           t=$(jq -r '.type // empty' <<<"$RESULT")
-          if [[ -n "$t" ]] && ! gh issue view "$ISSUE" --json labels --jq '.labels[].name' | grep -q '^type:'; then
+          existing=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name' | grep -m1 '^type:' || true)
+          if [[ -n "$t" && -z "$existing" ]]; then
             args+=(--add-label "type:$t")
           fi
+          # An existing type label (e.g. from the issue form) wins over the model's guess.
+          effective="${existing#type:}"
+          [[ -n "$effective" ]] || effective="$t"
           while read -r a; do
             [[ -n "$a" ]] && args+=(--add-label "area:$a")
           done < <(jq -r '.areas // [] | .[]' <<<"$RESULT")
+
+          # Low-risk specs skip review. Anything touching db or ci never does.
+          auto=false
+          if [[ -n "$effective" && ",${AUTO_TYPES// /}," == *",$effective,"* ]] \
+            && ! jq -e '.areas // [] | any(. == "db" or . == "ci")' <<<"$RESULT" >/dev/null; then
+            auto=true
+          fi
+
+          if [[ "$auto" == true ]]; then
+            gh issue edit "$ISSUE" --title "$title" --body-file "$RUNNER_TEMP/spec-body.md" \
+              --remove-label spec:request "${args[@]}"
+            gh issue comment "$ISSUE" --body "Spec drafted. This is a low-risk \`type:$effective\` issue, so the agent is starting without waiting for review. The original request is kept at the bottom of the description. [Run log]($RUN_URL)"
+            echo "autostart=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           gh issue edit "$ISSUE" --title "$title" --body-file "$RUNNER_TEMP/spec-body.md" \
             --remove-label spec:request --add-label spec:review "${args[@]}"
@@ -149,6 +175,10 @@ jobs:
             note=" This needs database work, so the agent will refuse it; a human should take it."
           fi
           gh issue comment "$ISSUE" --body "Spec drafted. The original request is kept at the bottom of the description. Review and edit it, then add \`agent:ready\` to start the agent.$note [Run log]($RUN_URL)"
+
+      - name: Start the agent for a low-risk spec
+        if: steps.apply.outputs.autostart == 'true'
+        run: gh workflow run agent.yml -f issue="$ISSUE"
 
       - name: Report failure
         if: failure() && steps.gate.outputs.skip != 'true'
