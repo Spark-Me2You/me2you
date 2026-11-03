@@ -31,6 +31,9 @@ labels=(
   "agent:review|5319e7|Agent opened a draft PR; needs human review"
   "agent:needs-human|d93f0b|Agent stopped; needs clarification or human work"
 
+  "spec:request|0e8a16|Rough idea; adding this has Claude draft the full spec"
+  "spec:review|5319e7|Spec drafted; a human reviews it, then adds agent:ready"
+
   "model:sonnet|bfdadc|Agent runs on Sonnet 5.5 (default)"
   "model:opus|bfdadc|Agent runs on Opus 5.5"
 )

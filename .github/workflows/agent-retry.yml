@@ -1,0 +1,76 @@
+# Agent retry: when the CI run the agent dispatched on its `agent/<issue>-<slug>`
+# branch fails, post the failing output on the issue and re-run the agent on the
+# same branch, at most MAX_RETRIES times. After that the issue goes to
+# `agent:needs-human`. See docs/AGENT_WORKFLOW.md.
+#
+# Only runs dispatched by agent.yml are considered (event workflow_dispatch), so
+# CI failures on commits a human pushed to the branch never trigger a retry.
+name: Agent retry
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  retry:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'workflow_dispatch' &&
+      startsWith(github.event.workflow_run.head_branch, 'agent/')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      actions: write # dispatch agent.yml
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.workflow_run.head_branch }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      CI_RUN_ID: ${{ github.event.workflow_run.id }}
+      CI_RUN_URL: ${{ github.event.workflow_run.html_url }}
+      MAX_RETRIES: 2
+    steps:
+      - name: Retry the agent on the failing branch
+        run: |
+          [[ "$BRANCH" =~ ^agent/([0-9]+)-[a-z0-9-]*$ ]] || { echo "Unexpected branch name."; exit 0; }
+          issue="${BASH_REMATCH[1]}"
+
+          # Ignore stale runs: the branch must still be at the commit CI ran on.
+          pr_head=$(gh pr list --head "$BRANCH" --state open --json headRefOid --jq '.[0].headRefOid // empty')
+          if [[ "$pr_head" != "$HEAD_SHA" ]]; then
+            echo "No open PR at $HEAD_SHA for $BRANCH; skipping."
+            exit 0
+          fi
+
+          # Only act while the agent has handed the issue over for review.
+          if ! gh issue view "$issue" --json labels --jq '.labels[].name' | grep -qx 'agent:review'; then
+            echo "Issue #$issue is not in agent:review; skipping."
+            exit 0
+          fi
+
+          attempts=$(gh issue view "$issue" --json comments \
+            --jq '[.comments[] | select(.author.login == "github-actions" and (.body | contains("<!-- agent-retry -->")))] | length')
+
+          if (( attempts >= MAX_RETRIES )); then
+            gh issue edit "$issue" --remove-label agent:review --add-label agent:needs-human
+            gh issue comment "$issue" --body "CI is still failing after $attempts automatic retries, so I'm stopping. [Failing run]($CI_RUN_URL)"
+            exit 0
+          fi
+
+          log=$(gh run view "$CI_RUN_ID" --log-failed 2>/dev/null \
+            | sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' | tail -c 8000 || true)
+          {
+            echo "<!-- agent-retry -->"
+            echo "CI failed on \`$BRANCH\` (automatic retry $((attempts + 1)) of $MAX_RETRIES). [Failing run]($CI_RUN_URL)"
+            echo
+            echo "Failing output (tail):"
+            echo
+            echo "~~~~"
+            echo "$log"
+            echo "~~~~"
+          } > "$RUNNER_TEMP/retry-comment.md"
+          gh issue comment "$issue" --body-file "$RUNNER_TEMP/retry-comment.md"
+
+          gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH"
