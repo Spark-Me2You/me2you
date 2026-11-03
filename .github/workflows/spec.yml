@@ -35,8 +35,9 @@ jobs:
       GH_REPO: ${{ github.repository }}
       ISSUE: ${{ github.event.issue.number }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      # Same allowlist as agent.yml: runs bill the owner's Claude subscription.
-      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
+      # Same allowlist as agent.yml (unset means nobody): runs bill the owner's
+      # Claude subscription.
+      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST }}
     steps:
       - name: Check who labeled
         id: gate
@@ -44,8 +45,10 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           if [[ ! ",${ALLOWLIST// /}," == *",$ACTOR,"* ]]; then
+            why="@$ACTOR is not on the agent allowlist. Ask a maintainer to add \`spec:request\`."
+            [[ -n "${ALLOWLIST//[ ,]/}" ]] || why="the \`AGENT_ALLOWLIST\` repo variable is not set. See docs/AGENT_WORKFLOW.md."
             gh issue edit "$ISSUE" --remove-label spec:request
-            gh issue comment "$ISSUE" --body "Spec not drafted: @$ACTOR is not on the agent allowlist. Ask a maintainer to add \`spec:request\`."
+            gh issue comment "$ISSUE" --body "Spec not drafted: $why"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -62,16 +65,15 @@ jobs:
         run: |
           mkdir -p .agent
           echo ".agent/" >> .git/info/exclude
-          gh issue view "$ISSUE" --json title,body --jq '.title' > .agent/title.txt
-          gh issue view "$ISSUE" --json title,body --jq '.body' > .agent/original-body.md
+          gh issue view "$ISSUE" --json number,title,body,labels,comments > .agent/issue.json
           # Same trust filter as agent.yml: the issue body is vouched for by whoever
           # added spec:request, but anyone can comment on a public issue, and a
           # low-risk spec goes straight to the agent without a human reading it.
           allow="${ALLOWLIST// /}"
-          gh issue view "$ISSUE" --json number,title,body,labels,comments | jq -r --arg allow "$allow" '
+          jq -r --arg allow "$allow" '
             def ok($l): any(($allow | split(","))[]; . == $l) or $l == "github-actions";
             "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
-            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/request.md
+            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' .agent/issue.json > .agent/request.md
 
       - name: Draft spec with Claude
         if: steps.gate.outputs.skip != 'true'
@@ -109,7 +111,7 @@ jobs:
             - `title` is `<type>: <imperative summary>`, 72 chars max, per docs/GIT_CONVENTIONS.md.
             - No AI attribution.
           claude_args: |
-            --model claude-sonnet-5-5
+            --model sonnet
             --max-turns 30
             --allowedTools "Read,Glob,Grep"
             --json-schema '{"type":"object","properties":{"status":{"type":"string","enum":["drafted","needs_input"]},"title":{"type":"string"},"type":{"type":"string","enum":["feature","fix","refactor","style","docs","chore","perf","test"]},"areas":{"type":"array","items":{"type":"string","enum":["kiosk","hub","discovery","games","cv","mobile","auth","db","ci"]}},"body":{"type":"string"},"questions":{"type":"string"}},"required":["status"]}'
@@ -136,18 +138,20 @@ jobs:
           fi
 
           title=$(jq -r '.title // empty' <<<"$RESULT")
-          [[ -n "$title" ]] || title=$(cat .agent/title.txt)
+          [[ -n "$title" ]] || title=$(jq -r .title .agent/issue.json)
 
           {
             jq -r '.body // ""' <<<"$RESULT"
             printf '\n\n<details>\n<summary>Original request</summary>\n\n'
-            cat .agent/original-body.md
+            jq -r .body .agent/issue.json
             printf '\n\n</details>\n'
           } > "$RUNNER_TEMP/spec-body.md"
 
           # Only labels from these fixed sets are applied.
           args=()
           t=$(jq -r '.type // empty' <<<"$RESULT")
+          # Fetched now, not from the snapshot: triage.yml may have labeled the
+          # issue while Claude was drafting.
           labels=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
           existing=$(grep -m1 '^type:' <<<"$labels" || true)
           if [[ -n "$t" && -z "$existing" ]]; then
@@ -157,7 +161,7 @@ jobs:
           effective="${existing#type:}"
           [[ -n "$effective" ]] || effective="$t"
           while read -r a; do
-            [[ -n "$a" ]] && args+=(--add-label "area:$a")
+            if [[ -n "$a" ]]; then args+=(--add-label "area:$a"); fi
           done < <(jq -r '.areas // [] | .[]' <<<"$RESULT")
 
           # Areas from the model plus any area:* labels the issue already has
@@ -172,21 +176,18 @@ jobs:
           fi
 
           if [[ "$auto" == true ]]; then
-            gh issue edit "$ISSUE" --title "$title" --body-file "$RUNNER_TEMP/spec-body.md" \
-              --remove-label spec:request "${args[@]}"
-            gh issue comment "$ISSUE" --body "Spec drafted. This is a low-risk \`type:$effective\` issue, so the agent is starting without waiting for review. The original request is kept at the bottom of the description. [Run log]($RUN_URL)"
+            next="This is a low-risk \`type:$effective\` issue, so the agent is starting without waiting for review."
             echo "autostart=true" >> "$GITHUB_OUTPUT"
-            exit 0
+          else
+            args+=(--add-label spec:review)
+            next="Review and edit it, then add \`agent:ready\` to start the agent."
+            if grep -qx db <<<"$areas" || [[ "$effective" == db ]]; then
+              next+=" This needs database work, so the agent will refuse it; a human should take it."
+            fi
           fi
-
           gh issue edit "$ISSUE" --title "$title" --body-file "$RUNNER_TEMP/spec-body.md" \
-            --remove-label spec:request --add-label spec:review "${args[@]}"
-
-          note=""
-          if grep -qx db <<<"$areas" || [[ "$effective" == db ]]; then
-            note=" This needs database work, so the agent will refuse it; a human should take it."
-          fi
-          gh issue comment "$ISSUE" --body "Spec drafted. The original request is kept at the bottom of the description. Review and edit it, then add \`agent:ready\` to start the agent.$note [Run log]($RUN_URL)"
+            --remove-label spec:request "${args[@]}"
+          gh issue comment "$ISSUE" --body "Spec drafted. The original request is kept at the bottom of the description. $next [Run log]($RUN_URL)"
 
       - name: Start the agent for a low-risk spec
         if: steps.apply.outputs.autostart == 'true'

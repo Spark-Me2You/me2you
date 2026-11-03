@@ -38,9 +38,10 @@ env:
   RETRY_BRANCH: ${{ inputs.branch }}
   REASON: ${{ inputs.reason }}
   RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-  # Runs bill the owner's Claude subscription, so only these users may start
-  # them. Override with the AGENT_ALLOWLIST repo variable.
-  ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
+  # Runs bill the owner's Claude subscription, so only users in the
+  # AGENT_ALLOWLIST repo variable (comma-separated logins) may start them.
+  # Unset means nobody can. Shared with spec.yml and agent-feedback.yml.
+  ALLOWLIST: ${{ vars.AGENT_ALLOWLIST }}
 
 jobs:
   # No environment, so refused runs never get near the Claude token.
@@ -54,68 +55,67 @@ jobs:
     outputs:
       model: ${{ steps.claim.outputs.model }}
     steps:
-      - name: Check who labeled and what the issue touches
+      - name: Check the request and pick a model
         id: gate
         env:
           ACTOR: ${{ github.actor }}
           EVENT: ${{ github.event_name }}
         run: |
-          # Retries and feedback runs are dispatched by agent-retry.yml and
-          # agent-feedback.yml as the Actions bot; only that exact shape is
-          # accepted, and a branch, if given, must belong to the issue.
-          if [[ "$EVENT" == "workflow_dispatch" && "$ACTOR" == "github-actions[bot]" ]]; then
-            ALLOWLIST="$ALLOWLIST,github-actions[bot]"
-            if [[ ! "$ISSUE" =~ ^[0-9]+$ || ! "$REASON" =~ ^(ci|feedback)$ ||
+          # Hand the issue back with a reason. Also clears agent:in-progress,
+          # which agent-feedback.yml and agent-retry.yml set before dispatching.
+          refuse() {
+            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress --add-label agent:needs-human || true
+            gh issue comment "$ISSUE" --body "Agent not started: $1 [Run log]($RUN_URL)" || true
+            exit 0
+          }
+
+          [[ "$ISSUE" =~ ^[0-9]+$ ]] || { echo "Invalid issue number."; exit 0; }
+          if [[ -z "${ALLOWLIST//[ ,]/}" ]]; then
+            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress || true
+            gh issue comment "$ISSUE" --body "Agent not started: the \`AGENT_ALLOWLIST\` repo variable is not set. See docs/AGENT_WORKFLOW.md." || true
+            exit 0
+          fi
+
+          # Every dispatch, whether from agent-retry.yml / agent-feedback.yml /
+          # spec.yml (as the Actions bot) or by hand, must have this shape, and
+          # a branch must belong to the issue.
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            if [[ ! "$REASON" =~ ^(ci|feedback)$ ||
                   ( -n "$RETRY_BRANCH" && ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]*$ ) ]]; then
-              gh issue comment "$ISSUE" --body "Agent not started: invalid retry request." || true
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
+              refuse "invalid dispatch (reason \`$REASON\`, branch \`$RETRY_BRANCH\`)."
             fi
+            if [[ "$ACTOR" == "github-actions[bot]" ]]; then ALLOWLIST="$ALLOWLIST,github-actions[bot]"; fi
           fi
           if [[ ! ",${ALLOWLIST// /}," == *",$ACTOR,"* ]]; then
+            # Not refuse(): someone else's run may be in progress on this issue.
             gh issue edit "$ISSUE" --remove-label agent:ready
             gh issue comment "$ISSUE" --body "Agent not started: @$ACTOR is not on the agent allowlist. Ask a maintainer to add \`agent:ready\`."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          labels=$(gh issue view "$ISSUE" --json labels --jq '[.labels[].name] | join(",")')
-          if [[ ",$labels," =~ ,(type:db|area:db), ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready --add-label agent:needs-human
-            gh issue comment "$ISSUE" --body "Agent not started: database work (migrations, RLS, edge functions) is reserved for humans."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-      - name: Pick model
-        if: steps.gate.outputs.skip != 'true'
-        id: model
-        run: |
-          # Only labels in this map are honored; the label is never passed to the CLI as-is.
-          declare -A models=( [model:sonnet]=claude-sonnet-5-5 [model:opus]=claude-opus-5-5 )
-          default=model:sonnet
 
           labels=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
-          picked=()
-          for l in "${!models[@]}"; do
-            grep -qxF "$l" <<<"$labels" && picked+=("$l")
-          done
-
-          if [[ ${#picked[@]} -gt 1 ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready --add-label agent:needs-human
-            gh issue comment "$ISSUE" --body "Agent not started: multiple model labels (${picked[*]}). Keep one and re-add \`agent:ready\`."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
+          if grep -qxE 'type:db|area:db' <<<"$labels"; then
+            refuse "database work (migrations, RLS, edge functions) is reserved for humans."
           fi
 
-          label=${picked[0]:-$default}
-          echo "id=${models[$label]}" >> "$GITHUB_OUTPUT"
+          # Only labels in this map are honored; the label is never passed to the
+          # CLI as-is. Values are Claude Code model aliases, which resolve to the
+          # newest model of that family in the pinned claude-code-action.
+          declare -A models=( [model:sonnet]=sonnet [model:opus]=opus )
+          picked=()
+          for l in "${!models[@]}"; do
+            if grep -qxF "$l" <<<"$labels"; then picked+=("$l"); fi
+          done
+          if [[ ${#picked[@]} -gt 1 ]]; then
+            refuse "multiple model labels (${picked[*]}). Keep one and re-add \`agent:ready\`."
+          fi
+          echo "model=${models[${picked[0]:-model:sonnet}]}" >> "$GITHUB_OUTPUT"
 
       - name: Claim issue
-        if: steps.gate.outputs.skip != 'true' && steps.model.outputs.skip != 'true'
+        if: steps.gate.outputs.model != ''
         id: claim
         env:
-          MODEL: ${{ steps.model.outputs.id }}
+          MODEL: ${{ steps.gate.outputs.model }}
         run: |
           gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:needs-human --remove-label agent:review --add-label agent:in-progress
           # Every run except a CI retry carries a marker, and agent-retry.yml
@@ -141,6 +141,7 @@ jobs:
     outputs:
       branch: ${{ steps.branch.outputs.name }}
       base: ${{ steps.branch.outputs.base }}
+      lease: ${{ steps.branch.outputs.lease }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -196,6 +197,10 @@ jobs:
           echo "name=$branch" >> "$GITHUB_OUTPUT"
           # The commit the agent starts from; publish only accepts commits on top of it.
           echo "base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # Where the remote branch was at checkout (empty if it didn't exist).
+          # publish pushes with this as the lease, so commits a human pushes
+          # during the run are never overwritten.
+          echo "lease=$(git rev-parse -q --verify "refs/remotes/origin/$branch" || true)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         with:
@@ -226,7 +231,8 @@ jobs:
             - Implement what the issue asks, nothing more. Keep the diff focused.
             - Do not modify `supabase/`, `.github/`, `.env*`, or `package.json` dependencies.
             - Add or update unit tests for logic you change, where practical.
-            - `npm run build` and `npm test` must both pass before you finish. Run `npm run lint` too.
+            - `npm run build` and `npm test` must both pass before you finish. Run `npm run typecheck`
+              and `npm run lint` too.
             - Commit your work with `git add` / `git commit` using `<type>: <imperative summary>`
               messages. No Co-Authored-By trailers or any other AI attribution in commits.
             - Do not switch branches or push. A later workflow step pushes and opens the PR.
@@ -245,8 +251,8 @@ jobs:
           claude_args: |
             --model ${{ needs.gate.outputs.model }}
             --max-turns 80
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm run build),Bash(npm test),Bash(npm run lint),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
-            --disallowedTools "Edit(supabase/**),Write(supabase/**),Edit(.github/**),Write(.github/**)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm run build),Bash(npm run typecheck),Bash(npm test),Bash(npm run lint),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
+            --disallowedTools "Edit(supabase/**),Write(supabase/**),Edit(.github/**),Write(.github/**),Edit(.env*),Write(.env*),Edit(package-lock.json),Write(package-lock.json)"
             --json-schema '{"type":"object","properties":{"status":{"type":"string","enum":["done","needs_human"]},"pr_title":{"type":"string"},"pr_body":{"type":"string"},"reason":{"type":"string"}},"required":["status","reason"]}'
 
 
@@ -283,6 +289,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BRANCH: ${{ needs.work.outputs.branch }}
       BASE: ${{ needs.work.outputs.base }}
+      LEASE: ${{ needs.work.outputs.lease }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -318,11 +325,21 @@ jobs:
           head=$(git rev-parse FETCH_HEAD)
           git merge-base --is-ancestor "$BASE" "$head" \
             || needs_human "The agent's commits are not on top of the commit it started from."
-          if git diff --name-only "origin/dev...$head" | grep -qE '^(supabase/|\.github/)'; then
-            needs_human "The change touches \`supabase/\` or \`.github/\`, which agents may not modify."
+          # Same limits as the prompt: no supabase/, .github/, .env* or lockfile
+          # changes, and no dependency changes in package.json.
+          if git diff --name-only "origin/dev...$head" | grep -qE '^(supabase/|\.github/|\.env|package-lock\.json$)'; then
+            needs_human "The change touches \`supabase/\`, \`.github/\`, \`.env*\` or \`package-lock.json\`, which agents may not modify."
+          fi
+          deps='{dependencies, devDependencies, peerDependencies, optionalDependencies}'
+          fork=$(git merge-base origin/dev "$head")
+          if [[ "$(git show "$fork:package.json" | jq -S "$deps")" != "$(git show "$head:package.json" | jq -S "$deps" 2>/dev/null)" ]]; then
+            needs_human "The change edits dependencies in \`package.json\`, which agents may not do."
           fi
 
-          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$head:refs/heads/$BRANCH"
+          [[ -z "$LEASE" || "$LEASE" =~ ^[0-9a-f]{40}$ ]] || needs_human "The run produced an unexpected lease commit."
+          git push --force-with-lease="refs/heads/$BRANCH:$LEASE" \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git" "$head:refs/heads/$BRANCH" \
+            || needs_human "The push to \`$BRANCH\` was rejected, most likely because someone pushed to it during the run, so nothing was overwritten. Check the branch, then send \`/agent\` or re-add \`agent:ready\`."
 
           title=$(jq -r '.pr_title // empty' "$result")
           [[ -n "$title" ]] || title=$(gh issue view "$ISSUE" --json title --jq .title)
