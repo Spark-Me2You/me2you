@@ -1,14 +1,5 @@
-# Spec drafting: adding the `spec:request` label to a rough issue has Claude
-# read the repo and rewrite the issue as an agent-ready spec (problem, behaviour,
-# acceptance criteria, out of scope, code pointers). The issue then waits for a
-# human on `spec:review`; this workflow never adds `agent:ready`. The one
-# exception to waiting for review: a spec whose type is in AGENT_AUTO_TYPES
-# (default docs,test) and that needs no db/ci work, by the model's areas or the
-# issue's existing labels, starts the agent directly via workflow_dispatch of
-# agent.yml (labels added by GITHUB_TOKEN would not trigger it). Because that
-# path skips human review, only comments from allowlisted users reach the model.
-# Claude has read-only tools. Editing the issue and labels is done by plain
-# shell steps below. See docs/AGENT_WORKFLOW.md.
+# Spec drafting: `spec:request` has Claude (read-only tools) rewrite a rough
+# issue as an agent-ready spec. See docs/AGENT_WORKFLOW.md.
 name: Spec
 
 on:

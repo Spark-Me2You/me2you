@@ -10,7 +10,7 @@ Issues here feed an automated agent pipeline (`docs/AGENT_WORKFLOW.md`). The iss
 ## 1. Pick the route
 
 - **You can write the full spec** (the request is clear, or the user answered your questions): write it in the format below and create the issue. No `spec:request` needed.
-- **Only a rough idea** (the user wants it captured, not designed): create the issue in plain language with `--label spec:request`. The `spec.yml` workflow drafts the spec, and the user reviews it. Use this for bulk capture too.
+- **Only a rough idea** (the user wants it captured, not designed): create the issue in plain language with `--label spec:request`. The `spec.yml` workflow drafts the spec, and the user reviews it, except for low-risk specs (see step 4). Use this for bulk capture too.
 
 Default to the first when the user is in the session with you. Ask a question only where a real design decision is open and a sensible default would be a guess.
 
@@ -20,9 +20,9 @@ Read `docs/AGENT_WORKFLOW.md` ("Writing an agent-ready issue"). Look at the code
 
 | Kind | Template | Sections, in order |
 |---|---|---|
-| Feature, refactor, style, perf, test, docs | `feature.yml` | Area, Problem / motivation, Proposed behaviour, Acceptance criteria, Out of scope, Code pointers |
+| New user-facing feature | `feature.yml` | Area, Problem / motivation, Proposed behaviour, Acceptance criteria, Out of scope, Code pointers |
 | Bug | `bug.yml` | Area, What happens, What should happen, Steps to reproduce, Code pointers, How to verify the fix |
-| Small chore | `task.yml` | Area, What needs doing, Acceptance criteria, Code pointers |
+| Refactor, style, perf, test, docs, chore | `task.yml` | Area, What needs doing, Acceptance criteria, Code pointers |
 
 Format each section as `### <label>` followed by its content. Add `### Manual verification` when confirming the change needs the kiosk, camera or Pixi.
 
@@ -49,8 +49,10 @@ gh issue create --title "feat: ..." --body-file <path> \
 
 ## 4. Don't start the agent unless asked
 
-`agent:ready` starts a run that costs subscription quota and opens a PR. Add it only when the user explicitly asks for the agent to do the work, and never to a `spec:request` issue (the spec has to be reviewed first). If the user asks, show them the issue first. Only allowlisted users can trigger runs; if the label is removed with a comment, report that rather than retrying.
+`agent:ready` starts a run that costs subscription quota and opens a PR. Add it only when the user explicitly asks for the agent to do the work, and never to a `spec:request` issue (there's no spec to work from yet). If the user asks, show them the issue first. Only allowlisted users can trigger runs; if the label is removed with a comment, report that rather than retrying.
+
+`spec:request` can start the agent too: a drafted spec of a low-risk type (`docs` and `test` by default) with no `db` or `ci` area skips review and starts a run. So for a docs or test idea the user only wants captured, leave off `spec:request`, or tell them it will start a run.
 
 ## 5. Report back
 
-Give the issue URL and the next step: for a `spec:request` issue, "wait for `spec:review`, edit the spec, then add `agent:ready`"; for a full spec, "add `agent:ready` when you want the agent to pick it up."
+Give the issue URL and the next step: for a `spec:request` issue, "wait for `spec:review`, edit the spec, then add `agent:ready`" (or, for a low-risk type, "the agent will start on its own; review its draft PR"); for a full spec, "add `agent:ready` when you want the agent to pick it up."

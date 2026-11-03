@@ -1,12 +1,6 @@
-# Agent feedback: a comment or review that starts with `/agent` re-runs the agent
-# on the issue's existing branch, with the thread and the PR's review comments
-# in its context. Works from the issue, the PR conversation, a PR review body or
-# an inline review comment. Only allowlisted users can use it. See
-# docs/AGENT_WORKFLOW.md.
-#
-# This job only reads the event and dispatches agent.yml; it holds no secrets.
-# agent.yml accepts the dispatch as the Actions bot, so the checks here (the
-# allowlist, an agent/ branch, issue state) are the gate for feedback runs.
+# Agent feedback: a comment or review starting with `/agent` re-runs the agent on
+# the issue's branch. The checks here are the gate for those runs, because
+# agent.yml trusts dispatches from the Actions bot. See docs/AGENT_WORKFLOW.md.
 name: Agent feedback
 
 on:

@@ -1,13 +1,6 @@
-# Issue agent: adding the `agent:ready` label to an issue runs Claude Code
-# against it and opens a draft PR into dev. See docs/AGENT_WORKFLOW.md.
-#
-# Three jobs, so code the agent writes never runs next to a write token:
-#   gate     checks the labeler and issue, picks the model, claims the issue
-#   work     Claude edits, builds, tests and commits locally (read-only token),
-#            then uploads its commits as a git bundle
-#   publish  re-checks the bundle, pushes, opens the PR, updates labels
-# `npm run build` / `npm test` execute code the agent wrote, so `work` holds no
-# GH_TOKEN and its github.token can only read. See docs/AGENT_WORKFLOW.md.
+# Issue agent: `agent:ready` runs Claude Code on an issue and opens a draft PR.
+# Jobs are split so code the agent writes never runs next to a write token; keep
+# it that way. See docs/AGENT_WORKFLOW.md.
 name: Agent
 
 on:
