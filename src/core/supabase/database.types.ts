@@ -630,9 +630,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      candy_desk_vouchers: {
+        Args: { p_org_id: string }
+        Returns: {
+          code: string
+          issued_at: string
+          player_email: string
+          player_name: string
+          redeemed_at: string
+          status: Database["public"]["Enums"]["candy_voucher_status"]
+          voucher_id: string
+        }[]
+      }
       get_user_org_id: { Args: never; Returns: string }
       issue_candy_voucher: {
         Args: { p_token_id: string; p_user_id: string }
+        Returns: Json
+      }
+      set_candy_voucher_redeemed: {
+        Args: { p_org_id: string; p_redeemed: boolean; p_voucher_id: string }
         Returns: Json
       }
     }
