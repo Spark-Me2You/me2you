@@ -54,6 +54,8 @@ Three small workflows sit around `agent.yml`. None of them add `agent:ready`: a 
 
 Typical flow: file a one-line issue, add `spec:request`, read and edit the spec, add `agent:ready`, review the draft PR.
 
+In Claude Code, the `raise-issue` skill (`.claude/skills/raise-issue/`) does the filing for you: ask it to "raise an issue for X" and it writes a full spec directly (or a rough issue with `spec:request` if you only want to capture the idea). Use `spec.yml` for issues filed any other way, such as the web UI or someone without Claude Code.
+
 ## Giving the agent feedback
 
 Once the agent has handed an issue over (`agent:review` or `agent:needs-human`), start a comment or review with `/agent` and say what to change:
