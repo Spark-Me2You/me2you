@@ -79,4 +79,9 @@ jobs:
           } > "$RUNNER_TEMP/retry-comment.md"
           gh issue comment "$issue" --body-file "$RUNNER_TEMP/retry-comment.md"
 
-          gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci
+          # Claim first, as agent-feedback.yml does, so a /agent sent meanwhile is declined.
+          gh issue edit "$issue" --remove-label agent:review --add-label agent:in-progress
+          if ! gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci; then
+            gh issue edit "$issue" --remove-label agent:in-progress --add-label agent:needs-human
+            exit 1
+          fi
