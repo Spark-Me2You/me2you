@@ -163,8 +163,8 @@ jobs:
           gh issue comment "$ISSUE" --body "${marker}Agent started working on this issue using \`$MODEL\`. [Run log]($RUN_URL)"
           echo "model=$MODEL" >> "$GITHUB_OUTPUT"
 
-  # Runs code the agent wrote (npm run build / npm test), so it gets a read-only
-  # token and no GH_TOKEN. Its only output is an artifact that `publish` checks.
+  # Claude edits files here with read/write tools only. Trusted shell packages
+  # the result; no repository code or project command runs beside the token.
   work:
     needs: gate
     if: needs.gate.outputs.model != ''
@@ -270,14 +270,6 @@ jobs:
           # during the run are never overwritten.
           echo "lease=$(git rev-parse -q --verify "refs/remotes/origin/$branch" || true)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Run Claude
         id: claude
         # Pinned to v1.0.266: this step holds the Claude token.
@@ -298,17 +290,15 @@ jobs:
             Rules:
             - Implement what the issue asks, nothing more. Keep the diff focused.
             - Do not modify `supabase/`, `.github/`, `.env*`, or `package.json` dependencies.
-            - Add or update unit tests for logic you change, where practical.
-            - `npm run build` and `npm test` must both pass before you finish. Run `npm run typecheck`
-              and `npm run lint` too.
-            - Commit your work with `git add` / `git commit` using `<type>: <imperative summary>`
-              messages. No Co-Authored-By trailers or any other AI attribution in commits.
-            - Do not switch branches or push. A later workflow step pushes and opens the PR.
-            - The runner has no camera, MediaPipe, WebGL or Supabase. If behaviour can only be
-              confirmed on the kiosk hardware, say so in the PR body under "Manual verification".
-            - If the issue is ambiguous, needs database changes, or you cannot make build and tests
-              pass, stop and return status `needs_human` with a short explanation and the specific
-              questions a human should answer. Do not guess at requirements.
+            - Add or update unit tests for logic you change, where practical. Do not run them here.
+              A fresh job without the Claude credential runs all project checks after you finish.
+            - Do not run commands, commit, switch branches or push. Trusted workflow steps create the
+              commit after your editing tools return.
+            - The runner used for later checks has no camera, MediaPipe, WebGL or Supabase. If
+              behaviour can only be confirmed on the kiosk hardware, say so in the PR body under "Manual verification".
+            - If the issue is ambiguous, needs database changes, or you cannot complete it without
+              executing project code, stop and return status `needs_human` with a short explanation
+              and the specific questions a human should answer. Do not guess at requirements.
 
             Finish with structured output:
             - `status`: `done` or `needs_human`
@@ -319,12 +309,11 @@ jobs:
           claude_args: |
             --model ${{ needs.gate.outputs.model }}
             --max-turns 80
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm run build),Bash(npm run typecheck),Bash(npm test),Bash(npm run lint),Bash(npx vitest:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*)"
-            --disallowedTools "Edit(supabase/**),Write(supabase/**),Edit(.github/**),Write(.github/**),Edit(.env*),Write(.env*),Edit(package-lock.json),Write(package-lock.json)"
+            --allowedTools "Read,Edit,Write,Glob,Grep"
+            --disallowedTools "Bash,Edit(.git/**),Write(.git/**),Edit(supabase/**),Write(supabase/**),Edit(.github/**),Write(.github/**),Edit(.env*),Write(.env*),Edit(package-lock.json),Write(package-lock.json)"
             --json-schema '{"type":"object","properties":{"status":{"type":"string","enum":["done","needs_human"]},"pr_title":{"type":"string"},"pr_body":{"type":"string"},"reason":{"type":"string"}},"required":["status","reason"]}'
 
-
-      - name: Package result for publish
+      - name: Validate output, commit, and package result
         env:
           RESULT: ${{ steps.claude.outputs.structured_output }}
           BASE: ${{ steps.branch.outputs.base }}
@@ -332,9 +321,38 @@ jobs:
           out="$RUNNER_TEMP/agent-result"
           mkdir -p "$out"
           printf '%s' "$RESULT" > "$out/result.json"
-          if [[ $(git rev-list --count "$BASE..HEAD") -gt 0 ]]; then
-            git bundle create "$out/commits.bundle" "$BASE..HEAD"
+
+          jq -e '
+            type == "object" and
+            (.status == "done" or .status == "needs_human") and
+            (.reason | type == "string") and
+            (if .status == "done" then
+              (.pr_title | type == "string") and (.pr_body | type == "string")
+            else true end)
+          ' "$out/result.json" >/dev/null
+
+          status=$(jq -r .status "$out/result.json")
+          [[ "$status" == done ]] || exit 0
+          [[ "$(git rev-parse HEAD)" == "$BASE" ]] || {
+            echo "The working tree moved away from its validated base commit."
+            exit 1
+          }
+
+          title=$(jq -r .pr_title "$out/result.json")
+          if [[ "$title" == *$'\n'* || "$title" == *$'\r'* || "$title" == *. ||
+                ${#title} -gt 72 ||
+                ! "$title" =~ ^(feat|fix|refactor|style|docs|chore|perf|test):\ [[:graph:]]([[:print:]]*[[:graph:]])?$ ]]; then
+            title='chore: apply agent changes'
+            jq --arg title "$title" '.pr_title = $title' "$out/result.json" > "$out/result.tmp"
+            mv "$out/result.tmp" "$out/result.json"
           fi
+
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c core.hooksPath=/dev/null commit -m "$title"
+          git bundle create "$out/commits.bundle" "$BASE..HEAD"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -343,10 +361,76 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  # Executes the candidate only in a fresh job with no Environment secrets and
+  # no persisted checkout credential. A needs_human result skips project checks
+  # but still succeeds so publish can update the issue.
+  validate:
+    needs: [gate, work]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-result
+          path: ${{ runner.temp }}/agent-result
+
+      - name: Load candidate commit
+        id: candidate
+        env:
+          BASE: ${{ needs.work.outputs.base }}
+        run: |
+          result="$RUNNER_TEMP/agent-result/result.json"
+          bundle="$RUNNER_TEMP/agent-result/commits.bundle"
+          status=$(jq -r '.status // empty' "$result" 2>/dev/null)
+          if [[ "$status" == needs_human ]]; then
+            echo "run_checks=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [[ "$status" == done && -f "$bundle" && "$BASE" =~ ^[0-9a-f]{40}$ ]]
+          git fetch -q "$bundle" HEAD
+          head=$(git rev-parse FETCH_HEAD)
+          git merge-base --is-ancestor "$BASE" "$head"
+          git -c core.hooksPath=/dev/null checkout --detach "$head"
+          echo "run_checks=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.candidate.outputs.run_checks == 'true'
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.candidate.outputs.run_checks == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.candidate.outputs.run_checks == 'true'
+        run: npm run lint
+
+      - name: Typecheck
+        if: steps.candidate.outputs.run_checks == 'true'
+        run: npm run typecheck
+
+      - name: Build
+        if: steps.candidate.outputs.run_checks == 'true'
+        run: npm run build
+
+      - name: Test
+        if: steps.candidate.outputs.run_checks == 'true'
+        run: npm test
+
   # Holds the write token but runs no repo code: only git, gh and jq on the
   # artifact, which it treats as untrusted (it was written next to agent code).
   publish:
-    needs: [gate, work]
+    needs: [gate, work, validate]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -433,7 +517,7 @@ jobs:
   # Any failure or cancellation (including the 60-minute timeout) after the
   # issue was claimed hands it back, so it never sticks on agent:in-progress.
   report:
-    needs: [gate, work, publish]
+    needs: [gate, work, validate, publish]
     if: >-
       always() && needs.gate.outputs.model != '' &&
       (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
