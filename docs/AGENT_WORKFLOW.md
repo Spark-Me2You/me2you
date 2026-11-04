@@ -5,12 +5,14 @@ GitHub issues are the main way we report bugs and track work. Well-specified iss
 ## How it works
 
 ```
-issue labeled agent:ready (by an allowlisted user)
-  or dispatched by: spec.yml (low-risk spec) · agent-feedback.yml (/agent) · agent-retry.yml (CI failed)
+issue labeled agent:ready (by a repository owner/admin)
+  or validated by: agent-feedback.yml (/agent) · agent-retry.yml (CI failed)
         │
-        ▼
+        ▼ reusable call to the trusted agent.yml on main
 .github/workflows/agent.yml
-  gate     1. labeler on the allowlist? issue not type:db / area:db?
+  gate     1. direct starter is a current repository admin, or the reusable call
+              has a trusted main ref, valid inputs and reason-specific checks?
+              issue not type:db / area:db?
            2. pick model from the model:* label, label agent:in-progress, comment with model and run link
   work     3. checkout dev → branch agent/<issue>-<slug> (or the existing branch for /agent and CI retries)
            4. Claude reads the issue, edits code, runs build/test/lint, commits locally
@@ -39,55 +41,49 @@ Created by `scripts/setup-agent-labels.sh`.
 | `type:*` | feature, fix, refactor, style, docs, chore, db, perf, test | Matches the commit types in `GIT_CONVENTIONS.md`. Bug and feature templates apply theirs automatically. The task template prefills a `chore:` title, and triage labels from that prefix. |
 | `area:*` | kiosk, hub, discovery, games, cv, mobile, auth, db, ci | Added at triage from the template's Area field. |
 | `model:*` | sonnet (default), opus | Optional. Picks the model for the run via the Claude Code `sonnet` / `opus` alias, i.e. the newest model of that family in the pinned `claude-code-action`. Only one allowed; with two the run is refused. `spec.yml` always uses `sonnet`. |
-| `spec:*` | request, review | Optional. `request` has Claude draft a full spec from a rough issue; `review` marks the drafted spec as waiting for a human. |
-| `agent:*` | ready → in-progress → review, or needs-human | `ready` is the only one humans add; the workflow manages the rest. |
+| `spec:*` | request, review | Optional. `request` has Claude draft a full spec from a rough issue; `review` marks the drafted spec as waiting for a repository admin. |
+| `agent:*` | ready → in-progress → review, or needs-human | `ready` is the only one repository admins add; the workflow manages the rest. |
 
 Issues labeled `type:db` or `area:db` are refused: migrations, RLS policies and edge functions stay with humans.
 
 ## Automation around the agent
 
-Four small workflows sit around `agent.yml`. A human decides what gets built, with one exception: low-risk specs start the agent on their own (see below).
+Four small workflows sit around `agent.yml`. A repository owner/admin decides what gets built, and every generated spec requires a separate `agent:ready` approval.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `triage.yml` | issue opened | Adds `area:*` from the template's Area field and `type:*` from a `feat:`/`fix:`/`docs:` title prefix when the template didn't set one. Deterministic, no model call. |
-| `spec.yml` | label `spec:request` | Claude (read-only tools) rewrites a rough issue into the agent-ready format, keeps the original text in a collapsed block at the bottom, applies labels, and swaps `spec:request` for `spec:review`. If the idea is too vague it asks questions in a comment instead; answer, then re-add `spec:request`. Same allowlist as the agent. Low-risk specs skip review (see below). |
-| `agent-feedback.yml` | comment or review starting with `/agent` | Re-runs the agent on the existing branch with your feedback. See below. |
-| `agent-retry.yml` | CI fails on a run the agent dispatched | Posts the failing output on the issue and re-runs `agent.yml` on the same `agent/` branch (earlier commits are kept), at most twice. After that the issue goes to `agent:needs-human`. CI failures on commits a human pushed to the branch are ignored. |
+| `spec.yml` | label `spec:request` | After verifying that the labeler is a current repository admin, Claude (read-only tools) rewrites a rough issue into the agent-ready format, keeps the original text in a collapsed block, applies labels, and swaps `spec:request` for `spec:review`. If the idea is too vague it asks questions in a comment instead; answer, then re-add `spec:request`. Every drafted spec waits for a second admin action: review or edit it, then add `agent:ready`. |
+| `agent-feedback.yml` | issue or PR conversation comment starting with `/agent` | After verifying that the commenter is a current repository admin and the PR identity is valid, prepares the continuation and calls the trusted reusable `agent.yml` on the existing branch. Review bodies and inline review comments do not trigger it. See below. |
+| `agent-retry.yml` | CI fails on a run the agent dispatched | Validates the bot-started CI run and exact PR, posts the failing output on the issue, then calls the trusted reusable `agent.yml` on the same `agent/` branch (earlier commits are kept), at most twice. After that the issue goes to `agent:needs-human`. CI failures on commits a human pushed to the branch are ignored. |
 
 Typical flow: file a one-line issue, add `spec:request`, read and edit the spec, add `agent:ready`, review the draft PR.
 
-**Low-risk specs start the agent on their own.** When the drafted spec's type is in `AGENT_AUTO_TYPES` (default `docs,test`) and neither the model's areas nor the issue's existing `area:*` labels include `db` or `ci`, `spec.yml` dispatches `agent.yml` directly instead of waiting on `spec:review` (a label added by `GITHUB_TOKEN` wouldn't trigger it). It still opens a draft PR, so a human reviews the change before it merges; only the spec review is skipped. An existing `type:*` label (for example from the issue form) takes precedence over the model's guess. Change the list with `gh variable set AGENT_AUTO_TYPES -b "docs,test,chore"`, or set it to `none` to turn this off (an empty value falls back to the default).
+**Every generated spec requires a second admin approval.** `spec.yml` always adds `spec:review` and never starts `agent.yml`. A repository owner/admin must read or edit the generated spec and then add `agent:ready`. Database guidance still applies: issues labeled `type:db` or `area:db` are refused by the agent.
 
 In Claude Code, the `raise-issue` skill (`.claude/skills/raise-issue/`) does the filing for you: ask it to "raise an issue for X" and it writes a full spec directly (or a rough issue with `spec:request` if you only want to capture the idea). Use `spec.yml` for issues filed any other way, such as the web UI or someone without Claude Code.
 
 ## Giving the agent feedback
 
-Once the agent has handed an issue over (`agent:review` or `agent:needs-human`), start a comment or review with `/agent` and say what to change:
+Once the agent has handed an issue over (`agent:review` or `agent:needs-human`), start an **issue comment or PR conversation comment** with `/agent` and say what to change:
 
 - on the issue, e.g. `/agent use the existing SplitCameraPanel instead of a new component`
 - in the draft PR's conversation
-- as the body of a PR review, with inline comments attached to it
-- as a single inline review comment
 
-The agent restarts **on the same branch**, keeping its earlier commits, with the issue thread, the PR conversation, review bodies and inline comments (with their diff hunks) in its context. It updates the existing PR and goes back to `agent:review`. Answering an `agent:needs-human` question works the same way; if no branch exists yet it starts fresh.
+The agent restarts **on the same branch**, keeping its earlier commits, with the issue thread and PR conversation comments in its context. It updates the existing PR and goes back to `agent:review`. Review bodies and inline review comments neither trigger a run nor enter the agent context.
 
-- Only allowlisted users can use `/agent`. A comment from anyone else is treated as ordinary discussion and ignored.
+- Only current repository owners/admins can use `/agent`. The workflow checks permission live and ignores everyone else.
 - `/agent` must be the first word. Comments without it never start a run, so humans can discuss freely.
+- `/agent` requires the existing open agent PR. A PR conversation command is accepted only on an open bot-authored PR from this repository into `dev` whose branch exactly matches `agent/<issue>-<slug>`. An issue command must resolve to exactly one such PR; zero or multiple matches are refused.
 - While a run is in progress, or queued from an earlier `/agent`, the command is declined; send it again when the agent finishes.
-- Only comments and reviews from allowlisted users (and the Actions bot, for CI failure output) are included in the agent's context, and in the spec drafter's. Other people's comments are not shown to either.
-- `/agent` is not limited like the CI retries: each revision needs a person to ask for it. If CI then fails on the revision, it gets a fresh two automatic retries. The count resets at every human-started attempt (`agent:ready`, `/agent`, spec auto-start), which `agent.yml` marks with a hidden `<!-- agent-run -->` in its start comment.
+- Only comments from current repository admins (and the Actions bot for workflow output) are included in the agent's and spec drafter's context.
+- `/agent` is not limited like the CI retries: each revision needs an admin to ask for it. If CI then fails on the revision, it gets a fresh two automatic retries. The count resets at every admin-started attempt (`agent:ready` or `/agent`), which `agent.yml` marks with a hidden `<!-- agent-run -->` in its start comment.
 
 ## Which copy of a workflow runs
 
-Most of this automation runs from the default branch, `main`, not `dev`. A workflow change merged into `dev` isn't live until `dev` is merged into `main`.
+Issue events, `issue_comment` and `workflow_run` use workflow files from the default branch, `main`, not `dev`. A workflow change merged into `dev` isn't live until `dev` is merged into `main`.
 
-| Trigger | Workflow copy used |
-|---|---|
-| Issue events, `issue_comment`, `workflow_run`, `gh workflow run` without `--ref` | `main` |
-| `pull_request_review`, `pull_request_review_comment` | the PR's merge ref, which for an agent PR is `dev` |
-
-So while `dev` is ahead of `main`, a `/agent` PR review runs `dev`'s `agent-feedback.yml`, which dispatches `main`'s `agent.yml`. If the two disagree on `agent.yml`'s inputs, GitHub rejects the dispatch. Promote workflow changes to `main` soon after they merge, and test them there: the Claude token is only available to runs on `main`.
+Both continuation workflows call the reusable `agent.yml` from the same trusted `main` commit. The agent gate also requires the inherited ref to be `refs/heads/main`, so pull-request merge refs and other branches cannot enter the secret-bearing jobs. Feedback and retry therefore use an atomic, trusted workflow set without a separate dispatch or caller-run timing check. Promote workflow changes to `main` soon after they merge, and test them there: the Claude token is only available to runs on `main`.
 
 ## Writing an agent-ready issue
 
@@ -113,11 +109,7 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
    ```
    Every agent run uses that account's subscription limits. The token lasts about a year; regenerate it before it expires, or when the owner leaves the project.
 2. **Labels.** `scripts/setup-agent-labels.sh`
-3. **Allowlist.** Set the users who may start runs. Until this is set, every workflow refuses to run:
-   ```bash
-   gh variable set AGENT_ALLOWLIST -b "clow427,amernor" -R Spark-Me2You/me2you
-   ```
-4. **Allow Actions to open PRs.** Settings → Actions → General → Workflow permissions → tick "Allow GitHub Actions to create and approve pull requests" (the org setting must allow it too). Or run:
+3. **Allow Actions to open PRs.** Settings → Actions → General → Workflow permissions → tick "Allow GitHub Actions to create and approve pull requests" (the org setting must allow it too). Or run:
    ```bash
    gh api -X PUT repos/Spark-Me2You/me2you/actions/permissions/workflow \
      -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true
@@ -130,9 +122,9 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 
 ## Security model
 
-- **Who can start runs.** Only users in the `AGENT_ALLOWLIST` repo variable (comma-separated logins, see Setup) can start a run, draft a spec or use `/agent`. It is the single source for all four workflows and has no default, so an unset variable means nobody. If anyone else adds `agent:ready`, the label is removed and a comment explains why. This also limits prompt-injection exposure from public issues: the person who adds the label is vouching for the issue content.
-- **Dispatched runs.** `agent.yml` accepts dispatches from the Actions bot, so the checks in `spec.yml`, `agent-feedback.yml` and `agent-retry.yml` are the gate for those runs. `agent-feedback.yml` and `agent-retry.yml` hold no secrets; they only read the event and dispatch. `agent-retry.yml` only considers CI runs that `agent.yml` dispatched, so CI failures on commits a human pushed never trigger a retry.
+- **Who can start runs.** Only current repository owners/admins can add `agent:ready`, add `spec:request`, or use `/agent`. Each entry workflow checks the actor live through GitHub's repository permission API and requires admin permission; API errors fail closed. If anyone else adds a start label, the label is removed and the run does not reach the Claude token. The admin who adds the label is vouching for the issue body.
+- **Reusable calls.** Feedback and retry use a trusted reusable call to `agent.yml@main`; there is no generic or manual Agent dispatch. The agent gate requires `refs/heads/main`, validates the reason, branch and expected SHA, rechecks the feedback initiator's identity and current admin permission, and verifies that the branch still has the expected commit. `agent-retry.yml` first requires bot-started failed CI and an exact open bot-authored PR from this repository into `dev`. The feedback and retry preparation jobs hold no secrets and cannot grant more permission than their reusable-call jobs declare.
 - **What the agent can do.** Claude can only read and edit files, run `npm run build|typecheck|test|lint`, `npx vitest`, and local `git status|diff|log|add|commit`. Build and test execute code the agent wrote, so the `work` job that runs them has a read-only `github.token` and no `GH_TOKEN`.
 - **Where the write token is.** Pushing, PR creation and label changes happen in `publish`, which holds the write token, runs no repo code, and treats the artifact from `work` as untrusted. It refuses changes to `supabase/`, `.github/`, `.env*`, `package-lock.json` or the dependency fields of `package.json`. It pushes with `--force-with-lease`: if someone pushed to the `agent/` branch during the run, nothing is overwritten and the issue goes to `agent:needs-human`.
-- **Where the Claude token is.** The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets, so the token is stored in the `agent` Environment (only `agent.yml`'s `work` job and the `spec.yml` job set `environment: agent`), which is limited to `main`. A workflow on any other branch can't read it. Don't also keep a repo-level copy. The token is necessarily in `work`, next to code the agent wrote; if you suspect it leaked, regenerate it (see Setup).
-- **Approvals.** The environment has no required reviewers, so a run starts as soon as an allowlisted user adds `agent:ready`. To require approval for each run, add required reviewers under Settings → Environments → agent.
+- **Where the Claude token is.** Repository-admin checks control who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets, so the token is stored in the `agent` Environment (only `agent.yml`'s `work` job and the `spec.yml` job set `environment: agent`), which is limited to `main`. A workflow on any other branch can't read it. Don't also keep a repo-level copy. The token is necessarily in `work`, next to code the agent wrote; if you suspect it leaked, regenerate it (see Setup).
+- **Approvals.** Every generated spec stops at `spec:review`; a repository owner/admin must add `agent:ready` as a second action. The environment has no required reviewers, so an otherwise valid run starts after that admin action. To require another approval for each run, add required reviewers under Settings → Environments → agent.

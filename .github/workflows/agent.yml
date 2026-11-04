@@ -6,21 +6,31 @@ name: Agent
 on:
   issues:
     types: [labeled]
-  # Used by agent-retry.yml (CI failed) and agent-feedback.yml (a human ran
-  # /agent) to re-run on an existing agent branch. A label added by GITHUB_TOKEN
-  # would not trigger the `issues` event.
-  workflow_dispatch:
+  # Feedback and retry workflows call this reusable workflow from trusted main.
+  # Fresh runs still require an admin to add `agent:ready`.
+  workflow_call:
     inputs:
       issue:
         description: Issue number
         required: true
+        type: string
       branch:
-        description: Existing agent/<issue>-<slug> branch to continue on (empty for a fresh run)
-        required: false
+        description: Existing agent/<issue>-<slug> branch to continue on
+        required: true
+        type: string
       reason:
-        description: Why this run was dispatched, `ci` or `feedback`
+        description: Continuation source, `feedback` or `ci`
+        required: true
+        type: string
+      initiator:
+        description: Admin who requested feedback
         required: false
-        default: ci
+        default: ''
+        type: string
+      expected_sha:
+        description: Expected commit at the existing branch head
+        required: true
+        type: string
 
 concurrency:
   group: agent-issue-${{ inputs.issue || github.event.issue.number }}
@@ -30,18 +40,17 @@ env:
   ISSUE: ${{ inputs.issue || github.event.issue.number }}
   RETRY_BRANCH: ${{ inputs.branch }}
   REASON: ${{ inputs.reason }}
+  INITIATOR: ${{ inputs.initiator }}
+  EXPECTED_SHA: ${{ inputs.expected_sha }}
   RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-  # Runs bill the owner's Claude subscription, so only users in the
-  # AGENT_ALLOWLIST repo variable (comma-separated logins) may start them.
-  # Unset means nobody can. Shared with spec.yml and agent-feedback.yml.
-  ALLOWLIST: ${{ vars.AGENT_ALLOWLIST }}
 
 jobs:
   # No environment, so refused runs never get near the Claude token.
   gate:
-    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'agent:ready'
+    if: github.event.label.name == 'agent:ready' || inputs.reason != ''
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
     env:
       GH_TOKEN: ${{ github.token }}
@@ -54,36 +63,71 @@ jobs:
           ACTOR: ${{ github.actor }}
           EVENT: ${{ github.event_name }}
         run: |
-          # Hand the issue back with a reason. Also clears agent:in-progress,
-          # which agent-feedback.yml and agent-retry.yml set before dispatching.
+          # Continuation callers claim the issue before calling this workflow.
+          # A refusal hands it back without exposing the Claude environment.
           refuse() {
             gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress --add-label agent:needs-human || true
             gh issue comment "$ISSUE" --body "Agent not started: $1 [Run log]($RUN_URL)" || true
             exit 0
           }
 
-          [[ "$ISSUE" =~ ^[0-9]+$ ]] || { echo "Invalid issue number."; exit 0; }
-          if [[ -z "${ALLOWLIST//[ ,]/}" ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress || true
-            gh issue comment "$ISSUE" --body "Agent not started: the \`AGENT_ALLOWLIST\` repo variable is not set. See docs/AGENT_WORKFLOW.md." || true
-            exit 0
-          fi
+          is_admin() {
+            local permission
+            permission=$(gh api "repos/$GH_REPO/collaborators/$1/permission" \
+              --jq '.user.permissions.admin == true' 2>/dev/null) || return 1
+            [[ "$permission" == true ]]
+          }
 
-          # Every dispatch, whether from agent-retry.yml / agent-feedback.yml /
-          # spec.yml (as the Actions bot) or by hand, must have this shape, and
-          # a branch must belong to the issue.
-          if [[ "$EVENT" == "workflow_dispatch" ]]; then
-            if [[ ! "$REASON" =~ ^(ci|feedback)$ ||
-                  ( -n "$RETRY_BRANCH" && ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]*$ ) ]]; then
-              refuse "invalid dispatch (reason \`$REASON\`, branch \`$RETRY_BRANCH\`)."
-            fi
-            if [[ "$ACTOR" == "github-actions[bot]" ]]; then ALLOWLIST="$ALLOWLIST,github-actions[bot]"; fi
-          fi
-          if [[ ! ",${ALLOWLIST// /}," == *",$ACTOR,"* ]]; then
-            # Not refuse(): someone else's run may be in progress on this issue.
-            gh issue edit "$ISSUE" --remove-label agent:ready
-            gh issue comment "$ISSUE" --body "Agent not started: @$ACTOR is not on the agent allowlist. Ask a maintainer to add \`agent:ready\`."
+          deny_non_admin() {
+            # Do not clear another run's in-progress label when an unrelated
+            # user attempts a direct start.
+            gh issue edit "$ISSUE" --remove-label agent:ready || true
+            gh issue comment "$ISSUE" --body "Agent not started: @$1 must be a current repository owner/admin. [Run log]($RUN_URL)" || true
             exit 0
+          }
+
+          [[ "$ISSUE" =~ ^[0-9]+$ ]] || { echo "Invalid issue number."; exit 0; }
+
+          if [[ -n "$REASON" ]]; then
+            # Reusable calls must inherit a trusted default-branch event. This
+            # rejects calls from pull-request merge refs and other branches.
+            [[ "$GITHUB_REF" == "refs/heads/main" ]] \
+              || refuse "continuations must be called from the trusted workflow on \`main\`."
+            if [[ ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]+$ ||
+                  ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+              refuse "invalid continuation branch or expected commit."
+            fi
+
+            case "$REASON" in
+              feedback)
+                [[ "$EVENT" == "issue_comment" && -n "$INITIATOR" && "$ACTOR" == "$INITIATOR" ]] \
+                  || refuse "feedback must come from the matching issue-comment initiator."
+                is_admin "$INITIATOR" \
+                  || refuse "the feedback initiator is not a current repository owner/admin."
+                ;;
+              ci)
+                [[ "$EVENT" == "workflow_run" && -z "$INITIATOR" ]] \
+                  || refuse "CI retries must come from the retry workflow without an initiator."
+                ;;
+              *)
+                refuse "invalid continuation reason \`$REASON\`."
+                ;;
+            esac
+
+            branch_sha=$(gh api "repos/$GH_REPO/git/ref/heads/$RETRY_BRANCH" \
+              --jq '.object.sha' 2>/dev/null) \
+              || refuse "the existing branch could not be verified."
+            [[ "$branch_sha" == "$EXPECTED_SHA" ]] \
+              || refuse "the existing branch no longer matches the expected commit."
+          else
+            # Fresh starts only come from the agent:ready label event. The
+            # labeler must still be an admin when this workflow runs.
+            [[ "$EVENT" == "issues" && "${{ github.event.action }}" == "labeled" &&
+               "${{ github.event.label.name }}" == "agent:ready" ]] \
+              || { echo "Not an agent:ready issue-label event."; exit 0; }
+            [[ -z "$RETRY_BRANCH" && -z "$INITIATOR" && -z "$EXPECTED_SHA" ]] \
+              || refuse "fresh starts cannot supply continuation inputs."
+            is_admin "$ACTOR" || deny_non_admin "$ACTOR"
           fi
 
           labels=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
@@ -112,8 +156,8 @@ jobs:
         run: |
           gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:needs-human --remove-label agent:review --add-label agent:in-progress
           # Every run except a CI retry carries a marker, and agent-retry.yml
-          # counts retries since the latest one, so each new attempt (agent:ready,
-          # /agent feedback, spec auto-start) gets a fresh retry budget.
+          # counts retries since the latest one, so each new admin-started
+          # attempt (agent:ready or /agent feedback) gets a fresh retry budget.
           marker='<!-- agent-run -->'
           [[ "$REASON" == "ci" && -n "$RETRY_BRANCH" ]] && marker=''
           gh issue comment "$ISSUE" --body "${marker}Agent started working on this issue using \`$MODEL\`. [Run log]($RUN_URL)"
@@ -157,34 +201,65 @@ jobs:
             branch="agent/$ISSUE-$slug"
             git switch -c "$branch"
           fi
+          if [[ -n "$EXPECTED_SHA" && "$(git rev-parse HEAD)" != "$EXPECTED_SHA" ]]; then
+            echo "Existing branch changed after the continuation was validated."
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           mkdir -p .agent
           echo ".agent/" >> .git/info/exclude
+          gh issue view "$ISSUE" --json number,title,body,labels,comments > .agent/issue.json
 
-          # Only comments from allowlisted users and the Actions bot reach the
-          # prompt; the issue body is vouched for by whoever added agent:ready.
-          allow="${ALLOWLIST// /}"
-          trusted='def ok($l): any(($allow | split(","))[]; . == $l) or $l == "github-actions";'
-          gh issue view "$ISSUE" --json number,title,body,labels,comments | jq -r --arg allow "$allow" "$trusted"'
-            "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
-            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' > .agent/issue.md
-
-          # On a revision, add the PR's review feedback (same trust filter).
+          # On a revision, collect only PR conversation comments. Review bodies
+          # and inline review comments cannot trigger /agent and are not prompt input.
+          pr=''
           if [[ -n "$RETRY_BRANCH" ]]; then
-            pr=$(gh pr list --head "$RETRY_BRANCH" --state open --json number --jq '.[0].number // empty')
+            prs=$(gh pr list --state open --base dev --limit 200 \
+              --json number,author,baseRefName,headRefName,headRepository,headRepositoryOwner)
+            pr=$(jq -r --arg repo "$GH_REPO" --arg branch "$RETRY_BRANCH" '
+              [.[] | select(
+                .author.login == "github-actions" and .baseRefName == "dev" and
+                ((.headRepositoryOwner.login // "") + "/" + (.headRepository.name // "")) == $repo and .headRefName == $branch
+              )] | if length == 1 then .[0].number else empty end' <<<"$prs")
             if [[ -n "$pr" ]]; then
-              {
-                printf '\n\n## PR #%s feedback\n\n' "$pr"
-                gh pr view "$pr" --json reviews,comments | jq -r --arg allow "$allow" "$trusted"'
-                  ((.reviews | map(select(ok(.author.login) and .body != "")) | map("### Review by @\(.author.login) (\(.state))\n\n\(.body)")) +
-                   (.comments | map(select(ok(.author.login))) | map("### PR comment by @\(.author.login)\n\n\(.body)"))) | join("\n\n")'
-                printf '\n\n### Inline review comments\n\n'
-                gh api "repos/$GH_REPO/pulls/$pr/comments" --paginate | jq -r --arg allow "$allow" "$trusted"'
-                  map(select(ok(.user.login)) | "#### @\(.user.login) on `\(.path)` line \(.line // .original_line // "?")\n\n\(.body)\n\n```diff\n\(.diff_hunk)\n```") | join("\n\n")'
-              } >> .agent/issue.md
+              gh pr view "$pr" --json comments > .agent/pr.json
             fi
+          fi
+
+          # The issue body was vouched for by the admin who started the run.
+          # Include comments only from current repository admins and Actions.
+          trusted='["github-actions"]'
+          {
+            jq -r '.comments[].author.login' .agent/issue.json
+            if [[ -f .agent/pr.json ]]; then jq -r '.comments[].author.login' .agent/pr.json; fi
+          } | sort -u | while read -r login; do
+            [[ -n "$login" && "$login" != "github-actions" ]] || continue
+            permission=$(gh api "repos/$GH_REPO/collaborators/$login/permission" \
+              --jq '.user.permissions.admin == true' 2>/dev/null) || permission=false
+            if [[ "$permission" == true ]]; then
+              printf '%s\n' "$login"
+            fi
+          done > .agent/admin-logins
+          while read -r login; do
+            trusted=$(jq -c --arg login "$login" '. + [$login] | unique' <<<"$trusted")
+          done < .agent/admin-logins
+
+          jq -r --argjson trusted "$trusted" '
+            def ok($l): ($trusted | index($l)) != null;
+            "# #\(.number): \(.title)\n\nLabels: \([.labels[].name] | join(", "))\n\n\(.body)\n\n## Comments\n\n"
+            + (.comments | map(select(ok(.author.login))) | map("### @\(.author.login)\n\n\(.body)") | join("\n\n"))' \
+            .agent/issue.json > .agent/issue.md
+
+          if [[ -f .agent/pr.json ]]; then
+            {
+              printf '\n\n## PR #%s conversation feedback\n\n' "$pr"
+              jq -r --argjson trusted "$trusted" '
+                def ok($l): ($trusted | index($l)) != null;
+                .comments | map(select(ok(.author.login))) |
+                map("### PR comment by @\(.author.login)\n\n\(.body)") | join("\n\n")' .agent/pr.json
+            } >> .agent/issue.md
           fi
 
           echo "name=$branch" >> "$GITHUB_OUTPUT"

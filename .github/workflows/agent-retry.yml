@@ -1,5 +1,5 @@
-# Agent retry: when a CI run dispatched by agent.yml fails, re-run the agent on
-# the same branch, up to MAX_RETRIES times. See docs/AGENT_WORKFLOW.md.
+# Agent retry: when bot-dispatched CI fails, validate the exact agent PR and
+# call the trusted agent workflow on main, up to MAX_RETRIES times.
 name: Agent retry
 
 on:
@@ -8,16 +8,24 @@ on:
     types: [completed]
 
 jobs:
-  retry:
+  prepare:
     if: >-
+      github.run_attempt == 1 &&
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.event == 'workflow_dispatch' &&
+      github.event.workflow_run.actor.login == 'github-actions[bot]' &&
       startsWith(github.event.workflow_run.head_branch, 'agent/')
     runs-on: ubuntu-latest
     permissions:
+      actions: read
+      contents: read
       issues: write
       pull-requests: read
-      actions: write # dispatch agent.yml
+    outputs:
+      start: ${{ steps.prepare.outputs.start }}
+      issue: ${{ steps.prepare.outputs.issue }}
+      branch: ${{ steps.prepare.outputs.branch }}
+      expected_sha: ${{ steps.prepare.outputs.expected_sha }}
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -25,17 +33,43 @@ jobs:
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       CI_RUN_ID: ${{ github.event.workflow_run.id }}
       CI_RUN_URL: ${{ github.event.workflow_run.html_url }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       MAX_RETRIES: 2
     steps:
-      - name: Retry the agent on the failing branch
+      - name: Validate and prepare retry
+        id: prepare
         run: |
-          [[ "$BRANCH" =~ ^agent/([0-9]+)-[a-z0-9-]*$ ]] || { echo "Unexpected branch name."; exit 0; }
+          [[ "${{ github.event.workflow_run.actor.login }}" == "github-actions[bot]" ]] || {
+            echo "The failed CI run was not started by the Actions bot."
+            exit 0
+          }
+          [[ "$BRANCH" =~ ^agent/([0-9]+)-[a-z0-9-]+$ ]] || { echo "Unexpected branch name."; exit 0; }
           issue="${BASH_REMATCH[1]}"
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Unexpected CI head SHA."; exit 0; }
 
-          # Ignore stale runs: the branch must still be at the commit CI ran on.
-          pr_head=$(gh pr list --head "$BRANCH" --state open --json headRefOid --jq '.[0].headRefOid // empty')
+          # Require one exact open PR created by Actions, from this repository
+          # into dev, still at the commit on which CI failed.
+          fields=state,author,baseRefName,headRefName,headRepository,headRepositoryOwner
+          prs=$(gh pr list --state open --base dev --limit 200 --json "$fields") || {
+            echo "Could not verify the agent PR."
+            exit 0
+          }
+          matches=$(jq -c --arg repo "$GH_REPO" --arg branch "$BRANCH" '
+            [.[] | select(
+              .state == "OPEN" and .baseRefName == "dev" and
+              .author.login == "github-actions" and
+              ((.headRepositoryOwner.login // "") + "/" + (.headRepository.name // "")) == $repo and .headRefName == $branch
+            )]' <<<"$prs")
+          if [[ $(jq 'length' <<<"$matches") != 1 ]]; then
+            echo "No unique open bot-authored PR for $BRANCH; skipping."
+            exit 0
+          fi
+          pr_head=$(gh api "repos/$GH_REPO/git/ref/heads/$BRANCH" --jq '.object.sha' 2>/dev/null) || {
+            echo "Could not verify the PR branch commit."
+            exit 0
+          }
           if [[ "$pr_head" != "$HEAD_SHA" ]]; then
-            echo "No open PR at $HEAD_SHA for $BRANCH; skipping."
+            echo "The open bot-authored PR is not at failed commit $HEAD_SHA; skipping."
             exit 0
           fi
 
@@ -45,7 +79,7 @@ jobs:
             exit 0
           fi
 
-          # Count retries since the latest attempt a human started (agent.yml
+          # Count retries since the latest attempt an admin started (agent.yml
           # marks those start comments with <!-- agent-run -->), so a /agent
           # revision or a fresh agent:ready gets its own MAX_RETRIES.
           attempts=$(gh issue view "$issue" --json comments --jq '
@@ -73,9 +107,45 @@ jobs:
           } > "$RUNNER_TEMP/retry-comment.md"
           gh issue comment "$issue" --body-file "$RUNNER_TEMP/retry-comment.md"
 
-          # Claim first, as agent-feedback.yml does, so a /agent sent meanwhile is declined.
+          # Claim before the reusable call so /agent feedback is declined while
+          # this retry is queued. agent.yml rechecks the branch and SHA.
           gh issue edit "$issue" --remove-label agent:review --add-label agent:in-progress
-          if ! gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci; then
-            gh issue edit "$issue" --remove-label agent:in-progress --add-label agent:needs-human
-            exit 1
+          echo "start=true" >> "$GITHUB_OUTPUT"
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "expected_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+  agent:
+    needs: prepare
+    if: needs.prepare.outputs.start == 'true'
+    uses: ./.github/workflows/agent.yml
+    with:
+      issue: ${{ needs.prepare.outputs.issue }}
+      branch: ${{ needs.prepare.outputs.branch }}
+      reason: ci
+      expected_sha: ${{ needs.prepare.outputs.expected_sha }}
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+  cleanup:
+    needs: [prepare, agent]
+    if: >-
+      always() && needs.prepare.outputs.start == 'true' &&
+      (needs.agent.result == 'failure' || needs.agent.result == 'cancelled')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE: ${{ needs.prepare.outputs.issue }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Hand back a failed call
+        run: |
+          if gh issue view "$ISSUE" --json labels --jq '.labels[].name' | grep -qx 'agent:in-progress'; then
+            gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:needs-human
+            gh issue comment "$ISSUE" --body "Agent retry failed. [Run log]($RUN_URL)"
           fi

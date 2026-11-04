@@ -10,7 +10,7 @@ Issues here feed an automated agent pipeline (`docs/AGENT_WORKFLOW.md`). The iss
 ## 1. Pick the route
 
 - **You can write the full spec** (the request is clear, or the user answered your questions): write it in the format below and create the issue. No `spec:request` needed.
-- **Only a rough idea** (the user wants it captured, not designed): create the issue in plain language with `--label spec:request`. The `spec.yml` workflow drafts the spec, and the user reviews it, except for low-risk specs (see step 4). Use this for bulk capture too.
+- **Only a rough idea** (the user wants it captured, not designed): create the issue in plain language with `--label spec:request`. The `spec.yml` workflow drafts the spec, and a repository owner/admin always reviews it before separately starting the agent. Use this for bulk capture too.
 
 Default to the first when the user is in the session with you. Ask a question only where a real design decision is open and a sensible default would be a guess.
 
@@ -49,10 +49,10 @@ gh issue create --title "feat: ..." --body-file <path> \
 
 ## 4. Don't start the agent unless asked
 
-`agent:ready` starts a run that costs subscription quota and opens a PR. Add it only when the user explicitly asks for the agent to do the work, and never to a `spec:request` issue (there's no spec to work from yet). If the user asks, show them the issue first. Only allowlisted users can trigger runs; if the label is removed with a comment, report that rather than retrying.
+`agent:ready` starts a run that costs subscription quota and opens a PR. Add it only when the user explicitly asks the agent to do the work, and never to a `spec:request` issue (there's no spec to work from yet). If the user asks, show them the issue first. Only current repository owners/admins can trigger runs; if the label is removed with a comment, report that rather than retrying.
 
-`spec:request` can start the agent too: a drafted spec of a low-risk type (`docs` and `test` by default) with no `db` or `ci` area skips review and starts a run. So for a docs or test idea the user only wants captured, leave off `spec:request`, or tell them it will start a run.
+`spec:request` never starts the agent. It always produces `spec:review` (or asks for more input), and a repository owner/admin must review the result and separately add `agent:ready`.
 
 ## 5. Report back
 
-Give the issue URL and the next step: for a `spec:request` issue, "wait for `spec:review`, edit the spec, then add `agent:ready`" (or, for a low-risk type, "the agent will start on its own; review its draft PR"); for a full spec, "add `agent:ready` when you want the agent to pick it up."
+Give the issue URL and the next step: for a `spec:request` issue, "wait for `spec:review`, have a repository owner/admin edit or approve the spec, then separately add `agent:ready`"; for a full spec, "a repository owner/admin can add `agent:ready` when the agent should pick it up."
