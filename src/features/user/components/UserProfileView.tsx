@@ -538,6 +538,12 @@ export const UserProfileView: React.FC = () => {
               >
                 customize avatar
               </button>
+              <button
+                onClick={() => navigate("/user/candy")}
+                className={`${OUTLINE_BTN} col-span-full border-[#e44805] bg-[rgba(228,72,5,0.1)] text-[#e44805] hover:bg-[rgba(228,72,5,0.2)]`}
+              >
+                my candy
+              </button>
             </div>
 
             <div className="mb-2 flex gap-2">

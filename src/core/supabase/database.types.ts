@@ -94,6 +94,80 @@ export type Database = {
           },
         ]
       }
+      candy_voucher: {
+        Row: {
+          claim_token_id: string | null
+          code: string
+          game_id: string
+          id: string
+          issued_at: string
+          org_id: string
+          owner_id: string
+          redeemed_at: string | null
+          round: Json
+          round_id: string
+          status: Database["public"]["Enums"]["candy_voucher_status"]
+          won_on: string
+        }
+        Insert: {
+          claim_token_id?: string | null
+          code: string
+          game_id: string
+          id?: string
+          issued_at?: string
+          org_id: string
+          owner_id: string
+          redeemed_at?: string | null
+          round: Json
+          round_id: string
+          status?: Database["public"]["Enums"]["candy_voucher_status"]
+          won_on: string
+        }
+        Update: {
+          claim_token_id?: string | null
+          code?: string
+          game_id?: string
+          id?: string
+          issued_at?: string
+          org_id?: string
+          owner_id?: string
+          redeemed_at?: string | null
+          round?: Json
+          round_id?: string
+          status?: Database["public"]["Enums"]["candy_voucher_status"]
+          won_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candy_voucher_claim_token_id_fkey"
+            columns: ["claim_token_id"]
+            isOneToOne: true
+            referencedRelation: "claim_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candy_voucher_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candy_voucher_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candy_voucher_owner_id_org_id_fkey"
+            columns: ["owner_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id", "org_id"]
+          },
+        ]
+      }
       claim_tokens: {
         Row: {
           claimed_by: string | null
@@ -460,6 +534,44 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_config: {
+        Row: {
+          daily_cap_per_user: number
+          enabled: boolean
+          max_broccoli_hits: number
+          min_slices: number
+          org_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          daily_cap_per_user?: number
+          enabled?: boolean
+          max_broccoli_hits?: number
+          min_slices?: number
+          org_id: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_cap_per_user?: number
+          enabled?: boolean
+          max_broccoli_hits?: number
+          min_slices?: number
+          org_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_config_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user: {
         Row: {
           accessory: string | null
@@ -518,9 +630,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      candy_desk_vouchers: {
+        Args: { p_org_id: string }
+        Returns: {
+          code: string
+          issued_at: string
+          player_email: string
+          player_name: string
+          redeemed_at: string
+          status: Database["public"]["Enums"]["candy_voucher_status"]
+          voucher_id: string
+        }[]
+      }
       get_user_org_id: { Args: never; Returns: string }
+      issue_candy_voucher: {
+        Args: { p_token_id: string; p_user_id: string }
+        Returns: Json
+      }
+      set_candy_voucher_redeemed: {
+        Args: { p_org_id: string; p_redeemed: boolean; p_voucher_id: string }
+        Returns: Json
+      }
     }
     Enums: {
+      candy_voucher_status: "issued" | "redeemed" | "void"
       claim_status: "pending" | "claimed" | "expired"
     }
     CompositeTypes: {
@@ -649,6 +782,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      candy_voucher_status: ["issued", "redeemed", "void"],
       claim_status: ["pending", "claimed", "expired"],
     },
   },

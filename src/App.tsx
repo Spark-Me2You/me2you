@@ -11,6 +11,7 @@ import {
   UserProfileView,
   UserGalleryPage,
   UserGameScoresPage,
+  UserCandyPage,
   CustomizeAvatarView,
 } from "@/features/user";
 import { ClaimPage, ClaimSuccessPage, ClaimErrorPage } from "@/features/claim";
@@ -66,6 +67,15 @@ function App() {
         element={
           <UserProtectedRoute>
             <UserGameScoresPage />
+          </UserProtectedRoute>
+        }
+      />
+      {/* User-only route: Candy vouchers won in Gumball Slice */}
+      <Route
+        path="/user/candy"
+        element={
+          <UserProtectedRoute>
+            <UserCandyPage />
           </UserProtectedRoute>
         }
       />

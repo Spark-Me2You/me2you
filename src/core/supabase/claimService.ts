@@ -16,6 +16,23 @@ interface ExecuteClaimResponse {
   error?: string;
 }
 
+/**
+ * functions.invoke reports any 4xx/5xx as a generic "non-2xx status code"
+ * error; the function's own `{ error }` message is in the response body.
+ */
+async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const response = (error as { context?: unknown })?.context;
+  if (response instanceof Response) {
+    try {
+      const body = await response.clone().json();
+      if (typeof body?.error === 'string') return body.error;
+    } catch {
+      // Not JSON; fall through.
+    }
+  }
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 interface ClaimDrawingResponse {
   success: boolean;
   token_id?: string;
@@ -82,6 +99,31 @@ export const claimService = {
     if (!data?.success || !data.token_id || !data.payload) {
       console.error('[claimService] execute-claim returned error:', data?.error);
       throw new Error(data?.error || 'Failed to execute claim');
+    }
+
+    return {
+      success: true,
+      token_id: data.token_id,
+      payload: data.payload,
+    };
+  },
+
+  // Same result shape as executeClaim: the edge function returns a payload
+  // whose display describes the outcome (voucher issued, daily cap, paused).
+  executeCandyClaim: async (tokenId: string): Promise<ClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ExecuteClaimResponse>(
+      'claim-candy-reward',
+      { body: { token_id: tokenId } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-candy-reward error:', error);
+      throw new Error(await functionErrorMessage(error, 'Failed to claim candy'));
+    }
+
+    if (!data?.success || !data.token_id || !data.payload) {
+      console.error('[claimService] claim-candy-reward returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to claim candy');
     }
 
     return {
