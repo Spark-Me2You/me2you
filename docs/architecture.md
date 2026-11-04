@@ -71,12 +71,12 @@ ONBOARDING → HUB
 ## Computer Vision
 
 - `SharedCameraProvider.tsx` owns the single camera `MediaStream`.
-- `cameraManager.ts` handles device enumeration and stream lifecycle.
+- `cameraManager.ts` is an unimplemented stub.
 - `face-detector-config.ts` / `mediapipe-config.ts` / `mediapipe-loader.ts` configure and load MediaPipe models.
 - CV cursor logic lives in `src/core/cv/cursor/`:
-  - `useCvCursor` runs `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), detects pinch clicks (thumb-to-index distance < `0.06`, 300 ms cooldown).
+  - `useCvCursor` runs `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), detects pinch clicks (thumb tip to index knuckle distance < `0.06`, 300 ms cooldown).
   - `CvCursorOverlay` renders the visible cursor.
-- Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
+- Features can pull `useSharedCamera()` to read the same stream. Games and Discovery don't yet: they open their own through `useCamera`. Games go through `useGameCamera` in `src/features/games/cv/`, so a move to the shared stream happens in one place.
 
 ## Avatar Rendering (Hub + User)
 

@@ -1,4 +1,3 @@
-// import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
 import { useState, useEffect, useRef } from "react";
 
 interface UseCameraOptions {
@@ -13,9 +12,8 @@ const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 
 /**
  * useCamera Hook
- * Consumes the shared camera stream from SharedCameraProvider.
- * Previously called getUserMedia() directly — now shares a single stream
- * with the CV cursor to avoid camera conflicts.
+ * Opens its own camera stream with getUserMedia, separate from the one in
+ * SharedCameraProvider. Games should use useGameCamera instead of this.
  */
 export const useCamera = (options: UseCameraOptions = {}) => {
   const { videoConstraints = DEFAULT_VIDEO_CONSTRAINTS } = options;
