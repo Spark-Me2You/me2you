@@ -13,8 +13,8 @@ const DOOR =
 const SIDE: Record<DoorSide, string> = {
   top: "top-0 left-1/2 h-[96px] w-[260px] -translate-x-1/2 rounded-b-[46px]",
   bottom: "bottom-0 left-1/2 h-[96px] w-[260px] -translate-x-1/2 rounded-t-[46px]",
-  left: "top-1/2 left-0 h-[260px] w-[140px] -translate-y-1/2 flex-col rounded-r-[46px] px-2 text-center leading-none",
-  right: "top-1/2 right-0 h-[260px] w-[140px] -translate-y-1/2 flex-col rounded-l-[46px] px-2 text-center leading-none",
+  left: "top-1/2 left-0 h-[260px] w-[160px] -translate-y-1/2 flex-col rounded-r-[46px] px-2 text-center leading-none",
+  right: "top-1/2 right-0 h-[260px] w-[160px] -translate-y-1/2 flex-col rounded-l-[46px] px-2 text-center leading-none",
 };
 
 const ARROW: Record<DoorSide, string> = { top: "↑", bottom: "↓", left: "←", right: "→" };
