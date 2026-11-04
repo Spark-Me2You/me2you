@@ -21,10 +21,10 @@ const ARROW: Record<DoorSide, string> = { top: "↑", bottom: "↓", left: "←"
 
 const DESTINATION_COLOR: Record<RoomId, string> = {
   main: "bg-magenta/93 text-white",
-  north: "bg-btn-purple text-white",
-  south: "bg-btn-yellow-green text-black",
-  west: "bg-btn-pink text-white",
-  east: "bg-btn-orange text-white",
+  north: "bg-purple/93 text-white",
+  south: "bg-lime/93 text-ink",
+  west: "bg-magenta/93 text-white",
+  east: "bg-orange/93 text-white",
 };
 
 interface RoomDoorsProps {
