@@ -1,6 +1,15 @@
 import React, { useEffect, useRef } from "react";
-import { Application, Assets, Container, Sprite, Texture } from "pixi.js";
+import {
+  Application,
+  Assets,
+  Container,
+  Point,
+  Sprite,
+  Texture,
+  type FederatedPointerEvent,
+} from "pixi.js";
 import type { Accessory } from "@/core/auth/AuthContext";
+import { useCvCursorEnabled } from "@/core/cv/cursor/CvCursorEnabledContext";
 import { useAppState } from "@/core/state-machine";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { croppedImageService, type CroppedImageRow } from "@/features/hub/services/croppedImageService";
@@ -28,6 +37,17 @@ import {
 import { InteractionScheduler } from "@/features/hub/interactions/interactionScheduler";
 import { HUB_INTERACTIONS } from "@/features/hub/interactions/registry";
 import type { InteractionActor } from "@/features/hub/interactions/types";
+import {
+  EdgeDwell,
+  HAND_PRESS_LIMITS,
+  HAND_RELEASE_GRACE_MS,
+  HOLD_LIFT,
+  MOUSE_PRESS_LIMITS,
+  PressGesture,
+  doorEdgeAt,
+  getHeldPose,
+  swayAngle,
+} from "@/features/hub/drag/walkerDrag";
 import { RoomDoors } from "./RoomDoors";
 
 export interface CharacterClickData {
@@ -60,6 +80,28 @@ interface WalkerHandle {
   /** Turn away from an obstacle; the normal points from the obstacle to this walker. */
   bounce: (normalX: number, normalY: number) => void;
   actor: InteractionActor;
+  /** Lift the walker off the floor; it stays attached to the pointer until `drop`. */
+  pickUp: (pointerX: number, pointerY: number) => void;
+  /** Move a held walker's pointer. */
+  holdAt: (pointerX: number, pointerY: number) => void;
+  /** Let a held walker fall back to the floor. */
+  drop: () => void;
+  isHeld: () => boolean;
+  /** Put the walker on another room's floor. */
+  moveToRoom: (roomId: RoomId) => void;
+}
+
+interface WalkerPress {
+  handle: WalkerHandle;
+  gesture: PressGesture;
+  edge: EdgeDwell;
+  pointerId: number;
+  /** Started by the CV hand cursor, so it lasts as long as the pinch, not the pointer events. */
+  isHand: boolean;
+  lastPinchedAt: number;
+  x: number;
+  y: number;
+  clickData: CharacterClickData;
 }
 
 interface RoomLayer {
@@ -83,9 +125,11 @@ export const PixiHub: React.FC<{
   const showRoomRef = useRef<((roomId: RoomId) => void) | null>(null);
   const roomIdRef = useRef(roomId);
   const { transitionTo } = useAppState();
+  const { cursorStateRef } = useCvCursorEnabled();
 
   useEffect(() => {
     let isMounted = true;
+    let removePressListeners: (() => void) | null = null;
 
     const initPixiApp = async () => {
       if (!canvasRef.current) return;
@@ -151,6 +195,13 @@ export const PixiHub: React.FC<{
         /** Share of the body frame's width that is the character rather than transparent padding. */
         const COLLIDER_WIDTH_FACTOR = 0.6;
         const FLOOR_MARGIN = 40;
+        /** Above any ground y, so a held walker draws over everyone in the room. */
+        const HELD_Z_INDEX = 1_000_000;
+        const LIFT_EASE = 0.2;
+        const SWAY_SETTLE = 0.85;
+
+        /** The press in progress. Tracked on `window` so a release anywhere ends it. */
+        let press: WalkerPress | null = null;
 
         function buildFrameSets(
           def: Texture,
@@ -190,23 +241,24 @@ export const PixiHub: React.FC<{
           walker.scale.set(BODY_SCALE);
           group.addChild(walker);
 
-          if (ownerId && onCharacterClick) {
-            walker.interactive = true;
-            walker.cursor = "pointer";
-            walker.on("pointerdown", () => {
-              onCharacterClick({
-                owner_id: ownerId,
-                cropped_image_id: croppedImageId || "",
-                storage_path: storagePath || "",
-              });
-            });
+          // Set while the pointer is holding this walker.
+          let held = false;
+
+          /** Body, face and accessory all grab the walker; presses bubble up to `group`. */
+          function makeGrabbable(sprite: Sprite) {
+            if (!ownerId) return;
+            sprite.eventMode = "static";
+            sprite.cursor = held ? "grabbing" : "grab";
           }
+
+          makeGrabbable(walker);
 
           let faceSprite: Sprite | null = null;
           if (faceTexture && centroidPoint) {
             faceSprite = new Sprite(faceTexture);
             faceSprite.anchor.set(0.5, 0.5);
             faceSprite.scale.set(FACE_SCALE);
+            makeGrabbable(faceSprite);
             group.addChild(faceSprite);
           }
 
@@ -216,6 +268,13 @@ export const PixiHub: React.FC<{
           let accRelativeToFace = true;
           let accUseBalloonHandAnchor = false;
           let accBaseRotation = 0;
+
+          let pointerX = 0;
+          let pointerY = 0;
+          let grabOffsetX = 0;
+          let grabOffsetY = 0;
+          let lift = 0;
+          let heldFrames = 0;
 
           function applyAccessoryOptions(options?: AccessoryOptions) {
             if (accessorySprite) {
@@ -239,6 +298,7 @@ export const PixiHub: React.FC<{
               } = options;
               accessorySprite = new Sprite(accTex);
               accessorySprite.anchor.set(0.5, 0.5);
+              makeGrabbable(accessorySprite);
               group.addChild(accessorySprite);
 
               const faceW = faceSprite.width;
@@ -403,8 +463,51 @@ export const PixiHub: React.FC<{
             }
           }
 
+          function setGrabCursor(cursor: "grab" | "grabbing") {
+            walker.cursor = cursor;
+            if (faceSprite) faceSprite.cursor = cursor;
+            if (accessorySprite) accessorySprite.cursor = cursor;
+          }
+
+          /** Follow the pointer, swaying the whole group around the point that was grabbed. */
+          function tickHeld(dt: number) {
+            lift += (HOLD_LIFT - lift) * Math.min(1, LIFT_EASE * dt);
+            heldFrames += dt;
+
+            const pose = getHeldPose(pointerX + grabOffsetX, pointerY + grabOffsetY, lift, {
+              minX: FLOOR_MARGIN,
+              maxX: app.screen.width - FLOOR_MARGIN,
+              minY: collisionBox().halfHeight * 2,
+              floorTop: app.screen.height / 3,
+              maxY: app.screen.height - FLOOR_MARGIN,
+            });
+            wx = pose.x;
+            wy = pose.groundY;
+            walker.x = pose.x;
+            walker.y = pose.y;
+            walker.rotation = 0;
+            advanceIdleFrames(dt);
+
+            group.pivot.set(pose.x - grabOffsetX, pose.y - grabOffsetY);
+            group.position.copyFrom(group.pivot);
+            group.rotation = swayAngle(heldFrames);
+          }
+
+          /** Ease out of the sway after a drop instead of snapping upright. */
+          function settleSway(dt: number) {
+            if (group.rotation === 0) return;
+            group.rotation *= Math.pow(SWAY_SETTLE, dt);
+            if (Math.abs(group.rotation) < 0.002) {
+              group.rotation = 0;
+              group.pivot.set(0, 0);
+              group.position.set(0, 0);
+            }
+          }
+
           function tick(dt: number) {
-            if (controlled) {
+            if (held) {
+              tickHeld(dt);
+            } else if (controlled) {
               walker.x = wx + offsetX;
               walker.y = wy + offsetY;
               walker.rotation = poseRotation;
@@ -412,13 +515,16 @@ export const PixiHub: React.FC<{
             } else {
               tickSelf(dt);
             }
-            group.zIndex = wy;
+            if (!held) settleSway(dt);
+            group.zIndex = held ? HELD_Z_INDEX : wy;
 
-            const bobRotation = controlled
-              ? poseRotation
-              : state === "walk"
-                ? Math.sin(bobPhase * 0.5) * 0.04
-                : 0;
+            const bobRotation = held
+              ? 0
+              : controlled
+                ? poseRotation
+                : state === "walk"
+                  ? Math.sin(bobPhase * 0.5) * 0.04
+                  : 0;
 
             if (faceSprite) {
               faceSprite.x = walker.x + HEAD_OFFSET_X;
@@ -497,7 +603,7 @@ export const PixiHub: React.FC<{
               return wy;
             },
             get isBusy() {
-              return state === "jump";
+              return held || state === "jump";
             },
             setControlled(next) {
               if (next === controlled) return;
@@ -531,7 +637,7 @@ export const PixiHub: React.FC<{
             }
           }
 
-          return {
+          const handle: WalkerHandle = {
             ownerId: ownerId ?? "",
             roomId,
             tick,
@@ -541,8 +647,175 @@ export const PixiHub: React.FC<{
             moveGround,
             bounce,
             actor,
+            pickUp(x, y) {
+              held = true;
+              pointerX = x;
+              pointerY = y;
+              grabOffsetX = walker.x - x;
+              grabOffsetY = walker.y - y;
+              lift = 0;
+              heldFrames = 0;
+              idleFrameIndex = 0;
+              idleFrameTimer = 0;
+              if (idleFrames) walker.texture = idleFrames[0];
+              setGrabCursor("grabbing");
+            },
+            holdAt(x, y) {
+              pointerX = x;
+              pointerY = y;
+            },
+            drop() {
+              if (!held) return;
+              held = false;
+              // Reuse the jump's gravity: the fall starts from wherever the walker is hanging.
+              state = "jump";
+              speed = 0;
+              jumpVY = 0;
+              jumpY = Math.min(0, walker.y - wy);
+              stateTimer = 999;
+              setGrabCursor("grab");
+            },
+            isHeld: () => held,
+            moveToRoom(nextRoom) {
+              rooms[nextRoom].floor.addChild(group);
+              handle.roomId = nextRoom;
+            },
+          };
+
+          if (ownerId) {
+            group.eventMode = "static";
+            group.on("pointerdown", (event) =>
+              beginPress(handle, event, {
+                owner_id: ownerId,
+                cropped_image_id: croppedImageId || "",
+                storage_path: storagePath || "",
+              }),
+            );
+          }
+
+          return handle;
+        }
+
+        function beginPress(
+          handle: WalkerHandle,
+          event: FederatedPointerEvent,
+          clickData: CharacterClickData,
+        ) {
+          if (press || event.button !== 0) return;
+          const { x, y } = event.global;
+          const now = performance.now();
+          // CvCursorOverlay dispatches synthetic events; a real mouse's are always trusted.
+          const isHand = (event.nativeEvent as Partial<Event> | undefined)?.isTrusted === false;
+          press = {
+            handle,
+            gesture: new PressGesture(x, y, now, isHand ? HAND_PRESS_LIMITS : MOUSE_PRESS_LIMITS),
+            edge: new EdgeDwell(doorEdgeUnder(x, y) !== null),
+            pointerId: event.pointerId,
+            isHand,
+            lastPinchedAt: now,
+            x,
+            y,
+            clickData,
           };
         }
+
+        function doorEdgeUnder(x: number, y: number) {
+          return doorEdgeAt(x, y, app.screen.width, app.screen.height, ROOMS[activeRoom].doors);
+        }
+
+        /** Holding a walker at an edge with a door takes it, and the view, into that room. */
+        function carryThroughEdge(current: WalkerPress) {
+          const side = current.edge.update(
+            doorEdgeUnder(current.x, current.y),
+            performance.now(),
+          );
+          const nextRoom = side && ROOMS[activeRoom].doors[side];
+          if (!nextRoom) return;
+
+          const walkers = rooms[activeRoom].walkers;
+          walkers.splice(walkers.indexOf(current.handle), 1);
+          rooms[nextRoom].walkers.push(current.handle);
+          current.handle.moveToRoom(nextRoom);
+          enterRoom(nextRoom);
+          onRoomChange(nextRoom);
+        }
+
+        /** Advance the press; called on pointer movement and every frame (for hold time). */
+        function updatePress(current: WalkerPress) {
+          const started = current.gesture.update(current.x, current.y, performance.now());
+          if (started) {
+            interactions.cancelFor(current.handle.actor.id);
+            current.handle.pickUp(current.x, current.y);
+          }
+          current.handle.holdAt(current.x, current.y);
+        }
+
+        /** End the press without counting it as a click (room change, lost pointer). */
+        function cancelPress() {
+          press?.handle.drop();
+          press = null;
+        }
+
+        /** The release: a press that never became a drag is the click. */
+        function finishPress(current: WalkerPress) {
+          press = null;
+          if (current.gesture.isDragging) current.handle.drop();
+          else onCharacterClick?.(current.clickData);
+        }
+
+        const pointerPosition = new Point();
+
+        function trackPointer(current: WalkerPress, clientX: number, clientY: number) {
+          app.renderer.events.mapPositionToPoint(pointerPosition, clientX, clientY);
+          current.x = pointerPosition.x;
+          current.y = pointerPosition.y;
+        }
+
+        /**
+         * Hand presses follow the live pinch. A pinch that drops out briefly is treated as still
+         * held, and the time it spent released doesn't count towards becoming a drag.
+         */
+        function updateHandPress(current: WalkerPress) {
+          const cursor = cursorStateRef.current;
+          const now = performance.now();
+          if (cursor.isPinched) {
+            current.lastPinchedAt = now;
+            trackPointer(current, cursor.x, cursor.y);
+            updatePress(current);
+          } else if (now - current.lastPinchedAt >= HAND_RELEASE_GRACE_MS) {
+            finishPress(current);
+          }
+        }
+
+        function handlePressMove(event: PointerEvent) {
+          if (!press || press.isHand || press.pointerId !== event.pointerId) return;
+          trackPointer(press, event.clientX, event.clientY);
+          updatePress(press);
+        }
+
+        function handlePressEnd(event: PointerEvent) {
+          // The overlay's pointerup comes 50 ms into every pinch, so hand presses ignore it.
+          if (!press || press.isHand || press.pointerId !== event.pointerId) return;
+          const current = press;
+          trackPointer(current, event.clientX, event.clientY);
+          updatePress(current);
+          finishPress(current);
+        }
+
+        function handlePressCancel(event: PointerEvent) {
+          if (press?.pointerId === event.pointerId) cancelPress();
+        }
+
+        window.addEventListener("pointermove", handlePressMove);
+        window.addEventListener("pointerup", handlePressEnd);
+        window.addEventListener("pointercancel", handlePressCancel);
+        window.addEventListener("blur", cancelPress);
+        removePressListeners = () => {
+          window.removeEventListener("pointermove", handlePressMove);
+          window.removeEventListener("pointerup", handlePressEnd);
+          window.removeEventListener("pointercancel", handlePressCancel);
+          window.removeEventListener("blur", cancelPress);
+        };
 
         // Cache body frame textures (loaded once and reused across all walkers)
         const bodyFrames = await Promise.all([
@@ -730,21 +1003,32 @@ export const PixiHub: React.FC<{
 
         // Only the visible room is simulated; walkers elsewhere wait where they were left.
         app.ticker.add((time) => {
+          if (press?.isHand) updateHandPress(press);
+          else if (press) updatePress(press);
+          if (press?.handle.isHeld()) carryThroughEdge(press);
           const walkers = rooms[activeRoom].walkers;
           walkers.forEach((handle) => handle.tick(time.deltaTime));
-          resolveCollisions(walkers);
+          // A held walker is in the air, so it doesn't shove anyone on the floor.
+          resolveCollisions(walkers.filter((handle) => !handle.isHeld()));
           interactions.tick(
             time.deltaTime,
             walkers.map((handle) => handle.actor),
           );
         });
 
-        showRoomRef.current = (nextRoom: RoomId) => {
-          if (nextRoom === activeRoom) return;
+        function enterRoom(nextRoom: RoomId) {
           interactions.cancelAll();
           rooms[activeRoom].root.visible = false;
           rooms[nextRoom].root.visible = true;
           activeRoom = nextRoom;
+        }
+
+        // A carried walker has already entered the room by the time the prop catches up, so this
+        // returns early and the walker stays held.
+        showRoomRef.current = (nextRoom: RoomId) => {
+          if (nextRoom === activeRoom) return;
+          cancelPress();
+          enterRoom(nextRoom);
         };
 
         // Expose imperative API to realtime subscription effect
@@ -783,6 +1067,7 @@ export const PixiHub: React.FC<{
 
     return () => {
       isMounted = false;
+      removePressListeners?.();
       addWalkerRef.current = null;
       updateAccRef.current = null;
       replaceFaceRef.current = null;
@@ -792,7 +1077,7 @@ export const PixiHub: React.FC<{
         appRef.current = null;
       }
     };
-  }, [transitionTo]);
+  }, [transitionTo, cursorStateRef]);
 
   useEffect(() => {
     roomIdRef.current = roomId;
@@ -835,7 +1120,7 @@ export const PixiHub: React.FC<{
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div className="select-none" style={{ position: "relative", width: "100%", height: "100%" }}>
       <div ref={canvasRef} style={{ width: "100%", height: "100%" }} />
       <ExitButton onClick={handleClick} />
       <RoomDoors roomId={roomId} onEnter={onRoomChange} />

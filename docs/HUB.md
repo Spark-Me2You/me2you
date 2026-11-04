@@ -1,8 +1,8 @@
 # Hub
 
 The hub (kiosk `HUB` state, `src/features/hub/`) is a PixiJS scene where every registered user
-walks around as a little character with their face and accessory. This doc covers the three
-systems layered on top of the walkers: **rooms**, **collision** and **interactions**.
+walks around as a little character with their face and accessory. This doc covers the systems
+layered on top of the walkers: **rooms**, **collision**, **dragging** and **interactions**.
 
 ```
 HubView                     ← owns the active room (survives opening a profile card)
@@ -10,13 +10,14 @@ HubView                     ← owns the active room (survives opening a profile
     RoomDoors               ← DOM door buttons over the canvas
   rooms/rooms.ts            ← room config + which room each person lives in
   physics/collision.ts      ← AABB contacts, separation, bounce (pure)
+  drag/walkerDrag.ts        ← click vs. drag decision, sway, held position (pure)
   interactions/             ← paired animations: types, scheduler, registry
 ```
 
 ## Rooms
 
 The hub is a small house: the main **spark** room with a door on each edge, and one room behind
-each door (`loft` top, `garden` bottom, `lounge` left, `studio` right). Each side room has one door,
+each door (`meeting room` top, `staircase` bottom, `meeting room` left, `lobby` right). Each side room has one door,
 on the opposite edge, leading back to spark.
 
 - **Config** lives in `ROOMS` (`rooms/rooms.ts`): label, background image, placeholder tint,
@@ -25,7 +26,8 @@ on the opposite edge, leading back to spark.
 - **Who is where.** `assignRoom(ownerId)` hashes the owner id (FNV-1a) into a room, weighted by
   `weight` (integers; main is 2, the others 1, so about a third of people are in spark). The same
   person is always in the same room on every kiosk, so visitors can go looking for a friend and
-  find them again. Changing weights or adding rooms reshuffles people.
+  find them again. Changing weights or adding rooms reshuffles people. Carrying someone to another
+  room (see [Dragging](#dragging)) lasts until the hub reloads; it isn't saved.
 - **Rendering.** `PixiHub` builds one `Container` per room (background + a depth-sorted `floor`).
   Only the active room is visible and simulated; walkers in other rooms freeze until you go in.
 - **Navigation.** `RoomDoors` renders DOM buttons (clickable by the CV hand cursor). The active
@@ -34,7 +36,7 @@ on the opposite edge, leading back to spark.
 
 **TODO / ideas**
 
-- Real art per room: replace `background` + `tint` (all rooms reuse `bg_draft1.png` for now).
+- Real art per room: replace `background` (side rooms use temporary `public/rooms/placeholder-*.png`; spark uses `bg_draft1.png`).
 - A hint for searching, e.g. a head count on each door, or a "find me" button from the mobile
   profile page that tells you which room you are in.
 - Transition animation between rooms (slide the old layer out in the door's direction).
@@ -59,6 +61,35 @@ in a crowded room the per-frame separation takes over.
 
 Tuning: `COLLIDER_WIDTH_FACTOR` and `FLOOR_MARGIN` in `PixiHub.tsx`. The pure functions are tested
 in `physics/collision.test.ts`.
+
+## Dragging
+
+Press and hold any walker (body, face or accessory) to pick it up, move the pointer to carry it,
+and release to drop it. A quick click and release opens the profile instead.
+
+- **Click or drag.** `PressGesture` starts every press as a click and turns it into a drag once the
+  pointer travels 8 px or the press lasts 200 ms (`MOUSE_PRESS_LIMITS`). It never turns back, and
+  the profile opens only if the release comes first, so one press can't do both. The press is
+  tracked on `window`, so a release over a door or off the canvas still ends it.
+- **CV hand cursor.** A pinch on a walker works the same way, and is recognised because
+  `CvCursorOverlay`'s events are untrusted. That overlay sends its release 50 ms into every pinch,
+  so `PixiHub` ignores it and follows `cursorStateRef.isPinched` in the ticker instead. Curling the
+  thumb moves the cursor and pinches last longer than clicks, so hands get looser limits, 40 px and
+  500 ms (`HAND_PRESS_LIMITS`). A pinch counts as released after `HAND_RELEASE_GRACE_MS` (150 ms),
+  so a tracking dropout of a few frames doesn't drop the walker.
+- **While held.** The walker rises `HOLD_LIFT`, draws over everyone, and sways via `swayAngle`.
+  The sway rotates the walker's whole group around the point that was grabbed, which keeps the
+  face and accessory attached. It can go anywhere on screen, and is skipped by collisions and by
+  the interaction scheduler (`isBusy`); grabbing a walker mid-interaction cancels that interaction.
+- **Carrying to another room.** Hold a walker within `EDGE_ZONE` (60 px) of an edge that has a door
+  for `EDGE_DWELL_MS` (300 ms), and it and the view move to that room, still held and still at the
+  pointer. `EdgeDwell` then requires the pointer to leave the edge before the next crossing, as it
+  does for a walker grabbed at an edge. Edges without a door do nothing. Clicking a door button while
+  holding a walker still drops it in the room being left.
+- **Dropping.** The walker falls with the jump's gravity to the floor below it (or the floor's top
+  edge if dropped above it), then normal collision pushes it clear of anyone it landed on.
+
+The pure logic is tested in `drag/walkerDrag.test.ts`.
 
 ## Interactions (scaffolded, not implemented)
 
