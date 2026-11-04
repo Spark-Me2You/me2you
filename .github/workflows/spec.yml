@@ -18,7 +18,9 @@ env:
 jobs:
   # Authorization happens before any job can enter the secret-bearing Environment.
   gate:
-    if: github.event.label.name == 'spec:request'
+    if: >-
+      github.run_attempt == 1 &&
+      github.event.label.name == 'spec:request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,21 +29,69 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     outputs:
       start: ${{ steps.gate.outputs.start }}
+      request_event_id: ${{ steps.gate.outputs.request_event_id }}
     steps:
       - name: Check who labeled
         id: gate
         env:
           ACTOR: ${{ github.actor }}
+          TRIGGER_UPDATED_AT: ${{ github.event.issue.updated_at }}
         run: |
+          set -euo pipefail
+
+          latest_request_event() {
+            gh api --paginate "repos/$GH_REPO/issues/$ISSUE/timeline?per_page=100" --slurp |
+              jq -c '[add[] | select(.event == "labeled" and .label.name == "spec:request")] | last // {}'
+          }
+
+          request_is_current() {
+            local data event
+            data=$(gh issue view "$ISSUE" --json state,labels) || return 1
+            [[ $(jq -r .state <<<"$data") == OPEN ]] || return 1
+            jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$data" || return 1
+            event=$(latest_request_event) || return 1
+            [[ $(jq -r '.id // empty' <<<"$event") == "$request_event_id" ]]
+          }
+
+          remove_current_request() {
+            # Recheck the exact label event immediately before consuming it.
+            request_is_current || return 1
+            gh issue edit "$ISSUE" --remove-label spec:request
+          }
+
+          issue_json=$(gh issue view "$ISSUE" --json state,labels)
+          [[ $(jq -r .state <<<"$issue_json") == OPEN ]] || exit 0
+          jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$issue_json" || exit 0
+          request_event=$(latest_request_event) || exit 0
+          request_event_id=$(jq -r '.id // empty' <<<"$request_event")
+          request_actor=$(jq -r '.actor.login // empty' <<<"$request_event")
+          request_created_at=$(jq -r '.created_at // empty' <<<"$request_event")
+          [[ "$request_event_id" =~ ^[0-9]+$ && "$request_actor" == "$ACTOR" &&
+             -n "$TRIGGER_UPDATED_AT" && "$request_created_at" == "$TRIGGER_UPDATED_AT" ]] || exit 0
+
+          if jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human")' >/dev/null <<<"$issue_json"; then
+            remove_current_request || exit 0
+            if [[ $(jq -r '.id // empty' <<<"$(latest_request_event)") == "$request_event_id" ]]; then
+              gh issue comment "$ISSUE" --body "Spec not drafted: the Agent lifecycle is already active. Finish or clear it before re-adding \`spec:request\`. [Run log]($RUN_URL)" || true
+            fi
+            exit 0
+          fi
+
           permission=$(gh api "repos/$GH_REPO/collaborators/$ACTOR/permission" \
             --jq '.user.permissions.admin == true' 2>/dev/null) || permission=false
           if [[ "$permission" != true ]]; then
-            gh issue edit "$ISSUE" --remove-label spec:request
-            gh issue comment "$ISSUE" --body "Spec not drafted: @$ACTOR must be a current repository owner/admin to add \`spec:request\`."
+            remove_current_request || exit 0
+            if [[ $(jq -r '.id // empty' <<<"$(latest_request_event)") == "$request_event_id" ]]; then
+              gh issue comment "$ISSUE" --body "Spec not drafted: @$ACTOR must be a current repository owner/admin to add \`spec:request\`." || true
+            fi
             exit 0
           fi
-          gh issue comment "$ISSUE" --body "Drafting a spec from this request. [Run log]($RUN_URL)"
-          echo "start=true" >> "$GITHUB_OUTPUT"
+          request_is_current || exit 0
+          {
+            echo "start=true"
+            echo "request_event_id=$request_event_id"
+          } >> "$GITHUB_OUTPUT"
+          gh issue comment "$ISSUE" --body "Drafting a spec from this request. [Run log]($RUN_URL)" || true
 
   # This job can read the issue and repository and call Claude, but cannot
   # mutate the issue or execute repository code.
@@ -63,16 +113,28 @@ jobs:
       - name: Write request context
         env:
           GH_TOKEN: ${{ github.token }}
+          REQUEST_EVENT_ID: ${{ needs.gate.outputs.request_event_id }}
         run: |
+          set -euo pipefail
+          [[ "$REQUEST_EVENT_ID" =~ ^[0-9]+$ ]]
+          latest_request_id=$(gh api --paginate "repos/$GH_REPO/issues/$ISSUE/timeline?per_page=100" --slurp |
+            jq -r '[add[] | select(.event == "labeled" and .label.name == "spec:request")] | last | .id // empty')
+          [[ "$latest_request_id" == "$REQUEST_EVENT_ID" ]]
           mkdir -p .agent
           echo ".agent/" >> .git/info/exclude
-          gh issue view "$ISSUE" --json number,title,body,labels,comments > .agent/issue.json
+          gh issue view "$ISSUE" --json number,state,title,body,updatedAt,labels,comments > .agent/issue.json
+          [[ $(jq -r .state .agent/issue.json) == OPEN ]]
+          jq -e 'any(.labels[]; .name == "spec:request") and
+            (any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human") | not)' \
+            .agent/issue.json >/dev/null
+          jq -c '[.title, .body, .updatedAt]' .agent/issue.json | sha256sum | cut -d' ' -f1 > .agent/issue-digest
+          printf '%s\n' "$REQUEST_EVENT_ID" > .agent/request-event-id
 
           # The issue body is vouched for by the admin who added spec:request.
-          # Include comments only from current repository admins and the Actions bot.
+          # Include comments only from current repository admins and Actions.
           trusted='["github-actions"]'
           while read -r login; do
-            [[ -n "$login" && "$login" != "github-actions" ]] || continue
+            [[ -n "$login" && "$login" != github-actions ]] || continue
             permission=$(gh api "repos/$GH_REPO/collaborators/$login/permission" \
               --jq '.user.permissions.admin == true' 2>/dev/null) || permission=false
             if [[ "$permission" == true ]]; then
@@ -130,10 +192,13 @@ jobs:
         env:
           RESULT: ${{ steps.claude.outputs.structured_output }}
         run: |
+          set -euo pipefail
           out="$RUNNER_TEMP/spec-result"
           mkdir -p "$out"
           printf '%s' "$RESULT" > "$out/result.json"
           cp .agent/issue.json "$out/issue.json"
+          cp .agent/issue-digest "$out/issue-digest"
+          cp .agent/request-event-id "$out/request-event-id"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -159,28 +224,124 @@ jobs:
 
       - name: Apply spec to the issue
         run: |
+          set -euo pipefail
           result="$RUNNER_TEMP/spec-result/result.json"
           snapshot="$RUNNER_TEMP/spec-result/issue.json"
-          [[ -f "$result" && ! -L "$result" && -f "$snapshot" && ! -L "$snapshot" ]]
+          digest_file="$RUNNER_TEMP/spec-result/issue-digest"
+          request_file="$RUNNER_TEMP/spec-result/request-event-id"
+          [[ -f "$result" && ! -L "$result" && -f "$snapshot" && ! -L "$snapshot" &&
+             -f "$digest_file" && ! -L "$digest_file" && -f "$request_file" && ! -L "$request_file" ]]
+          request_event_id=$(cat "$request_file")
+          [[ "$request_event_id" =~ ^[0-9]+$ ]]
+
+          latest_request_id() {
+            gh api --paginate "repos/$GH_REPO/issues/$ISSUE/timeline?per_page=100" --slurp |
+              jq -r '[add[] | select(.event == "labeled" and .label.name == "spec:request")] | last | .id // empty'
+          }
+
+          load_current() {
+            current=$(gh issue view "$ISSUE" --json state,title,body,updatedAt,labels) || return 1
+          }
+
+          request_id_is_current() {
+            [[ $(latest_request_id) == "$request_event_id" ]]
+          }
+
+          request_is_active() {
+            load_current || return 1
+            [[ $(jq -r .state <<<"$current") == OPEN ]] || return 1
+            jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current" || return 1
+            request_id_is_current
+          }
+
+          remove_current_request() {
+            local expected_updated_at="${1:-}"
+            # Recheck the event identity and mutable issue version immediately
+            # before consuming this exact request, including on a closed issue.
+            load_current || return 1
+            jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current" || return 1
+            request_id_is_current || return 1
+            [[ -z "$expected_updated_at" || $(jq -r .updatedAt <<<"$current") == "$expected_updated_at" ]] || return 1
+            gh issue edit "$ISSUE" --remove-label spec:request
+          }
+
+          comment_if_current() {
+            local body="$1"
+            load_current || return 0
+            [[ $(jq -r .state <<<"$current") == OPEN ]] || return 0
+            # Request identity is the final API recheck before commenting.
+            request_id_is_current || return 0
+            gh issue comment "$ISSUE" --body "$body" || true
+          }
+
           jq -e --argjson issue "$ISSUE" '
-            type == "object" and .number == $issue and
-            (.title | type == "string") and (.body | type == "string")
+            type == "object" and .number == $issue and .state == "OPEN" and
+            (.title | type == "string") and (.body | type == "string") and
+            (.updatedAt | type == "string" and test("\\S"))
           ' "$snapshot" >/dev/null
+          snapshot_digest=$(cat "$digest_file")
+          [[ "$snapshot_digest" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$(jq -c '[.title, .body, .updatedAt]' "$snapshot" | sha256sum | cut -d' ' -f1)" == "$snapshot_digest" ]]
+
+          # Validate the untrusted model output before preparing the candidate.
           jq -e '
             type == "object" and
-            (.status == "drafted" or .status == "needs_input") and
             (if .status == "drafted" then
-              (.title | type == "string") and (.body | type == "string") and
+              (.title | type == "string" and test("\\S")) and
+              (.body | type == "string" and test("\\S")) and
               (.type | IN("feature", "fix", "refactor", "style", "docs", "chore", "perf", "test")) and
-              (.areas | type == "array" and all(.[]; IN("kiosk", "hub", "discovery", "games", "cv", "mobile", "auth", "db", "ci")))
-            else (.questions // "" | type == "string") end)
+              (.areas | type == "array" and length > 0 and all(.[]; IN("kiosk", "hub", "discovery", "games", "cv", "mobile", "auth", "db", "ci"))) and
+              (.body | test("(?m)^### Acceptance criteria[[:space:]]*$"))
+            elif .status == "needs_input" then
+              (.questions | type == "string" and test("\\S"))
+            else false end)
           ' "$result" >/dev/null
+          if [[ $(jq -r .status "$result") == drafted ]]; then
+            jq -r .body "$result" | awk '
+              /^### Acceptance criteria[[:space:]]*$/ { in_acceptance=1; next }
+              in_acceptance && /^### / { exit }
+              in_acceptance { print }
+            ' > "$RUNNER_TEMP/acceptance.md"
+            grep -qE '^- \[ \] [^[:space:]]' "$RUNNER_TEMP/acceptance.md"
+          fi
+
+          request_id_is_current || exit 0
+          load_current || exit 0
+          current_updated_at=$(jq -r .updatedAt <<<"$current")
+          current_digest=$(jq -c '[.title, .body, .updatedAt]' <<<"$current" | sha256sum | cut -d' ' -f1)
+          lifecycle_moved=false
+          if [[ $(jq -r .state <<<"$current") != OPEN ]] ||
+             ! jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current" ||
+             jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human")' >/dev/null <<<"$current"; then
+            lifecycle_moved=true
+          fi
+          if [[ "$lifecycle_moved" == true ]]; then
+            # Consume only this captured request. A newer request event wins.
+            if jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current"; then
+              remove_current_request "$current_updated_at" || exit 0
+              comment_if_current "The generated draft was discarded because the issue closed, the request was withdrawn, or the Agent lifecycle already moved on. [Run log]($RUN_URL)"
+            fi
+            exit 0
+          fi
+          if [[ "$current_digest" != "$snapshot_digest" ]]; then
+            # Recheck request identity, issue version, and inactive Agent state
+            # immediately before replacing this request with spec:review.
+            request_is_active || exit 0
+            [[ $(jq -r .updatedAt <<<"$current") == "$current_updated_at" ]] || exit 0
+            jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human") | not' \
+              >/dev/null <<<"$current" || exit 0
+            lock_args=(--remove-label spec:request)
+            jq -e 'any(.labels[]; .name == "spec:review")' >/dev/null <<<"$current" || lock_args+=(--add-label spec:review)
+            gh issue edit "$ISSUE" "${lock_args[@]}"
+            comment_if_current "The generated draft was discarded because the issue title, body, or trusted input changed while it was being prepared. Review the current issue, then re-add \`spec:request\` if a new draft is wanted. [Run log]($RUN_URL)"
+            exit 0
+          fi
 
           status=$(jq -r .status "$result")
           if [[ "$status" != drafted ]]; then
-            questions=$(jq -r '.questions // "The request is too vague to spec."' "$result")
-            gh issue edit "$ISSUE" --remove-label spec:request
-            gh issue comment "$ISSUE" --body "Spec needs more input before it can be drafted:
+            questions=$(jq -r .questions "$result")
+            remove_current_request "$current_updated_at" || exit 0
+            comment_if_current "Spec needs more input before it can be drafted:
 
           $questions
 
@@ -203,25 +364,18 @@ jobs:
             printf '\n\n</details>\n'
           } > "$RUNNER_TEMP/spec-body.md"
 
-          # Only labels from these fixed sets are applied.
           args=()
           t=$(jq -r .type "$result")
-          # Fetched now, not from the snapshot: triage.yml may have labeled the
-          # issue while Claude was drafting.
           labels=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
           existing=$(grep -m1 '^type:' <<<"$labels" || true)
           if [[ -n "$t" && -z "$existing" ]]; then
             args+=(--add-label "type:$t")
           fi
-          # An existing type label (e.g. from the issue form) wins over the model's guess.
-          effective="${existing#type:}"
-          [[ -n "$effective" ]] || effective="$t"
-          while read -r a; do
-            [[ -n "$a" ]] && args+=(--add-label "area:$a")
+          effective=${existing#type:}
+          [[ -n "$effective" ]] || effective=$t
+          while read -r area; do
+            [[ -n "$area" ]] && args+=(--add-label "area:$area")
           done < <(jq -r '.areas[]' "$result")
-
-          # Areas from the model plus any area:* labels the issue already has
-          # (from triage or a human), so a guess cannot drop an existing db label.
           areas=$( { jq -r '.areas[]' "$result"; sed -n 's/^area://p' <<<"$labels"; } | sort -u)
 
           args+=(--add-label spec:review)
@@ -229,9 +383,42 @@ jobs:
           if grep -qx db <<<"$areas" || [[ "$effective" == db ]]; then
             next+=" This needs database work, so the agent will refuse it; a human should take it."
           fi
+          # Recheck the exact request and full mutable issue version at the
+          # mutation boundary. A newer request or any intervening trusted input
+          # invalidates this generated draft.
+          request_id_is_current || exit 0
+          load_current || exit 0
+          boundary_updated_at=$(jq -r .updatedAt <<<"$current")
+          boundary_digest=$(jq -c '[.title, .body, .updatedAt]' <<<"$current" | sha256sum | cut -d' ' -f1)
+          if [[ $(jq -r .state <<<"$current") != OPEN ]] ||
+             ! jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current" ||
+             jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human")' >/dev/null <<<"$current"; then
+            if jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current"; then
+              remove_current_request "$boundary_updated_at" || exit 0
+              comment_if_current "The generated draft was discarded because the issue closed, the request was withdrawn, or the Agent lifecycle already moved on. [Run log]($RUN_URL)"
+            fi
+            exit 0
+          fi
+          if [[ "$boundary_digest" != "$snapshot_digest" ]]; then
+            request_is_active || exit 0
+            [[ $(jq -r .updatedAt <<<"$current") == "$boundary_updated_at" ]] || exit 0
+            jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human") | not' \
+              >/dev/null <<<"$current" || exit 0
+            lock_args=(--remove-label spec:request)
+            jq -e 'any(.labels[]; .name == "spec:review")' >/dev/null <<<"$current" || lock_args+=(--add-label spec:review)
+            gh issue edit "$ISSUE" "${lock_args[@]}"
+            comment_if_current "The generated draft was discarded because the issue title, body, or trusted input changed while it was being prepared. Review the current issue, then re-add \`spec:request\` if a new draft is wanted. [Run log]($RUN_URL)"
+            exit 0
+          fi
+
+          # One final request-ID/version check immediately before the edit.
+          request_is_active || exit 0
+          [[ $(jq -c '[.title, .body, .updatedAt]' <<<"$current" | sha256sum | cut -d' ' -f1) == "$snapshot_digest" ]] || exit 0
+          jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:review" or .name == "agent:needs-human") | not' \
+            >/dev/null <<<"$current" || exit 0
           gh issue edit "$ISSUE" --title "$title" --body-file "$RUNNER_TEMP/spec-body.md" \
             --remove-label spec:request "${args[@]}"
-          gh issue comment "$ISSUE" --body "Spec drafted. The original request is kept at the bottom of the description. $next [Run log]($RUN_URL)"
+          comment_if_current "Spec drafted. The original request is kept at the bottom of the description. $next [Run log]($RUN_URL)"
 
   report:
     needs: [gate, generate, apply]
@@ -243,8 +430,23 @@ jobs:
       issues: write
     env:
       GH_TOKEN: ${{ github.token }}
+      REQUEST_EVENT_ID: ${{ needs.gate.outputs.request_event_id }}
     steps:
       - name: Report failure
         run: |
+          set -euo pipefail
+          [[ "$REQUEST_EVENT_ID" =~ ^[0-9]+$ ]] || exit 0
+          latest_request_id() {
+            gh api --paginate "repos/$GH_REPO/issues/$ISSUE/timeline?per_page=100" --slurp |
+              jq -r '[add[] | select(.event == "labeled" and .label.name == "spec:request")] | last | .id // empty'
+          }
+          current=$(gh issue view "$ISSUE" --json state,labels) || exit 0
+          [[ $(jq -r .state <<<"$current") == OPEN && $(latest_request_id) == "$REQUEST_EVENT_ID" ]] || exit 0
+          jq -e 'any(.labels[]; .name == "spec:request")' >/dev/null <<<"$current" || exit 0
+          # Final identity recheck before removing only the failed request.
+          [[ $(latest_request_id) == "$REQUEST_EVENT_ID" ]] || exit 0
           gh issue edit "$ISSUE" --remove-label spec:request
-          gh issue comment "$ISSUE" --body "Spec drafting failed. [Run log]($RUN_URL)"
+          current=$(gh issue view "$ISSUE" --json state) || exit 0
+          if [[ $(jq -r .state <<<"$current") == OPEN && $(latest_request_id) == "$REQUEST_EVENT_ID" ]]; then
+            gh issue comment "$ISSUE" --body "Spec drafting failed or was cancelled. [Run log]($RUN_URL)" || true
+          fi

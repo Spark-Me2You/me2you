@@ -1,5 +1,6 @@
 # Agent feedback: an issue or PR conversation comment starting with `/agent`
-# validates the request, then calls the trusted agent workflow on main.
+# validates the owner, content, exact PR and branch, then asks the serialized
+# Agent gate to claim the issue. Prepare never changes Agent state labels.
 name: Agent feedback
 
 on:
@@ -22,6 +23,10 @@ jobs:
       branch: ${{ steps.prepare.outputs.branch }}
       initiator: ${{ steps.prepare.outputs.initiator }}
       expected_sha: ${{ steps.prepare.outputs.expected_sha }}
+      expected_pr: ${{ steps.prepare.outputs.expected_pr }}
+      claim_id: ${{ steps.prepare.outputs.claim_id }}
+      prior_state: ${{ steps.prepare.outputs.prior_state }}
+      issue_digest: ${{ steps.prepare.outputs.issue_digest }}
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -29,16 +34,16 @@ jobs:
       BODY: ${{ github.event.comment.body }}
       NUMBER: ${{ github.event.issue.number }}
       IS_PR: ${{ github.event.issue.pull_request && 'true' || 'false' }}
+      CLAIM_ID: ${{ github.run_id }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Validate and prepare feedback
         id: prepare
         run: |
-          # "/agent" must be the command word, not a prefix of another word.
+          set -euo pipefail
           [[ "$BODY" =~ ^/agent([[:space:]]|$) ]] || exit 0
+          [[ "$CLAIM_ID" =~ ^[0-9]+$ ]] || exit 0
 
-          # Every command spends an owner's subscription quota. Check the
-          # commenter's current repository permission and fail closed if the API fails.
           permission=$(gh api "repos/$GH_REPO/collaborators/$ACTOR/permission" \
             --jq '.user.permissions.admin == true' 2>/dev/null) || permission=false
           if [[ "$permission" != true ]]; then
@@ -46,86 +51,96 @@ jobs:
             exit 0
           fi
 
-          fields=state,author,baseRefName,headRefName,headRepository,headRepositoryOwner
-          if [[ "$IS_PR" == "true" ]]; then
-            # PR conversation comments are issue_comment events. Only accept the
-            # repository's open bot-authored agent PRs into dev.
-            pr=$(gh pr view "$NUMBER" --json "$fields") || { echo "Could not read PR #$NUMBER."; exit 0; }
+          find_agent_prs() {
+            local issue="$1"
+            gh api --paginate "repos/$GH_REPO/pulls?state=open&base=dev&per_page=100" --slurp |
+              jq --arg repo "$GH_REPO" --arg issue "$issue" '
+                add | map(select(
+                  .state == "open" and .base.ref == "dev" and
+                  .user.login == "github-actions[bot]" and .head.repo.full_name == $repo and
+                  (.head.ref | test("^agent/" + $issue + "(-[a-z0-9-]+)?$"))
+                ))'
+          }
+
+          if [[ "$IS_PR" == true ]]; then
+            [[ "$NUMBER" =~ ^[0-9]+$ ]] || exit 0
+            pr=$(gh api "repos/$GH_REPO/pulls/$NUMBER") || { echo "Could not read PR #$NUMBER."; exit 0; }
             valid=$(jq -r --arg repo "$GH_REPO" '
-              .state == "OPEN" and .baseRefName == "dev" and
-              .author.login == "github-actions" and
-              ((.headRepositoryOwner.login // "") + "/" + (.headRepository.name // "")) == $repo' <<<"$pr")
-            branch=$(jq -r '.headRefName' <<<"$pr")
-            if [[ "$valid" != true || ! "$branch" =~ ^agent/[0-9]+-[a-z0-9-]+$ ]]; then
-              echo "PR #$NUMBER is not an open bot-authored agent PR from this repository into dev."
+              .state == "open" and .base.ref == "dev" and
+              .user.login == "github-actions[bot]" and .head.repo.full_name == $repo and
+              (.head.ref | test("^agent/[0-9]+(-[a-z0-9-]+)?$"))' <<<"$pr")
+            branch=$(jq -r .head.ref <<<"$pr")
+            [[ "$valid" == true && "$branch" =~ ^agent/([0-9]+)(-[a-z0-9-]+)?$ ]] || {
+              echo "PR #$NUMBER is not an open bot-authored Agent PR from this repository into dev."
               exit 0
-            fi
-            [[ "$branch" =~ ^agent/([0-9]+)-[a-z0-9-]+$ ]]
-            issue="${BASH_REMATCH[1]}"
-            sha=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq '.object.sha' 2>/dev/null) \
-              || { echo "Could not verify the PR branch commit."; exit 0; }
-            [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "Unexpected PR branch commit."; exit 0; }
+            }
+            issue=${BASH_REMATCH[1]}
+            expected_pr=$NUMBER
           else
-            issue="$NUMBER"
+            issue=$NUMBER
             [[ "$issue" =~ ^[0-9]+$ ]] || exit 0
-
-            # Search a deliberately high result limit and require exactly one
-            # matching PR. Ambiguity is refused rather than choosing one.
-            prs=$(gh pr list --state open --base dev --limit 200 --json "$fields") || {
-              gh issue comment "$issue" --body "Couldn't verify the agent PR for this feedback. [Run log]($RUN_URL)"
+            matches=$(find_agent_prs "$issue") || {
+              gh issue comment "$issue" --body "Couldn't verify the Agent PR for this feedback. [Run log]($RUN_URL)" || true
               exit 0
             }
-            matches=$(jq -c --arg repo "$GH_REPO" --arg prefix "agent/$issue-" '
-              [.[] | select(
-                .state == "OPEN" and .baseRefName == "dev" and
-                .author.login == "github-actions" and
-                ((.headRepositoryOwner.login // "") + "/" + (.headRepository.name // "")) == $repo and
-                (.headRefName | startswith($prefix))
-              )]' <<<"$prs")
-            count=$(jq 'length' <<<"$matches")
+            count=$(jq length <<<"$matches")
             if [[ "$count" != 1 ]]; then
-              gh issue comment "$issue" --body "\`/agent\` requires exactly one open bot-authored agent PR from this repository into \`dev\`; found $count. [Run log]($RUN_URL)"
+              gh issue comment "$issue" --body "\`/agent\` requires exactly one open bot-authored Agent PR for this issue from this repository into \`dev\`; found $count. [Run log]($RUN_URL)" || true
               exit 0
             fi
-            branch=$(jq -r '.[0].headRefName' <<<"$matches")
-            if [[ ! "$branch" =~ ^agent/$issue-[a-z0-9-]+$ ]]; then
-              gh issue comment "$issue" --body "The matching agent PR has an unexpected branch. [Run log]($RUN_URL)"
-              exit 0
-            fi
-            sha=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq '.object.sha' 2>/dev/null) || {
-              gh issue comment "$issue" --body "Couldn't verify the matching agent PR commit. [Run log]($RUN_URL)"
-              exit 0
-            }
-            if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
-              gh issue comment "$issue" --body "The matching agent PR has an unexpected commit. [Run log]($RUN_URL)"
-              exit 0
-            fi
+            pr=$(jq '.[0]' <<<"$matches")
+            branch=$(jq -r .head.ref <<<"$pr")
+            expected_pr=$(jq -r .number <<<"$pr")
           fi
 
-          # Only hand-offs are picked up; a running agent is left alone.
-          labels=$(gh issue view "$issue" --json labels --jq '.labels[].name')
-          if grep -qx 'agent:in-progress' <<<"$labels"; then
-            gh issue comment "$issue" --body "The agent is already running on this issue. Send \`/agent\` again when it finishes. [Run log]($RUN_URL)"
+          expected_sha=$(jq -r .head.sha <<<"$pr")
+          [[ "$expected_pr" =~ ^[0-9]+$ && "$expected_sha" =~ ^[0-9a-f]{40}$ &&
+             "$branch" =~ ^agent/$issue(-[a-z0-9-]+)?$ ]] || exit 0
+          branch_sha=$(gh api "repos/$GH_REPO/git/ref/heads/$branch" --jq '.object.sha' 2>/dev/null) || {
+            gh issue comment "$issue" --body "Couldn't verify the Agent PR branch commit. [Run log]($RUN_URL)" || true
             exit 0
-          fi
-          if ! grep -qxE 'agent:(review|needs-human)' <<<"$labels"; then
-            gh issue comment "$issue" --body "\`/agent\` only applies once the agent has handed the issue over (\`agent:review\` or \`agent:needs-human\`). To start it, a repository owner/admin must add \`agent:ready\`."
+          }
+          [[ "$branch_sha" == "$expected_sha" ]] || {
+            gh issue comment "$issue" --body "The Agent PR changed while feedback was being prepared; send \`/agent\` again. [Run log]($RUN_URL)" || true
             exit 0
-          fi
-          if grep -qxE 'type:db|area:db' <<<"$labels"; then
-            gh issue comment "$issue" --body "\`/agent\` can't run here: database work (migrations, RLS, edge functions) is reserved for humans."
+          }
+
+          issue_json=$(gh issue view "$issue" --json state,title,body,labels)
+          [[ $(jq -r .state <<<"$issue_json") == OPEN ]] || exit 0
+          states=$(jq -r '[.labels[].name | select(. == "agent:ready" or . == "agent:in-progress" or . == "agent:review" or . == "agent:needs-human")]' <<<"$issue_json")
+          [[ $(jq length <<<"$states") == 1 ]] || {
+            gh issue comment "$issue" --body "\`/agent\` found conflicting Agent state labels; a repository owner must clean them up. [Run log]($RUN_URL)" || true
+            exit 0
+          }
+          prior_state=$(jq -r '.[0]' <<<"$states")
+          [[ "$prior_state" == agent:review || "$prior_state" == agent:needs-human ]] || {
+            gh issue comment "$issue" --body "\`/agent\` only applies after the agent hands the issue over (\`agent:review\` or \`agent:needs-human\`). [Run log]($RUN_URL)" || true
+            exit 0
+          }
+          if jq -e 'any(.labels[]; .name == "type:db" or .name == "area:db")' >/dev/null <<<"$issue_json"; then
+            gh issue comment "$issue" --body "\`/agent\` can't run here: database work is reserved for humans. [Run log]($RUN_URL)" || true
             exit 0
           fi
 
-          # Claim before the reusable call so another command cannot queue a
-          # second run. agent.yml independently rechecks the actor, branch and SHA.
-          gh issue edit "$issue" --remove-label agent:review --remove-label agent:needs-human --add-label agent:in-progress
-          gh issue comment "$issue" --body "Picked up feedback from @$ACTOR. The agent is revising \`$branch\`. [Run log]($RUN_URL)"
-          echo "start=true" >> "$GITHUB_OUTPUT"
-          echo "issue=$issue" >> "$GITHUB_OUTPUT"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo "initiator=$ACTOR" >> "$GITHUB_OUTPUT"
-          echo "expected_sha=$sha" >> "$GITHUB_OUTPUT"
+          issue_digest=$(jq -c '[.title, .body]' <<<"$issue_json" | sha256sum | cut -d' ' -f1)
+          marker="<!-- agent-claim id=$CLAIM_ID reason=feedback state=$prior_state pr=$expected_pr sha=$expected_sha digest=$issue_digest conclusion= -->"
+          {
+            echo "$marker"
+            echo "Queued feedback from @$ACTOR for the exact Agent PR. The serialized Agent gate accepts only the highest-ID exact claim. [Run log]($RUN_URL)"
+          } > "$RUNNER_TEMP/claim-comment.md"
+          gh issue comment "$issue" --body-file "$RUNNER_TEMP/claim-comment.md"
+
+          {
+            echo "start=true"
+            echo "issue=$issue"
+            echo "branch=$branch"
+            echo "initiator=$ACTOR"
+            echo "expected_sha=$expected_sha"
+            echo "expected_pr=$expected_pr"
+            echo "claim_id=$CLAIM_ID"
+            echo "prior_state=$prior_state"
+            echo "issue_digest=$issue_digest"
+          } >> "$GITHUB_OUTPUT"
 
   agent:
     needs: prepare
@@ -137,28 +152,12 @@ jobs:
       reason: feedback
       initiator: ${{ needs.prepare.outputs.initiator }}
       expected_sha: ${{ needs.prepare.outputs.expected_sha }}
+      expected_pr: ${{ needs.prepare.outputs.expected_pr }}
+      claim_id: ${{ needs.prepare.outputs.claim_id }}
+      prior_state: ${{ needs.prepare.outputs.prior_state }}
+      issue_digest: ${{ needs.prepare.outputs.issue_digest }}
     permissions:
       actions: write
       contents: write
       issues: write
       pull-requests: write
-
-  cleanup:
-    needs: [prepare, agent]
-    if: >-
-      always() && needs.prepare.outputs.start == 'true' &&
-      (needs.agent.result == 'failure' || needs.agent.result == 'cancelled')
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      ISSUE: ${{ needs.prepare.outputs.issue }}
-      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-    steps:
-      - name: Hand back a failed call
-        run: |
-          if gh issue view "$ISSUE" --json labels --jq '.labels[].name' | grep -qx 'agent:in-progress'; then
-            gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:needs-human
-            gh issue comment "$ISSUE" --body "Agent run failed. [Run log]($RUN_URL)"
-          fi

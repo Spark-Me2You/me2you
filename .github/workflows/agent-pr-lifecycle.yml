@@ -1,0 +1,109 @@
+# Trusted cleanup for bot-authored Agent PRs. pull_request_target runs the
+# default-branch workflow and this job never checks out or executes PR code.
+name: Agent PR lifecycle
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  close-issue:
+    if: >-
+      github.event.pull_request.base.ref == 'dev' &&
+      startsWith(github.event.pull_request.head.ref, 'agent/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      EVENT_HEAD: ${{ github.event.pull_request.head.ref }}
+      EVENT_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_CLOSED_AT: ${{ github.event.pull_request.closed_at }}
+    steps:
+      - name: Reconcile linked issue
+        run: |
+          set -euo pipefail
+          [[ "$PR" =~ ^[0-9]+$ && "$EVENT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 0
+          [[ "$PR_CLOSED_AT" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || exit 0
+          [[ "$EVENT_HEAD" =~ ^agent/([0-9]+)(-[a-z0-9-]+)?$ ]] || exit 0
+          issue=${BASH_REMATCH[1]}
+
+          # Re-read the closed PR and bind every identity field. No PR content,
+          # checkout, build script, or changed file is executed by this workflow.
+          pr=$(gh api "repos/$GH_REPO/pulls/$PR") || exit 0
+          jq -e --argjson number "$PR" --arg repo "$GH_REPO" --arg branch "$EVENT_HEAD" --arg sha "$EVENT_SHA" '
+            .number == $number and .state == "closed" and .base.ref == "dev" and
+            .user.login == "github-actions[bot]" and .head.repo.full_name == $repo and
+            .head.ref == $branch and .head.sha == $sha
+          ' >/dev/null <<<"$pr" || exit 0
+
+          # A delayed or re-run close event must not erase a newer lifecycle.
+          # Skip when another matching Agent PR is open, an active request is
+          # present, or an accepted start is timestamped at/after this close.
+          open_count=$(gh api --paginate "repos/$GH_REPO/pulls?state=open&base=dev&per_page=100" --slurp |
+            jq --arg repo "$GH_REPO" --arg issue "$issue" '[add[] | select(
+              .user.login == "github-actions[bot]" and .head.repo.full_name == $repo and
+              (.head.ref | test("^agent/" + $issue + "(-[a-z0-9-]+)?$"))
+            )] | length') || exit 0
+          (( open_count == 0 )) || exit 0
+          latest_start=''
+          issue_json=$(gh issue view "$issue" --json state,labels) || exit 0
+          if jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:needs-human" or .name == "spec:request" or .name == "spec:review")' >/dev/null <<<"$issue_json"; then
+            exit 0
+          fi
+          comments=$(gh api --paginate "repos/$GH_REPO/issues/$issue/comments?per_page=100" --slurp | jq 'add | sort_by(.id)') || exit 0
+          latest_start=$(jq -r '[.[] | select(
+            .user.login == "github-actions[bot]" and
+            (.body | split("\n")[0] | test("^<!-- agent-owner-attempt run=[0-9]+ digest=[0-9a-f]{64} -->$|^<!-- agent-retry-start run=[0-9]+ digest=[0-9a-f]{64} pr=[0-9]+ sha=[0-9a-f]{40} -->$"))
+          ) | .created_at] | last // empty' <<<"$comments")
+          if [[ -n "$latest_start" && -n "$PR_CLOSED_AT" &&
+                ( "$latest_start" > "$PR_CLOSED_AT" || "$latest_start" == "$PR_CLOSED_AT" ) ]]; then
+            exit 0
+          fi
+
+          # Recheck replacement PRs, active requests, and accepted starts at the
+          # cleanup boundary. Equal-second starts are newer/ambiguous and win.
+          open_count=$(gh api --paginate "repos/$GH_REPO/pulls?state=open&base=dev&per_page=100" --slurp |
+            jq --arg repo "$GH_REPO" --arg issue "$issue" '[add[] | select(
+              .user.login == "github-actions[bot]" and .head.repo.full_name == $repo and
+              (.head.ref | test("^agent/" + $issue + "(-[a-z0-9-]+)?$"))
+            )] | length') || exit 0
+          (( open_count == 0 )) || exit 0
+          issue_json=$(gh issue view "$issue" --json state,labels) || exit 0
+          if jq -e 'any(.labels[]; .name == "agent:ready" or .name == "agent:in-progress" or .name == "agent:needs-human" or .name == "spec:request" or .name == "spec:review")' >/dev/null <<<"$issue_json"; then
+            exit 0
+          fi
+          comments=$(gh api --paginate "repos/$GH_REPO/issues/$issue/comments?per_page=100" --slurp | jq 'add | sort_by(.id)') || exit 0
+          latest_start=$(jq -r '[.[] | select(
+            .user.login == "github-actions[bot]" and
+            (.body | split("\n")[0] | test("^<!-- agent-owner-attempt run=[0-9]+ digest=[0-9a-f]{64} -->$|^<!-- agent-retry-start run=[0-9]+ digest=[0-9a-f]{64} pr=[0-9]+ sha=[0-9a-f]{40} -->$"))
+          ) | .created_at] | last // empty' <<<"$comments")
+          if [[ -n "$latest_start" && -n "$PR_CLOSED_AT" &&
+                ( "$latest_start" > "$PR_CLOSED_AT" || "$latest_start" == "$PR_CLOSED_AT" ) ]]; then
+            exit 0
+          fi
+          args=()
+          while read -r label; do
+            case "$label" in
+              agent:ready|agent:in-progress|agent:review|agent:needs-human|spec:request|spec:review)
+                args+=(--remove-label "$label")
+                ;;
+            esac
+          done < <(jq -r '.labels[].name' <<<"$issue_json")
+
+          merged=$(jq -r '.merged_at != null' <<<"$pr")
+          if [[ "$merged" == true ]]; then
+            if (( ${#args[@]} > 0 )); then gh issue edit "$issue" "${args[@]}"; fi
+            if [[ $(jq -r .state <<<"$issue_json") == OPEN ]]; then
+              gh issue close "$issue" --reason completed
+            fi
+            gh issue comment "$issue" --body "Agent PR #$PR merged into \`dev\`. Workflow state labels were cleared and this issue was explicitly closed." || true
+          else
+            args+=(--add-label agent:needs-human)
+            gh issue edit "$issue" "${args[@]}"
+            gh issue comment "$issue" --body "Agent PR #$PR was closed without merging. The issue is now \`agent:needs-human\`; review the closed PR and decide whether to restart or close the issue." || true
+          fi
