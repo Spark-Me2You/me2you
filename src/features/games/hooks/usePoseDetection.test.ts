@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { silenceConsole } from '@/test/console'
-import { POSE_PROCESS_INTERVAL_MS, usePoseDetection } from './usePoseDetection'
+import { usePoseDetection } from './usePoseDetection'
 
 const landmarker = vi.hoisted(() => ({ detectForVideo: vi.fn(), close: vi.fn() }))
 const create = vi.hoisted(() => vi.fn())
@@ -59,16 +59,45 @@ describe('usePoseDetection', () => {
     expect(result.current.allLandmarksRef.current).toEqual([])
   })
 
-  it('throttles frames closer together than the interval', async () => {
+  it('bumps the frame sequence when nobody is detected, so presence updates', async () => {
+    landmarker.detectForVideo.mockReturnValueOnce({ landmarks: [lm(1)] }).mockReturnValueOnce({ landmarks: [] })
+    const { result } = await ready()
+
+    act(() => result.current.processFrame(video, 1000))
+    act(() => result.current.processFrame(video, 2000))
+
+    expect(result.current.frameSequenceRef.current).toBe(2)
+  })
+
+  it('does not bump the frame sequence when detection fails', async () => {
+    silenceConsole('error')
+    landmarker.detectForVideo.mockImplementation(() => { throw new Error('bad frame') })
+    const { result } = await ready()
+
+    act(() => result.current.processFrame(video, 1000))
+
+    expect(result.current.frameSequenceRef.current).toBe(0)
+  })
+
+  it('does not drop frames that arrive slightly early, which would halve the rate', async () => {
     landmarker.detectForVideo.mockReturnValue({ landmarks: [lm(1)] })
     const { result } = await ready()
 
     act(() => result.current.processFrame(video, 1000))
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS - 1))
-    expect(landmarker.detectForVideo).toHaveBeenCalledTimes(1)
+    act(() => result.current.processFrame(video, 1074))
 
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS))
     expect(landmarker.detectForVideo).toHaveBeenCalledTimes(2)
+  })
+
+  it('skips timestamps that do not increase, which MediaPipe rejects', async () => {
+    landmarker.detectForVideo.mockReturnValue({ landmarks: [lm(1)] })
+    const { result } = await ready()
+
+    act(() => result.current.processFrame(video, 1000))
+    act(() => result.current.processFrame(video, 1000))
+    act(() => result.current.processFrame(video, 999))
+
+    expect(landmarker.detectForVideo).toHaveBeenCalledTimes(1)
   })
 
   it('skips videos that have no dimensions or are not ready', async () => {
