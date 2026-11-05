@@ -12,16 +12,15 @@ body:
       label: Area
       description: Which part of the app is affected? (Triage adds the matching `area:*` label.)
       multiple: true
-      # triage.yml labels each selected item by its first word: no commas in option text.
       options:
-        - kiosk (state machine / idle / auth / onboarding)
+        - kiosk (state machine, idle/auth/onboarding)
         - hub
         - discovery
         - games
-        - cv (camera / hand tracking / pose)
-        - mobile (user pages / registration / claim / messages)
+        - cv (camera, hand tracking, pose)
+        - mobile (user pages, registration, claim, messages)
         - auth
-        - db (migrations / RLS / edge functions)
+        - db (migrations, RLS, edge functions)
         - ci / tooling
     validations:
       required: true
