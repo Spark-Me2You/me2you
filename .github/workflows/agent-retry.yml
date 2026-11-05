@@ -49,10 +49,9 @@ jobs:
           # marks those start comments with <!-- agent-run -->), so a /agent
           # revision or a fresh agent:ready gets its own MAX_RETRIES.
           attempts=$(gh issue view "$issue" --json comments --jq '
-            reduce (.comments[] | select(.author.login == "github-actions") | .body) as $b (0;
-              if ($b | contains("<!-- agent-run -->")) then 0
-              elif ($b | contains("<!-- agent-retry -->")) then . + 1
-              else . end)')
+            [.comments[] | select(.author.login == "github-actions")] as $c
+            | ([$c | to_entries[] | select(.value.body | contains("<!-- agent-run -->")) | .key] | max // -1) as $start
+            | [$c[$start + 1:][] | select(.body | contains("<!-- agent-retry -->"))] | length')
 
           if (( attempts >= MAX_RETRIES )); then
             gh issue edit "$issue" --remove-label agent:review --add-label agent:needs-human
