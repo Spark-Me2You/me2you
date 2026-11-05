@@ -29,7 +29,7 @@ jobs:
       NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
       IS_PR: ${{ (github.event.pull_request || github.event.issue.pull_request) && 'true' || 'false' }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST }} # unset means nobody; see agent.yml
+      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST || 'clow427,amernor' }}
     steps:
       - name: Dispatch a feedback run
         run: |
