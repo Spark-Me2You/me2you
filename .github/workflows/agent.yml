@@ -66,6 +66,7 @@ jobs:
             ALLOWLIST="$ALLOWLIST,github-actions[bot]"
             if [[ ! "$ISSUE" =~ ^[0-9]+$ || ! "$REASON" =~ ^(ci|feedback)$ ||
                   ( -n "$RETRY_BRANCH" && ! "$RETRY_BRANCH" =~ ^agent/$ISSUE-[a-z0-9-]*$ ) ]]; then
+              gh issue edit "$ISSUE" --remove-label agent:in-progress --add-label agent:needs-human || true
               gh issue comment "$ISSUE" --body "Agent not started: invalid retry request." || true
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -82,7 +83,7 @@ jobs:
           # the allowlist too. This also covers dispatched retries and /agent runs.
           author=$(gh issue view "$ISSUE" --json author --jq .author.login)
           if [[ ! ",${ALLOWLIST// /}," == *",$author,"* ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready
+            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress --add-label agent:needs-human
             gh issue comment "$ISSUE" --body "Agent not started: this issue was opened by \`$author\`, who is not on the agent allowlist. Someone on the allowlist needs to open a new issue with the same request."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
@@ -90,7 +91,7 @@ jobs:
 
           labels=$(gh issue view "$ISSUE" --json labels --jq '[.labels[].name] | join(",")')
           if [[ ",$labels," =~ ,(type:db|area:db), ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready --add-label agent:needs-human
+            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress --add-label agent:needs-human
             gh issue comment "$ISSUE" --body "Agent not started: database work (migrations, RLS, edge functions) is reserved for humans."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
@@ -111,7 +112,7 @@ jobs:
           done
 
           if [[ ${#picked[@]} -gt 1 ]]; then
-            gh issue edit "$ISSUE" --remove-label agent:ready --add-label agent:needs-human
+            gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:in-progress --add-label agent:needs-human
             gh issue comment "$ISSUE" --body "Agent not started: multiple model labels (${picked[*]}). Keep one and re-add \`agent:ready\`."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
@@ -126,7 +127,12 @@ jobs:
           MODEL: ${{ steps.model.outputs.id }}
         run: |
           gh issue edit "$ISSUE" --remove-label agent:ready --remove-label agent:needs-human --remove-label agent:review --add-label agent:in-progress
-          gh issue comment "$ISSUE" --body "Agent started working on this issue using \`$MODEL\`. [Run log]($RUN_URL)"
+          # Every run except a CI retry carries a marker, and agent-retry.yml
+          # counts retries since the latest one, so each new attempt (agent:ready,
+          # /agent feedback, spec auto-start) gets a fresh retry budget.
+          marker='<!-- agent-run -->'
+          [[ "$REASON" == "ci" && -n "$RETRY_BRANCH" ]] && marker=''
+          gh issue comment "$ISSUE" --body "${marker}Agent started working on this issue using \`$MODEL\`. [Run log]($RUN_URL)"
 
       - uses: actions/checkout@v4
         if: steps.gate.outputs.skip != 'true' && steps.model.outputs.skip != 'true'

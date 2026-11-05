@@ -45,8 +45,14 @@ jobs:
             exit 0
           fi
 
-          attempts=$(gh issue view "$issue" --json comments \
-            --jq '[.comments[] | select(.author.login == "github-actions" and (.body | contains("<!-- agent-retry -->")))] | length')
+          # Count retries since the latest attempt a human started (agent.yml
+          # marks those start comments with <!-- agent-run -->), so a /agent
+          # revision or a fresh agent:ready gets its own MAX_RETRIES.
+          attempts=$(gh issue view "$issue" --json comments --jq '
+            reduce (.comments[] | select(.author.login == "github-actions") | .body) as $b (0;
+              if ($b | contains("<!-- agent-run -->")) then 0
+              elif ($b | contains("<!-- agent-retry -->")) then . + 1
+              else . end)')
 
           if (( attempts >= MAX_RETRIES )); then
             gh issue edit "$issue" --remove-label agent:review --add-label agent:needs-human
@@ -68,4 +74,9 @@ jobs:
           } > "$RUNNER_TEMP/retry-comment.md"
           gh issue comment "$issue" --body-file "$RUNNER_TEMP/retry-comment.md"
 
-          gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci
+          # Claim first, as agent-feedback.yml does, so a /agent sent meanwhile is declined.
+          gh issue edit "$issue" --remove-label agent:review --add-label agent:in-progress
+          if ! gh workflow run agent.yml -f issue="$issue" -f branch="$BRANCH" -f reason=ci; then
+            gh issue edit "$issue" --remove-label agent:in-progress --add-label agent:needs-human
+            exit 1
+          fi

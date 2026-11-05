@@ -73,9 +73,9 @@ The agent restarts **on the same branch**, keeping its earlier commits, with the
 
 - Only allowlisted users can use `/agent`. A comment from anyone else is treated as ordinary discussion and ignored.
 - `/agent` must be the first word. Comments without it never start a run, so humans can discuss freely.
-- While a run is in progress the command is declined; send it again when the agent finishes.
+- While a run is in progress, or queued from an earlier `/agent`, the command is declined; send it again when the agent finishes.
 - Only comments and reviews from allowlisted users (and the Actions bot, for CI failure output) are included in the agent's context. Other people's comments are not shown to it.
-- `/agent` is not limited like the CI retries: each revision needs a person to ask for it. If CI then fails on the revision, the usual two automatic retries apply.
+- `/agent` is not limited like the CI retries: each revision needs a person to ask for it. If CI then fails on the revision, it gets a fresh two automatic retries. The count resets at every human-started attempt (`agent:ready`, `/agent`, spec auto-start), which `agent.yml` marks with a hidden `<!-- agent-run -->` in its start comment.
 
 ## Which copy of a workflow runs
 

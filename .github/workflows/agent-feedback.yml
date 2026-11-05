@@ -60,11 +60,20 @@ jobs:
             gh issue comment "$issue" --body "\`/agent\` only applies once the agent has handed the issue over (\`agent:review\` or \`agent:needs-human\`). To start it, add \`agent:ready\`."
             exit 0
           fi
-          if gh issue view "$issue" --json labels --jq '.labels[].name' | grep -qxE 'type:db|area:db'; then
+          if grep -qxE 'type:db|area:db' <<<"$labels"; then
+            gh issue comment "$issue" --body "\`/agent\` can't run here: database work (migrations, RLS, edge functions) is reserved for humans."
             exit 0
           fi
 
+          # Claim the issue before dispatching, so a second /agent sent before
+          # agent.yml starts is declined above instead of starting another run.
+          # agent.yml's gate clears this label if it refuses the run.
+          gh issue edit "$issue" --remove-label agent:review --remove-label agent:needs-human --add-label agent:in-progress
           args=(-f issue="$issue" -f reason=feedback)
-          [[ -n "$branch" ]] && args+=(-f branch="$branch")
-          gh workflow run agent.yml "${args[@]}"
+          if [[ -n "$branch" ]]; then args+=(-f branch="$branch"); fi
+          if ! gh workflow run agent.yml "${args[@]}"; then
+            gh issue edit "$issue" --remove-label agent:in-progress --add-label agent:needs-human
+            gh issue comment "$issue" --body "Couldn't start the agent for this feedback. [Run log]($RUN_URL)"
+            exit 1
+          fi
           gh issue comment "$issue" --body "Picked up feedback from @$ACTOR. The agent is revising${branch:+ \`$branch\`}. [Run log]($RUN_URL)"

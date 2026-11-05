@@ -22,21 +22,17 @@ jobs:
         run: |
           labels=()
 
-          # "### Area" section of the issue form: one comma-separated line.
-          # Some option names contain other area names (kiosk mentions "auth"),
-          # so match whole items: bare names between separators, the rest by prefix.
-          area=$(awk '/^### Area/{f=1; next} /^### /{f=0} f' <<<"$BODY" | tr '\n' ' ' | sed -E 's/^ +| +$//g')
-          bare()   { [[ "$area" =~ (^|,\ )$1(,\ |$) ]] && labels+=("area:$1"); return 0; }
-          prefix() { [[ "$area" == *"$1"* ]] && labels+=("area:$2"); return 0; }
-          prefix "kiosk (state"   kiosk
-          bare   hub
-          bare   discovery
-          bare   games
-          prefix "cv (camera"     cv
-          prefix "mobile (user"   mobile
-          bare   auth
-          prefix "db (migrations" db
-          prefix "ci / tooling"   ci
+          # "### Area" section: one comma-separated line, either the issue form's
+          # options ("cv (camera / hand tracking / pose), hub") or bare names
+          # ("cv, hub", as raise-issue and spec.yml write it). Each item's first
+          # word is the area. Option text must not contain commas.
+          area=$(awk '/^### Area/{f=1; next} /^### /{f=0} f' <<<"$BODY" | tr '\n' ' ')
+          known=" kiosk hub discovery games cv mobile auth db ci "
+          IFS=',' read -ra items <<<"$area"
+          for item in "${items[@]}"; do
+            read -r word _ <<<"$item" || true
+            if [[ -n "$word" && "$known" == *" $word "* ]]; then labels+=("area:$word"); fi
+          done
 
           # Templates that already set a type:* label (feature, bug) win.
           existing=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
