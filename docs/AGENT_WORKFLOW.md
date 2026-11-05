@@ -10,7 +10,7 @@ issue labeled agent:ready (by an allowlisted user)
         │
         ▼
 .github/workflows/agent.yml
-  1. gate: labeler on the allowlist? issue not type:db / area:db?
+  1. gate: labeler and issue author on the allowlist? issue not type:db / area:db?
   2. pick model from the model:* label, label agent:in-progress, comment with model and run link
   3. checkout dev → branch agent/<issue>-<slug>
   4. Claude reads the issue, edits code, runs build/test/lint, commits locally
@@ -23,11 +23,11 @@ human reviews → marks ready → squash-merges into dev
   (or comments /agent → back to the top, on the same branch)
 ```
 
-Claude never holds a token with push rights. It can only read and edit files, run `npm run build|test|lint`, `npx vitest`, and local `git status|diff|log|add|commit`. Pushing, PR creation and label changes are plain workflow steps.
+Claude's allowed tools can only read and edit files, run `npm run build|test|lint`, `npx vitest`, and local `git status|diff|log|add|commit`. Pushing, PR creation and label changes are plain workflow steps. All of this runs in one job, so code executed by build and test sits beside the write token and the Claude token. The allowlist checks on who labels an issue and who wrote it are the main protection against that.
 
 If CI fails on the agent's branch, `agent-retry.yml` posts the failing output on the issue and re-runs the agent on the same branch (see "Automation around the agent" below).
 
-If the agent can't finish (the issue is ambiguous, build or tests fail, or the change needs out-of-scope files), it labels the issue `agent:needs-human` and comments why. Answer in a comment that starts with `/agent` (see "Giving the agent feedback"). Re-adding `agent:ready` also works, but it starts from fresh `dev` and replaces the same `agent/` branch, updating the existing PR.
+If the agent can't finish (the issue is ambiguous, build or tests fail, or the change needs out-of-scope files), it labels the issue `agent:needs-human` and comments why. Answer in a comment that starts with `/agent` (see "Giving the agent feedback"). Re-adding `agent:ready` also works, but it starts from fresh `dev` and force-pushes the same `agent/` branch, updating the existing PR.
 
 ## Labels
 
@@ -37,7 +37,7 @@ Created by `scripts/setup-agent-labels.sh`.
 |---|---|---|
 | `type:*` | feature, fix, refactor, style, docs, chore, db, perf, test | Matches the commit types in `GIT_CONVENTIONS.md`. Bug and feature templates apply theirs automatically. The task template prefills a `chore:` title, and triage labels from that prefix. |
 | `area:*` | kiosk, hub, discovery, games, cv, mobile, auth, db, ci | Added at triage from the template's Area field. |
-| `model:*` | sonnet (default), opus | Optional. Picks the model for the run via the Claude Code `sonnet` / `opus` alias, i.e. the newest model of that family in the pinned `claude-code-action`. Only one allowed; with two the run is refused. `spec.yml` always uses `sonnet`. |
+| `model:*` | sonnet (default), opus | Optional. Picks the model for the run: `claude-sonnet-5-5` or `claude-opus-5-5`. Only one allowed; with two the run is refused. |
 | `spec:*` | request, review | Optional. `request` has Claude draft a full spec from a rough issue; `review` marks the drafted spec as waiting for a human. |
 | `agent:*` | ready → in-progress → review, or needs-human | `ready` is the only one humans add; the workflow manages the rest. |
 
@@ -92,6 +92,7 @@ So while `dev` is ahead of `main`, a `/agent` PR review runs `dev`'s `agent-feed
 
 Add `agent:ready` only once an issue meets this bar:
 
+- **Opened by someone on the allowlist.** GitHub can't stop other people opening issues in a public repo, so the agent refuses any issue whose author isn't on `AGENT_ALLOWLIST`, whoever adds the label. If someone else reports something worth doing, open a new issue yourself and rewrite the request in your own words.
 - **Self-contained.** The agent sees only the issue title, body, labels and comments, plus the repo. Include anything that lives in someone's head.
 - **Concrete acceptance criteria.** A checklist that defines done.
 - **Scoped.** One logical change. Split bigger work into several issues.
@@ -102,7 +103,7 @@ Good fits: bug fixes with clear repro, pure logic and hooks, mobile UI tweaks, t
 
 ## Reviewing agent PRs
 
-Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<issue>`. Review them like any other PR. To ask for changes, push commits yourself or use `/agent` (see "Giving the agent feedback"). Pushing your own commits triggers CI normally. To throw the work away and start over, re-add `agent:ready`, which restarts from `dev` and replaces the branch.
+Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<issue>`. Review them like any other PR. To ask for changes, push commits yourself or use `/agent` (see "Giving the agent feedback"). Pushing your own commits triggers CI normally. To throw the work away and start over, re-add `agent:ready`, which restarts from `dev` and force-pushes the branch.
 
 ## Setup (one-time, repo admin)
 
@@ -112,7 +113,7 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
    ```
    Every agent run uses that account's subscription limits. The token lasts about a year; regenerate it before it expires, or when the owner leaves the project.
 2. **Labels.** `scripts/setup-agent-labels.sh`
-3. **Allowlist.** Set the users who may start runs. Until this is set, every workflow refuses to run:
+3. **Allowlist.** Set the users who may start runs and whose issues the agent will work on. If unset, it falls back to `clow427,amernor`:
    ```bash
    gh variable set AGENT_ALLOWLIST -b "clow427,amernor" -R Spark-Me2You/me2you
    ```
@@ -126,5 +127,6 @@ Agent PRs are drafts from `agent/<issue>-<slug>` branches and contain `Closes #<
 
 - The repo is public, so GitHub-hosted runner minutes are free. Jobs are capped at 60 minutes by the workflow, and Claude at 80 turns.
 - Runs are serialized per issue (`concurrency`), but different issues run in parallel. Each one draws on the same subscription.
-- Only allowlisted users can start a run (default `clow427,amernor`). To change the list without a PR, set the `AGENT_ALLOWLIST` repo variable to a comma-separated list of usernames: `gh variable set AGENT_ALLOWLIST -b "clow427,amernor"`. If anyone else adds `agent:ready`, the label is removed and a comment explains why. This also limits prompt-injection exposure from public issues: the person who adds the label is vouching for the issue content.
+- Only allowlisted users can start a run, and only on issues opened by an allowlisted user (default `clow427,amernor`). To change the list without a PR, set the `AGENT_ALLOWLIST` repo variable to a comma-separated list of usernames: `gh variable set AGENT_ALLOWLIST -b "clow427,amernor"`. If either check fails, the label is removed and a comment explains why. This limits prompt-injection exposure from public issues. `spec.yml` checks only who added `spec:request`, but a drafted spec still can't start the agent unless the issue's author is on the list.
 - The allowlist controls who can start runs, not who can read the token. Anyone with write access can push a branch whose workflow reads repo secrets. The token is therefore stored in the `agent` Environment (the `work` job sets `environment: agent`), which is limited to `main` branches, so a workflow on any other branch can't read it. The environment has no required reviewers, so a run starts as soon as an allowlisted user adds `agent:ready`. To require approval for each run again, add required reviewers under Settings → Environments → agent. Don't also keep a repo-level copy.
+- Earlier hardening work that was paused (closed PRs #125-127, the validate-and-resume plan) is archived in a [private doc](https://claude.ai/artifact/RHqW7EWHhGMGgCinMknuwn). Ask a repo admin for access.
