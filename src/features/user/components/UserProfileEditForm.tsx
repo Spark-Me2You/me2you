@@ -94,7 +94,7 @@ export const UserProfileEditForm: React.FC<UserProfileEditFormProps> = ({
   const displayError = localError || error;
 
   return (
-    <div className="relative mx-auto flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+    <div className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
       <img src={logo} alt="me2you" className="pointer-events-none absolute top-[7px] left-1/2 z-20 w-[270px] origin-top -translate-x-1/2 rotate-[3.41deg] select-none" />
 
       <div className="flex min-h-0 flex-1 flex-col items-center overflow-x-hidden overflow-y-auto px-[30px] pt-[120px] pb-[40px] [-webkit-overflow-scrolling:touch]">

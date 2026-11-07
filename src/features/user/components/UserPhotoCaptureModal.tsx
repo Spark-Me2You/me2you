@@ -67,7 +67,7 @@ export const UserPhotoCaptureModal: React.FC<UserPhotoCaptureModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-[rgba(0,0,0,0.85)]" onClick={onClose}>
-      <div className="flex max-h-[92vh] w-full max-w-[430px] flex-col overflow-hidden rounded-t-[24px] bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[92dvh] w-full max-w-[430px] flex-col overflow-hidden rounded-t-[24px] bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-3">
           <h2 className="m-0 font-jersey text-[28px] tracking-[2px] text-[#e44805] lowercase">update photo</h2>
           <button

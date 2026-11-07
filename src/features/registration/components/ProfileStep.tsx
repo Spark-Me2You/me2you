@@ -12,7 +12,7 @@ const FIELD_GROUP = 'mb-7 flex flex-col items-start';
 const FIELD_LABEL =
   'mx-0 mt-0 mb-2 inline-block bg-[#1405e4] px-[10px] py-[2px] font-jersey text-[28px] leading-[1.1] tracking-[5.44px] text-white';
 const FIELD_INPUT =
-  "box-border min-h-[34px] w-full rounded-[10px] border-0 bg-white px-3 py-2 font-['Andale_Mono','Courier_New',monospace] text-[12px] tracking-[-0.48px] text-black shadow-[inset_-1px_-1px_4px_0px_rgba(0,0,0,0.25),inset_0px_4px_4px_0px_rgba(0,0,0,0.25)] focus:outline-2 focus:outline-offset-[-2px] focus:outline-[#d3e405]";
+  "box-border min-h-[34px] w-full rounded-[10px] border-0 bg-white px-3 py-2 font-['Andale_Mono','Courier_New',monospace] text-[16px] tracking-[-0.48px] text-black shadow-[inset_-1px_-1px_4px_0px_rgba(0,0,0,0.25),inset_0px_4px_4px_0px_rgba(0,0,0,0.25)] focus:outline-2 focus:outline-offset-[-2px] focus:outline-[#d3e405]";
 const NEXT_IMG = 'block h-[51px] w-[55px]';
 
 interface ProfileStepProps {
@@ -81,7 +81,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
 
   return (
     <>
-      <div className="relative flex min-h-screen flex-col pt-[130px]">
+      <div className="relative flex min-h-dvh flex-col pt-[130px]">
         <div className="mt-0 mr-0 mb-2 ml-[10px] inline-block bg-magenta px-[18px] py-2">
           <p className="m-0 font-averia text-[18px] font-normal tracking-[3px] text-white">profile creation</p>
         </div>

@@ -18,7 +18,7 @@ import { SuccessStep } from './SuccessStep';
 import me2youLogo from '../../../assets/me2you.png';
 
 const PAGE =
-  'relative mx-auto h-screen w-full max-w-[430px] overflow-x-hidden overflow-y-auto bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] [-webkit-overflow-scrolling:touch]';
+  'relative mx-auto h-dvh w-full max-w-[430px] overflow-x-hidden overflow-y-auto bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] [-webkit-overflow-scrolling:touch]';
 const LOGO =
   'pointer-events-none absolute top-[30px] left-1/2 z-20 w-[270px] origin-top -translate-x-1/2 rotate-[2deg] scale-[1.3] select-none';
 
@@ -114,7 +114,7 @@ const RegistrationWizard: React.FC = () => {
       {currentStep !== 'success' && (
         <img src={me2youLogo} alt="me2you" className={LOGO} />
       )}
-      <div className="relative min-h-screen">
+      <div className="relative min-h-dvh">
         {renderStep()}
       </div>
     </div>
@@ -185,8 +185,8 @@ export const RegistrationPage: React.FC = () => {
     return (
       <div className={PAGE}>
         <img src={me2youLogo} alt="me2you" className={LOGO} />
-        <div className="relative min-h-screen">
-          <div className="flex min-h-screen items-center justify-center font-jersey text-[32px] text-[#333]">
+        <div className="relative min-h-dvh">
+          <div className="flex min-h-dvh items-center justify-center font-jersey text-[32px] text-[#333]">
             validating...
           </div>
         </div>

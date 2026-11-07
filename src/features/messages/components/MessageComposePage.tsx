@@ -46,7 +46,7 @@ export function MessageComposePage({ tokenId, recipientName }: MessageComposePag
   };
 
   return (
-    <div className="mx-auto box-border flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] px-4 py-6">
+    <div className="mx-auto box-border flex min-h-dvh w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] px-4 py-6">
       <div className="flex w-full flex-col gap-4 rounded-[20px] bg-[rgba(255,255,255,0.9)] px-6 py-8 shadow-[0_4px_20px_rgba(0,0,0,0.15)]">
         <p className="m-0 font-jersey text-[20px] tracking-[1px] text-[#555] lowercase">
           to: <span className="text-[#e44805]">{recipientName}</span>

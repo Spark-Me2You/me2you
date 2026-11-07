@@ -19,7 +19,7 @@ export function ClaimSuccessPage() {
   const icon = display?.icon ? (ICON_MAP[display.icon] ?? '✅') : '✅';
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
       <img src={logo} alt="me2you" className="pointer-events-none absolute top-[7px] left-1/2 z-20 w-[270px] origin-top -translate-x-1/2 rotate-[3.41deg] select-none" />
 
       <div className="flex flex-1 items-center justify-center px-[30px] pt-[120px] pb-10">
