@@ -17,7 +17,7 @@ export const GamesView: React.FC = () => {
   // restore it here.
   useEffect(() => () => setCvCursorEnabled(true), [setCvCursorEnabled]);
 
-  const handleSelectGame =(gameId: string) => {
+  const handleSelectGame = (gameId: string) => {
     setActiveGameId(gameId);
   };
 
