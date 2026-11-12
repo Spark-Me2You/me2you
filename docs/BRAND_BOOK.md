@@ -175,7 +175,7 @@ Reach for a scale step first in new work. Fluid sizes on non-scaled views use
 | **Label chip** | `bg-orange` + `font-jersey tracking-brand text-ink`, square corners |
 | **Photo well** | `bg-white shadow-well` with a large radius |
 | **QR tab** | `PinnedRegistrationQR`: `bg-magenta/93 shadow-glass-card`, half-rounded on the inner edge |
-| **Ozzy** | `otter_default_rough_draft.png` (full) and `hand.png` (pointing at the QR) |
+| **Ozzy** | `otter_default_rough_draft.png` (full; tilted 83° at its Home size to peek in from the left edge in `ReturnHomeOverlay`) and `hand.png` (pointing at the QR) |
 | **Arrows** | `arrow2.svg` and `pink_back_arrow.svg`, rotated to point at the target |
 
 Rotations are part of the look: keep them small and use them on decorative pieces and panels,
@@ -228,6 +228,8 @@ Defined as `--animate-*` in `theme.css`. Keep motion short and springy:
 | `animate-dot-pulse` | "loading . . ." dots; stagger each dot with `[animation-delay:…]` |
 | `animate-info-trace` | Dwell-to-click ring |
 | `animate-inactivity-swipe` | Idle-screen nudge: the faded otter hand swipes up-right three times (`InactivityHint`) |
+| `animate-ozzy-peek` | Ozzy sliding in from the left edge (return-home warning, `ReturnHomeOverlay`) |
+| `animate-return-wipe-in`, `animate-return-wipe-out` | A `bg-page-gradient` panel (the Home background) wiping left → right over the screen, then off it, when the kiosk times out back to Home |
 | `animate-completion-flash` | Discovery hold-timer complete |
 | `animate-timer-pulse`, `animate-timer-flash` | Game countdowns |
 

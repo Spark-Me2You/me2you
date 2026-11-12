@@ -122,6 +122,10 @@
   --animate-timer-flash: timer-flash 0.5s infinite;
   /* 3 passes; INACTIVITY_HINT_DURATION_MS in InactivityHint.tsx mirrors 1600ms × 3. */
   --animate-inactivity-swipe: inactivity-swipe 1600ms ease-in-out 3 both;
+  /* Return-home warning. RETURN_HOME_TIMELINE in ReturnHomeOverlay.tsx mirrors the wipe durations. */
+  --animate-ozzy-peek: ozzy-peek 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-return-wipe-in: return-wipe-in 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  --animate-return-wipe-out: return-wipe-out 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
 
   @keyframes fade-in {
     from {
@@ -149,6 +153,20 @@
     85% { opacity: 0.45; }
     /* 540px up = half the 1080px idle screen (75% → 25% of its height); 298px across. */
     100% { opacity: 0; translate: 298px -540px; }
+  }
+  /* Ozzy slides in from past the left edge with a small overshoot (translate only; rotate is a utility). */
+  @keyframes ozzy-peek {
+    0% { translate: -200px 0; }
+    70% { translate: 10px 0; }
+    100% { translate: 0 0; }
+  }
+  @keyframes return-wipe-in {
+    from { translate: -100% 0; }
+    to { translate: 0 0; }
+  }
+  @keyframes return-wipe-out {
+    from { translate: 0 0; }
+    to { translate: 100% 0; }
   }
   @keyframes info-trace {
     from { stroke-dashoffset: 100; }

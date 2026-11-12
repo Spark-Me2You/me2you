@@ -1,15 +1,18 @@
 /**
- * Inactivity tracker — pure logic behind the idle-screen "use your hand" hint.
+ * Inactivity tracker — pure logic behind the kiosk's inactivity prompts (the idle-screen
+ * "use your hand" hint and the return-home warning on every other screen).
  *
- * Someone counts as present while a screen-facing face was seen within the last
- * `presenceGraceMs` (so brief detector dropouts don't reset the clock). While they
- * are present and not using the CV cursor, the idle clock runs; once it reaches
- * `idleMs` the hint fires and the clock restarts after the hint finishes, so an
- * idle visitor sees it again every `idleMs`.
+ * While someone counts as present and isn't active, the idle clock runs; once it reaches
+ * `idleMs` the prompt fires. The clock is paused while the prompt plays and restarts once
+ * it ends, so an idle visitor sees it again every `idleMs`. Losing presence or becoming
+ * active resets the clock and cancels a running prompt.
+ *
+ * What "present" and "active" mean is up to the caller (see useInactivityPrompt.ts): the
+ * idle hint needs a screen-facing face, the return-home timer treats everyone as present.
  */
 
 export interface InactivityConfig {
-  /** Present-but-inactive time before the hint plays. */
+  /** Present-but-inactive time before the prompt plays. */
   idleMs: number;
   /** How long a person still counts as present after their face was last seen. */
   presenceGraceMs: number;
@@ -23,12 +26,12 @@ export const DEFAULT_INACTIVITY_CONFIG: InactivityConfig = {
 export interface InactivityInput {
   /** performance.now() */
   now: number;
-  /** Time a screen-facing face was last detected, or null if never. */
-  lastFaceAt: number | null;
-  /** The visitor is using the CV cursor (ready pose shown or pinching). */
+  /** Someone counts as present (see isPresent). */
+  present: boolean;
+  /** The visitor is interacting (CV cursor, hand, game input...). */
   active: boolean;
-  /** The hint animation is currently playing. */
-  hinting: boolean;
+  /** The prompt is currently playing. */
+  prompting: boolean;
 }
 
 export interface InactivityState {
@@ -36,7 +39,7 @@ export interface InactivityState {
   idleSince: number | null;
 }
 
-export type InactivityAction = "none" | "start-hint" | "cancel-hint";
+export type InactivityAction = "none" | "start-prompt" | "cancel-prompt";
 
 export const INITIAL_INACTIVITY_STATE: InactivityState = { idleSince: null };
 
@@ -49,19 +52,19 @@ export function stepInactivity(
   input: InactivityInput,
   config: InactivityConfig = DEFAULT_INACTIVITY_CONFIG,
 ): { state: InactivityState; action: InactivityAction } {
-  const { now, lastFaceAt, active, hinting } = input;
+  const { now, present, active, prompting } = input;
 
-  // Nobody watching, or they're already using the cursor: reset and stop any hint.
-  if (!isPresent(now, lastFaceAt, config.presenceGraceMs) || active) {
-    return { state: { idleSince: null }, action: hinting ? "cancel-hint" : "none" };
+  // Nobody watching, or they're interacting: reset and stop any prompt.
+  if (!present || active) {
+    return { state: { idleSince: null }, action: prompting ? "cancel-prompt" : "none" };
   }
 
-  // The clock is paused while the hint plays and restarts once it ends.
-  if (hinting) return { state: { idleSince: null }, action: "none" };
+  // The clock is paused while the prompt plays and restarts once it ends.
+  if (prompting) return { state: { idleSince: null }, action: "none" };
 
   const idleSince = state.idleSince ?? now;
   if (now - idleSince >= config.idleMs) {
-    return { state: { idleSince: null }, action: "start-hint" };
+    return { state: { idleSince: null }, action: "start-prompt" };
   }
   return { state: { idleSince }, action: "none" };
 }
