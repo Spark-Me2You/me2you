@@ -31,10 +31,6 @@ All models are fetched from `https://storage.googleapis.com/mediapipe-models/`:
 For offline development without internet access, you can download models locally:
 
 ```bash
-# Option 1: Use the download script (recommended)
-npm run download-models
-
-# Option 2: Manual download
 mkdir -p public/models
 
 # Download Image Segmenter (selfie multiclass)
@@ -42,10 +38,7 @@ curl -o public/models/selfie_multiclass_256x256.tflite \
   https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite
 ```
 
-Then update `.env.local` to use local models (if you implement this feature):
-```env
-VITE_USE_LOCAL_MODELS=true
-```
+The app does not read local model files today: model paths are set in `src/core/cv/mediapipe-config.ts`, so point the relevant `modelAssetPath` at `/models/...` to use them.
 
 ## Notes
 

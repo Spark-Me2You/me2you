@@ -150,6 +150,6 @@ public/
 ├── accessories/      # hat.svg, sunglasses.svg, balloon.svg
 ├── animations/       # mii walk-cycle frames (default, leftstep, rightstep, …)
 ├── badges/           # badge artwork PNGs
-├── models/           # MediaPipe WASM/tflite models (downloaded via scripts/download-models.ts)
+├── models/           # optional local MediaPipe models (the app loads them from the CDN)
 └── screensaver/      # screensaver content
 ```
