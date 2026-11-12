@@ -7,6 +7,9 @@ on:
     branches: [main, dev]
   workflow_dispatch: # used by agent.yml to run CI on agent PR branches
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -17,6 +20,13 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint
+      # Lint is a ratchet: the number is the current warning count. Lower it as
+      # warnings are fixed, never raise it.
+      - run: npm run lint -- --max-warnings 38
       - run: npm run build
-      - run: npm test
+      # Enforces the coverage floor set in vitest.config.ts.
+      - run: npm run test:coverage
+      # Informational for now: reports known vulnerabilities in production deps.
+      - name: Audit production dependencies
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: true
