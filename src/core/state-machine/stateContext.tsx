@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { AppState } from './appStateMachine';
 
 interface StateContextType {
@@ -12,29 +12,17 @@ interface StateProviderProps {
   children: React.ReactNode;
 }
 
-/**
- * State Provider Component
- * TODO: Implement state machine context provider
- */
+/** State Provider Component: holds the kiosk's current app state. */
 export const StateProvider: React.FC<StateProviderProps> = ({ children }) => {
   const [currentState, setCurrentState] = useState<AppState>(AppState.IDLE);
 
-  const transitionTo = (state: AppState) => {
-    // TODO: Implement state transition with validation
-    setCurrentState(state);
-  };
+  const transitionTo = useCallback((state: AppState) => setCurrentState(state), []);
+  const value = useMemo(() => ({ currentState, transitionTo }), [currentState, transitionTo]);
 
-  return (
-    <StateContext.Provider value={{ currentState, transitionTo }}>
-      {children}
-    </StateContext.Provider>
-  );
+  return <StateContext.Provider value={value}>{children}</StateContext.Provider>;
 };
 
-/**
- * Hook to access state machine
- * TODO: Implement state machine hook
- */
+/** Hook to access the state machine. */
 export const useAppState = () => {
   const context = useContext(StateContext);
   if (context === undefined) {

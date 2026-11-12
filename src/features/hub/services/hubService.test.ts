@@ -88,11 +88,7 @@ describe('hubService', () => {
       await expect(hubService.getAllOrgUsers('org')).resolves.toHaveLength(1)
     })
 
-    // KNOWN BUG: the code documents "keep first image found", but the
-    // `usersWithImages.has()` check runs before an `await` inside Promise.all, so
-    // every duplicate passes it and the last one to resolve wins. Remove `.fails`
-    // once the check/set is made atomic.
-    it.fails('keeps the first image when a user has several', async () => {
+    it('keeps the first image when a user has several', async () => {
       routeTables({
         gesture_image: {
           data: [
@@ -157,6 +153,48 @@ describe('hubService', () => {
 
       routeTables({ gesture_image: { data: [] }, user: { error: { message: 'usr' } } })
       await expect(hubService.getAllOrgUsers('org')).rejects.toThrow('Failed to fetch users: usr')
+    })
+  })
+
+  describe('getUserById', () => {
+    it('requires both ids', async () => {
+      await expect(hubService.getUserById('', 'org')).rejects.toThrow('required')
+      await expect(hubService.getUserById('u', '')).rejects.toThrow('required')
+    })
+
+    it('returns the user with a signed image URL, scoped to the org and public', async () => {
+      const userQuery = queryResult({ data: userRow('a', '2026-01-01', { accessory: 'hat' }) })
+      supabaseMock.from.mockImplementation((t: string) =>
+        t === 'user' ? userQuery : queryResult({ data: { storage_path: 'p.jpg' } }),
+      )
+
+      const found = await hubService.getUserById('a', 'org')
+
+      expect(found?.user.id).toBe('a')
+      expect(found?.user.accessory).toBe('hat')
+      expect(found?.profileImageUrl).toBe('https://signed/p.jpg')
+      expect(userQuery.eq).toHaveBeenCalledWith('id', 'a')
+      expect(userQuery.eq).toHaveBeenCalledWith('org_id', 'org')
+      expect(userQuery.eq).toHaveBeenCalledWith('visibility', 'public')
+      expect(userQuery.maybeSingle).toHaveBeenCalled()
+    })
+
+    it('returns null when the user is not found', async () => {
+      supabaseMock.from.mockReturnValue(queryResult({ data: null }))
+      await expect(hubService.getUserById('a', 'org')).resolves.toBeNull()
+    })
+
+    it('keeps the user with a null image when there is no photo or signing fails', async () => {
+      supabaseMock.from.mockImplementation((t: string) =>
+        t === 'user' ? queryResult({ data: userRow('a', '2026-01-01') }) : queryResult({ data: { storage_path: 'p.jpg' } }),
+      )
+      getPhotoUrl.mockRejectedValue(new Error('sign failed'))
+      await expect(hubService.getUserById('a', 'org')).resolves.toMatchObject({ profileImageUrl: null })
+    })
+
+    it('throws when the user query fails', async () => {
+      supabaseMock.from.mockReturnValue(queryResult({ error: { message: 'boom' } }))
+      await expect(hubService.getUserById('a', 'org')).rejects.toThrow('Failed to fetch user: boom')
     })
   })
 

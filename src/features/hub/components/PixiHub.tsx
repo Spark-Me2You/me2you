@@ -124,12 +124,38 @@ export const PixiHub: React.FC<{
   const replaceFaceRef = useRef<((ownerId: string, storagePath: string) => Promise<void>) | null>(null);
   const showRoomRef = useRef<((roomId: RoomId) => void) | null>(null);
   const roomIdRef = useRef(roomId);
+  // Latest callbacks, read from inside the Pixi effect so it doesn't re-initialise when they change.
+  const onCharacterClickRef = useRef(onCharacterClick);
+  const onRoomChangeRef = useRef(onRoomChange);
+  useEffect(() => {
+    onCharacterClickRef.current = onCharacterClick;
+    onRoomChangeRef.current = onRoomChange;
+  });
   const { transitionTo } = useAppState();
   const { cursorStateRef } = useCvCursorEnabled();
 
   useEffect(() => {
     let isMounted = true;
     let removePressListeners: (() => void) | null = null;
+
+    // Face textures are loaded from one-off signed URLs, so each is its own Assets cache
+    // entry. Track them to unload a face when it is replaced and all of them on cleanup.
+    // (Body frames, backgrounds and accessories are shared and stay cached.)
+    const faceUrlByTexture = new Map<unknown, string>();
+
+    function unloadFace(url: string) {
+      Promise.resolve(Assets.unload(url)).catch(() => {});
+    }
+
+    async function loadFace(url: string) {
+      const texture = await Assets.load(url);
+      if (!isMounted) {
+        unloadFace(url);
+        return texture;
+      }
+      faceUrlByTexture.set(texture, url);
+      return texture;
+    }
 
     const initPixiApp = async () => {
       if (!canvasRef.current) return;
@@ -628,9 +654,15 @@ export const PixiHub: React.FC<{
           async function replaceFace(storagePath: string) {
             try {
               const faceUrl = await storageService.getPhotoUrl(storagePath);
-              const newTexture = await Assets.load(faceUrl);
+              const newTexture = await loadFace(faceUrl);
               if (faceSprite) {
+                const oldTexture = faceSprite.texture;
+                const oldUrl = faceUrlByTexture.get(oldTexture);
                 faceSprite.texture = newTexture;
+                if (oldUrl && oldTexture !== newTexture) {
+                  faceUrlByTexture.delete(oldTexture);
+                  unloadFace(oldUrl);
+                }
               }
             } catch (err) {
               console.error("[PixiHub] Failed to replace face texture:", err);
@@ -737,7 +769,7 @@ export const PixiHub: React.FC<{
           rooms[nextRoom].walkers.push(current.handle);
           current.handle.moveToRoom(nextRoom);
           enterRoom(nextRoom);
-          onRoomChange(nextRoom);
+          onRoomChangeRef.current(nextRoom);
         }
 
         /** Advance the press; called on pointer movement and every frame (for hold time). */
@@ -760,7 +792,7 @@ export const PixiHub: React.FC<{
         function finishPress(current: WalkerPress) {
           press = null;
           if (current.gesture.isDragging) current.handle.drop();
-          else onCharacterClick?.(current.clickData);
+          else onCharacterClickRef.current?.(current.clickData);
         }
 
         const pointerPosition = new Point();
@@ -894,7 +926,21 @@ export const PixiHub: React.FC<{
 
         const walkersMap = new Map<string, WalkerHandle>();
 
-        async function spawnWalker(row: CroppedImageRow) {
+        // Spawns in flight, by owner. A second row for the same owner (duplicates in one
+        // batch, or a realtime INSERT during the initial load) waits for the first spawn
+        // and then takes the existing-walker path, instead of spawning a second sprite.
+        const spawning = new Map<string, Promise<void>>();
+
+        function spawnWalker(row: CroppedImageRow): Promise<void> {
+          const pending = spawning.get(row.owner_id);
+          if (pending) return pending.then(() => spawnWalker(row));
+
+          const spawn = spawnWalkerUnguarded(row).finally(() => spawning.delete(row.owner_id));
+          spawning.set(row.owner_id, spawn);
+          return spawn;
+        }
+
+        async function spawnWalkerUnguarded(row: CroppedImageRow) {
           const existing = walkersMap.get(row.owner_id);
           if (existing) {
             await existing.replaceFace(row.storage_path);
@@ -903,7 +949,7 @@ export const PixiHub: React.FC<{
 
           try {
             const faceUrl = await storageService.getPhotoUrl(row.storage_path);
-            const faceTexture = await Assets.load(faceUrl);
+            const faceTexture = await loadFace(faceUrl);
             if (!isMounted) return;
 
             const roomId = assignRoom(row.owner_id);
@@ -1073,11 +1119,13 @@ export const PixiHub: React.FC<{
       replaceFaceRef.current = null;
       showRoomRef.current = null;
       if (appRef.current) {
-        appRef.current.destroy();
+        appRef.current.destroy({ removeView: true }, { children: true });
         appRef.current = null;
       }
+      faceUrlByTexture.forEach(unloadFace);
+      faceUrlByTexture.clear();
     };
-  }, [transitionTo, cursorStateRef]);
+  }, [orgId, cursorStateRef]);
 
   useEffect(() => {
     roomIdRef.current = roomId;

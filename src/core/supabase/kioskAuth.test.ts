@@ -44,6 +44,7 @@ describe('kioskAuthService', () => {
         access_token: 'access',
         refresh_token: 'refresh',
       })
+      expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
       expect(supabaseMock.auth.signOut.mock.invocationCallOrder[0]).toBeLessThan(
         supabaseMock.auth.setSession.mock.invocationCallOrder[0],
       )
@@ -108,6 +109,6 @@ describe('kioskAuthService', () => {
   it('exitKioskMode signs out', async () => {
     supabaseMock.auth.signOut.mockResolvedValue({ error: null })
     await kioskAuthService.exitKioskMode()
-    expect(supabaseMock.auth.signOut).toHaveBeenCalled()
+    expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
 })

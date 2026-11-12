@@ -1,47 +1,13 @@
 /**
  * App State Machine
- * TODO: Define state definitions and transitions (replaces routing)
+ * The kiosk's top-level screens (replaces routing). Views move between them with `transitionTo`.
  */
 
 export const AppState = {
   IDLE: 'IDLE',
-  AUTH: 'AUTH',
-  ONBOARDING: 'ONBOARDING',
   HUB: 'HUB',
   DISCOVERY: 'DISCOVERY',
   GAMES: 'GAMES',
 } as const;
 
 export type AppState = typeof AppState[keyof typeof AppState];
-
-export type StateTransition = {
-  from: AppState;
-  to: AppState;
-  event: string;
-};
-
-/**
- * Valid state transitions
- * TODO: Define all valid state transitions
- */
-export const transitions: StateTransition[] = [
-  { from: AppState.IDLE, to: AppState.AUTH, event: 'USER_DETECTED' },
-  { from: AppState.AUTH, to: AppState.ONBOARDING, event: 'NEW_USER' },
-  { from: AppState.AUTH, to: AppState.HUB, event: 'EXISTING_USER' },
-  { from: AppState.IDLE, to: AppState.DISCOVERY, event: 'TRY_DISCOVERY' },
-  { from: AppState.DISCOVERY, to: AppState.IDLE, event: 'EXIT_DISCOVERY' },
-{ from: AppState.IDLE, to: AppState.HUB, event: 'VIEW_HUB' },
-  { from: AppState.HUB, to: AppState.IDLE, event: 'EXIT_HUB' },
-  { from: AppState.IDLE, to: AppState.GAMES, event: 'OPEN_GAMES' },
-  { from: AppState.GAMES, to: AppState.IDLE, event: 'EXIT_GAMES' },
-  // TODO: Add more transitions
-];
-
-/**
- * Check if transition is valid
- * TODO: Implement transition validation
- */
-export const canTransition = (_from: AppState, _to: AppState): boolean => {
-  // TODO: Implement transition validation logic
-  return true;
-};

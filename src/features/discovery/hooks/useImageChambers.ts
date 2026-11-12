@@ -38,7 +38,6 @@ const preloadImages = (images: RandomImageData[]): Promise<void[]> => {
         new Promise<void>((resolve) => {
           const preloadImg = new Image();
           preloadImg.onload = () => {
-            console.log('[preloadImages] Loaded:', img.image.id);
             resolve();
           };
           preloadImg.onerror = () => {
@@ -90,14 +89,12 @@ export const useImageChambers = (
    */
   useEffect(() => {
     if (!orgId || categories.length === 0) {
-      console.log('[useImageChambers] Skipping initialization: no orgId or categories');
       return;
     }
 
     // CRITICAL: Prevent duplicate initialization
     // This guards against React Strict Mode, dependency changes, or component remounts
     if (hasInitializedRef.current) {
-      console.log('[useImageChambers] Already initialized, skipping duplicate fetch');
       return;
     }
     hasInitializedRef.current = true;
@@ -105,7 +102,6 @@ export const useImageChambers = (
     const initializeChambers = async () => {
       // CRITICAL: Mark as initializing to prevent refills during init
       isInitializingRef.current = true;
-      console.log('[useImageChambers] Initializing chambers for:', categories);
 
       const initialChambers: Record<string, ImageChamber> = {};
 
@@ -121,18 +117,11 @@ export const useImageChambers = (
               DEFAULT_BATCH_SIZE
             );
 
-            console.log(
-              `[useImageChambers] Fetched initial batch for ${category}: ${images.length} images`
-            );
 
             // CRITICAL: Preload images into browser cache
             // This ensures instant display when user makes a gesture
             if (images.length > 0) {
-              preloadImages(images).then(() => {
-                console.log(
-                  `[useImageChambers] Preloaded ${images.length} images for ${category}`
-                );
-              });
+              void preloadImages(images);
             }
 
             // Determine total count based on batch size
@@ -156,17 +145,11 @@ export const useImageChambers = (
             } else if (images.length < DEFAULT_BATCH_SIZE) {
               // Got fewer than requested - we know exact total count
               totalCount = images.length;
-              console.log(
-                `[useImageChambers] Small category ${category}: exactly ${totalCount} images`
-              );
             } else {
               // Got full batch - need to query for exact count
               totalCount = await discoveryService.getImageCount(
                 orgId,
                 category
-              );
-              console.log(
-                `[useImageChambers] Large category ${category}: ${totalCount} total images`
               );
             }
 
@@ -180,13 +163,6 @@ export const useImageChambers = (
               error: null,
             };
 
-            console.log(
-              `[useImageChambers] Chamber initialized for ${category}:`,
-              images.length,
-              'images loaded,',
-              totalCount,
-              'total available'
-            );
           } catch (error) {
             // Error during initialization - create error chamber
             const errorMessage =
@@ -221,7 +197,6 @@ export const useImageChambers = (
       // This allows refills to proceed normally
       isInitializingRef.current = false;
 
-      console.log('[useImageChambers] All chambers initialized');
     };
 
     initializeChambers();
@@ -239,7 +214,7 @@ export const useImageChambers = (
   const triggerRefill = useCallback(
     async (
       category: string,
-      currentCount: number,
+      _currentCount: number,
       totalCount: number | null,
       lastRefillTime: number
     ) => {
@@ -249,25 +224,16 @@ export const useImageChambers = (
 
       // SAFEGUARD 0: Don't refill during initialization
       if (isInitializingRef.current) {
-        console.log(
-          `[useImageChambers] Refill blocked for ${category}: still initializing`
-        );
         return;
       }
 
       // SAFEGUARD 1: Don't refill if totalCount is 0 or 1
       if (totalCount !== null && totalCount <= 1) {
-        console.log(
-          `[useImageChambers] Refill blocked for ${category}: totalCount=${totalCount}`
-        );
         return;
       }
 
       // SAFEGUARD 2: Prevent concurrent refills using ref
       if (refillingRef.current.has(category)) {
-        console.log(
-          `[useImageChambers] Refill blocked for ${category}: already refilling`
-        );
         return;
       }
 
@@ -275,9 +241,6 @@ export const useImageChambers = (
       const now = Date.now();
       const timeSinceLastRefill = now - lastRefillTime;
       if (timeSinceLastRefill < MIN_REFILL_INTERVAL_MS) {
-        console.log(
-          `[useImageChambers] Refill blocked for ${category}: rate limit (${timeSinceLastRefill}ms < ${MIN_REFILL_INTERVAL_MS}ms)`
-        );
         return;
       }
 
@@ -286,9 +249,6 @@ export const useImageChambers = (
       refillingRef.current.add(category);
 
       try {
-        console.log(
-          `[useImageChambers] Refilling chamber for ${category}: current=${currentCount}, threshold=${REFILL_THRESHOLD}`
-        );
 
         // Fetch new batch
         const newImages = await discoveryService.fetchRandomImageBatch(
@@ -297,17 +257,10 @@ export const useImageChambers = (
           DEFAULT_BATCH_SIZE
         );
 
-        console.log(
-          `[useImageChambers] Refill complete for ${category}: fetched ${newImages.length} new images`
-        );
 
         // CRITICAL: Preload new images into browser cache
         if (newImages.length > 0) {
-          preloadImages(newImages).then(() => {
-            console.log(
-              `[useImageChambers] Preloaded ${newImages.length} refill images for ${category}`
-            );
-          });
+          void preloadImages(newImages);
         }
 
         // Update chamber with new images using functional state update
@@ -322,9 +275,6 @@ export const useImageChambers = (
             currentChamber.totalCount === null
           ) {
             updatedTotalCount = currentCount + newImages.length;
-            console.log(
-              `[useImageChambers] Detected total count for ${category}: ${updatedTotalCount}`
-            );
           }
 
           return {
@@ -404,9 +354,6 @@ export const useImageChambers = (
       // CRITICAL FIX: For 1-image categories, DON'T pop from chamber
       // Just return the same image every time
       if (chamber.totalCount === 1) {
-        console.log(
-          `[useImageChambers] Returning (not popping) single image from ${category}: ${image.image.id}`
-        );
         return image;
       }
 
@@ -425,16 +372,10 @@ export const useImageChambers = (
         },
       }));
 
-      console.log(
-        `[useImageChambers] Popped image from ${category}: ${image.image.id}, ${remainingAfterPop} remaining`
-      );
 
       // PRE-EMPTIVE REFILL: Check threshold with NEW count
       // Pass state values directly to avoid stale closures
       if (remainingAfterPop <= REFILL_THRESHOLD) {
-        console.log(
-          `[useImageChambers] Triggering refill for ${category}: ${remainingAfterPop} <= ${REFILL_THRESHOLD}`
-        );
         // Trigger refill asynchronously (non-blocking)
         // Pass current state to avoid stale closures
         triggerRefill(
