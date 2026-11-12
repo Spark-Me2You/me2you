@@ -241,6 +241,20 @@ describe('profileService', () => {
       await expect(profileService.deleteAllImages()).rejects.toThrow(message)
     })
 
+    it.each([
+      ['deleteAllImages', () => profileService.deleteAllImages()],
+      ['deleteAccount', () => profileService.deleteAccount()],
+    ])('%s surfaces the function body error on non-2xx', async (_name, call) => {
+      supabaseMock.functions.invoke.mockResolvedValue({
+        data: null,
+        error: {
+          message: 'Edge Function returned a non-2xx status code',
+          context: new Response(JSON.stringify({ error: 'Not allowed' }), { status: 403 }),
+        },
+      })
+      await expect(call()).rejects.toThrow('Not allowed')
+    })
+
     it('deleteAccount resolves on success and rejects on failure', async () => {
       supabaseMock.functions.invoke.mockResolvedValueOnce({ data: { success: true }, error: null })
       await expect(profileService.deleteAccount()).resolves.toBeUndefined()

@@ -20,7 +20,7 @@ interface ExecuteClaimResponse {
  * functions.invoke reports any 4xx/5xx as a generic "non-2xx status code"
  * error; the function's own `{ error }` message is in the response body.
  */
-async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+export async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
   const response = (error as { context?: unknown })?.context;
   if (response instanceof Response) {
     try {
@@ -30,7 +30,8 @@ async function functionErrorMessage(error: unknown, fallback: string): Promise<s
       // Not JSON; fall through.
     }
   }
-  return error instanceof Error && error.message ? error.message : fallback;
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === 'string' && message ? message : fallback;
 }
 
 interface ClaimDrawingResponse {
@@ -70,7 +71,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] generate-claim-token error:', error);
-      throw new Error(error.message || 'Failed to generate claim token');
+      throw new Error(await functionErrorMessage(error, 'Failed to generate claim token'));
     }
 
     if (!data?.success || !data.token_id || !data.claim_url || !data.expires_at) {
@@ -93,7 +94,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] execute-claim error:', error);
-      throw new Error(error.message || 'Failed to execute claim');
+      throw new Error(await functionErrorMessage(error, 'Failed to execute claim'));
     }
 
     if (!data?.success || !data.token_id || !data.payload) {
@@ -141,7 +142,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] claim-drawing error:', error);
-      throw new Error(error.message || 'Failed to claim drawing');
+      throw new Error(await functionErrorMessage(error, 'Failed to claim drawing'));
     }
 
     if (!data?.success || !data.token_id || !data.drawing_id || !data.image_path) {
@@ -165,7 +166,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] claim-message error:', error);
-      throw new Error(error.message || 'Failed to send message');
+      throw new Error(await functionErrorMessage(error, 'Failed to send message'));
     }
 
     if (!data?.success || !data.token_id || !data.message_id) {

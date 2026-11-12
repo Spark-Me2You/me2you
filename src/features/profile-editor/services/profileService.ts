@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/core/supabase/client";
+import { functionErrorMessage } from "@/core/supabase/claimService";
 import { storageService } from "@/core/supabase/storage";
 import {
   faceCropService,
@@ -504,7 +505,7 @@ export const profileService = {
     );
     if (error) {
       console.error("[profileService] Failed to delete images:", error);
-      throw new Error(error.message || "Failed to delete images");
+      throw new Error(await functionErrorMessage(error, "Failed to delete images"));
     }
     if (!data?.success) {
       throw new Error(data?.error || "Failed to delete images");
@@ -529,7 +530,7 @@ export const profileService = {
       );
     if (error) {
       console.error("[profileService] Failed to delete account:", error);
-      throw new Error(error.message || "Failed to delete account");
+      throw new Error(await functionErrorMessage(error, "Failed to delete account"));
     }
     if (!data?.success) {
       throw new Error(data?.error || "Failed to delete account");

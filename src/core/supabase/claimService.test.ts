@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetSupabaseMock, supabaseMock } from '@/test/supabaseMock'
-import { claimService } from './claimService'
+import { claimService, functionErrorMessage } from './claimService'
 
 vi.mock('./client', () => import('@/test/supabaseMockModule'))
 
@@ -162,5 +162,49 @@ describe('claimService.subscribeToClaim', () => {
     unsubscribe()
     unsubscribe()
     expect(supabaseMock.removeChannel).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('functionErrorMessage', () => {
+  const nonOk = (body: string, status = 400) => ({
+    message: 'Edge Function returned a non-2xx status code',
+    context: new Response(body, { status }),
+  })
+
+  beforeEach(() => {
+    resetSupabaseMock()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  it('surfaces the JSON body error of a non-2xx response', async () => {
+    await expect(
+      functionErrorMessage(nonOk(JSON.stringify({ error: 'Token expired' })), 'fallback'),
+    ).resolves.toBe('Token expired')
+  })
+
+  it('falls back to the error message when the body is not JSON', async () => {
+    await expect(functionErrorMessage(nonOk('oops', 500), 'fallback')).resolves.toBe(
+      'Edge Function returned a non-2xx status code',
+    )
+  })
+
+  it('handles a network error without a response', async () => {
+    await expect(functionErrorMessage(new Error('Failed to fetch'), 'fallback')).resolves.toBe(
+      'Failed to fetch',
+    )
+    await expect(functionErrorMessage({}, 'fallback')).resolves.toBe('fallback')
+  })
+
+  it.each([
+    ['generateClaimToken', () => claimService.generateClaimToken(payload)],
+    ['executeClaim', () => claimService.executeClaim('t')],
+    ['executeDrawingClaim', () => claimService.executeDrawingClaim('t')],
+    ['executeMessageClaim', () => claimService.executeMessageClaim('t', 'hi')],
+  ])('%s throws the function body error on non-2xx', async (_name, call) => {
+    invoke.mockResolvedValue({
+      data: null,
+      error: nonOk(JSON.stringify({ error: 'Claim already used' }), 409),
+    })
+    await expect(call()).rejects.toThrow('Claim already used')
   })
 })
