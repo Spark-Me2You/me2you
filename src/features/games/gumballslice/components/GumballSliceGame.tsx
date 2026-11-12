@@ -22,7 +22,7 @@ import type {
   RoundStats,
   ScreenState,
 } from "../types/gumballSlice";
-import { PlayerLostScreen, ResultsScreen } from "./ResultsScreen";
+import { LoadErrorScreen, PlayerLostScreen, ResultsScreen } from "./ResultsScreen";
 import { SliceCountdown } from "./SliceCountdown";
 import { SliceHud } from "./SliceHud";
 import { StartScreen } from "./StartScreen";
@@ -50,10 +50,11 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   const [outcome, setOutcome] = useState<RoundOutcome | null>(null);
   const [size] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [textures, setTextures] = useState<ItemTextures | null>(null);
+  const [textureError, setTextureError] = useState(false);
   const engineRef = useRef<GumballSliceEngine | null>(null);
   const sessionRef = useRef("");
 
-  const { app, containerRef, isReady } = usePixiApp({
+  const { app, containerRef, isReady, error: pixiError } = usePixiApp({
     width: size.width,
     height: size.height,
     backgroundAlpha: 0,
@@ -77,14 +78,19 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
   useEffect(() => {
     let cancelled = false;
     const urls = [BROCCOLI_IMAGE, RAINBOW_IMAGE.url, ...CANDY_IMAGES.map((c) => c.url)];
-    Assets.load<Texture>(urls).then((loaded) => {
-      if (cancelled) return;
-      setTextures({
-        broccoli: loaded[BROCCOLI_IMAGE],
-        rainbow: { texture: loaded[RAINBOW_IMAGE.url], particleColor: RAINBOW_IMAGE.particleColor },
-        candies: CANDY_IMAGES.map((c) => ({ texture: loaded[c.url], particleColor: c.particleColor })),
+    Assets.load<Texture>(urls)
+      .then((loaded) => {
+        if (cancelled) return;
+        setTextures({
+          broccoli: loaded[BROCCOLI_IMAGE],
+          rainbow: { texture: loaded[RAINBOW_IMAGE.url], particleColor: RAINBOW_IMAGE.particleColor },
+          candies: CANDY_IMAGES.map((c) => ({ texture: loaded[c.url], particleColor: c.particleColor })),
+        });
+      })
+      .catch((err) => {
+        console.error("Gumball Slice: failed to load textures", err);
+        if (!cancelled) setTextureError(true);
       });
-    });
     return () => {
       cancelled = true;
     };
@@ -139,11 +145,17 @@ export const GumballSliceGame: React.FC<GameProps> = ({ onExit }) => {
     setScreen("START");
   }, []);
 
+  const loadFailed = textureError || pixiError !== null;
+
   return (
     <div className={`fixed inset-0 overflow-hidden ${WOOD}`}>
       <div ref={containerRef} className="absolute inset-0" />
 
-      {screen === "START" && <StartScreen onReady={handleReady} onBack={onExit} />}
+      {loadFailed && <LoadErrorScreen onMenu={onExit} />}
+
+      {!loadFailed && screen === "START" && (
+        <StartScreen ready={isReady && textures !== null} onReady={handleReady} onBack={onExit} />
+      )}
 
       {screen === "COUNTDOWN" && <SliceCountdown onDone={handleCountdownDone} />}
 

@@ -18,11 +18,13 @@ const LABEL =
   "ml-[6px] font-jersey text-[clamp(28px,5vh,52px)] tracking-[4px] [text-shadow:3px_3px_0_rgba(0,0,0,0.45)]";
 
 interface Props {
+  /** False until the Pixi app and textures are loaded. */
+  ready: boolean;
   onReady: () => void;
   onBack: () => void;
 }
 
-export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
+export const StartScreen: React.FC<Props> = ({ ready, onReady, onBack }) => (
   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-[clamp(10px,2.5vh,28px)] px-6 py-[clamp(16px,4vh,48px)]">
     <ExitButton onClick={onBack} label="back" />
 
@@ -52,8 +54,8 @@ export const StartScreen: React.FC<Props> = ({ onReady, onBack }) => (
       slice as many candies as you can in {C.ROUND_SECONDS} seconds!
     </p>
 
-    <button className="cursor-pointer rounded-[14px] border-4 border-solid border-white bg-white px-[clamp(48px,8vw,96px)] py-[clamp(10px,2vh,20px)] font-jersey text-[clamp(32px,5.5vh,56px)] tracking-[4px] text-[#4e2c14] shadow-[0_6px_0_rgba(0,0,0,0.35)] transition-transform duration-[120ms] ease-[ease] hover:[transform:scale(1.05)]" onClick={onReady}>
-      Ready
+    <button disabled={!ready} className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-[14px] border-4 border-solid border-white bg-white px-[clamp(48px,8vw,96px)] py-[clamp(10px,2vh,20px)] font-jersey text-[clamp(32px,5.5vh,56px)] tracking-[4px] text-[#4e2c14] shadow-[0_6px_0_rgba(0,0,0,0.35)] transition-transform duration-[120ms] ease-[ease] enabled:hover:[transform:scale(1.05)]" onClick={onReady}>
+      {ready ? "Ready" : "loading..."}
     </button>
 
     <PinnedRegistrationQR side="right" top={145} qrSize={150} />

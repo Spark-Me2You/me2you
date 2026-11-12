@@ -104,3 +104,13 @@ export const PlayerLostScreen: React.FC<ActionsProps> = ({ onPlayAgain, onMenu }
     <Actions onPlayAgain={onPlayAgain} onMenu={onMenu} />
   </div>
 );
+
+export const LoadErrorScreen: React.FC<{ onMenu: () => void }> = ({ onMenu }) => (
+  <div className={OVERLAY}>
+    <h1 className={TITLE}>oh no!</h1>
+    <p className="m-0 max-w-[1100px] text-center text-[clamp(30px,5vh,52px)] tracking-[3px]">we couldn't load the game. please head back and try again.</p>
+    <button className={`${BUTTON} bg-white text-[#4e2c14]`} onClick={onMenu}>
+      menu
+    </button>
+  </div>
+);
