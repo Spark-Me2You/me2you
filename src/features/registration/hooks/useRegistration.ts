@@ -363,11 +363,16 @@ export const useRegistration = (): UseRegistrationReturn => {
             },
           }));
           if (previous) {
-            registrationService
-              .deleteGesturePhoto(previous.id, previous.storagePath)
-              .catch((e) =>
-                console.warn("[useRegistration] Failed to delete replaced photo:", e),
-              );
+            void (async () => {
+              try {
+                await registrationService.deleteGesturePhoto(
+                  previous.id,
+                  previous.storagePath,
+                );
+              } catch (e) {
+                console.warn("[useRegistration] Failed to delete replaced photo:", e);
+              }
+            })();
           }
         }
 
