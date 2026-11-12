@@ -31,22 +31,6 @@ function AppContainerContent() {
       case AppState.IDLE:
         return <IdleScreen />;
 
-      case AppState.AUTH:
-        return (
-          <div>
-            <h1 className="text-[3.2em] leading-[1.1]">Authentication</h1>
-            <p>Please swipe your card</p>
-          </div>
-        );
-
-      case AppState.ONBOARDING:
-        return (
-          <div>
-            <h1 className="text-[3.2em] leading-[1.1]">Welcome!</h1>
-            <p>Let's create your profile</p>
-          </div>
-        );
-
       case AppState.HUB:
         return <HubView />;
 
