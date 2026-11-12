@@ -18,10 +18,10 @@ export default mergeConfig(
         // Floor against regressions, set a little below the current numbers.
         // Ratchet these up as coverage improves, never down.
         thresholds: {
-          lines: 33,
-          statements: 30,
-          functions: 35,
-          branches: 24,
+          lines: 50,
+          statements: 44,
+          functions: 50,
+          branches: 33,
         },
       },
     },

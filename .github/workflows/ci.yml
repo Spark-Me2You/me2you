@@ -22,7 +22,7 @@ jobs:
       - run: npm ci
       # Lint is a ratchet: the number is the current warning count. Lower it as
       # warnings are fixed, never raise it.
-      - run: npm run lint -- --max-warnings 38
+      - run: npm run lint -- --max-warnings 34
       - run: npm run build
       # Enforces the coverage floor set in vitest.config.ts.
       - run: npm run test:coverage
