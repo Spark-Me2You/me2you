@@ -182,8 +182,8 @@ export function IdleScreen() {
         <div className="absolute right-[42%] bottom-[20%] z-[4] box-content flex h-[375px] w-[200px] items-start justify-start overflow-visible rounded-[6px] bg-note pt-[22px] pr-6 pb-6 pl-6 shadow-note [transform:rotate(184deg)]">
           <div className={`${TAPE} -top-3 z-[5] h-[22px] w-[90px] [transform:translateX(-50%)_rotate(-4deg)]`} />
           <ul className="m-0 list-disc py-0 pr-0 pl-[1.2em] text-left font-averia text-[22px] tracking-[2px] text-ink">
-            <li className="mb-2 leading-[1.2] last:mb-0">use your pointer finger to move the mouse!</li>
-            <li className="mb-2 leading-[1.2] last:mb-0">curve your thumb in like this to click!</li>
+            <li className="mb-2 leading-[1.2] last:mb-0">make an L with your thumb and pointer finger, then move your hand!</li>
+            <li className="mb-2 leading-[1.2] last:mb-0">pinch them together to click!</li>
             <li className="mb-2 leading-[1.2] last:mb-0">now practice by clicking this button!</li>
           </ul>
         </div>

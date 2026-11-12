@@ -19,7 +19,7 @@ export interface SharedCursorState {
 export interface HandTrackSample {
   /** A hand (any pose) was detected in this inference */
   detected: boolean;
-  /** Index fingertip in screen px (mirrored + remapped like the cursor, no EMA) */
+  /** Index fingertip in screen px (mirrored + remapped to the screen, no EMA) */
   tipX: number;
   tipY: number;
   /** Wrist → middle-finger MCP distance in normalized camera units (bigger = closer) */
@@ -36,9 +36,6 @@ export interface HandTrackSample {
 interface CvCursorEnabledContextValue {
   enabled: boolean;
   setEnabled: (v: boolean) => void;
-  /** Ref is true while a pointing pose is detected — read in hot loops, no rerenders */
-  cursorVisibleRef: React.RefObject<boolean>;
-  notifyCursorVisible: (v: boolean) => void;
   /** Latest cursor state, written by CvCursorOverlay each frame. Read in hot loops. */
   cursorStateRef: React.RefObject<SharedCursorState>;
   updateCursorState: (s: SharedCursorState) => void;
@@ -70,8 +67,6 @@ const createHandTrackSample = (): HandTrackSample => ({
 const CvCursorEnabledContext = createContext<CvCursorEnabledContextValue>({
   enabled: true,
   setEnabled: () => {},
-  cursorVisibleRef: { current: false },
-  notifyCursorVisible: () => {},
   cursorStateRef: { current: defaultCursorState },
   updateCursorState: () => {},
   handTrackRef: { current: createHandTrackSample() },
@@ -82,13 +77,8 @@ const CvCursorEnabledContext = createContext<CvCursorEnabledContextValue>({
 export function CvCursorEnabledProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
   const [cursorVariant, setCursorVariant] = useState<CursorVariant>("default");
-  const cursorVisibleRef = useRef(false);
   const cursorStateRef = useRef<SharedCursorState>({ ...defaultCursorState });
   const handTrackRef = useRef<HandTrackSample>(createHandTrackSample());
-
-  const notifyCursorVisible = useCallback((v: boolean) => {
-    cursorVisibleRef.current = v;
-  }, []);
 
   const updateCursorState = useCallback((s: SharedCursorState) => {
     cursorStateRef.current = s;
@@ -99,8 +89,6 @@ export function CvCursorEnabledProvider({ children }: { children: ReactNode }) {
       value={{
         enabled,
         setEnabled,
-        cursorVisibleRef,
-        notifyCursorVisible,
         cursorStateRef,
         updateCursorState,
         handTrackRef,

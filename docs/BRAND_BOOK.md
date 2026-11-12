@@ -193,6 +193,7 @@ Reuse these before building a new version:
 | `PinnedRegistrationQR` | `src/features/kiosk/components/` | Every kiosk screen shows one |
 | `RegistrationQRDisplay` | `src/features/kiosk/components/` | Bare QR; wrap it in a magenta glass frame |
 | `HelpPopup` | `src/features/discovery/components/` | Corkboard + note + gif help pattern |
+| `HintToast` | `src/shared/components/HintToast.tsx` | Taped sticky-note hint that eases in and fades out; drive it with `useHints` (each hint shows once per screen visit) |
 | `GlassCard` | `src/shared/components/GlassCard.tsx` | Large glass container |
 | `BadgeDisplay` | `src/shared/components/BadgeDisplay.tsx` | Badge grid with tooltips |
 
@@ -222,6 +223,7 @@ Defined as `--animate-*` in `theme.css`. Keep motion short and springy:
 | `animate-fade-in`, `animate-fade-in-fast` | Scrims, overlays |
 | `animate-slide-in-right` | Popups entering from the side |
 | `animate-pop-in`, `animate-pop` | Cards and badges appearing |
+| `animate-hint-in` | `HintToast` notes easing up into view (slower, so they're noticed) |
 | `animate-dot-pulse` | "loading . . ." dots; stagger each dot with `[animation-delay:…]` |
 | `animate-info-trace` | Dwell-to-click ring |
 | `animate-completion-flash` | Discovery hold-timer complete |

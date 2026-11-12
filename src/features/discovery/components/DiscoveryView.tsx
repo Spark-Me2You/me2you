@@ -15,9 +15,18 @@ import {
   isSupportedGesture,
   CATEGORY_LIST,
 } from "../config/gestureMapping";
-import { ExitButton } from "@/shared/components";
+import { ExitButton, HintToast } from "@/shared/components";
+import { useHints } from "@/shared/hooks/useHints";
 import { PinnedRegistrationQR } from "@/features/kiosk";
 import { HelpPopup } from "./HelpPopup";
+
+// Shown the first time a pose brings up a match: the hold-to-open mechanic
+// isn't discoverable on its own, and the hold timer is already running.
+const HOLD_HINT = {
+  id: "hold-to-open",
+  text: "hold your pose to open their profile!",
+  durationMs: 3500,
+};
 
 /**
  * DiscoveryView Component
@@ -42,6 +51,7 @@ export const DiscoveryView: React.FC = () => {
     useState<RandomImageData | null>(null);
 
   const [showHelp, setShowHelp] = useState(false);
+  const { hint, showHint } = useHints();
 
   // Ref to track if we've already popped an image for current gesture
   // Prevents infinite loops from useEffect re-running when imageData changes
@@ -223,11 +233,12 @@ export const DiscoveryView: React.FC = () => {
     if (currentImageId !== previousImageId) {
       resetTimer(); // Reset first to clear any existing timer
       startTimer(); // Start fresh timer for new image
+      showHint(HOLD_HINT); // No-op after the first match
       previousImageIdRef.current = currentImageId;
     }
 
     // Case 3: Same image, timer continues (no action needed)
-  }, [imageData, resetTimer, startTimer]);
+  }, [imageData, resetTimer, startTimer, showHint]);
 
   // Profile detail — replaces discovery entirely so nothing overlaps
   if (viewMode === "profile-detail" && selectedProfile) {
@@ -281,6 +292,8 @@ export const DiscoveryView: React.FC = () => {
       >
         ?
       </button>
+
+      {!showHelp && <HintToast hint={hint} />}
 
       <HelpPopup isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>

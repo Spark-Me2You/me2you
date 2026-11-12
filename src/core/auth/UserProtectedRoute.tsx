@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 interface UserProtectedRouteProps {
@@ -23,6 +23,7 @@ interface UserProtectedRouteProps {
  */
 export const UserProtectedRoute: React.FC<UserProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading, authMode } = useAuth();
+  const location = useLocation();
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -53,7 +54,9 @@ export const UserProtectedRoute: React.FC<UserProtectedRouteProps> = ({ children
 
   // Redirect to /user landing page if not authenticated as user
   if (!isAuthenticated || authMode !== 'user') {
-    return <Navigate to="/user" replace />;
+    // Come back here after signing in (UserLandingPage reads ?next=).
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/user?next=${next}`} replace />;
   }
 
   // Render children if authenticated as user

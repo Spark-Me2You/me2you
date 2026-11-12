@@ -2,6 +2,8 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** Shown instead of the crashed tree. Defaults to a bare message. */
+  fallback?: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -30,6 +32,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback !== undefined) return this.props.fallback;
       return (
         <div>
           {/* TODO: Implement error recovery UI */}
