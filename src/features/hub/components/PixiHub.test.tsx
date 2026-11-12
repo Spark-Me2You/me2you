@@ -8,6 +8,7 @@ type Listener = (event: unknown) => void;
 const pixi = vi.hoisted(() => ({
   containers: [] as unknown[],
   tickers: [] as ((time: { deltaTime: number }) => void)[],
+  unloaded: [] as string[],
 }));
 
 const batch = vi.hoisted(() => ({
@@ -110,7 +111,12 @@ vi.mock("pixi.js", () => {
       y = 0;
     },
     Texture: { WHITE: { width: 325, height: 250 } },
-    Assets: { load: async () => ({ width: 325, height: 250 }) },
+    Assets: {
+      load: async () => ({ width: 325, height: 250 }),
+      unload: async (url: string) => {
+        pixi.unloaded.push(url);
+      },
+    },
   };
 });
 
@@ -581,6 +587,15 @@ describe("PixiHub spawning", () => {
     (pixi.containers as FakeContainer[]).filter((c) => c.listeners.has("pointerdown")).length;
 
   const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+  it("unloads face textures on cleanup but keeps shared assets cached", async () => {
+    pixi.unloaded.length = 0;
+    const view = renderHub();
+    await settle();
+    expect(pixi.unloaded).toEqual([]);
+    view.unmount();
+    expect(pixi.unloaded).toEqual(["face.png"]);
+  });
 
   it("spawns one walker for a single row", async () => {
     pixi.containers.length = 0;

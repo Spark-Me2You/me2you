@@ -138,6 +138,25 @@ export const PixiHub: React.FC<{
     let isMounted = true;
     let removePressListeners: (() => void) | null = null;
 
+    // Face textures are loaded from one-off signed URLs, so each is its own Assets cache
+    // entry. Track them to unload a face when it is replaced and all of them on cleanup.
+    // (Body frames, backgrounds and accessories are shared and stay cached.)
+    const faceUrlByTexture = new Map<unknown, string>();
+
+    function unloadFace(url: string) {
+      Promise.resolve(Assets.unload(url)).catch(() => {});
+    }
+
+    async function loadFace(url: string) {
+      const texture = await Assets.load(url);
+      if (!isMounted) {
+        unloadFace(url);
+        return texture;
+      }
+      faceUrlByTexture.set(texture, url);
+      return texture;
+    }
+
     const initPixiApp = async () => {
       if (!canvasRef.current) return;
 
@@ -635,9 +654,15 @@ export const PixiHub: React.FC<{
           async function replaceFace(storagePath: string) {
             try {
               const faceUrl = await storageService.getPhotoUrl(storagePath);
-              const newTexture = await Assets.load(faceUrl);
+              const newTexture = await loadFace(faceUrl);
               if (faceSprite) {
+                const oldTexture = faceSprite.texture;
+                const oldUrl = faceUrlByTexture.get(oldTexture);
                 faceSprite.texture = newTexture;
+                if (oldUrl && oldTexture !== newTexture) {
+                  faceUrlByTexture.delete(oldTexture);
+                  unloadFace(oldUrl);
+                }
               }
             } catch (err) {
               console.error("[PixiHub] Failed to replace face texture:", err);
@@ -924,7 +949,7 @@ export const PixiHub: React.FC<{
 
           try {
             const faceUrl = await storageService.getPhotoUrl(row.storage_path);
-            const faceTexture = await Assets.load(faceUrl);
+            const faceTexture = await loadFace(faceUrl);
             if (!isMounted) return;
 
             const roomId = assignRoom(row.owner_id);
@@ -1094,9 +1119,11 @@ export const PixiHub: React.FC<{
       replaceFaceRef.current = null;
       showRoomRef.current = null;
       if (appRef.current) {
-        appRef.current.destroy();
+        appRef.current.destroy({ removeView: true }, { children: true });
         appRef.current = null;
       }
+      faceUrlByTexture.forEach(unloadFace);
+      faceUrlByTexture.clear();
     };
   }, [orgId, cursorStateRef]);
 
