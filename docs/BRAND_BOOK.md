@@ -222,6 +222,7 @@ Defined as `--animate-*` in `theme.css`. Keep motion short and springy:
 | `animate-fade-in`, `animate-fade-in-fast` | Scrims, overlays |
 | `animate-slide-in-right` | Popups entering from the side |
 | `animate-pop-in`, `animate-pop` | Cards and badges appearing |
+| `animate-dot-pulse` | "loading . . ." dots; stagger each dot with `[animation-delay:…]` |
 | `animate-info-trace` | Dwell-to-click ring |
 | `animate-completion-flash` | Discovery hold-timer complete |
 | `animate-timer-pulse`, `animate-timer-flash` | Game countdowns |
