@@ -4,6 +4,8 @@ import { useAuth } from "@/core/auth";
 import type { Accessory } from "@/core/auth/AuthContext";
 import { profileService } from "@/features/profile-editor/services/profileService";
 import { accessoryService } from "@/features/profile-editor/services/accessoryService";
+import { profileCache } from "@/features/profile-editor/services/profileCache";
+import { LoadingText } from "@/shared/components/LoadingText";
 import type {
   AccessorySettings,
   AvatarLandmarkPoints,
@@ -29,11 +31,22 @@ export const CustomizeAvatarView: React.FC = () => {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
 
-  const [settings, setSettings] = useState<AccessorySettings>(DEFAULT_ACCESSORY_SETTINGS);
-  const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(null);
+  // Coming from the profile page, everything needed is usually cached, so
+  // the preview shows at once instead of refetching.
+  const [cached] = useState(() => ({
+    profile: profileCache.getProfile(user?.id),
+    settings: profileCache.getAccessorySettings(user?.id),
+  }));
+  const isFullyCached = cached.profile !== null && cached.settings !== null;
+  const [settings, setSettings] = useState<AccessorySettings>(
+    () => cached.settings ?? DEFAULT_ACCESSORY_SETTINGS,
+  );
+  const [bobbleheadUrl, setBobbleheadUrl] = useState<string | null>(
+    () => cached.profile?.bobbleheadUrl ?? null,
+  );
   const [bobbleheadLandmarks, setBobbleheadLandmarks] =
-    useState<AvatarLandmarkPoints | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+    useState<AvatarLandmarkPoints | null>(() => cached.profile?.bobbleheadLandmarks ?? null);
+  const [isDataLoading, setIsDataLoading] = useState(!isFullyCached);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,20 +55,25 @@ export const CustomizeAvatarView: React.FC = () => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user?.id) return;
+    // Cached data is already showing. Skipping the fetch also means a late
+    // response can't overwrite an accessory the user has just picked.
+    if (!user?.id || isFullyCached) return;
+    const userId = user.id;
     Promise.all([
-      profileService.getCurrentProfile({ userId: user.id }),
-      accessoryService.getAccessorySettings(user.id),
+      profileService.getCurrentProfile({ userId }),
+      accessoryService.getAccessorySettings(userId),
     ]).then(([profileData, accSettings]) => {
       setBobbleheadUrl(profileData?.bobbleheadUrl ?? null);
       setBobbleheadLandmarks(profileData?.bobbleheadLandmarks ?? null);
       setSettings(accSettings);
+      if (profileData) profileCache.setProfile(userId, profileData);
+      profileCache.setAccessorySettings(userId, accSettings);
     }).catch((err) =>
       console.warn("[CustomizeAvatarView] Failed to load preview:", err),
     ).finally(() => {
       setIsDataLoading(false);
     });
-  }, [user?.id]);
+  }, [user?.id, isFullyCached]);
 
   // --- Drag handlers ---
 
@@ -153,6 +171,8 @@ export const CustomizeAvatarView: React.FC = () => {
         userProfile.org_id,
         settings,
       );
+      // So the profile page shows the new accessory straight away.
+      profileCache.setAccessorySettings(user.id, settings);
       navigate("/user/profile", { replace: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "failed to save");
@@ -189,7 +209,7 @@ export const CustomizeAvatarView: React.FC = () => {
               onTouchStart={hasAccessory ? handleTouchStart : undefined}
             >
               {isDataLoading ? (
-                <div className="flex h-full w-full items-center justify-center font-jersey text-[16px] text-[#999]">loading</div>
+                <div className="flex h-full w-full items-center justify-center"><LoadingText className="text-[20px]" /></div>
               ) : (
                 <UserMiiPixiPreview
                   className="relative h-full w-full bg-[#fefffb]"

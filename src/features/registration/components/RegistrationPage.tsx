@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { LoadingText } from '@/shared/components/LoadingText';
 import { kioskQrService } from '@/core/supabase/kioskQrService';
 import { RegistrationProvider, type RegistrationContextType } from '../context/RegistrationContext';
 import { RegistrationError } from './RegistrationError';
@@ -186,8 +187,8 @@ export const RegistrationPage: React.FC = () => {
       <div className={PAGE}>
         <img src={me2youLogo} alt="me2you" className={LOGO} />
         <div className="relative min-h-dvh">
-          <div className="flex min-h-dvh items-center justify-center font-jersey text-[32px] text-[#333]">
-            validating...
+          <div className="flex min-h-dvh items-center justify-center">
+            <LoadingText label="validating" className="text-[32px]" />
           </div>
         </div>
       </div>

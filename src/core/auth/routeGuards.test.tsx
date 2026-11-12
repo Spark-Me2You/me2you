@@ -89,7 +89,7 @@ describe('route guards', () => {
 
     it('waits while loading', () => {
       renderGuard(UserProtectedRoute, { authMode: 'unauthenticated', isLoading: true })
-      expect(screen.getByText('loading...')).toBeInTheDocument()
+      expect(screen.getByRole('status')).toHaveTextContent('loading')
     })
   })
 })

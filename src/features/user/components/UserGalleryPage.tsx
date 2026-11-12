@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingText } from "@/shared/components/LoadingText";
 import { useAuth } from "@/core/auth";
 import {
   deleteMyDrawing,
@@ -51,7 +52,7 @@ export const UserGalleryPage: React.FC = () => {
       </div>
 
       {error && <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#aa0000]">{error}</p>}
-      {!error && items === null && <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">Loading...</p>}
+      {!error && items === null && <LoadingText className="mt-10 text-[24px]" />}
       {items && items.length === 0 && (
         <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">No drawings yet. Scan a kiosk QR to claim one!</p>
       )}

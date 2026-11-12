@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { LoadingDots } from "@/shared/components/LoadingDots";
 import { usePhotoCapture } from "../hooks/usePhotoCapture";
 import { poseLabel } from "../utils/poseVotes";
 import type { GestureCategory } from "../types/profileTypes";
@@ -40,15 +41,6 @@ interface PoseCaptureProps {
   error?: string | null;
   onClearError?: () => void;
 }
-
-/** "checking your pose . . ." with the dots pulsing one after another. */
-const CheckingDots: React.FC = () => (
-  <span aria-hidden="true" className="inline-flex gap-[6px]">
-    <span className="animate-dot-pulse">.</span>
-    <span className="animate-dot-pulse [animation-delay:200ms]">.</span>
-    <span className="animate-dot-pulse [animation-delay:400ms]">.</span>
-  </span>
-);
 
 export const PoseCapture: React.FC<PoseCaptureProps> = ({
   onSubmit,
@@ -169,7 +161,7 @@ export const PoseCapture: React.FC<PoseCaptureProps> = ({
           {phase === "classifying" && (
             <div className={`${CENTER_OVERLAY} text-[30px] tracking-[2px]`} role="status">
               <span>
-                checking your pose <CheckingDots />
+                checking your pose <LoadingDots />
               </span>
             </div>
           )}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LoadingText } from '@/shared/components/LoadingText';
 import { useAuth } from '@/core/auth';
 import { messagesService } from '../services/messagesService';
 import type { MessageWithSender } from '../types';
@@ -55,7 +56,7 @@ export function MessagesView() {
       </div>
 
       {isLoading ? (
-        <p className="mt-[60px] text-center font-jersey text-[20px] tracking-[1px] text-[#888] lowercase">loading...</p>
+        <LoadingText className="mt-[60px] text-[24px]" />
       ) : error ? (
         <p className="mt-10 text-center font-jersey text-[15px] tracking-[0.5px] text-[#d32f2f]">{error}</p>
       ) : messages.length === 0 ? (

@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { LoadingText } from '@/shared/components/LoadingText';
 import { useAuth } from './AuthContext';
 
 interface UserProtectedRouteProps {
@@ -28,26 +29,8 @@ export const UserProtectedRoute: React.FC<UserProtectedRouteProps> = ({ children
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          background: 'linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%)',
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <p
-            style={{
-              fontFamily: '"Jersey 10", sans-serif',
-              fontSize: '32px',
-              color: '#333',
-            }}
-          >
-            loading...
-          </p>
-        </div>
+      <div className="flex h-dvh items-center justify-center bg-page-gradient">
+        <LoadingText className="text-[32px]" />
       </div>
     );
   }
