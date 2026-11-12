@@ -3,7 +3,8 @@
  *
  * Permanently deletes the calling user's account. Steps:
  * 1. Verifies the caller's JWT and resolves their org_id from the database (RLS enforced).
- * 2. Removes all storage objects under images/{org_id}/{user_id}/ in the images bucket.
+ * 2. Removes all storage objects under images/{org_id}/{user_id}/ in the images bucket
+ *    and under {user_id}/ in the drawings bucket (claimed drawings).
  * 3. Calls auth.admin.deleteUser() — which cascades to public.user, public.admin,
  *    public.image, public.gesture_image, and public.cropped_image via the FK ON DELETE
  *    CASCADE constraints established in migration 013_add_cascade_deletes.sql.
@@ -287,6 +288,59 @@ serve(async (req) => {
           JSON.stringify({
             success: false,
             error: "Failed to delete image files",
+            error_code: "STORAGE_ERROR",
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
+    // 5b. Claimed drawings live in the `drawings` bucket under {user_id}/
+    //     (see claim-drawing). Same failure policy as the images above.
+    let drawingPaths: string[] = [];
+    try {
+      drawingPaths = await listAllStorageFiles(
+        supabaseAdmin,
+        "drawings",
+        userId,
+      );
+    } catch (error) {
+      console.error(
+        "[delete-user-account] Failed to list drawing objects:",
+        error,
+      );
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to list drawing files",
+          error_code: "STORAGE_ERROR",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (drawingPaths.length > 0) {
+      try {
+        storageDeletedCount += await deleteStorageFilesInBatches(
+          supabaseAdmin,
+          "drawings",
+          drawingPaths,
+        );
+      } catch (error) {
+        console.error(
+          "[delete-user-account] Failed to remove drawing objects:",
+          error,
+        );
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Failed to delete drawing files",
             error_code: "STORAGE_ERROR",
           }),
           {
