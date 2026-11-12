@@ -1,5 +1,7 @@
 # BUCKET POLICIES
 
+> Source of truth: `supabase/migrations/032_images_bucket_storage_policies.sql`. The SQL below is kept for reference; change policies via a new migration, not by editing this file.
+
 -- Users can upload their own images
 CREATE POLICY "Users can upload own images"
 ON storage.objects FOR INSERT
