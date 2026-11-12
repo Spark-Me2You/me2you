@@ -10,6 +10,17 @@ const pixi = vi.hoisted(() => ({
   tickers: [] as ((time: { deltaTime: number }) => void)[],
 }));
 
+const batch = vi.hoisted(() => ({
+  rows: [
+    {
+      id: "image-1",
+      owner_id: "owner-1",
+      storage_path: "faces/owner-1.png",
+      centroid_point: { x: 0, y: 0 },
+    },
+  ] as Array<Record<string, unknown>>,
+}));
+
 const cursorStateRef = vi.hoisted(() => ({
   current: { x: 0, y: 0, visible: false, isPinched: false },
 }));
@@ -125,14 +136,7 @@ vi.mock("@/features/hub/rooms/rooms", async (importOriginal) => ({
 vi.mock("@/features/hub/services/croppedImageService", () => ({
   croppedImageService: {
     getPaginatedCroppedImages: async () => ({
-      rows: [
-        {
-          id: "image-1",
-          owner_id: "owner-1",
-          storage_path: "faces/owner-1.png",
-          centroid_point: { x: 0, y: 0 },
-        },
-      ],
+      rows: batch.rows,
       pagination: { hasMore: false, offset: 1 },
     }),
   },
@@ -552,5 +556,47 @@ describe("PixiHub walker press", () => {
       expect(group.zIndex).toBeGreaterThan(1080);
       expect(onCharacterClick).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("PixiHub spawning", () => {
+  const originalRows = [...batch.rows];
+
+  afterEach(() => {
+    cleanup();
+    batch.rows = [...originalRows];
+  });
+
+  const renderHub = () =>
+    render(
+      <PixiHub
+        onCharacterClick={vi.fn()}
+        orgId="org-1"
+        roomId="main"
+        onRoomChange={vi.fn()}
+      />,
+    );
+
+  const walkerCount = () =>
+    (pixi.containers as FakeContainer[]).filter((c) => c.listeners.has("pointerdown")).length;
+
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+  it("spawns one walker for a single row", async () => {
+    pixi.containers.length = 0;
+    renderHub();
+    await settle();
+    expect(walkerCount()).toBe(1);
+  });
+
+  it("spawns one walker when a batch holds two rows for the same owner", async () => {
+    batch.rows = [
+      ...originalRows,
+      { ...originalRows[0], id: "image-2", storage_path: "faces/owner-1-new.png" },
+    ];
+    pixi.containers.length = 0;
+    renderHub();
+    await settle();
+    expect(walkerCount()).toBe(1);
   });
 });

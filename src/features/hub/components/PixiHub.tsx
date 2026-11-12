@@ -894,7 +894,21 @@ export const PixiHub: React.FC<{
 
         const walkersMap = new Map<string, WalkerHandle>();
 
-        async function spawnWalker(row: CroppedImageRow) {
+        // Spawns in flight, by owner. A second row for the same owner (duplicates in one
+        // batch, or a realtime INSERT during the initial load) waits for the first spawn
+        // and then takes the existing-walker path, instead of spawning a second sprite.
+        const spawning = new Map<string, Promise<void>>();
+
+        function spawnWalker(row: CroppedImageRow): Promise<void> {
+          const pending = spawning.get(row.owner_id);
+          if (pending) return pending.then(() => spawnWalker(row));
+
+          const spawn = spawnWalkerUnguarded(row).finally(() => spawning.delete(row.owner_id));
+          spawning.set(row.owner_id, spawn);
+          return spawn;
+        }
+
+        async function spawnWalkerUnguarded(row: CroppedImageRow) {
           const existing = walkersMap.get(row.owner_id);
           if (existing) {
             await existing.replaceFace(row.storage_path);
