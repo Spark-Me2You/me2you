@@ -47,6 +47,29 @@ describe('kioskQrService', () => {
       await expect(kioskQrService.verifyRegistrationToken('jwt')).resolves.toEqual(data)
     })
 
+    it.each([
+      [400, { success: false, error: 'Token has expired', error_code: 'TOKEN_EXPIRED' }],
+      [400, { success: false, error: 'Invalid token', error_code: 'INVALID_TOKEN' }],
+      [404, { success: false, error: 'Organization not found', error_code: 'ORG_NOT_FOUND' }],
+    ])('returns the rejection body of a %i response so the page can show the right state', async (status, body) => {
+      invoke.mockResolvedValue({
+        data: null,
+        error: {
+          message: 'Edge Function returned a non-2xx status code',
+          context: new Response(JSON.stringify(body), { status }),
+        },
+      })
+      await expect(kioskQrService.verifyRegistrationToken('jwt')).resolves.toEqual(body)
+    })
+
+    it('still throws for a non-2xx response without a typed body', async () => {
+      invoke.mockResolvedValue({
+        data: null,
+        error: { message: 'boom', context: new Response('gateway down', { status: 502 }) },
+      })
+      await expect(kioskQrService.verifyRegistrationToken('jwt')).rejects.toThrow('boom')
+    })
+
     it('throws when the function errors or returns nothing', async () => {
       invoke.mockResolvedValueOnce({ data: null, error: { message: 'down' } })
       await expect(kioskQrService.verifyRegistrationToken('jwt')).rejects.toThrow('down')

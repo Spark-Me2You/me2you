@@ -18,8 +18,6 @@ export const RegistrationError: React.FC<RegistrationErrorProps> = ({ message, e
     switch (errorCode) {
       case 'TOKEN_EXPIRED':
         return 'QR codes refresh every 5 minutes for security.';
-      case 'NONCE_ALREADY_USED':
-        return 'Each QR code can only be used once.';
       case 'INVALID_TOKEN':
         return 'The QR code may be corrupted or invalid.';
       default:
