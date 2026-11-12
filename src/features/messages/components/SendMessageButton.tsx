@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ClaimQR, useClaimQR } from '@/features/claim';
+import { ClaimSection } from '@/features/claim/components/ClaimSection';
 import type { ClaimPayload } from '@/features/claim';
 import envelopeClosed from '@/assets/envelope1.png';
 import envelopeOpen from '@/assets/openenvelope.png';
@@ -9,26 +9,6 @@ const BTN_PRIMARY =
 const BTN_CANCEL =
   'absolute -translate-x-1/2 cursor-pointer border-0 bg-transparent py-1 font-jersey tracking-[0.1em] text-[#888]';
 const ENVELOPE_TEXT = 'm-0 text-center font-jersey tracking-[0.1em] text-[#333]';
-
-interface ClaimSectionProps {
-  payload: ClaimPayload;
-  onClaimed: () => void;
-}
-
-function ClaimSection({ payload, onClaimed }: ClaimSectionProps) {
-  const { claim, isGenerating, error, secondsRemaining, regenerate } =
-    useClaimQR(payload, { onClaimed });
-
-  return (
-    <ClaimQR
-      claim={claim}
-      isGenerating={isGenerating}
-      error={error}
-      secondsRemaining={secondsRemaining}
-      onRegenerate={regenerate}
-    />
-  );
-}
 
 interface SendMessageButtonProps {
   recipientId: string;

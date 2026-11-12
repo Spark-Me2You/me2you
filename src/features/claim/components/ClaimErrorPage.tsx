@@ -1,10 +1,11 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { sanitizeReason } from '../utils/sanitizeReason';
 import logo from '@/assets/me2you.png';
 
 export function ClaimErrorPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const reason = searchParams.get('reason') ?? 'something went wrong';
+  const reason = sanitizeReason(searchParams.get('reason'));
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-[430px] flex-col bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">

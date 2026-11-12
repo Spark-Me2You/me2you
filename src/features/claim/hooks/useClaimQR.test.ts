@@ -6,7 +6,6 @@ import { useClaimQR } from './useClaimQR'
 vi.mock('@/core/supabase/claimService', () => ({
   claimService: { generateClaimToken: vi.fn(), subscribeToClaim: vi.fn() },
 }))
-vi.mock('@/shared/sound/playClaimSound', () => ({ playClaimSound: vi.fn() }))
 
 const service = vi.mocked(claimService)
 const payload = { type: 'message' } as never

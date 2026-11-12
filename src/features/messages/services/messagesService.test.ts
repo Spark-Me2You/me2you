@@ -55,13 +55,19 @@ describe('messagesService', () => {
 
   describe('deleteMessage', () => {
     it('deletes by id', async () => {
-      const query = queryResult()
+      const query = queryResult({ data: [{ id: 'm1' }] })
       supabaseMock.from.mockReturnValue(query)
 
       await messagesService.deleteMessage('m1')
 
       expect(query.delete).toHaveBeenCalled()
       expect(query.eq).toHaveBeenCalledWith('id', 'm1')
+      expect(query.select).toHaveBeenCalledWith('id')
+    })
+
+    it('fails when no row was deleted (e.g. filtered by RLS)', async () => {
+      supabaseMock.from.mockReturnValue(queryResult({ data: [] }))
+      await expect(messagesService.deleteMessage('m1')).rejects.toThrow('could not delete message')
     })
 
     it('throws the database error message', async () => {

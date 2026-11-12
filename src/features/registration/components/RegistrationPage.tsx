@@ -43,6 +43,8 @@ const RegistrationWizard: React.FC = () => {
     goToStep,
     registrationComplete,
     croppedPhotoUrl,
+    canSkipAvatar,
+    handleContinueWithoutAvatar,
   } = useRegistration();
 
   // Redirect to profile page when registration completes
@@ -81,6 +83,7 @@ const RegistrationWizard: React.FC = () => {
         return (
           <PhotoStep
             onSubmit={handlePhotoSubmit}
+            onSkipAvatar={canSkipAvatar ? handleContinueWithoutAvatar : undefined}
             onBack={previousStep}
             isSubmitting={isSubmitting}
             error={error}

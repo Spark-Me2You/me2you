@@ -28,6 +28,20 @@ export interface VerifyTokenResponse {
   error_code?: 'TOKEN_EXPIRED' | 'INVALID_TOKEN' | 'MISSING_TOKEN' | 'INVALID_PAYLOAD' | 'ORG_NOT_FOUND' | 'SERVER_ERROR';
 }
 
+async function readVerifyRejection(error: unknown): Promise<VerifyTokenResponse | null> {
+  const response = (error as { context?: unknown })?.context;
+  if (!(response instanceof Response)) return null;
+  try {
+    const body = await response.clone().json();
+    if (body && body.success === false && typeof body.error_code === 'string') {
+      return body as VerifyTokenResponse;
+    }
+  } catch {
+    // Not JSON; treat as a transport failure.
+  }
+  return null;
+}
+
 export const kioskQrService = {
   /**
    * Generate a registration QR code token
@@ -59,8 +73,9 @@ export const kioskQrService = {
    * Called by registration page to validate QR code token
    *
    * @param token - JWT token from QR code
-   * @returns Organization ID and name if valid
-   * @throws Error if verification fails
+   * @returns Organization ID and name if valid, or `{ success: false, error_code }` when the
+   *   function rejects the token
+   * @throws Error on transport failures
    */
   verifyRegistrationToken: async (token: string): Promise<VerifyTokenResponse> => {
     const { data, error } = await supabase.functions.invoke<VerifyTokenResponse>('verify-registration-token', {
@@ -68,6 +83,9 @@ export const kioskQrService = {
     });
 
     if (error) {
+      // 4xx responses carry `{ success: false, error, error_code }` in the body.
+      const rejection = await readVerifyRejection(error);
+      if (rejection) return rejection;
       console.error('[kioskQrService] Error invoking verify-registration-token:', error);
       throw new Error(error.message || 'Failed to verify registration token');
     }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/auth';
-import { supabase } from '@/core/supabase/client';
 import { claimService } from '@/core/supabase/claimService';
 import { MessageComposePage } from '@/features/messages';
 
@@ -22,7 +21,7 @@ export function ClaimPage() {
 
     if (authMode !== 'user') {
       // Preserve destination for post-login resume
-      navigate(`/user?next=/claim/${tokenId}`, { replace: true });
+      navigate(`/user?next=${encodeURIComponent(`/claim/${tokenId}`)}`, { replace: true });
       return;
     }
 
@@ -44,13 +43,7 @@ export function ClaimPage() {
     // Candy reward claims go through claim-candy-reward (voucher + daily cap).
     (async () => {
       try {
-        const { data: token } = await supabase
-          .from('claim_tokens')
-          .select('payload')
-          .eq('id', tokenId)
-          .single();
-
-        const payload = token?.payload as { type?: string; data?: { recipient_name?: string } } | null;
+        const payload = await claimService.peekClaimToken(tokenId);
         const payloadType = payload?.type;
 
         if (payloadType === 'message') {

@@ -4,7 +4,7 @@ import { useAuth } from '@/core/auth/AuthContext'
 import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth'
 import { silenceConsole } from '@/test/console'
 import { resetSupabaseMock, supabaseMock } from '@/test/supabaseMock'
-import { faceCropService } from '../services/faceCropService'
+import { faceCropService, FaceNotDetectedError } from '../services/faceCropService'
 import { registrationService } from '../services/registrationService'
 import { useRegistration } from './useRegistration'
 
@@ -22,9 +22,15 @@ vi.mock('@/core/supabase/userRegistrationAuth', () => ({
   },
 }))
 vi.mock('../services/registrationService', () => ({
-  registrationService: { uploadGesturePhoto: vi.fn(), uploadCroppedPhotoWithLandmarks: vi.fn() },
+  registrationService: { uploadGesturePhoto: vi.fn(),
+    uploadCroppedPhotoWithLandmarks: vi.fn(),
+    deleteGesturePhoto: vi.fn(),
+  },
 }))
-vi.mock('../services/faceCropService', () => ({ faceCropService: { cropFace: vi.fn() } }))
+vi.mock('../services/faceCropService', () => ({
+  faceCropService: { cropFace: vi.fn() },
+  FaceNotDetectedError: class FaceNotDetectedError extends Error {},
+}))
 
 const regAuth = vi.mocked(userRegistrationAuthService)
 const regService = vi.mocked(registrationService)
@@ -146,15 +152,34 @@ describe('useRegistration', () => {
         expect(result.current.error).toBe('Account already exists. Please log in instead.')
       })
 
-      it('signs out when the profile row is missing', async () => {
+      it('creates the missing profile row with the QR org and resumes', async () => {
         signUpUser.mockRejectedValue(existing())
         regAuth.checkOnboardingComplete.mockResolvedValue(null as never)
         const { result } = setup()
 
-        await act(async () => { await result.current.handleSignUp('a@x.com', 'pw') })
+        let ok = false
+        await act(async () => { ok = await result.current.handleSignUp('a@x.com', 'pw') })
 
+        expect(ok).toBe(true)
+        expect(regAuth.createMinimalUserRecord).toHaveBeenCalledWith('u1', 'org-1')
+        expect(regAuth.signOut).not.toHaveBeenCalled()
+        expect(result.current.currentStep).toBe('profile')
+        expect(result.current.error).toBeNull()
+      })
+
+      it('signs out with a support message only when the row cannot be created either', async () => {
+        signUpUser.mockRejectedValue(existing())
+        regAuth.checkOnboardingComplete.mockResolvedValue(null as never)
+        regAuth.createMinimalUserRecord.mockRejectedValue(new Error('rls'))
+        const { result } = setup()
+
+        let ok = true
+        await act(async () => { ok = await result.current.handleSignUp('a@x.com', 'pw') })
+
+        expect(ok).toBe(false)
         expect(regAuth.signOut).toHaveBeenCalled()
         expect(result.current.error).toMatch(/profile not found/)
+        expect(result.current.currentStep).toBe('signup')
       })
 
       it('does not reveal whether the email exists when the password is wrong', async () => {
@@ -208,7 +233,8 @@ describe('useRegistration', () => {
 
     function ready() {
       regAuth.updateUserProfile.mockResolvedValue(profile as never)
-      regService.uploadGesturePhoto.mockResolvedValue({ id: 'img1' } as never)
+      regService.uploadGesturePhoto.mockResolvedValue({ id: 'img1', storage_path: 'p1' } as never)
+      regService.deleteGesturePhoto.mockResolvedValue(undefined)
       faceCrop.cropFace.mockResolvedValue({ croppedBlob: cropped, cropMetadata: { landmarks: { a: 1 } } } as never)
       const hook = setup()
       act(() => hook.result.current.goToStep('photo'))
@@ -255,6 +281,50 @@ describe('useRegistration', () => {
       expect(result.current.currentStep).toBe('photo')
     })
 
+    it('reuses the saved upload when the same photo is resubmitted after a face failure', async () => {
+      const { result } = ready()
+      faceCrop.cropFace.mockRejectedValueOnce(new FaceNotDetectedError())
+      let ok = true
+      await act(async () => { ok = await result.current.handlePhotoSubmit(photo, 'wave') })
+
+      expect(ok).toBe(false)
+      expect(result.current.canSkipAvatar).toBe(true)
+      expect(result.current.currentStep).toBe('photo')
+      expect(result.current.error).toMatch(/continue without an avatar/)
+
+      await act(async () => { ok = await result.current.handlePhotoSubmit(photo, 'wave') })
+      expect(ok).toBe(true)
+      expect(regService.uploadGesturePhoto).toHaveBeenCalledTimes(1)
+      expect(result.current.result?.imageId).toBe('img1')
+      expect(result.current.canSkipAvatar).toBe(false)
+    })
+
+    it('uploads again and deletes the replaced upload when the user retakes', async () => {
+      const { result } = ready()
+      faceCrop.cropFace.mockRejectedValueOnce(new FaceNotDetectedError())
+      await act(async () => { await result.current.handlePhotoSubmit(photo, 'wave') })
+
+      regService.uploadGesturePhoto.mockResolvedValue({ id: 'img2', storage_path: 'p2' } as never)
+      await act(async () => { await result.current.handlePhotoSubmit(new Blob(['retake']), 'wave') })
+
+      expect(regService.uploadGesturePhoto).toHaveBeenCalledTimes(2)
+      expect(regService.deleteGesturePhoto).toHaveBeenCalledWith('img1', 'p1')
+      expect(result.current.result?.imageId).toBe('img2')
+    })
+
+    it('lets the user continue without an avatar after a face failure', async () => {
+      const { result } = ready()
+      act(() => result.current.handleContinueWithoutAvatar()) // nothing saved yet: no-op
+      expect(result.current.registrationComplete).toBe(false)
+
+      faceCrop.cropFace.mockRejectedValueOnce(new FaceNotDetectedError())
+      await act(async () => { await result.current.handlePhotoSubmit(photo, 'wave') })
+      act(() => result.current.handleContinueWithoutAvatar())
+
+      expect(result.current.registrationComplete).toBe(true)
+      expect(regService.uploadCroppedPhotoWithLandmarks).not.toHaveBeenCalled()
+    })
+
     it('fails when not signed in or when the name is missing', async () => {
       const { result } = setup()
       supabaseMock.auth.getUser.mockResolvedValue({ data: { user: null } })
@@ -296,6 +366,21 @@ describe('useRegistration', () => {
       expect(ok).toBe(true)
       expect(regService.uploadCroppedPhotoWithLandmarks).toHaveBeenCalledWith(expect.any(Blob), 'u1', 'org-1', { a: 1 })
       expect(result.current.registrationComplete).toBe(true)
+    })
+
+    it('sends the user back to retake when joining without landmarks', async () => {
+      const { result } = await atBobblehead()
+      faceCrop.cropFace.mockResolvedValue({ croppedBlob: new Blob(['c']), cropMetadata: { landmarks: null } } as never)
+      await act(async () => { await result.current.handlePhotoSubmit(new Blob(['p2']), 'wave') })
+
+      let ok = true
+      await act(async () => { ok = await result.current.handleBobbleheadSubmit(true) })
+
+      expect(ok).toBe(false)
+      expect(result.current.registrationComplete).toBe(false)
+      expect(result.current.currentStep).toBe('photo')
+      expect(result.current.error).toMatch(/retake/)
+      expect(regService.uploadCroppedPhotoWithLandmarks).not.toHaveBeenCalled()
     })
 
     it('skips the upload but still completes when declining', async () => {
