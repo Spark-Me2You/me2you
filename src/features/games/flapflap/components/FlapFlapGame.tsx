@@ -33,10 +33,7 @@ import {
 } from "@/features/games/services/gameScoreService";
 import { PinnedRegistrationQR, useKioskActivity } from "@/features/kiosk";
 
-export const FlapFlapGame: React.FC<GameProps> = ({
-  onExit,
-  onScoreChange,
-}) => {
+export const FlapFlapGame: React.FC<GameProps> = ({ onExit }) => {
   const { kioskOrgId, userProfile } = useAuth();
   const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
@@ -145,7 +142,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     velocityThreshold: 0.014,
     bufferSize: 3,
     cooldownMs: 230,
-    publishState: false,
     onFlap: handleFlap,
   });
 
@@ -166,9 +162,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     if (!app || !isReady) return;
 
     const engine = new FlapFlapEngine(app);
-    engine.setCallbacks(handleGameStateChange, (score) =>
-      onScoreChange?.(score),
-    );
+    engine.setCallbacks(handleGameStateChange);
     engineRef.current = engine;
     const FIXED_STEP_SECONDS = 1 / 60;
     const MAX_UPDATE_STEPS = 4;
@@ -215,7 +209,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, [
     app,
     isReady,
-    onScoreChange,
     landmarksRef,
     frameSequenceRef,
     handleGameStateChange,

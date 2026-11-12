@@ -104,7 +104,6 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
     velocityThreshold: 0.014,
     bufferSize: 3,
     cooldownMs: 230,
-    publishState: false,
   };
   const { processLandmarks: processP1, reset: resetP1 } = useArmFlap({
     ...armFlapOptions,

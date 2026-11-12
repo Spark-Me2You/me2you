@@ -37,8 +37,6 @@ describe('useArmFlap', () => {
 
     expect(onFlap).toHaveBeenCalledTimes(1)
     expect(onFlap).toHaveBeenCalledWith({ arm: 'left', velocity: 0.25, timestamp: 1_000_000 })
-    expect(result.current.flapDetected).toBe(true)
-    expect(result.current.lastFlap?.arm).toBe('left')
   })
 
   it('reports both arms and right arm', () => {
@@ -83,23 +81,6 @@ describe('useArmFlap', () => {
     vi.advanceTimersByTime(250)
     feed(result, [[{ y: 0.5 }, { y: 0 }], [{ y: 0.5 }, { y: 0 }], [{ y: 1 }, { y: 0 }]])
     expect(onFlap).toHaveBeenCalledTimes(2)
-  })
-
-  it('clears flapDetected after 100ms', () => {
-    const { result } = renderHook(() => useArmFlap(options))
-    feed(result, [[{ y: 0 }, { y: 0 }], [{ y: 0.5 }, { y: 0 }]])
-    expect(result.current.flapDetected).toBe(true)
-    act(() => { vi.advanceTimersByTime(100) })
-    expect(result.current.flapDetected).toBe(false)
-  })
-
-  it('does not publish state when publishState is false but still calls onFlap', () => {
-    const onFlap = vi.fn()
-    const { result } = renderHook(() => useArmFlap({ ...options, publishState: false, onFlap }))
-    feed(result, [[{ y: 0 }, { y: 0 }], [{ y: 0.5 }, { y: 0 }]])
-    expect(onFlap).toHaveBeenCalledTimes(1)
-    expect(result.current.flapDetected).toBe(false)
-    expect(result.current.lastFlap).toBeNull()
   })
 
   it('ignores a low-visibility wrist and bails when both are hidden', () => {

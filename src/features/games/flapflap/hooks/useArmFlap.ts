@@ -4,7 +4,7 @@
  * FlapFlap-specific - not shared across games
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import { PoseLandmark } from "@/shared/utils/gestureConstants";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { FlapEvent } from "../types/flapflap";
@@ -13,13 +13,10 @@ interface UseArmFlapOptions {
   velocityThreshold?: number;
   bufferSize?: number;
   cooldownMs?: number;
-  publishState?: boolean;
   onFlap?: (event: FlapEvent) => void;
 }
 
 interface UseArmFlapReturn {
-  flapDetected: boolean;
-  lastFlap: FlapEvent | null;
   processLandmarks: (landmarks: NormalizedLandmark[]) => void;
   /** Drop buffered samples and the held-signal latch (call when the player leaves view). */
   reset: () => void;
@@ -38,16 +35,10 @@ export const useArmFlap = (
     velocityThreshold = DEFAULT_VELOCITY_THRESHOLD,
     bufferSize = DEFAULT_BUFFER_SIZE,
     cooldownMs = DEFAULT_COOLDOWN_MS,
-    publishState = true,
     onFlap,
   } = options;
 
-  // Use refs instead of state to avoid re-renders
-  const flapDetectedRef = useRef(false);
-  const lastFlapRef = useRef<FlapEvent | null>(null);
-  const [flapDetected, setFlapDetected] = useState(false);
-  const [lastFlap, setLastFlap] = useState<FlapEvent | null>(null);
-
+  // Refs, not state: processLandmarks runs per frame and must not re-render.
   const leftWristBuffer = useRef<number[]>([]);
   const rightWristBuffer = useRef<number[]>([]);
   const lastFlapTime = useRef<number>(0);
@@ -117,36 +108,17 @@ export const useArmFlap = (
 
         lastFlapTime.current = now;
 
-        // Update refs first (no re-render)
-        flapDetectedRef.current = true;
-        lastFlapRef.current = flapEvent;
-
         onFlap?.(flapEvent);
-
-        if (!publishState) {
-          flapDetectedRef.current = false;
-          return;
-        }
-
-        // Optional state publishing for debug/UI consumers
-        setFlapDetected(true);
-        setLastFlap(flapEvent);
-
-        // Reset flap detected after short delay
-        setTimeout(() => {
-          flapDetectedRef.current = false;
-          setFlapDetected(false);
-        }, 100);
       }
 
       if (hasFlapSignal) {
         wasFlapSignalRef.current = true;
       }
     },
-    [velocityThreshold, bufferSize, cooldownMs, publishState, onFlap],
+    [velocityThreshold, bufferSize, cooldownMs, onFlap],
   );
 
-  return { flapDetected, lastFlap, processLandmarks, reset };
+  return { processLandmarks, reset };
 };
 
 function calculateVelocity(buffer: number[]): number {
