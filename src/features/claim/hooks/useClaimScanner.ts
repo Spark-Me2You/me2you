@@ -1,114 +1,119 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { Html5Qrcode } from 'html5-qrcode';
-import { claimService } from '@/core/supabase/claimService';
-import { supabase } from '@/core/supabase/client';
-import type { ClaimPayload } from '../types';
 
 const CLAIM_TOKEN_PATTERN = /\/claim\/([0-9a-f-]{36})(?:[?#].*)?$/;
 
+/**
+ * html5-qrcode's stop() throws synchronously (a string, not a rejected
+ * promise) when the scanner isn't running. Left uncaught in a React cleanup
+ * it unmounts the whole app, leaving a blank screen, so every stop goes
+ * through here.
+ */
+async function safeStop(scanner: Html5Qrcode | null): Promise<void> {
+  if (!scanner) return;
+  try {
+    await scanner.stop();
+  } catch {
+    // Not running (never started, or already stopped)
+  }
+}
+
 interface UseClaimScannerOptions {
   elementId: string;
-  onSuccess: (payload: ClaimPayload) => void;
-  onError: (message: string) => void;
+  /**
+   * Called once with the token of the first claim QR scanned. The scanner is
+   * already stopped. The caller opens /claim/:tokenId so a scan behaves exactly
+   * like opening the QR link (message compose, drawing, candy, ...).
+   */
+  onScan: (tokenId: string) => void;
 }
 
 interface UseClaimScannerResult {
   isScanning: boolean;
-  isProcessing: boolean;
   error: string | null;
   start: () => Promise<void>;
   stop: () => Promise<void>;
 }
 
-export function useClaimScanner({
-  elementId,
-  onSuccess,
-  onError,
-}: UseClaimScannerOptions): UseClaimScannerResult {
+export function useClaimScanner({ elementId, onScan }: UseClaimScannerOptions): UseClaimScannerResult {
   const [isScanning, setIsScanning] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const mountedRef = useRef(true);
-  const callbacksRef = useRef({ onSuccess, onError });
-  callbacksRef.current = { onSuccess, onError };
+  // Bumped by every start/stop, so a start that is still awaiting the camera
+  // can tell it was cancelled (closed early, or StrictMode's double mount).
+  const runIdRef = useRef(0);
+  const onScanRef = useRef(onScan);
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
+      // Also cancels a start still awaiting the camera (see isCurrent).
       mountedRef.current = false;
-      // Clean up scanner on unmount without triggering state updates
-      scannerRef.current?.stop().catch(() => {});
+      void safeStop(scannerRef.current);
+      scannerRef.current = null;
     };
   }, []);
 
   const stop = useCallback(async () => {
+    runIdRef.current++;
     const scanner = scannerRef.current;
-    if (!scanner) return;
-    try {
-      await scanner.stop();
-    } catch {
-      // Already stopped
-    }
+    scannerRef.current = null;
+    await safeStop(scanner);
     if (mountedRef.current) setIsScanning(false);
   }, []);
 
   const start = useCallback(async () => {
     if (!mountedRef.current) return;
+    const runId = ++runIdRef.current;
+    const isCurrent = () => mountedRef.current && runIdRef.current === runId;
     setError(null);
     setIsScanning(true);
 
+    // A scanner left over from an earlier start must not keep the camera.
+    await safeStop(scannerRef.current);
+    scannerRef.current = null;
+
     try {
       const { Html5Qrcode: Html5QrcodeClass } = await import('html5-qrcode');
+      if (!isCurrent()) return;
       const scanner = new Html5QrcodeClass(elementId);
       scannerRef.current = scanner;
+      let handled = false;
 
       await scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText: string) => {
           const match = decodedText.match(CLAIM_TOKEN_PATTERN);
-          if (!match) return;
+          if (!match || handled) return;
+          handled = true;
 
-          const tokenId = match[1];
-          await scanner.stop().catch(() => {});
-          if (mountedRef.current) {
-            setIsScanning(false);
-            setIsProcessing(true);
-          }
-
-          try {
-            // Candy rewards have their own claim function (voucher + daily cap).
-            const { data: token } = await supabase
-              .from('claim_tokens')
-              .select('payload')
-              .eq('id', tokenId)
-              .single();
-            const isCandy = (token?.payload as { type?: string } | null)?.type === 'candy_reward';
-            const result = isCandy
-              ? await claimService.executeCandyClaim(tokenId)
-              : await claimService.executeClaim(tokenId);
-            if (mountedRef.current) callbacksRef.current.onSuccess(result.payload);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Claim failed';
-            if (mountedRef.current) {
-              setError(msg);
-              callbacksRef.current.onError(msg);
-            }
-          } finally {
-            if (mountedRef.current) setIsProcessing(false);
-          }
+          await safeStop(scanner);
+          if (scannerRef.current === scanner) scannerRef.current = null;
+          if (!isCurrent()) return;
+          setIsScanning(false);
+          onScanRef.current(match[1]);
         },
-        undefined
+        undefined,
       );
+
+      // Closed while the camera was starting: release it now.
+      if (!isCurrent()) {
+        await safeStop(scanner);
+        if (scannerRef.current === scanner) scannerRef.current = null;
+      }
     } catch (err) {
-      if (!mountedRef.current) return;
+      if (!isCurrent()) return;
       const msg = err instanceof Error ? err.message : 'Could not start camera';
       setError(msg);
       setIsScanning(false);
     }
   }, [elementId]);
 
-  return { isScanning, isProcessing, error, start, stop };
+  return { isScanning, error, start, stop };
 }

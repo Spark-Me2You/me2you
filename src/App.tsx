@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { ErrorBoundary, PageCrashFallback } from "@/core/monitoring";
 import {
   ProtectedRoute,
   AdminOnlyRoute,
@@ -30,106 +31,112 @@ import AppContainer from "./AppContainer";
  * - /app: Protected route wrapping the state machine (admin or kiosk only)
  */
 function App() {
+  const { pathname } = useLocation();
+
+  // Keyed by path so navigating away (including the phone's back button)
+  // clears a crash instead of staying on the fallback.
   return (
-    <Routes>
-      {/* Public route: Admin login */}
-      <Route path="/login" element={<AdminLoginPage />} />
+    <ErrorBoundary key={pathname} fallback={<PageCrashFallback />}>
+      <Routes>
+        {/* Public route: Admin login */}
+        <Route path="/login" element={<AdminLoginPage />} />
 
-      {/* Public route: Mobile user sign-in */}
-      <Route path="/user" element={<UserLandingPage />} />
+        {/* Public route: Mobile user sign-in */}
+        <Route path="/user" element={<UserLandingPage />} />
 
-      {/* Public route: Mobile user registration */}
-      <Route path="/register" element={<RegistrationPage />} />
+        {/* Public route: Mobile user registration */}
+        <Route path="/register" element={<RegistrationPage />} />
 
-      {/* User-only route: Mobile user profile */}
-      <Route
-        path="/user/profile"
-        element={
-          <UserProtectedRoute>
-            <UserProfileView />
-          </UserProtectedRoute>
-        }
-      />
+        {/* User-only route: Mobile user profile */}
+        <Route
+          path="/user/profile"
+          element={
+            <UserProtectedRoute>
+              <UserProfileView />
+            </UserProtectedRoute>
+          }
+        />
 
-      {/* User-only route: Personal drawings gallery */}
-      <Route
-        path="/user/gallery"
-        element={
-          <UserProtectedRoute>
-            <UserGalleryPage />
-          </UserProtectedRoute>
-        }
-      />
+        {/* User-only route: Personal drawings gallery */}
+        <Route
+          path="/user/gallery"
+          element={
+            <UserProtectedRoute>
+              <UserGalleryPage />
+            </UserProtectedRoute>
+          }
+        />
 
-      {/* User-only route: Personal game scores */}
-      <Route
-        path="/user/game-scores"
-        element={
-          <UserProtectedRoute>
-            <UserGameScoresPage />
-          </UserProtectedRoute>
-        }
-      />
-      {/* User-only route: Candy vouchers won in Gumball Slice */}
-      <Route
-        path="/user/candy"
-        element={
-          <UserProtectedRoute>
-            <UserCandyPage />
-          </UserProtectedRoute>
-        }
-      />
-      {/* User-only route: Avatar accessory customization */}
-      <Route
-        path="/user/customize"
-        element={
-          <UserProtectedRoute>
-            <CustomizeAvatarView />
-          </UserProtectedRoute>
-        }
-      />
+        {/* User-only route: Personal game scores */}
+        <Route
+          path="/user/game-scores"
+          element={
+            <UserProtectedRoute>
+              <UserGameScoresPage />
+            </UserProtectedRoute>
+          }
+        />
+        {/* User-only route: Candy vouchers won in Gumball Slice */}
+        <Route
+          path="/user/candy"
+          element={
+            <UserProtectedRoute>
+              <UserCandyPage />
+            </UserProtectedRoute>
+          }
+        />
+        {/* User-only route: Avatar accessory customization */}
+        <Route
+          path="/user/customize"
+          element={
+            <UserProtectedRoute>
+              <CustomizeAvatarView />
+            </UserProtectedRoute>
+          }
+        />
 
-      {/* User-only route: Personal messages inbox */}
-      <Route
-        path="/user/messages"
-        element={
-          <UserProtectedRoute>
-            <MessagesView />
-          </UserProtectedRoute>
-        }
-      />
+        {/* User-only route: Personal messages inbox */}
+        <Route
+          path="/user/messages"
+          element={
+            <UserProtectedRoute>
+              <MessagesView />
+            </UserProtectedRoute>
+          }
+        />
 
-      {/* Admin-only route: Organization selector */}
-      <Route
-        path="/select-org"
-        element={
-          <AdminOnlyRoute>
-            <OrgSelectorPage />
-          </AdminOnlyRoute>
-        }
-      />
+        {/* Admin-only route: Organization selector */}
+        <Route
+          path="/select-org"
+          element={
+            <AdminOnlyRoute>
+              <OrgSelectorPage />
+            </AdminOnlyRoute>
+          }
+        />
 
-      {/* Protected route: Main app with state machine (admin or kiosk) */}
-      <Route
-        path="/app"
-        element={
-          <ProtectedRoute>
-            <AppContainer />
-          </ProtectedRoute>
-        }
-      />
+        {/* Protected route: Main app with state machine (admin or kiosk) */}
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <AppContainer />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Public routes: claim flow (ClaimPage handles its own auth redirect) */}
-      <Route path="/claim/:tokenId" element={<ClaimPage />} />
-      <Route path="/claim/success" element={<ClaimSuccessPage />} />
-      <Route path="/claim/error" element={<ClaimErrorPage />} />
+        {/* Public routes: claim flow (ClaimPage handles its own auth redirect) */}
+        <Route path="/claim/:tokenId" element={<ClaimPage />} />
+        <Route path="/claim/success" element={<ClaimSuccessPage />} />
+        <Route path="/claim/error" element={<ClaimErrorPage />} />
 
-      {/* Default redirect to user landing page */}
-      <Route path="/" element={<Navigate to="/user" replace />} />
+        {/* Default redirect to user landing page */}
+        <Route path="/" element={<Navigate to="/user" replace />} />
 
-      {/* Catch-all: redirect to user landing page */}
-      <Route path="*" element={<Navigate to="/user" replace />} />
-    </Routes>
+        {/* Catch-all: redirect to user landing page */}
+        <Route path="*" element={<Navigate to="/user" replace />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }
 
