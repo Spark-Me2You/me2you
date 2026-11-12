@@ -38,7 +38,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   onScoreChange,
 }) => {
   const { kioskOrgId, userProfile } = useAuth();
-  const { setEnabled: setCvCursorEnabled, cursorVisibleRef } =
+  const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
   const activeOrgId = kioskOrgId ?? userProfile?.org_id ?? null;
 
@@ -179,15 +179,15 @@ export const FlapFlapGame: React.FC<GameProps> = ({
       }
 
       // Only process freshly inferred landmarks once.
-      // Skip flap detection while the CV cursor's pointing pose is active —
-      // moving the pointing hand would otherwise false-trigger a flap.
+      // Skip flap detection while the CV cursor's ready pose is active —
+      // moving that hand would otherwise false-trigger a flap.
       const currentFrameSequence = frameSequenceRef.current;
       const currentLandmarks = landmarksRef.current;
       if (
         currentLandmarks &&
         currentFrameSequence !== lastProcessedFrameSequence
       ) {
-        if (!cursorVisibleRef.current) {
+        if (!cursorStateRef.current.visible) {
           processLandmarksRef.current(currentLandmarks);
         }
         lastProcessedFrameSequence = currentFrameSequence;
@@ -208,7 +208,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     landmarksRef,
     frameSequenceRef,
     handleGameStateChange,
-    cursorVisibleRef,
+    cursorStateRef,
   ]);
 
   // Run CV inference in a separate cadence from render/physics ticker.

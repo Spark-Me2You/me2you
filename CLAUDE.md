@@ -108,7 +108,7 @@ BrowserRouter
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
 - **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
-- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), and detects thumb-curl clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
+- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the palm center to screen coords (EMA-smoothed), and detects pinch clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
 - **`monitoring/`** — `ErrorBoundary` component.
@@ -157,7 +157,7 @@ Sequential numbered migrations (001–026). Current schema includes: `users`, `a
 ### CV Gesture System
 
 `useCvCursor` detects two states used throughout the kiosk:
-- **Hover** (pointing pose): index extended, other fingers curled → moves cursor
-- **Click** (pinch): thumb-tip to index-tip normalized distance < `0.06` → fires click with 300 ms cooldown
+- **Hover** (ready pose): thumb and index open, other fingers closed or half-closed → shows cursor, palm center moves it. It stays up until the hand opens flat or makes a fist, and rides out dropouts for 400 ms
+- **Click** (pinch, only while the cursor is up): thumb-tip to index-tip distance under `0.3` × palm length (released above `0.45` ×; see `handGeometry.ts`) → fires click with 300 ms cooldown
 
-Games access the raw `isPinched` field (no cooldown) for continuous paint/drag interactions.
+Games access the raw `isPinched` field (no cooldown) for continuous paint/drag interactions. FlapFlap ignores flaps while the cursor is visible. Gumball Slice steers with the fingertip from `handTrackRef`, not the cursor.
