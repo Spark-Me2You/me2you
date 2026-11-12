@@ -1,6 +1,6 @@
 /**
  * Discovery Service
- * API for matching gestures and fetching random profiles from the organization
+ * API for fetching random profiles from the organization
  */
 
 import { supabase } from "@/core/supabase/client";
@@ -13,127 +13,6 @@ type DiscoveryUserData = Pick<
 >;
 
 export const discoveryService = {
-  /**
-   * Match gesture to profile
-   * TODO: Implement gesture matching API call
-   */
-  matchGesture: async (_gestureEmbedding: number[]) => {
-    // TODO: Send gesture embedding to backend for matching
-    return null;
-  },
-
-  fetchRandomImage: async (
-    orgId: string,
-    category?: string,
-  ): Promise<RandomImageData | null> => {
-    if (!orgId) {
-      throw new Error("Organization ID is required");
-    }
-
-    try {
-      let query = supabase
-        .from("gesture_image")                      // changed
-        .select(
-          `
-          id,
-          owner_id,
-          org_id,
-          storage_path,
-          category,
-          is_public,
-          created_at,
-          user (
-            id,
-            name,
-            status,
-            pronouns,
-            major,
-            interests,
-            created_at,
-            accessory
-          )
-        `,
-        )
-        .eq("org_id", orgId)
-        .eq("is_public", true);
-
-      if (category) {
-        query = query.eq("category", category);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("[discoveryService] Database query failed:", error);
-        throw new Error(`Failed to fetch images: ${error.message}`);
-      }
-
-      if (!data || data.length === 0) {
-        console.log(
-          "[discoveryService] No public images found for org:",
-          orgId,
-          category ? `with category: ${category}` : "(all categories)",
-        );
-        return null;
-      }
-
-      const randomIndex = Math.floor(Math.random() * data.length);
-      const selectedImage = data[randomIndex];
-
-      const rawUserData = Array.isArray(selectedImage.user)
-        ? selectedImage.user[0]
-        : selectedImage.user;
-
-      const userData = rawUserData as DiscoveryUserData | null;
-
-      if (!userData) {
-        console.error(
-          "[discoveryService] Image has no owner:",
-          selectedImage.id,
-        );
-        throw new Error("Image owner data is missing");
-      }
-
-      const imageUrl = await storageService.getPhotoUrl(selectedImage.storage_path); // removed cropped_path fallback
-
-      console.log(
-        "[discoveryService] Random image selected:",
-        selectedImage.id,
-        "from",
-        data.length,
-        "available images",
-      );
-
-      return {
-        image: {
-          id: selectedImage.id,
-          owner_id: selectedImage.owner_id,
-          org_id: selectedImage.org_id,
-          storage_path: selectedImage.storage_path,
-          cropped_path: null,                       // removed, hardcoded to null
-          category: selectedImage.category,
-          is_public: selectedImage.is_public,
-          created_at: selectedImage.created_at,
-        },
-        owner: {
-          id: userData.id,
-          org_id: selectedImage.org_id,
-          name: userData.name,
-          status: userData.status,
-          pronouns: userData.pronouns ?? null,
-          major: userData.major ?? null,
-          interests: userData.interests ?? null,
-          created_at: userData.created_at,
-          accessory: userData.accessory ?? null,
-        },
-        imageUrl,
-      };
-    } catch (error) {
-      console.error("[discoveryService] fetchRandomImage failed:", error);
-      throw error;
-    }
-  },
-
   getImageCount: async (orgId: string, category: string): Promise<number> => {
     if (!orgId || !category) {
       throw new Error("Organization ID and category are required");
@@ -141,7 +20,7 @@ export const discoveryService = {
 
     try {
       const { count, error } = await supabase
-        .from("gesture_image")                      // changed
+        .from("gesture_image")
         .select("*", { count: "exact", head: true })
         .eq("org_id", orgId)
         .eq("category", category)
@@ -151,11 +30,6 @@ export const discoveryService = {
         console.error("[discoveryService] Count query failed:", error);
         throw new Error(`Failed to count images: ${error.message}`);
       }
-
-      console.log(
-        `[discoveryService] Image count for ${category}:`,
-        count ?? 0,
-      );
 
       return count ?? 0;
     } catch (error) {
@@ -179,7 +53,7 @@ export const discoveryService = {
 
     try {
       const { count } = await supabase
-        .from("gesture_image")                      // changed
+        .from("gesture_image")
         .select("*", { count: "exact", head: true })
         .eq("org_id", orgId)
         .eq("category", category)
@@ -188,9 +62,6 @@ export const discoveryService = {
       const totalCount = count ?? 0;
 
       if (totalCount === 0) {
-        console.log(
-          `[discoveryService] No images found for batch: ${category}`,
-        );
         return [];
       }
 
@@ -198,7 +69,7 @@ export const discoveryService = {
       const randomOffset = Math.floor(Math.random() * (maxOffset + 1));
 
       const { data, error } = await supabase
-        .from("gesture_image")                      // changed
+        .from("gesture_image")
         .select(
           `
           id,
@@ -232,9 +103,6 @@ export const discoveryService = {
       }
 
       if (!data || data.length === 0) {
-        console.log(
-          `[discoveryService] No images found for batch: ${category}`,
-        );
         return [];
       }
 
@@ -244,20 +112,20 @@ export const discoveryService = {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
+      const withOwner = shuffled.flatMap((img) => {
+        const rawUserData = Array.isArray(img.user) ? img.user[0] : img.user;
+        const userData = rawUserData as DiscoveryUserData | null;
+        if (!userData) {
+          // One orphaned image must not fail the whole batch.
+          console.warn("[discoveryService] Skipping image without owner data:", img.id);
+          return [];
+        }
+        return [{ img, userData }];
+      });
+
       const processedImages: RandomImageData[] = await Promise.all(
-        shuffled.map(async (img) => {
-          const rawUserData = Array.isArray(img.user) ? img.user[0] : img.user;
-          const userData = rawUserData as DiscoveryUserData | null;
-
-          if (!userData) {
-            console.warn(
-              "[discoveryService] Image missing owner data:",
-              img.id,
-            );
-            throw new Error(`Image ${img.id} has no owner data`);
-          }
-
-          const imageUrl = await storageService.getPhotoUrl(img.storage_path); // removed cropped_path fallback
+        withOwner.map(async ({ img, userData }) => {
+          const imageUrl = await storageService.getPhotoUrl(img.storage_path);
 
           return {
             image: {
@@ -265,7 +133,7 @@ export const discoveryService = {
               owner_id: img.owner_id,
               org_id: img.org_id,
               storage_path: img.storage_path,
-              cropped_path: null,                   // removed, hardcoded to null
+              cropped_path: null,
               category: img.category,
               is_public: img.is_public,
               created_at: img.created_at,
@@ -284,12 +152,6 @@ export const discoveryService = {
             imageUrl,
           };
         }),
-      );
-
-      console.log(
-        `[discoveryService] Fetched batch for ${category}:`,
-        processedImages.length,
-        "images",
       );
 
       return processedImages;
