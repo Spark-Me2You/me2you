@@ -20,26 +20,14 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-type JsonResponse = Record<string, unknown>;
+import { corsHeaders } from '../_shared/cors.ts';
+import { json } from '../_shared/http.ts';
 
 type IssueResult =
   | { status: 'issued'; voucher_id: string; code: string; won_on: string }
   | { status: 'capped'; resets_at: string }
   | { status: 'disabled' }
   | { status: 'error'; http: number; error: string };
-
-function json(status: number, body: JsonResponse): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
 
 /** What the phone's claim success page shows for each outcome. */
 function display(result: Exclude<IssueResult, { status: 'error' }>) {
