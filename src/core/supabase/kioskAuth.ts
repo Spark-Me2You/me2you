@@ -76,7 +76,7 @@ export const kioskAuthService = {
 
     // 2. Sign out current admin session
     console.log('[kioskAuth] Signing out admin session');
-    const { error: signOutError } = await supabase.auth.signOut();
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
     if (signOutError) {
       console.error('[kioskAuth] Failed to sign out admin session:', signOutError);
       throw new Error('Failed to sign out admin session before entering kiosk mode');
@@ -158,7 +158,7 @@ export const kioskAuthService = {
   exitKioskMode: async (): Promise<void> => {
     console.log('[kioskAuth] Exiting kiosk mode');
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
 
     console.log('[kioskAuth] Kiosk session signed out');
   },

@@ -68,7 +68,7 @@ export const adminAuthService = {
     // Step 4: If not an admin, sign out and throw error
     if (adminError || !adminData) {
       // Clean up the session since this user is not an admin
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
 
       // Provide detailed error message
       if (adminError) {
@@ -160,7 +160,7 @@ export const adminAuthService = {
    * @throws Error if sign out fails
    */
   signOut: async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
 
     if (error) {
       throw new Error(`Sign out failed: ${error.message}`);

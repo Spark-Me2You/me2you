@@ -47,7 +47,7 @@ describe('adminAuthService', () => {
       supabaseMock.from.mockReturnValue(queryResult({ data: null }))
 
       await expect(adminAuthService.signInWithEmail('a', 'b')).rejects.toThrow('not authorized as an admin')
-      expect(supabaseMock.auth.signOut).toHaveBeenCalled()
+      expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     })
 
     it('signs out and reports the database error when the admin lookup fails', async () => {
@@ -57,7 +57,7 @@ describe('adminAuthService', () => {
       await expect(adminAuthService.signInWithEmail('a', 'b')).rejects.toThrow(
         'Admin verification failed: rls (Code: 42501)',
       )
-      expect(supabaseMock.auth.signOut).toHaveBeenCalled()
+      expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     })
   })
 
@@ -97,6 +97,7 @@ describe('adminAuthService', () => {
     it('resolves on success and throws on error', async () => {
       supabaseMock.auth.signOut.mockResolvedValueOnce({ error: null })
       await expect(adminAuthService.signOut()).resolves.toBeUndefined()
+      expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
 
       supabaseMock.auth.signOut.mockResolvedValueOnce({ error: { message: 'x' } })
       await expect(adminAuthService.signOut()).rejects.toThrow('Sign out failed: x')
