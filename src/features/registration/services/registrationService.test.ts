@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { storageService } from '@/core/supabase/storage'
 import { userRegistrationAuthService } from '@/core/supabase/userRegistrationAuth'
+import { queryResult, supabaseMock } from '@/test/supabaseMock'
 import { registrationService } from './registrationService'
 
+vi.mock('@/core/supabase/client', () => import('@/test/supabaseMockModule'))
+
 vi.mock('@/core/supabase/storage', () => ({
-  storageService: { uploadPhoto: vi.fn(), uploadCroppedPhoto: vi.fn() },
+  storageService: { uploadPhoto: vi.fn(), uploadCroppedPhoto: vi.fn(), deletePhoto: vi.fn() },
 }))
 vi.mock('@/core/supabase/userRegistrationAuth', () => ({
   userRegistrationAuthService: {
@@ -125,6 +128,31 @@ describe('registrationService', () => {
 
       await expect(registrationService.completeRegistration(form, 'org')).rejects.toThrow('email taken')
       expect(auth.createUserProfile).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('deleteGesturePhoto', () => {
+    it('removes the stored file and the row', async () => {
+      const q = queryResult({})
+      supabaseMock.from.mockReturnValue(q)
+      storage.deletePhoto.mockResolvedValue(undefined)
+
+      await registrationService.deleteGesturePhoto('img1', 'org/u1/p.jpg')
+
+      expect(storage.deletePhoto).toHaveBeenCalledWith('org/u1/p.jpg')
+      expect(supabaseMock.from).toHaveBeenCalledWith('gesture_image')
+      expect(q.delete).toHaveBeenCalled()
+      expect(q.eq).toHaveBeenCalledWith('id', 'img1')
+    })
+
+    it('still deletes the row when the file removal fails, and throws when the row cannot be deleted', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      supabaseMock.from.mockReturnValue(queryResult({ error: { message: 'rls' } }))
+      storage.deletePhoto.mockRejectedValue(new Error('gone'))
+
+      await expect(registrationService.deleteGesturePhoto('img1', 'p.jpg')).rejects.toThrow(
+        'Failed to delete gesture image record: rls',
+      )
     })
   })
 })

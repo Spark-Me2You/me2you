@@ -13,7 +13,11 @@ import {
   type RegistrationResult,
 } from "../services/registrationService";
 import { useRegistrationContext } from "../context/RegistrationContext";
-import { faceCropService, type CropMetadata } from "../services/faceCropService";
+import {
+  faceCropService,
+  FaceNotDetectedError,
+  type CropMetadata,
+} from "../services/faceCropService";
 
 /**
  * Registration steps
@@ -32,6 +36,10 @@ export interface RegistrationState {
   registrationComplete: boolean;
   croppedPhoto: Blob | null;
   cropMetadata: CropMetadata | null;
+  /** Gesture photo already saved this session, reused if the same photo is resubmitted. */
+  uploadedImage: { id: string; storagePath: string; photo: Blob } | null;
+  /** Photo saved but no face found: the user may retake or continue without an avatar. */
+  canSkipAvatar: boolean;
 }
 
 /**
@@ -46,6 +54,7 @@ export interface UseRegistrationReturn {
   result: RegistrationResult | null;
   registrationComplete: boolean;
   croppedPhotoUrl: string | null;
+  canSkipAvatar: boolean;
 
   // Step navigation
   goToStep: (step: RegistrationStep) => void;
@@ -63,6 +72,7 @@ export interface UseRegistrationReturn {
   handleProfileSubmit: () => Promise<boolean>;
   handlePhotoSubmit: (photo: Blob | null, category: string) => Promise<boolean>;
   handleBobbleheadSubmit: (joinNetwork: boolean) => Promise<boolean>;
+  handleContinueWithoutAvatar: () => void;
 }
 
 const STEP_ORDER: RegistrationStep[] = [
@@ -89,6 +99,8 @@ export const useRegistration = (): UseRegistrationReturn => {
     registrationComplete: false,
     croppedPhoto: null,
     cropMetadata: null,
+    uploadedImage: null,
+    canSkipAvatar: false,
   });
 
   const [croppedPhotoUrl, setCroppedPhotoUrl] = useState<string | null>(null);
@@ -298,7 +310,12 @@ export const useRegistration = (): UseRegistrationReturn => {
         return false;
       }
 
-      setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
+      setState((prev) => ({
+        ...prev,
+        isSubmitting: true,
+        error: null,
+        canSkipAvatar: false,
+      }));
 
       try {
         const {
@@ -323,19 +340,53 @@ export const useRegistration = (): UseRegistrationReturn => {
 
         setUserProfile(profile);
 
-        // Upload gesture photo to gesture_image table
-        const gestureImageRecord =
-          await registrationService.uploadGesturePhoto(
+        // Reuse the saved upload when the same photo is resubmitted (retry after a
+        // crop failure); a retake replaces it.
+        const previous = state.uploadedImage;
+        let imageId: string;
+        if (previous && previous.photo === photo) {
+          imageId = previous.id;
+        } else {
+          const record = await registrationService.uploadGesturePhoto(
             photo,
             user.id,
             org_id,
             category,
           );
+          imageId = record.id;
+          setState((prev) => ({
+            ...prev,
+            uploadedImage: {
+              id: record.id,
+              storagePath: record.storage_path,
+              photo,
+            },
+          }));
+          if (previous) {
+            registrationService
+              .deleteGesturePhoto(previous.id, previous.storagePath)
+              .catch((e) =>
+                console.warn("[useRegistration] Failed to delete replaced photo:", e),
+              );
+          }
+        }
 
-        // Run face cropping to get bobblehead
-        console.log('[useRegistration] Running face crop...');
-        const cropResult = await faceCropService.cropFace(photo);
-        console.log('[useRegistration] Face crop complete');
+        let cropResult;
+        try {
+          cropResult = await faceCropService.cropFace(photo);
+        } catch (cropError) {
+          if (cropError instanceof FaceNotDetectedError) {
+            setState((prev) => ({
+              ...prev,
+              isSubmitting: false,
+              canSkipAvatar: true,
+              error:
+                "We couldn't find a face in that photo. Retake it, or continue without an avatar.",
+            }));
+            return false;
+          }
+          throw cropError;
+        }
 
         // Create preview URL for cropped photo
         const previewUrl = URL.createObjectURL(cropResult.croppedBlob);
@@ -349,7 +400,7 @@ export const useRegistration = (): UseRegistrationReturn => {
           result: {
             user,
             profile,
-            imageId: gestureImageRecord.id,
+            imageId,
           },
           croppedPhoto: cropResult.croppedBlob,
           cropMetadata: cropResult.cropMetadata,
@@ -365,7 +416,7 @@ export const useRegistration = (): UseRegistrationReturn => {
         return false;
       }
     },
-    [state.formData, setUserProfile, nextStep, org_id],
+    [state.formData, state.uploadedImage, setUserProfile, nextStep, org_id],
   );
 
   const handleProfileSubmit = useCallback(async (): Promise<boolean> => {
@@ -387,6 +438,18 @@ export const useRegistration = (): UseRegistrationReturn => {
       setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
 
       try {
+        if (joinNetwork && !(state.croppedPhoto && state.cropMetadata?.landmarks)) {
+          // Joining needs landmarks; send the user back to retake rather than skipping silently
+          setState((prev) => ({
+            ...prev,
+            isSubmitting: false,
+            currentStep: "photo",
+            error:
+              "We couldn't map your face for the network. Please retake your photo.",
+          }));
+          return false;
+        }
+
         if (joinNetwork && state.croppedPhoto && state.cropMetadata?.landmarks) {
           const {
             data: { user },
@@ -424,6 +487,14 @@ export const useRegistration = (): UseRegistrationReturn => {
     [state.croppedPhoto, state.cropMetadata, org_id],
   );
 
+  const handleContinueWithoutAvatar = useCallback(() => {
+    setState((prev) =>
+      prev.canSkipAvatar && prev.uploadedImage
+        ? { ...prev, canSkipAvatar: false, error: null, registrationComplete: true }
+        : prev,
+    );
+  }, []);
+
   return {
     // State
     currentStep: state.currentStep,
@@ -433,6 +504,7 @@ export const useRegistration = (): UseRegistrationReturn => {
     result: state.result,
     registrationComplete: state.registrationComplete,
     croppedPhotoUrl,
+    canSkipAvatar: state.canSkipAvatar,
 
     // Step navigation
     goToStep,
@@ -450,5 +522,6 @@ export const useRegistration = (): UseRegistrationReturn => {
     handleProfileSubmit,
     handlePhotoSubmit,
     handleBobbleheadSubmit,
+    handleContinueWithoutAvatar,
   };
 };
