@@ -7,14 +7,22 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
-      include: ['src/**/*.test.{ts,tsx}'],
+      include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/_shared/*.test.ts'],
       setupFiles: ['./src/test/setup.ts'],
       restoreMocks: true,
       coverage: {
         provider: 'v8',
         include: ['src/**/*.{ts,tsx}'],
         exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/**/*.d.ts', 'src/main.tsx'],
-        reporter: ['text', 'html'],
+        reporter: ['text', 'html', 'json-summary'],
+        // Floor against regressions, set a little below the current numbers.
+        // Ratchet these up as coverage improves, never down.
+        thresholds: {
+          lines: 33,
+          statements: 30,
+          functions: 35,
+          branches: 24,
+        },
       },
     },
   }),
