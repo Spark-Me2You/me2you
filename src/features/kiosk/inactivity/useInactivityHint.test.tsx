@@ -3,10 +3,11 @@ import { act, render, renderHook, screen } from "@testing-library/react";
 
 const faceRef: { current: number | null } = { current: null };
 const cursorRef = { current: { x: 0, y: 0, visible: false, isPinched: false } };
+const handRef = { current: { detected: false, timestamp: 0 } };
 
 vi.mock("./useFacePresence", () => ({ useFacePresence: () => faceRef }));
 vi.mock("@/core/cv/cursor/CvCursorEnabledContext", () => ({
-  useCvCursorEnabled: () => ({ cursorStateRef: cursorRef }),
+  useCvCursorEnabled: () => ({ cursorStateRef: cursorRef, handTrackRef: handRef }),
 }));
 
 import { useInactivityHint } from "./useInactivityHint";

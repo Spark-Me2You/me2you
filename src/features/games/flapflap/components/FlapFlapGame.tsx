@@ -31,7 +31,7 @@ import {
   gameScoreService,
   type FlapFlapLeaderboardEntry,
 } from "@/features/games/services/gameScoreService";
-import { PinnedRegistrationQR } from "@/features/kiosk";
+import { PinnedRegistrationQR, useKioskActivity } from "@/features/kiosk";
 
 export const FlapFlapGame: React.FC<GameProps> = ({
   onExit,
@@ -41,6 +41,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
   const activeOrgId = kioskOrgId ?? userProfile?.org_id ?? null;
+  const { markActivity } = useKioskActivity();
 
   const [gameState, setGameState] = useState<FlapFlapState>("READY");
   const [finalScore, setFinalScore] = useState(0);
@@ -101,8 +102,10 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, []);
 
   const handleFlap = useCallback(() => {
+    // Flaps don't move the CV cursor, so tell the return-home timer someone's playing.
+    markActivity();
     engineRef.current?.flap();
-  }, []);
+  }, [markActivity]);
 
   const refreshLeaderboard = useCallback(async () => {
     if (!activeOrgId) {

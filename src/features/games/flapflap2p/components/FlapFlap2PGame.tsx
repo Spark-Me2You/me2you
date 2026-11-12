@@ -21,6 +21,7 @@ import type {
   PlayerId,
 } from "../types/flapflap2p";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
+import { useKioskActivity } from "@/features/kiosk";
 import { ExitButton } from "@/shared/components";
 import type { GameProps } from "../../types/game";
 import { SplitCameraPanel } from "./SplitCameraPanel";
@@ -31,6 +32,7 @@ const PRESENCE_POLL_MS = 250;
 export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
   const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
+  const { markActivity } = useKioskActivity();
 
   const [gameState, setGameState] = useState<FlapFlap2PState>("WAITING");
   const [result, setResult] = useState<FlapFlap2PResult | null>(null);
@@ -87,8 +89,15 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
     setFinalScore(0);
   }, []);
 
-  const handleFlapP1 = useCallback(() => engineRef.current?.flap("P1"), []);
-  const handleFlapP2 = useCallback(() => engineRef.current?.flap("P2"), []);
+  // Flaps don't move the CV cursor, so tell the return-home timer someone's playing.
+  const handleFlapP1 = useCallback(() => {
+    markActivity();
+    engineRef.current?.flap("P1");
+  }, [markActivity]);
+  const handleFlapP2 = useCallback(() => {
+    markActivity();
+    engineRef.current?.flap("P2");
+  }, [markActivity]);
 
   // One detector per player so each has its own wrist buffers and cooldown.
   const armFlapOptions = {
