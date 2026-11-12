@@ -58,7 +58,7 @@ interface ResultsProps extends ActionsProps {
 }
 
 function outcomeText(result: RoundResult): string {
-  if (result.qualifies) return "claim your candy at the gumball machine!";
+  if (result.qualifies) return "scan the qr, then collect your candy at the front desk!";
   if (!result.fullRound) return `${STRIKE_RULE_TEXT} no candy this time`;
   if (tooMuchBroccoli(result.broccoliHits)) return "you sliced broccoli, so no candy this time";
   return `${WIN_RULE_TEXT} to win candy`;

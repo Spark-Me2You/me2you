@@ -27,6 +27,9 @@ export interface UsePoseDetectionReturn {
 }
 
 export const POSE_PROCESS_INTERVAL_MS = 75; // ms (~13 FPS, better input response)
+// Callers poll on POSE_PROCESS_INTERVAL_MS; throttling at the full interval
+// would drop every other sample whenever a timer fires a hair early.
+export const POSE_THROTTLE_MS = POSE_PROCESS_INTERVAL_MS * 0.8;
 
 export const usePoseDetection = (
   options: UsePoseDetectionOptions = {},
@@ -78,8 +81,7 @@ export const usePoseDetection = (
     (video: HTMLVideoElement, timestamp: number) => {
       if (!poseLandmarkerRef.current || !isInitialized) return;
 
-      // Throttle pose detection to ~15 FPS
-      if (timestamp - lastProcessTimeRef.current < POSE_PROCESS_INTERVAL_MS) {
+      if (timestamp - lastProcessTimeRef.current < POSE_THROTTLE_MS) {
         return;
       }
       lastProcessTimeRef.current = timestamp;

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { silenceConsole } from '@/test/console'
-import { POSE_PROCESS_INTERVAL_MS, usePoseDetection } from './usePoseDetection'
+import { POSE_PROCESS_INTERVAL_MS, POSE_THROTTLE_MS, usePoseDetection } from './usePoseDetection'
 
 const landmarker = vi.hoisted(() => ({ detectForVideo: vi.fn(), close: vi.fn() }))
 const create = vi.hoisted(() => vi.fn())
@@ -75,10 +75,11 @@ describe('usePoseDetection', () => {
     const { result } = await ready()
 
     act(() => result.current.processFrame(video, 1000))
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS - 1))
+    act(() => result.current.processFrame(video, 1000 + POSE_THROTTLE_MS - 1))
     expect(landmarker.detectForVideo).toHaveBeenCalledTimes(1)
 
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS))
+    // A poll that fires a few ms early must still be processed.
+    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS - 5))
     expect(landmarker.detectForVideo).toHaveBeenCalledTimes(2)
   })
 

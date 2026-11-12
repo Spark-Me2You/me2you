@@ -107,7 +107,13 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     engineRef.current?.flap();
   }, [markActivity]);
 
+  const leaderboardRequestRef = useRef(0);
+
   const refreshLeaderboard = useCallback(async () => {
+    // Only the newest request may write state; slower, older responses are dropped.
+    const requestId = ++leaderboardRequestRef.current;
+    const isStale = () => requestId !== leaderboardRequestRef.current;
+
     if (!activeOrgId) {
       setLeaderboardEntries([]);
       setLeaderboardError(null);
@@ -123,13 +129,15 @@ export const FlapFlapGame: React.FC<GameProps> = ({
         activeOrgId,
         5,
       );
+      if (isStale()) return;
       setLeaderboardEntries(topPlayers);
     } catch (error) {
+      if (isStale()) return;
       const message =
         error instanceof Error ? error.message : "failed to load leaderboard";
       setLeaderboardError(message);
     } finally {
-      setIsLeaderboardLoading(false);
+      if (!isStale()) setIsLeaderboardLoading(false);
     }
   }, [activeOrgId]);
 
