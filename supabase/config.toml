@@ -19,3 +19,28 @@ additional_redirect_urls = []
 jwt_expiry = 3600
 
 # TODO: Add production configuration
+
+# Edge function JWT settings. Each function authenticates its caller itself
+# (supabase.auth.getUser() or a shared secret) so the gateway check is off.
+# Source: supabase/functions/README.md ("Deploy a specific function" and the
+# --no-verify-jwt note), plus the header comments of candy-desk and
+# mint-kiosk-session. Functions not listed here (generate-registration-qr,
+# verify-registration-token, claim-drawing, claim-message, claim-candy-reward)
+# are not documented individually and keep the CLI default.
+[functions.mint-kiosk-session]
+verify_jwt = false
+
+[functions.generate-claim-token]
+verify_jwt = false
+
+[functions.execute-claim]
+verify_jwt = false
+
+[functions.delete-user-images]
+verify_jwt = false
+
+[functions.delete-user-account]
+verify_jwt = false
+
+[functions.candy-desk]
+verify_jwt = false
