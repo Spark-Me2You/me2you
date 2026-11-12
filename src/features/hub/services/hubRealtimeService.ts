@@ -1,94 +1,128 @@
 import { supabase } from '@/core/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { AccessorySettings } from '@/features/profile-editor/types/profileTypes';
 import { croppedImageService, type CroppedImageRow } from './croppedImageService';
+
+/** Delay before the first resubscribe attempt; doubles per failed attempt up to the cap. */
+export const RESUBSCRIBE_BASE_DELAY_MS = 1_000;
+export const RESUBSCRIBE_MAX_DELAY_MS = 30_000;
+
+interface TableListener {
+  event: 'INSERT' | 'UPDATE';
+  table: 'cropped_image' | 'accessories';
+  handler: (event: { new: Record<string, unknown> }) => unknown;
+}
+
+/**
+ * Subscribe to postgres changes for one org. The server filters on `org_id`; handlers also
+ * check it, since the filter is a performance and privacy measure, not the only guard.
+ * If the channel errors, times out or closes, it is rebuilt with capped exponential backoff
+ * until the returned unsubscribe function is called.
+ */
+function subscribeToOrgChanges(
+  channelName: string,
+  orgId: string,
+  listeners: TableListener[],
+): () => void {
+  let removed = false;
+  let channel: RealtimeChannel | null = null;
+  let attempt = 0;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const connect = () => {
+    retryTimer = null;
+    const current: RealtimeChannel = supabase.channel(channelName);
+    channel = current;
+
+    for (const { event, table, handler } of listeners) {
+      current.on(
+        'postgres_changes',
+        { event, schema: 'public', table, filter: `org_id=eq.${orgId}` },
+        (payload: { new: Record<string, unknown> }) => {
+          if (removed || payload.new.org_id !== orgId) return;
+          return handler(payload);
+        },
+      );
+    }
+
+    current.subscribe((status, err) => {
+      // A rebuilt channel's predecessor may still report its own closing.
+      if (removed || channel !== current) return;
+
+      if (status === 'SUBSCRIBED') {
+        attempt = 0;
+        return;
+      }
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        const delay = Math.min(RESUBSCRIBE_BASE_DELAY_MS * 2 ** attempt, RESUBSCRIBE_MAX_DELAY_MS);
+        attempt++;
+        console.warn(`[realtime] ${channelName} ${status}${err ? `: ${err.message}` : ''}; retrying in ${delay}ms`);
+        supabase.removeChannel(current);
+        retryTimer = setTimeout(connect, delay);
+      }
+    });
+  };
+
+  connect();
+
+  return () => {
+    if (removed) return;
+    removed = true;
+    if (retryTimer) clearTimeout(retryTimer);
+    if (channel) supabase.removeChannel(channel);
+  };
+}
 
 export const hubRealtimeService = {
   subscribeToNewCroppedImages: (
     orgId: string,
     onInsert: (row: CroppedImageRow) => void,
   ): (() => void) => {
-    const channelName = `hub-cropped-image-${orgId}`;
     let removed = false;
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      supabase.removeChannel(channel);
-    };
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'cropped_image' },
-        async (event) => {
-          const raw = event.new as { id: string; org_id: string };
-          if (removed || raw.org_id !== orgId) return;
-          const row = await croppedImageService.getCroppedImageById(raw.id, orgId);
+    const unsubscribe = subscribeToOrgChanges(`hub-cropped-image-${orgId}`, orgId, [
+      {
+        event: 'INSERT',
+        table: 'cropped_image',
+        handler: async (event) => {
+          const row = await croppedImageService.getCroppedImageById(event.new.id as string, orgId);
           if (removed || !row) return;
           onInsert(row);
         },
-      )
-      .subscribe((status, err) => {
-        if (err) console.error(`[realtime] ${channelName} error:`, err);
-        else console.log(`[realtime] ${channelName} ${status}`);
-      });
-
-    return remove;
+      },
+    ]);
+    return () => {
+      removed = true;
+      unsubscribe();
+    };
   },
 
   subscribeToProfilePictureUpdates: (
     orgId: string,
     onUpdate: (ownerId: string, storagePath: string) => void,
-  ): (() => void) => {
-    const channelName = `hub-cropped-image-update-${orgId}`;
-    let removed = false;
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      supabase.removeChannel(channel);
-    };
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'cropped_image' },
-        (event) => {
-          const raw = event.new as { org_id: string; owner_id: string; storage_path: string };
-          if (removed || raw.org_id !== orgId) return;
+  ): (() => void) =>
+    subscribeToOrgChanges(`hub-cropped-image-update-${orgId}`, orgId, [
+      {
+        event: 'UPDATE',
+        table: 'cropped_image',
+        handler: (event) => {
+          const raw = event.new as { owner_id: string; storage_path: string };
           onUpdate(raw.owner_id, raw.storage_path);
         },
-      )
-      .subscribe((status, err) => {
-        if (err) console.error(`[realtime] ${channelName} error:`, err);
-        else console.log(`[realtime] ${channelName} ${status}`);
-      });
-
-    return remove;
-  },
+      },
+    ]),
 
   subscribeToAccessoryUpdates: (
     orgId: string,
     onUpdate: (ownerId: string, settings: AccessorySettings) => void,
   ): (() => void) => {
-    const channelName = `hub-accessories-${orgId}`;
-    let removed = false;
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      supabase.removeChannel(channel);
-    };
-
-    const handleEvent = (event: { new: Record<string, unknown> }) => {
+    const handler: TableListener['handler'] = (event) => {
       const raw = event.new as {
-        org_id: string;
         user_id: string;
         selected_accessory: 'sunglasses' | 'hat' | 'balloon' | null;
         relative_x: number;
         relative_y: number;
         scale: number;
       };
-      if (raw.org_id !== orgId) return;
       onUpdate(raw.user_id, {
         selected_accessory: raw.selected_accessory,
         relative_x: raw.relative_x ?? 0,
@@ -97,23 +131,9 @@ export const hubRealtimeService = {
       });
     };
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'accessories' },
-        handleEvent,
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'accessories' },
-        handleEvent,
-      )
-      .subscribe((status, err) => {
-        if (err) console.error(`[realtime] ${channelName} error:`, err);
-        else console.log(`[realtime] ${channelName} ${status}`);
-      });
-
-    return remove;
+    return subscribeToOrgChanges(`hub-accessories-${orgId}`, orgId, [
+      { event: 'INSERT', table: 'accessories', handler },
+      { event: 'UPDATE', table: 'accessories', handler },
+    ]);
   },
 };
