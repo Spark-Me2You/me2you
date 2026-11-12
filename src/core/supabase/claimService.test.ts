@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resetSupabaseMock, supabaseMock } from '@/test/supabaseMock'
+import { queryResult, resetSupabaseMock, supabaseMock } from '@/test/supabaseMock'
 import { claimService, functionErrorMessage } from './claimService'
 
 vi.mock('./client', () => import('@/test/supabaseMockModule'))
@@ -162,6 +162,48 @@ describe('claimService.subscribeToClaim', () => {
     unsubscribe()
     unsubscribe()
     expect(supabaseMock.removeChannel).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('peekClaimToken', () => {
+  const rpc = supabaseMock.rpc
+
+  beforeEach(() => {
+    resetSupabaseMock()
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  it('returns the payload from the peek_claim_token RPC', async () => {
+    rpc.mockResolvedValue({ data: { type: 'message', data: { recipient_name: 'Ann' } }, error: null })
+
+    await expect(claimService.peekClaimToken('t1')).resolves.toEqual({
+      type: 'message',
+      data: { recipient_name: 'Ann' },
+    })
+    expect(rpc).toHaveBeenCalledWith('peek_claim_token', { p_token_id: 't1' })
+    expect(supabaseMock.from).not.toHaveBeenCalled()
+  })
+
+  it('returns null when the RPC finds nothing', async () => {
+    rpc.mockResolvedValue({ data: null, error: null })
+    await expect(claimService.peekClaimToken('t1')).resolves.toBeNull()
+    expect(supabaseMock.from).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the direct select when the RPC is not deployed yet', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
+    const q = queryResult({ data: { payload: { type: 'drawing' } } })
+    supabaseMock.from.mockReturnValue(q)
+
+    await expect(claimService.peekClaimToken('t1')).resolves.toEqual({ type: 'drawing' })
+    expect(supabaseMock.from).toHaveBeenCalledWith('claim_tokens')
+    expect(q.eq).toHaveBeenCalledWith('id', 't1')
+  })
+
+  it('returns null on other RPC errors without falling back', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'denied' } })
+    await expect(claimService.peekClaimToken('t1')).resolves.toBeNull()
+    expect(supabaseMock.from).not.toHaveBeenCalled()
   })
 })
 
