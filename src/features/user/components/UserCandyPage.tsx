@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { LoadingText } from "@/shared/components/LoadingText";
 import { useAuth } from "@/core/auth";
 import {
   candyVoucherService,
@@ -107,7 +108,7 @@ export const UserCandyPage: React.FC = () => {
       {error && <p className="mt-0 mb-4 text-center text-[18px] tracking-[2px] text-[#aa0000]">could not load your candy right now. try again in a bit.</p>}
 
       {isLoading ? (
-        <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">Loading...</p>
+        <LoadingText className="mt-10 text-[24px]" />
       ) : (
         <>
           <h2 className="mt-2 mb-[10px] text-[24px] font-normal tracking-[2px] text-[#003366]">ready to redeem ({ready.length})</h2>

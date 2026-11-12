@@ -8,6 +8,8 @@ import type {
   GestureCategory,
 } from "@/features/profile-editor/types/profileTypes";
 import { accessoryService } from "@/features/profile-editor/services/accessoryService";
+import { profileCache } from "@/features/profile-editor/services/profileCache";
+import { LoadingText } from "@/shared/components/LoadingText";
 import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
@@ -34,9 +36,15 @@ export const UserProfileView: React.FC = () => {
   const { signOut, setUserProfile, session } = useAuth();
   const currentUserId = session?.user.id ?? null;
 
-  const [profileData, setProfileData] = useState<ProfileWithImage | null>(null);
-  const [accessorySettings, setAccessorySettings] = useState<AccessorySettings>(DEFAULT_ACCESSORY_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
+  // Start from the cached copy (e.g. coming back from customize) so the page
+  // shows at once; the mount effect still refreshes it in the background.
+  const [profileData, setProfileData] = useState<ProfileWithImage | null>(
+    () => profileCache.getProfile(currentUserId),
+  );
+  const [accessorySettings, setAccessorySettings] = useState<AccessorySettings>(
+    () => profileCache.getAccessorySettings(currentUserId) ?? DEFAULT_ACCESSORY_SETTINGS,
+  );
+  const [isLoading, setIsLoading] = useState(() => profileCache.getProfile(currentUserId) === null);
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -138,14 +146,24 @@ export const UserProfileView: React.FC = () => {
 
   useEffect(() => {
     mountedRef.current = true;
-    void loadCoreProfile();
+    // With a cached profile already on screen, refresh quietly.
+    void loadCoreProfile({ setLoading: profileCache.getProfile(currentUserId) === null });
     void loadAccessorySettings();
 
     return () => {
       mountedRef.current = false;
       clearProfileLoadTimeout();
     };
-  }, [clearProfileLoadTimeout, loadCoreProfile, loadAccessorySettings]);
+  }, [clearProfileLoadTimeout, loadCoreProfile, loadAccessorySettings, currentUserId]);
+
+  // Keep the cache in step with what this page shows (fetches and saves).
+  useEffect(() => {
+    if (currentUserId && profileData) profileCache.setProfile(currentUserId, profileData);
+  }, [currentUserId, profileData]);
+
+  useEffect(() => {
+    if (currentUserId) profileCache.setAccessorySettings(currentUserId, accessorySettings);
+  }, [currentUserId, accessorySettings]);
 
   const nextSaveToken = useCallback(() => {
     return ++saveRequestIdRef.current;
@@ -252,6 +270,7 @@ export const UserProfileView: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
+      profileCache.clear();
       await signOut();
       navigate("/user");
     } catch (error) {
@@ -268,6 +287,7 @@ export const UserProfileView: React.FC = () => {
     try {
       setIsDeleting(true);
       await profileService.deleteAccount();
+      profileCache.clear();
       await signOut();
       navigate("/user");
     } catch (e) {
@@ -284,12 +304,8 @@ export const UserProfileView: React.FC = () => {
     return (
       <div className="relative mx-auto flex h-dvh w-full max-w-[430px] flex-col overflow-hidden bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
         <img src={logo} alt="me2you" className="pointer-events-none absolute top-[7px] left-1/2 z-[100] w-[270px] origin-top -translate-x-1/2 rotate-[3.41deg] select-none" />
-        <div className="flex min-h-0 flex-1 flex-col items-center overflow-x-hidden overflow-y-auto px-[30px] pt-[120px] pb-[60px] [-webkit-overflow-scrolling:touch] before:min-h-0 before:flex-[1_0_0] after:min-h-0 after:flex-[1_0_0]">
-          <div className="w-full max-w-[350px] shrink-0 rounded-[24px] bg-glass px-[30px] py-10 shadow-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105">
-            <div>
-              <span className="font-jersey text-[14px] text-[rgba(255,255,255,0.9)] lowercase">loading...</span>
-            </div>
-          </div>
+        <div className="flex flex-1 items-center justify-center pt-[120px] pb-[60px]">
+          <LoadingText className="text-[32px]" />
         </div>
       </div>
     );
