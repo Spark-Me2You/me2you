@@ -16,6 +16,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
+import { validateClaimPayload } from '../_shared/claimPayload.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -102,6 +103,20 @@ serve(async (req) => {
     if (!display || typeof display.title !== 'string' || typeof display.description !== 'string') {
       return new Response(
         JSON.stringify({ success: false, error: 'payload.display must have title and description' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Plausibility check of the payload type and its data fields. This does NOT
+    // prove the result is real: a kiosk session can still assert any in-range
+    // score/round until rounds are recorded server-side.
+    const payloadError = validateClaimPayload({
+      type: payload.type as string,
+      data: payload.data as Record<string, unknown>,
+    });
+    if (payloadError) {
+      return new Response(
+        JSON.stringify({ success: false, error: payloadError }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
