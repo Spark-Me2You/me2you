@@ -115,11 +115,14 @@ serve(async (req) => {
     console.log('[generate-registration-qr] Kiosk authorized for org:', org_id);
 
     // 5. Generate JWT token
-    const secret = new TextEncoder().encode(Deno.env.get('QR_TOKEN_SECRET'));
-    if (!secret) {
-      console.error('[generate-registration-qr] QR_TOKEN_SECRET not configured');
+    // Read the env var before encoding: encode(undefined) yields an empty
+    // array, so a check on the encoded value can never fire.
+    const secretRaw = Deno.env.get('QR_TOKEN_SECRET');
+    if (!secretRaw || secretRaw.length < 32) {
+      console.error('[generate-registration-qr] QR_TOKEN_SECRET not configured or shorter than 32 characters');
       throw new Error('Server configuration error: QR_TOKEN_SECRET not set');
     }
+    const secret = new TextEncoder().encode(secretRaw);
 
     const now = Math.floor(Date.now() / 1000);
     const exp = now + 300; // 5 minutes from now

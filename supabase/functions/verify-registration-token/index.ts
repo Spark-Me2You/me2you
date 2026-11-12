@@ -59,17 +59,21 @@ serve(async (req) => {
     console.log('[verify-registration-token] Token received');
 
     // 2. Verify JWT
-    const secret = new TextEncoder().encode(Deno.env.get('QR_TOKEN_SECRET'));
-    if (!secret) {
-      console.error('[verify-registration-token] QR_TOKEN_SECRET not configured');
+    // Read the env var before encoding: encode(undefined) yields an empty
+    // array, so a check on the encoded value can never fire.
+    const secretRaw = Deno.env.get('QR_TOKEN_SECRET');
+    if (!secretRaw || secretRaw.length < 32) {
+      console.error('[verify-registration-token] QR_TOKEN_SECRET not configured or shorter than 32 characters');
       throw new Error('Server configuration error: QR_TOKEN_SECRET not set');
     }
+    const secret = new TextEncoder().encode(secretRaw);
 
     let payload;
     try {
       console.log('[verify-registration-token] Verifying JWT signature and expiration...');
       const { payload: p } = await jose.jwtVerify(token, secret, {
         issuer: 'me2you-kiosk',
+        algorithms: ['HS256'],
       });
       payload = p;
       console.log('[verify-registration-token] JWT verified successfully');
