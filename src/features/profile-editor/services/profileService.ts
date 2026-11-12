@@ -168,6 +168,52 @@ const withTransientRetry = async <T>(
   throw new Error("Operation failed");
 };
 
+type ImageRow = { id: string; storage_path: string };
+
+const listOwnImages = async (
+  table: "gesture_image" | "cropped_image",
+  userId: string,
+): Promise<ImageRow[]> => {
+  try {
+    const { data, error } = await supabase
+      .from(table)
+      .select("id, storage_path")
+      .eq("owner_id", userId);
+    if (error) throw error;
+    return (data ?? []) as ImageRow[];
+  } catch (e) {
+    console.warn(`[profileService] Failed to list existing ${table} rows:`, e);
+    return [];
+  }
+};
+
+// Best effort: the new image is already saved, so a failure here only leaves clutter.
+const deleteOldImages = async (
+  table: "gesture_image" | "cropped_image",
+  rows: ImageRow[],
+): Promise<void> => {
+  if (rows.length === 0) return;
+  await Promise.all(
+    rows.map(async (row) => {
+      try {
+        await storageService.deletePhoto(row.storage_path);
+      } catch (e) {
+        console.warn("[profileService] Failed to delete old file:", e);
+      }
+    }),
+  );
+  const { error } = await supabase
+    .from(table)
+    .delete()
+    .in(
+      "id",
+      rows.map((row) => row.id),
+    );
+  if (error) {
+    console.warn(`[profileService] Failed to delete old ${table} rows:`, error);
+  }
+};
+
 export const profileService = {
   /**
    * Get current user's profile with profile image
@@ -354,31 +400,16 @@ export const profileService = {
     const sessionExpiresAt = options?.sessionExpiresAt;
     await ensureFreshSession(sessionExpiresAt);
 
-    // Delete existing photo if present
-    if (existingImageId && existingStoragePath) {
-      try {
-        await profileService.deletePhoto(existingImageId, existingStoragePath);
-      } catch (e) {
-        console.warn(
-          "[profileService] Failed to delete old photo, continuing anyway:",
-          e,
-        );
-      }
+    // Remember the current images; they are removed only once the new photo is saved
+    const oldGesture = await listOwnImages("gesture_image", userId);
+    if (
+      existingImageId &&
+      existingStoragePath &&
+      !oldGesture.some((row) => row.id === existingImageId)
+    ) {
+      oldGesture.push({ id: existingImageId, storage_path: existingStoragePath });
     }
-
-    // Purge old gesture + cropped images before uploading new ones
-    try {
-      await withTimeout(
-        profileService.deleteAllImages(),
-        DELETE_IMAGES_TIMEOUT_MS,
-        "Clear old images",
-      );
-    } catch (e) {
-      console.warn(
-        "[profileService] Failed to clear old gesture/cropped images, continuing anyway:",
-        e,
-      );
-    }
+    const oldCropped = await listOwnImages("cropped_image", userId);
 
     // Upload new photo
     const storagePath = await withTimeout(
@@ -413,10 +444,11 @@ export const profileService = {
       throw new Error(`Failed to create image record: ${error.message}`);
     }
 
+    await deleteOldImages("gesture_image", oldGesture);
+
     // Try to generate bobblehead (non-blocking - don't throw on error)
     let bobbleheadError: string | undefined;
     try {
-      console.log("[profileService] Generating bobblehead from photo...");
       const cropResult = await withTimeout(
         faceCropService.cropFace(photo),
         BOBBLEHEAD_STEP_TIMEOUT_MS,
@@ -434,7 +466,7 @@ export const profileService = {
           BOBBLEHEAD_STEP_TIMEOUT_MS,
           "Upload bobblehead image",
         );
-        console.log("[profileService] Bobblehead generated successfully");
+        await deleteOldImages("cropped_image", oldCropped);
       } else {
         bobbleheadError = "No face landmarks detected";
         console.warn(

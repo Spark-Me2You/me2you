@@ -269,25 +269,43 @@ describe('profileService', () => {
     const photo = new Blob(['x'])
     const landmarks = { centroid: { x: 0, y: 0 } }
 
-    function happyPath() {
-      supabaseMock.functions.invoke.mockResolvedValue({
-        data: { success: true, gesture_rows_deleted: 0, cropped_rows_deleted: 0, storage_objects_deleted: 0 },
-        error: null,
+    const oldGesture = [{ id: 'old-g', storage_path: 'org/u1/old.jpg' }]
+    const oldCropped = [{ id: 'old-c', storage_path: 'org/u1/old_cropped.png' }]
+
+    // Records every query builder per table so tests can inspect what was written/deleted.
+    function happyPath(overrides: { insert?: QueryOutcome } = {}) {
+      const builders: Array<{ table: string; builder: ReturnType<typeof queryResult> }> = []
+      supabaseMock.from.mockImplementation((table: string) => {
+        const outcome: QueryOutcome =
+          table === 'gesture_image'
+            ? { data: { id: 'new', storage_path: 'org/u1/new.jpg' }, ...overrides.insert }
+            : {}
+        const builder = queryResult(outcome)
+        builders.push({ table, builder })
+        // listing the existing rows goes through select(...).eq('owner_id', ...)
+        builder.eq.mockImplementation((col: string) => {
+          if (col === 'owner_id') {
+            const rows = table === 'gesture_image' ? oldGesture : oldCropped
+            return Object.assign(Promise.resolve({ data: rows, error: null }), builder)
+          }
+          return builder
+        })
+        return builder
       })
-      const insert = queryResult({ data: { id: 'new', storage_path: 'org/u1/new.jpg' } })
-      supabaseMock.from.mockReturnValue(insert)
       faceCrop.cropFace.mockResolvedValue({ croppedBlob: new Blob(['c']), cropMetadata: { landmarks } } as never)
-      return insert
+      const find = (table: string, method: 'insert' | 'delete') =>
+        builders.filter((b) => b.table === table && b.builder[method].mock.calls.length > 0).map((b) => b.builder)
+      return { find }
     }
 
-    it('purges old images, uploads, inserts the record and generates the bobblehead', async () => {
-      const insert = happyPath()
+    it('uploads and inserts the new photo, generates the bobblehead, then removes exactly the old images', async () => {
+      const { find } = happyPath()
 
       const result = await profileService.updatePhoto(photo, 'u1', 'org', 'wave', null, null, fresh)
 
-      expect(supabaseMock.functions.invoke).toHaveBeenCalledWith('delete-user-images', { body: {} })
+      expect(supabaseMock.functions.invoke).not.toHaveBeenCalled()
       expect(storage.uploadPhoto).toHaveBeenCalledWith(photo, 'u1', 'org')
-      expect(insert.insert).toHaveBeenCalledWith({
+      expect(find('gesture_image', 'insert')[0].insert).toHaveBeenCalledWith({
         owner_id: 'u1',
         org_id: 'org',
         storage_path: 'org/u1/new.jpg',
@@ -295,33 +313,59 @@ describe('profileService', () => {
         is_public: true,
       })
       expect(registration.uploadCroppedPhotoWithLandmarks).toHaveBeenCalledWith(expect.any(Blob), 'u1', 'org', landmarks)
+      expect(find('gesture_image', 'delete')[0].in).toHaveBeenCalledWith('id', ['old-g'])
+      expect(find('cropped_image', 'delete')[0].in).toHaveBeenCalledWith('id', ['old-c'])
+      expect(storage.deletePhoto.mock.calls.map((c) => c[0]).sort()).toEqual([
+        'org/u1/old.jpg',
+        'org/u1/old_cropped.png',
+      ])
+      expect(storage.deletePhoto).not.toHaveBeenCalledWith('org/u1/new.jpg')
       expect(result).toEqual({ id: 'new', storage_path: 'org/u1/new.jpg', bobbleheadError: undefined })
     })
 
-    it('continues when the old photo cannot be deleted or purged', async () => {
+    it('also removes the passed-in existing photo when it is not among the listed rows', async () => {
+      const { find } = happyPath()
+      await profileService.updatePhoto(photo, 'u1', 'org', 'wave', 'extra', 'extra.jpg', fresh)
+      expect(find('gesture_image', 'delete')[0].in).toHaveBeenCalledWith('id', ['old-g', 'extra'])
+    })
+
+    it('still succeeds when the old files or rows cannot be deleted', async () => {
       happyPath()
       storage.deletePhoto.mockRejectedValue(new Error('x'))
-      supabaseMock.functions.invoke.mockResolvedValue({ data: null, error: { message: 'purge failed' } })
 
       const result = await profileService.updatePhoto(photo, 'u1', 'org', 'wave', 'old', 'old.jpg', fresh)
       expect(result.id).toBe('new')
     })
 
-    it('aborts without a record when the upload fails', async () => {
-      happyPath()
+    it('leaves the old photo and avatar untouched when the upload fails', async () => {
+      const { find } = happyPath()
       storage.uploadPhoto.mockRejectedValue(new Error('quota'))
 
-      await expect(profileService.updatePhoto(photo, 'u1', 'org', 'wave', null, null, fresh)).rejects.toThrow('quota')
+      await expect(profileService.updatePhoto(photo, 'u1', 'org', 'wave', 'old-g', 'old.jpg', fresh)).rejects.toThrow('quota')
       expect(faceCrop.cropFace).not.toHaveBeenCalled()
+      expect(find('gesture_image', 'delete')).toHaveLength(0)
+      expect(find('cropped_image', 'delete')).toHaveLength(0)
+      expect(storage.deletePhoto).not.toHaveBeenCalled()
+      expect(supabaseMock.functions.invoke).not.toHaveBeenCalled()
     })
 
-    it('throws if the image record cannot be created', async () => {
-      happyPath()
-      supabaseMock.from.mockReturnValue(queryResult({ error: { message: 'fk' } }))
+    it('leaves the old photo untouched when the image record cannot be created', async () => {
+      const { find } = happyPath({ insert: { data: null, error: { message: 'fk' } } })
 
       await expect(profileService.updatePhoto(photo, 'u1', 'org', 'wave', null, null, fresh)).rejects.toThrow(
         'Failed to create image record: fk',
       )
+      expect(find('gesture_image', 'delete')).toHaveLength(0)
+      expect(storage.deletePhoto).not.toHaveBeenCalled()
+    })
+
+    it('keeps the old avatar when no new one could be generated', async () => {
+      const { find } = happyPath()
+      faceCrop.cropFace.mockResolvedValue({ croppedBlob: new Blob(), cropMetadata: { landmarks: null } } as never)
+
+      await profileService.updatePhoto(photo, 'u1', 'org', 'wave', null, null, fresh)
+      expect(find('cropped_image', 'delete')).toHaveLength(0)
+      expect(find('gesture_image', 'delete')).toHaveLength(1)
     })
 
     it('reports a bobblehead error but still succeeds when no landmarks are found', async () => {
