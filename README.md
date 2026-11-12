@@ -103,15 +103,11 @@ npm ci
 Create `.env` (see `.env.example`):
 
 ```env
-SUPABASE_URL=<your url>
-SUPABASE_ANON_KEY=<anon key>
+VITE_SUPABASE_URL=<your url>
+VITE_SUPABASE_ANON_KEY=<anon key>
 ```
 
-Download MediaPipe models:
-
-```bash
-npx ts-node scripts/download-models.ts
-```
+MediaPipe models load from Google's CDN at runtime, so there is nothing to download.
 
 ### Common Commands
 

@@ -41,35 +41,6 @@ try {
 faceCropService.dispose();
 ```
 
-#### With React Hook
-
-```typescript
-import { useFaceCrop } from '../hooks/useFaceCrop';
-
-function PhotoCapture() {
-  const { isInitializing, isProcessing, error, cropPhoto } = useFaceCrop();
-
-  const handleCapture = async (blob: Blob) => {
-    try {
-      const result = await cropPhoto(blob);
-      setCroppedPhoto(result.croppedBlob);
-    } catch (error) {
-      if (error instanceof FaceNotDetectedError) {
-        setError('No face detected - center your face and try again');
-      }
-    }
-  };
-
-  if (isInitializing) return <div>Loading face detector...</div>;
-
-  return (
-    <button onClick={() => captureFromCamera(handleCapture)} disabled={isProcessing}>
-      Capture
-    </button>
-  );
-}
-```
-
 ### API Reference
 
 #### `faceCropService.initialize(): Promise<void>`

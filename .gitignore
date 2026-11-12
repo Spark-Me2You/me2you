@@ -33,7 +33,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# ML models (downloaded via scripts/download-models.ts)
+# Locally downloaded ML models (optional; the app loads models from the CDN)
 /public/models/*
 !/public/models/README.md
 

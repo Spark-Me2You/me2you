@@ -115,7 +115,7 @@ This creates a race condition:
 3. onAuthStateChange subscribes → FIRES IMMEDIATELY → also calls getCurrentAdmin()
 4. Two getCurrentAdmin() calls run simultaneously
 5. supabase.auth.getSession() gets called twice at same time
-6. Race condition → one call hangs → infinite loading! ❌
+6. Race condition → one call hangs → infinite loading
 ```
 
 **The Solution:**
@@ -129,7 +129,7 @@ Use an `isInitializing` flag to prevent duplicate work:
 3. initializeAuth() starts (async) → calls getCurrentAdmin()
 4. onAuthStateChange subscribes → FIRES IMMEDIATELY
 5. Event handler sees isInitializing = true → SKIPS processing
-6. Only ONE getCurrentAdmin() call happens ✅
+6. Only ONE getCurrentAdmin() call happens
 7. initializeAuth() completes → sets isInitializing = false
 8. Future auth events (login, logout) are processed normally
 ```

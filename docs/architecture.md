@@ -17,7 +17,7 @@ me2you/
 │   │   ├── badges/            # badgeService
 │   │   └── monitoring/        # error boundaries
 │   ├── features/              # domain features (see table below)
-│   ├── shared/                # reusable UI, hooks, sound, theme, constants
+│   ├── shared/                # reusable UI, hooks, sound, utils
 │   ├── App.tsx                # router entry
 │   └── AppContainer.tsx       # state-machine driven kiosk shell
 ├── docs/                      # project documentation
@@ -36,6 +36,7 @@ React Router handles top-level routes in `src/App.tsx`:
 | `/user/profile` | `UserProfileView` | Mobile (auth required) |
 | `/user/gallery` | `UserGalleryPage` | Mobile (auth required) |
 | `/user/game-scores` | `UserGameScoresPage` | Mobile (auth required) |
+| `/user/candy` | `UserCandyPage` | Mobile (auth required) |
 | `/user/customize` | `CustomizeAvatarView` | Mobile (auth required) |
 | `/user/messages` | `MessagesView` | Mobile (auth required) |
 | `/register` | `RegistrationPage` | Mobile |
@@ -43,7 +44,7 @@ React Router handles top-level routes in `src/App.tsx`:
 | `/claim/success` | `ClaimSuccessPage` | Mobile |
 | `/claim/error` | `ClaimErrorPage` | Mobile |
 | `/app` | `AppContainer` | Kiosk (admin or kiosk auth) |
-| `/` | redirect → `/user` | — |
+| `/`, `*` | redirect → `/user` | — |
 
 Inside `/app`, `src/AppContainer.tsx` switches views by app state from `src/core/state-machine`.
 
@@ -71,7 +72,6 @@ ONBOARDING → HUB
 ## Computer Vision
 
 - `SharedCameraProvider.tsx` owns the single camera `MediaStream`.
-- `cameraManager.ts` handles device enumeration and stream lifecycle.
 - `face-detector-config.ts` / `mediapipe-config.ts` / `mediapipe-loader.ts` configure and load MediaPipe models.
 - CV cursor logic lives in `src/core/cv/cursor/`:
   - `useCvCursor` runs `HandLandmarker`, shows the cursor on the ready pose (thumb and index open, other fingers closed), maps the palm center to screen coords (EMA-smoothed), detects pinch clicks (thumb-tip to index-tip distance relative to palm length, 300 ms cooldown). The geometry and thresholds live in `handGeometry.ts`.
@@ -104,24 +104,23 @@ New features style their UI per `BRAND_BOOK.md` (see its "Building a new page or
 |---|---|
 | `discovery/` | Kiosk: gesture-based random profile reveal |
 | `hub/` | Kiosk: browsable profile network (`hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts`) |
-| `games/` | Kiosk: mini-games — `drawit/` (freehand drawing via pinch), `flapflap/` (flap game) |
+| `games/` | Kiosk: mini-games — `drawit/` (freehand drawing via pinch), `flapflap/` + `flapflap2p/` (arm-flap game, 1P and 2P), `gumballslice/` (fingertip slicing game) |
 | `registration/` | Mobile: new user sign-up with QR-code entry; includes face crop step |
-| `profile-editor/` | Mobile: `ProfileCreator`, multi-step form hooks, `accessoryService.ts`, `profileService.ts` |
+| `profile-editor/` | Mobile: `PoseCapture`, `usePhotoCapture`, `accessoryService.ts`, `profileService.ts` |
 | `user/` | Mobile: `UserProfileView`, `UserGalleryPage`, `UserGameScoresPage`, `CustomizeAvatarView`, `UserMiiPixiPreview` |
 | `messages/` | Mobile: `MessagesView`, `MessageComposePage`, `messagesService.ts` |
 | `claim/` | Token-based claim flow — `ClaimPage`, `ClaimScanner`, `ClaimQR`, success/error pages |
 | `admin/` | Admin login + org selector (leads to kiosk session mint) |
 | `kiosk/` | `RegistrationQRDisplay`, `PinnedRegistrationQR`, `RegistrationQRContext` |
-| `system/` | Cross-cutting hooks: `useIdleTimeout`, `useOverlayDismiss`, `usePresence` |
 
 ## Shared Layer (`src/shared/`)
 
 | Subdirectory | Contents |
 |---|---|
-| `components/` | `Button`, `Modal`, `LoadingSpinner`, `GlassCard`, `BadgeDisplay`, `ConfirmDialog`, `ExitButton`, and others |
-| `hooks/` | `useDebounce`, `useInterval`, `useKeyboardShortcut`, `useSessionStorage` |
+| `components/` | `GlassCard`, `BadgeDisplay`, `ExitButton`, `HintToast`, `LoadingDots`, `LoadingText` |
+| `hooks/` | `useHints` |
 | `sound/` | `playClaimSound.ts` |
-| `utils/` | `accessoryLayout.ts`, `constants.ts`, `gestureConstants.ts` |
+| `utils/` | `accessoryLayout.ts`, `gestureConstants.ts` |
 
 ## Styling
 
@@ -137,11 +136,13 @@ Styling uses Tailwind CSS v4 (`@tailwindcss/vite`); see `TAILWIND_MIGRATION.md` 
 - `mint-kiosk-session` — verifies admin auth, scopes kiosk JWT to an org
 - `generate-registration-qr` / `verify-registration-token` — QR-code registration handshake
 - `generate-claim-token` / `execute-claim` / `claim-drawing` / `claim-message` — drawing/message claim flow
+- `claim-candy-reward` — Gumball Slice wins: issues a candy voucher (1 per user per day)
+- `candy-desk` — front-desk Google Sheet endpoint (shared-secret header, no JWT): lists and redeems vouchers
 - `delete-user-account` / `delete-user-images` — account deletion helpers
 
 ## Database (`supabase/migrations/`)
 
-24 sequential migrations. Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos, with landmark columns), `game_score`, `drawings`, `accessories`, `messages`, and claim tokens. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001 onward). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos, with landmark columns), `game_score`, `drawings`, `accessories`, `messages`, claim tokens, and `reward_config` / `candy_voucher` (candy rewards). RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ## Public Assets (`public/`)
 
@@ -150,6 +151,6 @@ public/
 ├── accessories/      # hat.svg, sunglasses.svg, balloon.svg
 ├── animations/       # mii walk-cycle frames (default, leftstep, rightstep, …)
 ├── badges/           # badge artwork PNGs
-├── models/           # MediaPipe WASM/tflite models (downloaded via scripts/download-models.ts)
+├── models/           # optional local MediaPipe models (the app loads them from the CDN)
 └── screensaver/      # screensaver content
 ```

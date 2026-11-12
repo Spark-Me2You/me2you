@@ -1,6 +1,6 @@
 /**
  * Gesture Constants
- * TODO: MediaPipe pose keypoint indices
+ * MediaPipe pose keypoint indices
  */
 
 // MediaPipe Pose landmark indices
@@ -39,5 +39,3 @@ export const PoseLandmark = {
   LEFT_FOOT_INDEX: 31,
   RIGHT_FOOT_INDEX: 32,
 };
-
-// TODO: Add gesture recognition thresholds
