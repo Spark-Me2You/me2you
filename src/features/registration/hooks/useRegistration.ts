@@ -235,15 +235,34 @@ export const useRegistration = (): UseRegistrationReturn => {
               }));
               return false;
             } else {
-              // User record not found - shouldn't happen but handle gracefully
-              await userRegistrationAuthService.signOut();
+              // Auth user exists but the earlier minimal-row insert failed: create it now
+              try {
+                await userRegistrationAuthService.createMinimalUserRecord(
+                  signedInUser.id,
+                  org_id,
+                );
+              } catch (createError) {
+                console.error(
+                  "[handleSignUp] Could not create missing user record:",
+                  createError,
+                );
+                await userRegistrationAuthService.signOut();
+                setState((prev) => ({
+                  ...prev,
+                  isSubmitting: false,
+                  error:
+                    "Account exists but profile not found. Please contact support.",
+                }));
+                return false;
+              }
               setState((prev) => ({
                 ...prev,
                 isSubmitting: false,
-                error:
-                  "Account exists but profile not found. Please contact support.",
+                error: null,
+                formData: { ...prev.formData, email, password },
               }));
-              return false;
+              nextStep(); // Resume at profile step
+              return true;
             }
           } catch (rescueError) {
             // Sign-in failed - show generic error (don't reveal if email exists)
@@ -269,7 +288,7 @@ export const useRegistration = (): UseRegistrationReturn => {
         return false;
       }
     },
-    [signUpUser, signInUser, nextStep],
+    [signUpUser, signInUser, nextStep, org_id],
   );
 
   const handlePhotoSubmit = useCallback(

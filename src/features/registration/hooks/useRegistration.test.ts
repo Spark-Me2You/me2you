@@ -146,15 +146,34 @@ describe('useRegistration', () => {
         expect(result.current.error).toBe('Account already exists. Please log in instead.')
       })
 
-      it('signs out when the profile row is missing', async () => {
+      it('creates the missing profile row with the QR org and resumes', async () => {
         signUpUser.mockRejectedValue(existing())
         regAuth.checkOnboardingComplete.mockResolvedValue(null as never)
         const { result } = setup()
 
-        await act(async () => { await result.current.handleSignUp('a@x.com', 'pw') })
+        let ok = false
+        await act(async () => { ok = await result.current.handleSignUp('a@x.com', 'pw') })
 
+        expect(ok).toBe(true)
+        expect(regAuth.createMinimalUserRecord).toHaveBeenCalledWith('u1', 'org-1')
+        expect(regAuth.signOut).not.toHaveBeenCalled()
+        expect(result.current.currentStep).toBe('profile')
+        expect(result.current.error).toBeNull()
+      })
+
+      it('signs out with a support message only when the row cannot be created either', async () => {
+        signUpUser.mockRejectedValue(existing())
+        regAuth.checkOnboardingComplete.mockResolvedValue(null as never)
+        regAuth.createMinimalUserRecord.mockRejectedValue(new Error('rls'))
+        const { result } = setup()
+
+        let ok = true
+        await act(async () => { ok = await result.current.handleSignUp('a@x.com', 'pw') })
+
+        expect(ok).toBe(false)
         expect(regAuth.signOut).toHaveBeenCalled()
         expect(result.current.error).toMatch(/profile not found/)
+        expect(result.current.currentStep).toBe('signup')
       })
 
       it('does not reveal whether the email exists when the password is wrong', async () => {
