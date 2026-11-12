@@ -261,7 +261,13 @@ export const CustomizeAvatarView: React.FC = () => {
           <div className="flex w-full gap-[10px]">
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() =>
+                // history.state.idx is React Router's position in this tab;
+                // 0 means this page was opened directly, so -1 would leave the app.
+                (window.history.state?.idx ?? 0) > 0
+                  ? navigate(-1)
+                  : navigate("/user/profile")
+              }
               className="flex-1 border-[#ccc] bg-[rgba(0,0,0,0.05)] text-[#666] hover:bg-[rgba(0,0,0,0.1)] cursor-pointer rounded-[14px] border-2 border-solid px-[14px] py-[18px] font-jersey text-[22px] tracking-[1px] lowercase [transition:background_0.2s,transform_0.1s] active:enabled:[transform:scale(0.98)]"
             >
               cancel

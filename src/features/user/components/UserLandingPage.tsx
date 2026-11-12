@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/core/auth";
 import { CreateAccountPrompt } from "./CreateAccountPrompt";
+import { safeNextPath } from "../utils/safeNextPath";
 import logo from "@/assets/me2you.png";
 
 const PRIMARY_BTN =
@@ -26,9 +27,8 @@ export const UserLandingPage: React.FC = () => {
   const [showCreatePrompt, setShowCreatePrompt] = useState(false);
 
   // Redirect if already signed in as user, honoring any ?next= destination
-  const next = searchParams.get("next");
+  const destination = safeNextPath(searchParams.get("next"));
   if (authMode === "user") {
-    const destination = next && next.startsWith("/claim/") ? next : "/user/profile";
     return <Navigate to={destination} replace />;
   }
 
@@ -39,7 +39,6 @@ export const UserLandingPage: React.FC = () => {
 
     try {
       await signInUser(email, password);
-      const destination = next && next.startsWith("/claim/") ? next : "/user/profile";
       navigate(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");

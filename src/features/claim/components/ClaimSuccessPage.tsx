@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import type { ClaimPayload } from '../types';
 import logo from '@/assets/me2you.png';
 
@@ -15,7 +15,10 @@ export function ClaimSuccessPage() {
   const navigate = useNavigate();
   const payload = (state as { payload?: ClaimPayload } | null)?.payload;
 
-  const display = payload?.display;
+  // Opened directly (refresh, bookmark): there's nothing to celebrate.
+  if (!payload) return <Navigate to="/user/profile" replace />;
+
+  const display = payload.display;
   const icon = display?.icon ? (ICON_MAP[display.icon] ?? '✅') : '✅';
 
   return (
