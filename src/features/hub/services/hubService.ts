@@ -35,6 +35,28 @@ type UserProfileData = {
   accessory: 'sunglasses' | 'hat' | 'balloon' | null;
 };
 
+type UserRow = Omit<UserProfileData, 'accessory' | 'created_at'> & {
+  accessory: string | null;
+  created_at: string | null;
+};
+
+const USER_COLUMNS = "id, name, status, pronouns, major, interests, created_at, accessory";
+
+/** Map a `user` row to the hub shape. */
+function toHubUser(user: UserRow): HubUserData["user"] {
+  return {
+    id: user.id,
+    name: user.name,
+    status: user.status,
+    pronouns: user.pronouns,
+    major: user.major,
+    interests: user.interests,
+    // Column is nullable; fall back to the epoch so these sort last
+    created_at: user.created_at ?? new Date(0).toISOString(),
+    accessory: (user.accessory as 'sunglasses' | 'hat' | 'balloon' | null) ?? null,
+  };
+}
+
 export const hubService = {
   /**
    * Get all public users in an organization
@@ -121,16 +143,7 @@ export const hubService = {
             );
           }
           usersWithImages.set(userData.id, {
-            user: {
-              id: userData.id,
-              name: userData.name,
-              status: userData.status,
-              pronouns: userData.pronouns,
-              major: userData.major,
-              interests: userData.interests,
-              created_at: userData.created_at,
-              accessory: userData.accessory ?? null,
-            },
+            user: toHubUser(userData),
             profileImageUrl,
           });
         }),
@@ -139,7 +152,7 @@ export const hubService = {
       // Step 3: Query for users WITHOUT profile images
       const { data: allUsersData, error: usersError } = await supabase
         .from("user")
-        .select("id, name, status, pronouns, major, interests, created_at, accessory")
+        .select(USER_COLUMNS)
         .eq("org_id", orgId)
         .eq("visibility", "public");
 
@@ -160,17 +173,7 @@ export const hubService = {
           } else {
             // User doesn't have a profile image, add them with null URL
             result.push({
-              user: {
-                id: user.id,
-                name: user.name,
-                status: user.status,
-                pronouns: user.pronouns,
-                major: user.major,
-                interests: user.interests,
-                // Column is nullable; fall back to the epoch so these sort last
-                created_at: user.created_at ?? new Date(0).toISOString(),
-                accessory: (user.accessory as 'sunglasses' | 'hat' | 'balloon' | null) ?? null,
-              },
+              user: toHubUser(user),
               profileImageUrl: null,
             });
           }
@@ -191,6 +194,57 @@ export const hubService = {
       console.error("[hubService] getAllOrgUsers failed:", error);
       throw error;
     }
+  },
+
+  /**
+   * Get one public user in an organization, with a signed profile image URL.
+   *
+   * @returns The user, or null if they don't exist or aren't public
+   * @throws Error if a database query fails
+   */
+  getUserById: async (ownerId: string, orgId: string): Promise<HubUserData | null> => {
+    if (!ownerId || !orgId) {
+      throw new Error("Owner ID and Organization ID are required");
+    }
+
+    const { data: userRow, error: userError } = await supabase
+      .from("user")
+      .select(USER_COLUMNS)
+      .eq("id", ownerId)
+      .eq("org_id", orgId)
+      .eq("visibility", "public")
+      .maybeSingle();
+
+    if (userError) {
+      console.error("[hubService] User query failed:", userError);
+      throw new Error(`Failed to fetch user: ${userError.message}`);
+    }
+    if (!userRow) return null;
+
+    const { data: imageRow, error: imageError } = await supabase
+      .from("gesture_image")
+      .select("storage_path")
+      .eq("owner_id", ownerId)
+      .eq("org_id", orgId)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (imageError) {
+      console.warn("[hubService] Image query failed:", imageError);
+    }
+
+    let profileImageUrl: string | null = null;
+    if (imageRow?.storage_path) {
+      try {
+        profileImageUrl = await storageService.getPhotoUrl(imageRow.storage_path);
+      } catch (error) {
+        console.warn("[hubService] Failed to generate image URL:", error);
+      }
+    }
+
+    return { user: toHubUser(userRow), profileImageUrl };
   },
 
   /**
