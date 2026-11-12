@@ -36,6 +36,9 @@ describe('validateClaimPayload', () => {
     it('accepts a valid round', () => {
       expect(validateClaimPayload(candy())).toBeNull();
     });
+    it('accepts a non-uuid text round_id', () => {
+      expect(validateClaimPayload(candy({ round_id: 'abc' }))).toBeNull();
+    });
     it('accepts a round without duration_ms', () => {
       expect(validateClaimPayload(candy({ duration_ms: undefined }))).toBeNull();
     });
@@ -44,7 +47,8 @@ describe('validateClaimPayload', () => {
       expect(validateClaimPayload(candy({ sliced_count: 1.2 }))).not.toBeNull();
       expect(validateClaimPayload(candy({ broccoli_hits: '0' }))).not.toBeNull();
       expect(validateClaimPayload(candy({ full_round: 'yes' }))).not.toBeNull();
-      expect(validateClaimPayload(candy({ round_id: 'abc' }))).not.toBeNull();
+      expect(validateClaimPayload(candy({ round_id: '' }))).not.toBeNull();
+      expect(validateClaimPayload(candy({ round_id: 5 }))).not.toBeNull();
       expect(validateClaimPayload(candy({ duration_ms: 4999 }))).not.toBeNull();
       expect(validateClaimPayload(candy({ duration_ms: 'long' }))).not.toBeNull();
     });

@@ -20,8 +20,6 @@ export const CLAIM_PAYLOAD_TYPES = ['game_score', 'candy_reward', 'drawing', 'me
 export const MAX_GAME_SCORE = 100000;
 export const MIN_ROUND_DURATION_MS = 5000;
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 type Data = Record<string, unknown>;
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
@@ -53,8 +51,9 @@ export function validateClaimPayload(payload: { type: string; data: Data }): str
       if (typeof data.full_round !== 'boolean') {
         return 'candy_reward data.full_round must be a boolean';
       }
-      if (typeof data.round_id !== 'string' || !UUID_RE.test(data.round_id)) {
-        return 'candy_reward data.round_id must be a uuid';
+      // round_id is TEXT in migration 025, so only require a non-empty string.
+      if (!isNonEmptyString(data.round_id)) {
+        return 'candy_reward data.round_id must be a non-empty string';
       }
       if (
         data.duration_ms !== undefined &&
