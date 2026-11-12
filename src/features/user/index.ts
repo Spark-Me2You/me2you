@@ -8,5 +8,4 @@ export { UserProfileView } from "./components/UserProfileView";
 export { UserGalleryPage } from "./components/UserGalleryPage";
 export { UserGameScoresPage } from "./components/UserGameScoresPage";
 export { UserCandyPage } from "./components/UserCandyPage";
-export { CreateAccountPrompt } from "./components/CreateAccountPrompt";
 export { CustomizeAvatarView } from "./components/CustomizeAvatarView";

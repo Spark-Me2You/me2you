@@ -285,6 +285,3 @@ Not yet migrated (still uses raw hex values): games, registration, mobile user p
 claim. The mobile pages use their own blue palette (`#003366`, `#a7d1f5`, `#e6f2ff`→`#c4dff5`
 gradient) and Material reds (`#d32f2f`, `#b71c1c`). Decide whether that becomes a documented
 "mobile" palette or folds into this one before migrating them.
-
-`src/features/hub/components/ProfileCard.tsx` is not imported anywhere (the Hub renders
-characters in Pixi) and was left untouched.
