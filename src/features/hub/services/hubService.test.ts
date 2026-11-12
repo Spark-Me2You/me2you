@@ -88,11 +88,7 @@ describe('hubService', () => {
       await expect(hubService.getAllOrgUsers('org')).resolves.toHaveLength(1)
     })
 
-    // KNOWN BUG: the code documents "keep first image found", but the
-    // `usersWithImages.has()` check runs before an `await` inside Promise.all, so
-    // every duplicate passes it and the last one to resolve wins. Remove `.fails`
-    // once the check/set is made atomic.
-    it.fails('keeps the first image when a user has several', async () => {
+    it('keeps the first image when a user has several', async () => {
       routeTables({
         gesture_image: {
           data: [

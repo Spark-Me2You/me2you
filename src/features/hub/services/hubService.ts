@@ -89,70 +89,51 @@ export const hubService = {
         throw new Error(`Failed to fetch images: ${imagesError.message}`);
       }
 
-      console.log(
-        "[hubService] Found profile images:",
-        imagesData?.length || 0,
-      );
 
-      // Step 2: Process users with images
-      const usersWithImages = new Map<string, HubUserData>();
+      // Step 2: Pick the first image per user synchronously (before any await), so which
+      // image wins doesn't depend on the order signed URLs resolve in.
+      const firstImages = new Map<string, { userData: UserProfileData; storagePath: string }>();
+      for (const img of imagesData ?? []) {
+        // Extract user data (Supabase returns as array or object)
+        const rawUserData = Array.isArray(img.user) ? img.user[0] : img.user;
+        const userData = rawUserData as UserProfileData | null;
 
-      if (imagesData && imagesData.length > 0) {
-        await Promise.all(
-          imagesData.map(async (img) => {
-            // Extract user data (Supabase returns as array or object)
-            const rawUserData = Array.isArray(img.user)
-              ? img.user[0]
-              : img.user;
-            const userData = rawUserData as UserProfileData | null;
-
-            if (!userData) {
-              console.warn("[hubService] Image missing user data:", img.id);
-              return;
-            }
-
-            // Skip if we already have this user (keep first image found)
-            if (usersWithImages.has(userData.id)) {
-              return;
-            }
-
-            // Generate signed URL for the image
-            let profileImageUrl: string | null = null;
-            try {
-              profileImageUrl = await storageService.getPhotoUrl(
-                img.storage_path,
-              );
-              console.log(
-                `[hubService] Generated URL for ${userData.name}:`,
-                profileImageUrl?.substring(0, 100),
-              );
-            } catch (error) {
-              console.warn(
-                `[hubService] Failed to generate URL for ${userData.name}:`,
-                error,
-              );
-            }
-
-            usersWithImages.set(userData.id, {
-              user: {
-                id: userData.id,
-                name: userData.name,
-                status: userData.status,
-                pronouns: userData.pronouns,
-                major: userData.major,
-                interests: userData.interests,
-                created_at: userData.created_at,
-                accessory: userData.accessory ?? null,
-              },
-              profileImageUrl,
-            });
-          }),
-        );
+        if (!userData) {
+          console.warn("[hubService] Image missing user data:", img.id);
+          continue;
+        }
+        if (!firstImages.has(userData.id)) {
+          firstImages.set(userData.id, { userData, storagePath: img.storage_path });
+        }
       }
 
-      console.log(
-        "[hubService] Processed users with images:",
-        usersWithImages.size,
+      // Then sign the URLs.
+      const usersWithImages = new Map<string, HubUserData>();
+      await Promise.all(
+        [...firstImages.values()].map(async ({ userData, storagePath }) => {
+          let profileImageUrl: string | null = null;
+          try {
+            profileImageUrl = await storageService.getPhotoUrl(storagePath);
+          } catch (error) {
+            console.warn(
+              `[hubService] Failed to generate URL for ${userData.name}:`,
+              error,
+            );
+          }
+          usersWithImages.set(userData.id, {
+            user: {
+              id: userData.id,
+              name: userData.name,
+              status: userData.status,
+              pronouns: userData.pronouns,
+              major: userData.major,
+              interests: userData.interests,
+              created_at: userData.created_at,
+              accessory: userData.accessory ?? null,
+            },
+            profileImageUrl,
+          });
+        }),
       );
 
       // Step 3: Query for users WITHOUT profile images
@@ -167,7 +148,6 @@ export const hubService = {
         throw new Error(`Failed to fetch users: ${usersError.message}`);
       }
 
-      console.log("[hubService] Total public users:", allUsersData?.length || 0);
 
       // Step 4: Merge results
       const result: HubUserData[] = [];
@@ -179,9 +159,6 @@ export const hubService = {
             result.push(usersWithImages.get(user.id)!);
           } else {
             // User doesn't have a profile image, add them with null URL
-            console.log(
-              `[hubService] User without profile image: ${user.name}`,
-            );
             result.push({
               user: {
                 id: user.id,
@@ -208,9 +185,6 @@ export const hubService = {
         );
       });
 
-      console.log(
-        `[hubService] Final result: ${result.length} users (${usersWithImages.size} with images, ${result.length - usersWithImages.size} without)`,
-      );
 
       return result;
     } catch (error) {
