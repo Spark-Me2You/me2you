@@ -23,6 +23,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Payload types that legitimately go through this function (see ClaimPage and
+// the kiosk's GameOverClaim, which builds `game_score` payloads).
+const EXECUTE_CLAIM_TYPES = ['game_score'];
+
+// Types that have a dedicated claim function, for the error message.
+const DEDICATED_FLOWS: Record<string, string> = {
+  candy_reward: 'claim-candy-reward',
+  drawing: 'claim-drawing',
+  message: 'claim-message',
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -110,11 +121,19 @@ serve(async (req) => {
       );
     }
 
-    // Candy rewards need the voucher + daily-cap logic in claim-candy-reward;
-    // claiming them here would use up the win without issuing a voucher.
-    if (token.payload?.type === 'candy_reward') {
+    // Allowlist of payload types this generic flow may consume. Every other
+    // type has its own function that does the real work; claiming it here would
+    // spend the token without doing that work (no voucher, no stored drawing,
+    // no delivered message). game_score is handled by the DB trigger
+    // handle_game_score_claim on the pending -> claimed transition.
+    const tokenType: unknown = token.payload?.type;
+    if (typeof tokenType !== 'string' || !EXECUTE_CLAIM_TYPES.includes(tokenType)) {
+      const flow = DEDICATED_FLOWS[tokenType as string];
+      const error = flow
+        ? `This token must be claimed through ${flow}`
+        : 'This token type cannot be claimed here';
       return new Response(
-        JSON.stringify({ success: false, error: 'Candy rewards must be claimed through claim-candy-reward' }),
+        JSON.stringify({ success: false, error }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
