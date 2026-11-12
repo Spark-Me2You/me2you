@@ -7,10 +7,11 @@ import otterImage from "@/assets/otter_default_rough_draft.png";
 import corkboardImage from "@/assets/corkboard.png";
 import arrow2 from "@/assets/arrow2.svg";
 import otterHandImage from "@/assets/hand.png";
-import cvMouseGif from "@/assets/cvmousegif.gif";
+import cursorTutorialGif from "@/assets/cursor_tutorial.gif";
 import { RegistrationQRDisplay } from "./RegistrationQRDisplay";
 import { InfoOverlay } from "./InfoOverlay";
 import { CameraPreview } from "./CameraPreview";
+import { Polaroid } from "./Polaroid";
 import { InactivityHint } from "../inactivity/InactivityHint";
 import { useInactivityHint } from "../inactivity/useInactivityHint";
 
@@ -21,6 +22,10 @@ const MENU_BUTTON =
 const BTN_TITLE = "font-jersey text-display-xl leading-none tracking-brand lowercase";
 const BTN_SUBTITLE = "font-averia text-body-xl leading-none font-bold tracking-brand lowercase";
 const TAPE = "absolute left-1/2 bg-tape";
+// Corkboard how-to steps (number badges + step text on the sticky note).
+const STEP_BADGE =
+  "flex size-9 shrink-0 items-center justify-center rounded-full bg-magenta font-jersey text-[24px] leading-none text-white shadow-tape";
+const STEP_TEXT = "m-0 pt-[2px] text-left font-averia text-[24px] leading-[1.2] tracking-[2px] text-ink";
 
 /** Simple power icon SVG, white, 48px */
 function PowerIcon() {
@@ -172,30 +177,56 @@ export function IdleScreen() {
         <img src={corkboardImage} alt="" className="h-[103%] w-[103%]" />
 
         {/* Corner title (top-left of corkboard) */}
-        <div className="pointer-events-none absolute right-0 bottom-[5%] z-[3] w-[500px] origin-center text-center font-jersey text-display-lg leading-[normal] font-normal tracking-[6.97px] text-white not-italic [transform:rotate(180.591deg)]">
+        <div className="pointer-events-none absolute right-[1%] bottom-[5%] z-[3] w-[500px] origin-center text-center font-jersey text-display-lg leading-[normal] font-normal tracking-[6.97px] text-white not-italic [transform:rotate(180.591deg)]">
           MOUSE TUTORIAL
         </div>
 
-        {/* Gesture demo gif (with pink tape on top) */}
-        <div className="pointer-events-none absolute right-[4%] bottom-[20%] z-[5] h-[35%] w-[40%] [transform:rotate(175deg)]">
-          <img src={cvMouseGif} alt="Hover and click gesture demo" className="block h-full w-full object-contain" />
-          <div className={`${TAPE} -top-[10px] z-[6] h-6 w-[110px] shadow-tape [transform:translateX(-50%)_rotate(6deg)]`} />
-        </div>
+        {/* Gesture demo gif, pinned as a polaroid like the "that's you!" preview */}
+        <Polaroid className="pointer-events-none absolute right-[6%] bottom-[20%] z-[5] w-[40%] [transform:rotate(175deg)]">
+          <img
+            src={cursorTutorialGif}
+            alt="make an L with your thumb and pointer finger, then pinch to click"
+            className="block aspect-video w-full rounded-[2px] object-cover"
+          />
+        </Polaroid>
 
-        {/* Pink-tape label below gif */}
-        <div className="absolute right-[42%] bottom-[20%] z-[4] box-content flex h-[375px] w-[200px] items-start justify-start overflow-visible rounded-[6px] bg-note pt-[22px] pr-6 pb-6 pl-6 shadow-note [transform:rotate(184deg)]">
-          <div className={`${TAPE} -top-3 z-[5] h-[22px] w-[90px] [transform:translateX(-50%)_rotate(-4deg)]`} />
-          <ul className="m-0 list-disc py-0 pr-0 pl-[1.2em] text-left font-averia text-[22px] tracking-[2px] text-ink">
-            <li className="mb-2 leading-[1.2] last:mb-0">make an L with your thumb and pointer finger, then move your hand!</li>
-            <li className="mb-2 leading-[1.2] last:mb-0">pinch them together to click!</li>
-            <li className="mb-2 leading-[1.2] last:mb-0">now practice by clicking this button!</li>
-          </ul>
+        {/* Numbered how-to on one sticky note beside the polaroid; step 3 sits
+            level with the info!! button, with an arrow out of the note into
+            it. The board is turned ~180°, so right-/bottom- here are left/top
+            on screen, and the note is turned back upright. Kept within the
+            left ~3/4 of the board, which narrower windows still show. */}
+        <div className="absolute right-[45%] bottom-[28%] z-[6] box-content flex w-[200px] flex-col gap-4 rounded-[6px] bg-note pt-[26px] pr-5 pb-5 pl-4 shadow-note [transform:rotate(186deg)]">
+          <div className={`${TAPE} -top-3 z-[5] h-[22px] w-[90px] shadow-tape [transform:translateX(-50%)_rotate(-4deg)]`} />
+          <div className="flex items-start gap-3">
+            <span className={STEP_BADGE}>1</span>
+            <p className={STEP_TEXT}>use your index to move the cursor</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className={STEP_BADGE}>2</span>
+            <p className={`${STEP_TEXT} font-bold`}>pinch to click!</p>
+          </div>
+          <div className="relative flex items-start gap-3">
+            {/* Hand-drawn style arrow, just outside the note, pointing into the button */}
+            <svg
+              viewBox="0 0 80 40"
+              aria-hidden="true"
+              className="pointer-events-none absolute top-[30%] right-full mr-10 h-auto w-[56px] -translate-y-1/2 -rotate-12 overflow-visible text-ink"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M76 8 C56 2 30 6 10 22" />
+              <path d="M24 20 L10 22 L15 9" />
+            </svg>
+            <span className={STEP_BADGE}>3</span>
+            <p className={STEP_TEXT}>practice by clicking this button!</p>
+          </div>
         </div>
-
-        <img src={arrow2} alt="" className="pointer-events-none absolute top-1/4 right-1/2 z-[4] h-4 w-[44px] [transform:rotate(-20deg)]" />
 
         {/* Info button with dwell-to-open trace animation */}
-        <div className="absolute top-[20%] right-[8%] z-[4] h-[108px] w-[273px] [transform:rotate(187deg)]">
+        <div className="absolute top-[14%] right-[9%] z-[4] h-[108px] w-[273px] [transform:rotate(187deg)]">
           <button
             ref={infoButtonRef}
             className="absolute top-0 left-0 z-[1] m-0 box-border flex h-[108px] w-[273px] cursor-pointer items-center justify-center rounded-glass border-[7px] border-solid border-lime bg-magenta p-0 font-jersey text-display-md tracking-brand text-[#f5f5f5] lowercase shadow-glass-card"

@@ -6,11 +6,10 @@
 
 import { useEffect, useRef } from "react";
 import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
+import { Polaroid } from "./Polaroid";
 
-const FRAME =
-  "pointer-events-none fixed bottom-6 left-6 z-[50] flex flex-col items-center gap-2 rounded-[4px] bg-polaroid px-3 pt-3 pb-2 shadow-note select-none origin-bottom-left [transform:rotate(-3deg)_scale(0.85)]";
-const TAPE =
-  "absolute -top-[11px] left-1/2 h-[22px] w-[90px] -translate-x-1/2 rotate-[4deg] bg-tape/80 shadow-tape";
+const POSITION =
+  "pointer-events-none fixed bottom-6 left-6 z-[50] origin-bottom-left [transform:rotate(-3deg)_scale(0.85)]";
 
 export const CameraPreview: React.FC = () => {
   const { stream } = useSharedCamera();
@@ -31,8 +30,7 @@ export const CameraPreview: React.FC = () => {
   if (!stream) return null;
 
   return (
-    <div className={FRAME} data-testid="camera-preview">
-      <div className={TAPE} />
+    <Polaroid className={POSITION} caption="that's you!" data-testid="camera-preview">
       <video
         ref={videoRef}
         autoPlay
@@ -41,9 +39,6 @@ export const CameraPreview: React.FC = () => {
         aria-label="live camera preview"
         className="block h-[150px] w-[200px] -scale-x-100 rounded-[2px] bg-ink object-cover"
       />
-      <p className="m-0 font-averia text-body-md leading-none tracking-brand text-ink lowercase">
-        that's you!
-      </p>
-    </div>
+    </Polaroid>
   );
 };
