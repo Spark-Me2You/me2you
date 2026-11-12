@@ -1,7 +1,4 @@
-/**
- * MediaPipe Configuration
- * TODO: Configure pose detection settings
- */
+/** MediaPipe task configuration (models are fetched from the Google CDN). */
 
 export const poseLandmarkerConfig = {
   // Fetch directly from Google Cloud Storage CDN
@@ -12,13 +9,6 @@ export const poseLandmarkerConfig = {
   minPosePresenceConfidence: 0.5,
   minTrackingConfidence: 0.5,
   runningMode: "VIDEO" as const,
-};
-
-export const faceMeshConfig = {
-  // TODO: Configure MediaPipe face mesh settings
-  modelAssetPath: "/models/face_mesh.task",
-  runningMode: "VIDEO" as const,
-  numFaces: 1,
 };
 
 export const gestureRecognizerConfig = {
