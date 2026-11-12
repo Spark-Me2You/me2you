@@ -20,13 +20,15 @@ export interface UsePoseDetectionReturn {
   landmarksRef: React.RefObject<NormalizedLandmark[] | null>;
   /** Landmarks for every detected person (length <= numPoses) */
   allLandmarksRef: React.RefObject<NormalizedLandmark[][]>;
+  /** Bumped after every inference, including frames where nobody is detected. */
   frameSequenceRef: React.RefObject<number>;
   isInitialized: boolean;
   error: string | null;
   processFrame: (video: HTMLVideoElement, timestamp: number) => void;
 }
 
-export const POSE_PROCESS_INTERVAL_MS = 75; // ms (~13 FPS, better input response)
+/** How often callers should run processFrame (~13 FPS). The hook doesn't throttle. */
+export const POSE_PROCESS_INTERVAL_MS = 75;
 
 export const usePoseDetection = (
   options: UsePoseDetectionOptions = {},
@@ -78,16 +80,15 @@ export const usePoseDetection = (
     (video: HTMLVideoElement, timestamp: number) => {
       if (!poseLandmarkerRef.current || !isInitialized) return;
 
-      // Throttle pose detection to ~15 FPS
-      if (timestamp - lastProcessTimeRef.current < POSE_PROCESS_INTERVAL_MS) {
-        return;
-      }
-      lastProcessTimeRef.current = timestamp;
+      // detectForVideo needs strictly increasing timestamps
+      if (timestamp <= lastProcessTimeRef.current) return;
 
       // Ensure video has valid dimensions before processing
       if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
         return;
       }
+
+      lastProcessTimeRef.current = timestamp;
 
       try {
         const result: PoseLandmarkerResult =
@@ -96,11 +97,13 @@ export const usePoseDetection = (
         if (result.landmarks && result.landmarks.length > 0) {
           landmarksRef.current = result.landmarks[0]; // First person's landmarks
           allLandmarksRef.current = result.landmarks;
-          frameSequenceRef.current += 1;
         } else {
           landmarksRef.current = null;
           allLandmarksRef.current = [];
         }
+        // Bump on empty frames too, or consumers that dedupe on the sequence
+        // keep showing a player who has left the frame.
+        frameSequenceRef.current += 1;
       } catch (err) {
         console.error("Pose detection error:", err);
       }
