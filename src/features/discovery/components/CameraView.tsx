@@ -80,7 +80,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
       if (!videoRef.current) return;
 
       // Process gesture detection
-      processVideoFrame(videoRef.current, Date.now());
+      processVideoFrame(videoRef.current, performance.now());
 
       animationFrameId = requestAnimationFrame(processFrame);
     };
