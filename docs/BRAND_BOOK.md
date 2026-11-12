@@ -227,6 +227,7 @@ Defined as `--animate-*` in `theme.css`. Keep motion short and springy:
 | `animate-hint-in` | `HintToast` notes easing up into view (slower, so they're noticed) |
 | `animate-dot-pulse` | "loading . . ." dots; stagger each dot with `[animation-delay:…]` |
 | `animate-info-trace` | Dwell-to-click ring |
+| `animate-inactivity-swipe` | Idle-screen nudge: the faded otter hand swipes up-right three times (`InactivityHint`) |
 | `animate-completion-flash` | Discovery hold-timer complete |
 | `animate-timer-pulse`, `animate-timer-flash` | Game countdowns |
 

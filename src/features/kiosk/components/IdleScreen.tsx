@@ -11,6 +11,8 @@ import cvMouseGif from "@/assets/cvmousegif.gif";
 import { RegistrationQRDisplay } from "./RegistrationQRDisplay";
 import { InfoOverlay } from "./InfoOverlay";
 import { CameraPreview } from "./CameraPreview";
+import { InactivityHint } from "../inactivity/InactivityHint";
+import { useInactivityHint } from "../inactivity/useInactivityHint";
 
 const INFO_DWELL_MS = 1400;
 
@@ -47,6 +49,7 @@ export function IdleScreen() {
   const [infoArming, setInfoArming] = useState(false);
   const infoButtonRef = useRef<HTMLButtonElement>(null);
   const infoDwellTimerRef = useRef<number | null>(null);
+  const { hinting, endHint } = useInactivityHint(!showInfo);
 
   const clearInfoTimer = () => {
     if (infoDwellTimerRef.current) {
@@ -244,6 +247,8 @@ export function IdleScreen() {
 
       {/* ===== Live camera preview (bottom left) ===== */}
       <CameraPreview />
+
+      {hinting && <InactivityHint onDone={endHint} />}
 
       {showInfo && <InfoOverlay onClose={() => setShowInfo(false)} />}
     </div>
