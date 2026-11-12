@@ -24,11 +24,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { resolveAppBaseUrl } from '../_shared/baseUrl.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -115,11 +112,14 @@ serve(async (req) => {
     console.log('[generate-registration-qr] Kiosk authorized for org:', org_id);
 
     // 5. Generate JWT token
-    const secret = new TextEncoder().encode(Deno.env.get('QR_TOKEN_SECRET'));
-    if (!secret) {
-      console.error('[generate-registration-qr] QR_TOKEN_SECRET not configured');
+    // Read the env var before encoding: encode(undefined) yields an empty
+    // array, so a check on the encoded value can never fire.
+    const secretRaw = Deno.env.get('QR_TOKEN_SECRET');
+    if (!secretRaw || secretRaw.length < 32) {
+      console.error('[generate-registration-qr] QR_TOKEN_SECRET not configured or shorter than 32 characters');
       throw new Error('Server configuration error: QR_TOKEN_SECRET not set');
     }
+    const secret = new TextEncoder().encode(secretRaw);
 
     const now = Math.floor(Date.now() / 1000);
     const exp = now + 300; // 5 minutes from now
@@ -138,7 +138,11 @@ serve(async (req) => {
     console.log('[generate-registration-qr] JWT generated');
 
     // 6. Build registration URL
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'http://localhost:5173';
+    const baseUrl = resolveAppBaseUrl(Deno.env.get('APP_BASE_URL'), Deno.env.get('SUPABASE_URL'));
+    if (!baseUrl) {
+      console.error('[generate-registration-qr] APP_BASE_URL not configured');
+      throw new Error('Server configuration error: APP_BASE_URL not set');
+    }
     const registrationUrl = `${baseUrl}/register?token=${token}`;
 
     console.log('[generate-registration-qr] Registration URL created');

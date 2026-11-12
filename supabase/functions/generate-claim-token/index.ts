@@ -16,11 +16,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { resolveAppBaseUrl } from '../_shared/baseUrl.ts';
+import { validateClaimPayload } from '../_shared/claimPayload.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -106,6 +104,31 @@ serve(async (req) => {
       );
     }
 
+    // Plausibility check of the payload type and its data fields. This does NOT
+    // prove the result is real: a kiosk session can still assert any in-range
+    // score/round until rounds are recorded server-side.
+    const payloadError = validateClaimPayload({
+      type: payload.type as string,
+      data: payload.data as Record<string, unknown>,
+    });
+    if (payloadError) {
+      return new Response(
+        JSON.stringify({ success: false, error: payloadError }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Resolve the link base before inserting so a misconfigured deployment does
+    // not leave an unusable token behind.
+    const baseUrl = resolveAppBaseUrl(Deno.env.get('APP_BASE_URL'), Deno.env.get('SUPABASE_URL'));
+    if (!baseUrl) {
+      console.error('[generate-claim-token] APP_BASE_URL not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('[generate-claim-token] Inserting token for org:', org_id, 'type:', payload.type);
 
     // Insert using the kiosk's JWT — the RLS INSERT policy validates org_id matches JWT app_metadata
@@ -118,12 +141,11 @@ serve(async (req) => {
     if (insertError || !token) {
       console.error('[generate-claim-token] Insert error:', insertError?.message);
       return new Response(
-        JSON.stringify({ success: false, error: insertError?.message || 'Failed to create claim token' }),
+        JSON.stringify({ success: false, error: 'Failed to create claim token' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'http://localhost:5173';
     const claimUrl = `${baseUrl}/claim/${token.id}`;
 
     console.log('[generate-claim-token] Token created:', token.id);
@@ -141,7 +163,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[generate-claim-token] Error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Internal server error' }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

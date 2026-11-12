@@ -23,11 +23,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -59,17 +55,21 @@ serve(async (req) => {
     console.log('[verify-registration-token] Token received');
 
     // 2. Verify JWT
-    const secret = new TextEncoder().encode(Deno.env.get('QR_TOKEN_SECRET'));
-    if (!secret) {
-      console.error('[verify-registration-token] QR_TOKEN_SECRET not configured');
+    // Read the env var before encoding: encode(undefined) yields an empty
+    // array, so a check on the encoded value can never fire.
+    const secretRaw = Deno.env.get('QR_TOKEN_SECRET');
+    if (!secretRaw || secretRaw.length < 32) {
+      console.error('[verify-registration-token] QR_TOKEN_SECRET not configured or shorter than 32 characters');
       throw new Error('Server configuration error: QR_TOKEN_SECRET not set');
     }
+    const secret = new TextEncoder().encode(secretRaw);
 
     let payload;
     try {
       console.log('[verify-registration-token] Verifying JWT signature and expiration...');
       const { payload: p } = await jose.jwtVerify(token, secret, {
         issuer: 'me2you-kiosk',
+        algorithms: ['HS256'],
       });
       payload = p;
       console.log('[verify-registration-token] JWT verified successfully');
