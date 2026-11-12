@@ -31,6 +31,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 import { diagnoseClaimFailure } from '../_shared/claimGuard.ts';
+import { isSafeTempDrawingPath } from '../_shared/drawingPath.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -181,6 +182,14 @@ serve(async (req) => {
       console.error('[claim-drawing] Missing image_path in payload');
       await revertClaim();
       return json(400, { success: false, error: 'Token payload is missing image_path' });
+    }
+
+    // image_path is kiosk-supplied and downloaded with the service role, so it
+    // must stay inside the token's own org folder in temp-drawings.
+    if (!isSafeTempDrawingPath(tempPath, claimed.org_id)) {
+      console.error('[claim-drawing] Rejected image_path outside org folder:', tempPath, 'token:', token_id);
+      await revertClaim();
+      return json(400, { success: false, error: 'Token payload has an invalid image_path' });
     }
 
     // Step 5: generate the permanent path under the user's folder
