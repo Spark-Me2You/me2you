@@ -21,6 +21,8 @@ interface UseArmFlapReturn {
   flapDetected: boolean;
   lastFlap: FlapEvent | null;
   processLandmarks: (landmarks: NormalizedLandmark[]) => void;
+  /** Drop buffered samples and the held-signal latch (call when the player leaves view). */
+  reset: () => void;
 }
 
 const DEFAULT_VELOCITY_THRESHOLD = 0.014;
@@ -50,6 +52,12 @@ export const useArmFlap = (
   const rightWristBuffer = useRef<number[]>([]);
   const lastFlapTime = useRef<number>(0);
   const wasFlapSignalRef = useRef(false);
+
+  const reset = useCallback(() => {
+    leftWristBuffer.current = [];
+    rightWristBuffer.current = [];
+    wasFlapSignalRef.current = false;
+  }, []);
 
   const processLandmarks = useCallback(
     (landmarks: NormalizedLandmark[]) => {
@@ -138,7 +146,7 @@ export const useArmFlap = (
     [velocityThreshold, bufferSize, cooldownMs, publishState, onFlap],
   );
 
-  return { flapDetected, lastFlap, processLandmarks };
+  return { flapDetected, lastFlap, processLandmarks, reset };
 };
 
 function calculateVelocity(buffer: number[]): number {

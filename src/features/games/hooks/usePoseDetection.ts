@@ -96,11 +96,13 @@ export const usePoseDetection = (
         if (result.landmarks && result.landmarks.length > 0) {
           landmarksRef.current = result.landmarks[0]; // First person's landmarks
           allLandmarksRef.current = result.landmarks;
-          frameSequenceRef.current += 1;
         } else {
           landmarksRef.current = null;
           allLandmarksRef.current = [];
         }
+        // Advance on every processed frame, including empty ones, so callers
+        // can see that everyone has left.
+        frameSequenceRef.current += 1;
       } catch (err) {
         console.error("Pose detection error:", err);
       }

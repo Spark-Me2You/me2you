@@ -114,4 +114,31 @@ describe('useArmFlap', () => {
     feed(result, [[{ y: 0, visibility: 0.1 }, { y: 0 }], [{ y: 0.5, visibility: 0.1 }, { y: 0 }]])
     expect(onFlap).not.toHaveBeenCalled() // hidden left drop doesn't count
   })
+
+  it('reset clears stale samples so re-entry does not produce a phantom flap', () => {
+    const onFlap = vi.fn()
+    const { result } = renderHook(() => useArmFlap({ ...options, onFlap }))
+    feed(result, [[{ y: 0 }, { y: 0 }]]) // last sample before the player leaves
+    act(() => result.current.reset())
+    // Player re-enters with hands lower down; without reset this diffs against y=0.
+    feed(result, [[{ y: 0.6 }, { y: 0.6 }]])
+    expect(onFlap).not.toHaveBeenCalled()
+  })
+
+  it('without reset the same re-entry is a false flap (guards the test above)', () => {
+    const onFlap = vi.fn()
+    const { result } = renderHook(() => useArmFlap({ ...options, onFlap }))
+    feed(result, [[{ y: 0 }, { y: 0 }], [{ y: 0.6 }, { y: 0.6 }]])
+    expect(onFlap).toHaveBeenCalledTimes(1)
+  })
+
+  it('reset clears the held-signal latch so the next flap fires', () => {
+    const onFlap = vi.fn()
+    const { result } = renderHook(() => useArmFlap({ ...options, cooldownMs: 0, onFlap }))
+    feed(result, [[{ y: 0 }, { y: 0 }], [{ y: 0.5 }, { y: 0 }]])
+    expect(onFlap).toHaveBeenCalledTimes(1)
+    act(() => result.current.reset())
+    feed(result, [[{ y: 0 }, { y: 0 }], [{ y: 0.5 }, { y: 0 }]])
+    expect(onFlap).toHaveBeenCalledTimes(2)
+  })
 })

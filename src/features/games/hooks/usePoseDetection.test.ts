@@ -59,6 +59,17 @@ describe('usePoseDetection', () => {
     expect(result.current.allLandmarksRef.current).toEqual([])
   })
 
+  it('advances the frame sequence on empty frames so callers see people leave', async () => {
+    landmarker.detectForVideo.mockReturnValueOnce({ landmarks: [lm(1)] }).mockReturnValueOnce({ landmarks: [] })
+    const { result } = await ready()
+
+    act(() => result.current.processFrame(video, 1000))
+    const afterPresent = result.current.frameSequenceRef.current
+    act(() => result.current.processFrame(video, 2000))
+
+    expect(result.current.frameSequenceRef.current).toBe(afterPresent + 1)
+  })
+
   it('throttles frames closer together than the interval', async () => {
     landmarker.detectForVideo.mockReturnValue({ landmarks: [lm(1)] })
     const { result } = await ready()
