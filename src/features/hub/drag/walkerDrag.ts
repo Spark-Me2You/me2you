@@ -16,8 +16,8 @@ export interface PressLimits {
 export const MOUSE_PRESS_LIMITS: PressLimits = { distance: 8, holdMs: 200 };
 
 /**
- * Looser than a mouse: curling the thumb to pinch moves the fingertip that steers the cursor,
- * and a pinch naturally lasts longer than a mouse click.
+ * Looser than a mouse: a hand can't hold the cursor as still as a mouse can, and a pinch
+ * naturally lasts longer than a mouse click.
  */
 export const HAND_PRESS_LIMITS: PressLimits = { distance: 40, holdMs: 500 };
 

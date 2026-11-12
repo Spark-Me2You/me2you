@@ -1,7 +1,8 @@
 /**
  * CV Cursor Hook
  * Uses shared camera stream + HandLandmarker for cursor position and click detection.
- * Index finger tip = cursor position, thumb curl = click.
+ * Ready pose (thumb and index open, other fingers closed) = cursor showing,
+ * palm position = cursor position, thumb-to-index pinch = click.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -9,6 +10,8 @@ import { createHandLandmarker, closeHandLandmarker } from "./handLandmarkerLoade
 import type { HandLandmarker, NormalizedLandmark } from "./handLandmarkerLoader";
 import { useSharedCamera } from "../SharedCameraProvider";
 import { useCvCursorEnabled } from "./CvCursorEnabledContext";
+import { IDLE_TRACKER, palmCenter, toScreen, trackCursorPose } from "./handGeometry";
+import type { HandRange } from "./handGeometry";
 
 export interface CvCursorState {
   x: number;
@@ -24,38 +27,19 @@ export interface CvCursorState {
 
 // Smoothing factor for EMA (0 = no update, 1 = no smoothing)
 const SMOOTHING_ALPHA = 0.35;
-// Normalized distance threshold for thumb curl detection
-const CLICK_DISTANCE_THRESHOLD = 0.06;
 // Minimum ms between click events
 const CLICK_COOLDOWN_MS = 300;
 
 // The usable range of hand movement in normalized camera space [0,1].
 // Hand typically moves within a subset of the frame — map this range to the full screen.
 // Adjust these if the cursor still can't reach edges.
-const HAND_X_MIN = 0.15;
-const HAND_X_MAX = 0.85;
-const HAND_Y_MIN = 0.15;
-const HAND_Y_MAX = 0.75;
+// The palm sits lower in the frame than the fingertip, so its vertical range is lower too.
+const PALM_RANGE: HandRange = { xMin: 0.15, xMax: 0.85, yMin: 0.25, yMax: 0.85 };
+// Fingertip range for the raw HandTrackSample, which games steer with.
+const TIP_RANGE: HandRange = { xMin: 0.15, xMax: 0.85, yMin: 0.15, yMax: 0.75 };
 
-/**
- * Check if the hand is in a pointing pose:
- * - Index finger extended (tip above PIP joint)
- * - Middle, ring, pinky curled (tips below their PIP joints)
- */
-function isPointingPose(landmarks: NormalizedLandmark[]): boolean {
-  const indexExtended = landmarks[8].y < landmarks[6].y;
-  const middleCurled = landmarks[12].y > landmarks[10].y;
-  const ringCurled = landmarks[16].y > landmarks[14].y;
-  const pinkyCurled = landmarks[20].y > landmarks[18].y;
-
-  return indexExtended && middleCurled && ringCurled && pinkyCurled;
-}
-
-/** Map a landmark to screen px: mirrored for the front camera, usable hand range → full screen. */
-function toScreen(landmark: NormalizedLandmark): { x: number; y: number } {
-  const normX = Math.min(1, Math.max(0, (landmark.x - HAND_X_MIN) / (HAND_X_MAX - HAND_X_MIN)));
-  const normY = Math.min(1, Math.max(0, (landmark.y - HAND_Y_MIN) / (HAND_Y_MAX - HAND_Y_MIN)));
-  return { x: (1 - normX) * window.innerWidth, y: normY * window.innerHeight };
+function screenSize() {
+  return { width: window.innerWidth, height: window.innerHeight };
 }
 
 function landmarkDistance(a: NormalizedLandmark, b: NormalizedLandmark): number {
@@ -73,7 +57,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
   const smoothXRef = useRef(0);
   const smoothYRef = useRef(0);
 
-  const wasClickingRef = useRef(false);
+  const poseTrackerRef = useRef(IDLE_TRACKER);
   const lastClickTimeRef = useRef(0);
 
   const [state, setState] = useState<CvCursorState>({
@@ -111,7 +95,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     sample.timestamp = performance.now();
     sample.frameId++;
     if (detectedLandmarks) {
-      const tip = toScreen(detectedLandmarks[8]);
+      const tip = toScreen(detectedLandmarks[8], TIP_RANGE, screenSize());
       sample.tipX = tip.x;
       sample.tipY = tip.y;
       sample.handScale = landmarkDistance(detectedLandmarks[0], detectedLandmarks[9]);
@@ -119,7 +103,18 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
       sample.wristY = detectedLandmarks[0].y;
     }
 
-    if (!results.landmarks || results.landmarks.length === 0) {
+    const now = Date.now();
+    const aspect = video.videoWidth / video.videoHeight || 1;
+    const wasPinched = poseTrackerRef.current.pose.pinched;
+    poseTrackerRef.current = trackCursorPose(
+      poseTrackerRef.current,
+      detectedLandmarks ?? null,
+      aspect,
+      now,
+    );
+    const pose = poseTrackerRef.current.pose;
+
+    if (!pose.active) {
       setState((prev) =>
         prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
       );
@@ -127,19 +122,15 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
       return;
     }
 
-    const landmarks = results.landmarks[0];
-
-    if (!isPointingPose(landmarks)) {
-      setState((prev) =>
-        prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
-      );
+    // Hand dropped out but the pose is being held: leave the cursor where it was.
+    if (!detectedLandmarks) {
+      setState((prev) => (prev.clicking ? { ...prev, clicking: false } : prev));
       rafRef.current = requestAnimationFrame(processFrame);
       return;
     }
 
-    // Cursor position from index finger tip (landmark 8), mirrored for front camera.
-    // Remap the usable hand range to full screen so edges are reachable.
-    const { x: rawX, y: rawY } = toScreen(landmarks[8]);
+    // Cursor position from the palm, which stays put while the fingers pinch.
+    const { x: rawX, y: rawY } = toScreen(palmCenter(detectedLandmarks), PALM_RANGE, screenSize());
 
     smoothXRef.current =
       SMOOTHING_ALPHA * rawX + (1 - SMOOTHING_ALPHA) * smoothXRef.current;
@@ -149,19 +140,13 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     const x = Math.round(smoothXRef.current);
     const y = Math.round(smoothYRef.current);
 
-    // Click detection: thumb tip (4) to index MCP (5) distance
-    const thumbDist = landmarkDistance(landmarks[4], landmarks[5]);
-    const isClicking = thumbDist < CLICK_DISTANCE_THRESHOLD;
-
-    const now = Date.now();
     let clicking = false;
-    if (isClicking && !wasClickingRef.current && now - lastClickTimeRef.current > CLICK_COOLDOWN_MS) {
+    if (pose.pinched && !wasPinched && now - lastClickTimeRef.current > CLICK_COOLDOWN_MS) {
       clicking = true;
       lastClickTimeRef.current = now;
     }
-    wasClickingRef.current = isClicking;
 
-    setState({ x, y, visible: true, clicking, isPinched: isClicking, isReady: true, error: null });
+    setState({ x, y, visible: true, clicking, isPinched: pose.pinched, isReady: true, error: null });
 
     rafRef.current = requestAnimationFrame(processFrame);
   }, [handTrackRef]);
@@ -177,7 +162,8 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
   // Init HandLandmarker and start frame loop
   useEffect(() => {
     if (!enabled || !stream) {
-      setState((prev) => ({ ...prev, visible: false, clicking: false }));
+      poseTrackerRef.current = IDLE_TRACKER;
+      setState((prev) => ({ ...prev, visible: false, clicking: false, isPinched: false }));
       return;
     }
 

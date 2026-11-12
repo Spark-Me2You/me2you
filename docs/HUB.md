@@ -73,8 +73,8 @@ and release to drop it. A quick click and release opens the profile instead.
   tracked on `window`, so a release over a door or off the canvas still ends it.
 - **CV hand cursor.** A pinch on a walker works the same way, and is recognised because
   `CvCursorOverlay`'s events are untrusted. That overlay sends its release 50 ms into every pinch,
-  so `PixiHub` ignores it and follows `cursorStateRef.isPinched` in the ticker instead. Curling the
-  thumb moves the cursor and pinches last longer than clicks, so hands get looser limits, 40 px and
+  so `PixiHub` ignores it and follows `cursorStateRef.isPinched` in the ticker instead. A hand
+  can't hold the cursor as still as a mouse and pinches last longer than clicks, so hands get looser limits, 40 px and
   500 ms (`HAND_PRESS_LIMITS`). A pinch counts as released after `HAND_RELEASE_GRACE_MS` (150 ms),
   so a tracking dropout of a few frames doesn't drop the walker.
 - **While held.** The walker rises `HOLD_LIFT`, draws over everyone, and sways via `swayAngle`.
