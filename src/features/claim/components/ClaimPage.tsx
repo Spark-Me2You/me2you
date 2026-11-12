@@ -22,7 +22,7 @@ export function ClaimPage() {
 
     if (authMode !== 'user') {
       // Preserve destination for post-login resume
-      navigate(`/user?next=/claim/${tokenId}`, { replace: true });
+      navigate(`/user?next=${encodeURIComponent(`/claim/${tokenId}`)}`, { replace: true });
       return;
     }
 
