@@ -192,6 +192,7 @@ Reuse these before building a new version:
 | `ExitButton` | `src/shared/components/ExitButton.tsx` | Red, sky border, top-left. `compact` for small screens |
 | `PinnedRegistrationQR` | `src/features/kiosk/components/` | Every kiosk screen shows one |
 | `RegistrationQRDisplay` | `src/features/kiosk/components/` | Bare QR; wrap it in a magenta glass frame |
+| `CameraPreview` | `src/features/kiosk/components/` | Mirrored live feed as a taped polaroid, bottom-left (Idle, Hub). Uses the shared camera stream |
 | `HelpPopup` | `src/features/discovery/components/` | Corkboard + note + gif help pattern |
 | `HintToast` | `src/shared/components/HintToast.tsx` | Taped sticky-note hint that eases in and fades out; drive it with `useHints` (each hint shows once per screen visit) |
 | `GlassCard` | `src/shared/components/GlassCard.tsx` | Large glass container |

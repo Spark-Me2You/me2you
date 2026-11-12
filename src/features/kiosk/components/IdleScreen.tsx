@@ -10,6 +10,7 @@ import otterHandImage from "@/assets/hand.png";
 import cvMouseGif from "@/assets/cvmousegif.gif";
 import { RegistrationQRDisplay } from "./RegistrationQRDisplay";
 import { InfoOverlay } from "./InfoOverlay";
+import { CameraPreview } from "./CameraPreview";
 
 const INFO_DWELL_MS = 1400;
 
@@ -240,6 +241,9 @@ export function IdleScreen() {
         </p>
         <img src={arrow2} alt="" className="pointer-events-none absolute top-[11rem] right-[8rem] z-[4] h-4 w-[34px] [transform:rotate(171.44deg)]" />
       </div>
+
+      {/* ===== Live camera preview (bottom left) ===== */}
+      <CameraPreview />
 
       {showInfo && <InfoOverlay onClose={() => setShowInfo(false)} />}
     </div>
