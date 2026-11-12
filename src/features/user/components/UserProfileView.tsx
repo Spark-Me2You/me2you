@@ -350,6 +350,7 @@ export const UserProfileView: React.FC = () => {
           }}
           onCapture={handlePhotoCapture}
           isSubmitting={isSaving}
+          error={saveError}
         />
       </>
     );
