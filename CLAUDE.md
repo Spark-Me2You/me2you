@@ -111,11 +111,11 @@ BrowserRouter
 ### Core Layer (`src/core/`)
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
-- **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
+- **`state-machine/`** — Four kiosk states in `appStateMachine.ts`: `IDLE`, `HUB`, `DISCOVERY`, `GAMES`. `useAppState()` / `transitionTo()` drive navigation in the kiosk; any state can move to any other.
 - **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the palm center to screen coords (EMA-smoothed), and detects pinch clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
-- **`monitoring/`** — `ErrorBoundary` component.
+- **`monitoring/`** — `ErrorBoundary` (resettable via `resetKeys` / a `reset` render prop) and `KioskErrorBoundary`, the kiosk crash screen that returns to `IDLE` after 10 s and reloads the page on a repeat crash.
 
 ### Feature Layer (`src/features/`)
 
@@ -157,7 +157,7 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 
 ### Database (`supabase/migrations/`)
 
-Sequential numbered migrations (001–026). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001–032). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ### CV Gesture System
 

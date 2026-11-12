@@ -58,12 +58,10 @@ Inside `/app`, `src/AppContainer.tsx` switches views by app state from `src/core
 
 ## State Machine
 
-Six kiosk states in `src/core/state-machine/appStateMachine.ts`:
+Four kiosk states in `src/core/state-machine/appStateMachine.ts`:
 
 ```
-IDLE → DISCOVERY | HUB | GAMES | AUTH
-AUTH → ONBOARDING (new user) | HUB (existing user)
-ONBOARDING → HUB
+IDLE ⇄ DISCOVERY | HUB | GAMES
 ```
 
 - `useAppState()` / `transitionTo()` drive navigation in the kiosk.
