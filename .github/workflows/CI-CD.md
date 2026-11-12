@@ -14,7 +14,7 @@ This document provides a quick summary of the continuous integration and deploym
   - run: npm audit --audit-level=high --omit=dev   # continue-on-error
   ```
 
-  - **Lint ratchet.** Errors fail the build, and so does any increase over the baseline of 38 warnings. Lower the number in `ci.yml` as warnings are fixed; never raise it.
+  - **Lint ratchet.** Errors fail the build, and so does any increase over the baseline of 34 warnings. Lower the number in `ci.yml` as warnings are fixed; never raise it.
   - **Coverage thresholds.** `test:coverage` fails if coverage drops below the floor in `vitest.config.ts` (lines 50, statements 44, functions 50, branches 33). Raise the floor as coverage improves. Tests under `supabase/functions/_shared/*.test.ts` are collected too.
   - **Audit.** `npm audit` on production dependencies reports high-severity advisories but does not block (`continue-on-error: true`).
   - **Edge functions.** The separate `edge-functions` job runs `deno check supabase/functions/*/index.ts` (`denoland/setup-deno@v2`). It has never run before, so it is `continue-on-error: true`; remove that once it is green to make it blocking.
