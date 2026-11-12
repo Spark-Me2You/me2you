@@ -46,7 +46,7 @@ describe('adminAuthService', () => {
       supabaseMock.auth.signInWithPassword.mockResolvedValue({ data: { user, session }, error: null })
       supabaseMock.from.mockReturnValue(queryResult({ data: null }))
 
-      await expect(adminAuthService.signInWithEmail('a', 'b')).rejects.toThrow('not authorized as an admin')
+      await expect(adminAuthService.signInWithEmail('a', 'b')).rejects.toThrow("doesn't have admin access")
       expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     })
 
@@ -54,9 +54,9 @@ describe('adminAuthService', () => {
       supabaseMock.auth.signInWithPassword.mockResolvedValue({ data: { user, session }, error: null })
       supabaseMock.from.mockReturnValue(queryResult({ error: { message: 'rls', code: '42501' } as never }))
 
-      await expect(adminAuthService.signInWithEmail('a', 'b')).rejects.toThrow(
-        'Admin verification failed: rls (Code: 42501)',
-      )
+      const failure = adminAuthService.signInWithEmail('a', 'b')
+      await expect(failure).rejects.toThrow("doesn't have admin access")
+      await expect(failure).rejects.not.toThrow(/rls|42501|admin-1/)
       expect(supabaseMock.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     })
   })

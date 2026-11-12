@@ -57,7 +57,6 @@ export const kioskAuthService = {
    * @throws Error if minting fails at any step
    */
   mintKioskSession: async (orgId: string): Promise<KioskSession> => {
-    console.log('[kioskAuth] Minting kiosk session for org:', orgId);
 
     // 1. Call edge function to create kiosk session
     const { data, error } = await supabase.functions.invoke<MintKioskSessionResponse>(
@@ -72,19 +71,15 @@ export const kioskAuthService = {
       throw new Error(data?.error || 'Failed to mint kiosk session');
     }
 
-    console.log('[kioskAuth] Edge function returned session for user:', data.kiosk_user_id);
 
     // 2. Sign out current admin session
-    console.log('[kioskAuth] Signing out admin session');
     const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
     if (signOutError) {
       console.error('[kioskAuth] Failed to sign out admin session:', signOutError);
       throw new Error('Failed to sign out admin session before entering kiosk mode');
     }
-    console.log('[kioskAuth] Admin signed out');
 
     // 3. Set the kiosk session using the tokens from the edge function
-    console.log('[kioskAuth] Setting kiosk session with access and refresh tokens');
 
     const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
       access_token: data.access_token!,
@@ -96,9 +91,6 @@ export const kioskAuthService = {
       throw new Error('Failed to set kiosk session');
     }
 
-    console.log('[kioskAuth] Kiosk session established');
-    console.log('[kioskAuth] Kiosk user ID:', sessionData.user.id);
-    console.log('[kioskAuth] Kiosk org_id from app_metadata:', sessionData.user.app_metadata?.org_id);
 
     // 4. Return kiosk session
     return {
@@ -119,7 +111,6 @@ export const kioskAuthService = {
    * @returns Promise<KioskSession | null> - The kiosk session data or null if not a kiosk session
    */
   getCurrentKioskSession: async (): Promise<KioskSession | null> => {
-    console.log('[kioskAuth] Checking for current kiosk session');
 
     const {
       data: { session },
@@ -127,7 +118,6 @@ export const kioskAuthService = {
     } = await supabase.auth.getSession();
 
     if (error || !session) {
-      console.log('[kioskAuth] No session found');
       return null;
     }
 
@@ -135,11 +125,9 @@ export const kioskAuthService = {
     const { is_kiosk, org_id } = session.user.app_metadata || {};
 
     if (!is_kiosk || !org_id) {
-      console.log('[kioskAuth] Current session is not a kiosk session');
       return null;
     }
 
-    console.log('[kioskAuth] Kiosk session found for org:', org_id);
 
     return {
       user: session.user,
@@ -156,10 +144,8 @@ export const kioskAuthService = {
    * @throws Error if sign out fails
    */
   exitKioskMode: async (): Promise<void> => {
-    console.log('[kioskAuth] Exiting kiosk mode');
 
     await supabase.auth.signOut({ scope: 'local' });
 
-    console.log('[kioskAuth] Kiosk session signed out');
   },
 };
