@@ -105,12 +105,15 @@ export const HubView: React.FC = () => {
 
   return (
     <>
-      <PixiHub
-        onCharacterClick={handleCharacterClick}
-        orgId={kioskOrgId || ''}
-        roomId={roomId}
-        onRoomChange={setRoomId}
-      />
+      {/* Wait for the org: the hub loads its characters once, for the org it starts with. */}
+      {kioskOrgId && (
+        <PixiHub
+          onCharacterClick={handleCharacterClick}
+          orgId={kioskOrgId}
+          roomId={roomId}
+          onRoomChange={setRoomId}
+        />
+      )}
       <PinnedRegistrationQR />
       <CameraPreview />
       <HintToast hint={hint} />

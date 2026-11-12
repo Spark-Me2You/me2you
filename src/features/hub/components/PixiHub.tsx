@@ -124,6 +124,13 @@ export const PixiHub: React.FC<{
   const replaceFaceRef = useRef<((ownerId: string, storagePath: string) => Promise<void>) | null>(null);
   const showRoomRef = useRef<((roomId: RoomId) => void) | null>(null);
   const roomIdRef = useRef(roomId);
+  // Latest callbacks, read from inside the Pixi effect so it doesn't re-initialise when they change.
+  const onCharacterClickRef = useRef(onCharacterClick);
+  const onRoomChangeRef = useRef(onRoomChange);
+  useEffect(() => {
+    onCharacterClickRef.current = onCharacterClick;
+    onRoomChangeRef.current = onRoomChange;
+  });
   const { transitionTo } = useAppState();
   const { cursorStateRef } = useCvCursorEnabled();
 
@@ -737,7 +744,7 @@ export const PixiHub: React.FC<{
           rooms[nextRoom].walkers.push(current.handle);
           current.handle.moveToRoom(nextRoom);
           enterRoom(nextRoom);
-          onRoomChange(nextRoom);
+          onRoomChangeRef.current(nextRoom);
         }
 
         /** Advance the press; called on pointer movement and every frame (for hold time). */
@@ -760,7 +767,7 @@ export const PixiHub: React.FC<{
         function finishPress(current: WalkerPress) {
           press = null;
           if (current.gesture.isDragging) current.handle.drop();
-          else onCharacterClick?.(current.clickData);
+          else onCharacterClickRef.current?.(current.clickData);
         }
 
         const pointerPosition = new Point();
@@ -1091,7 +1098,7 @@ export const PixiHub: React.FC<{
         appRef.current = null;
       }
     };
-  }, [transitionTo, cursorStateRef]);
+  }, [orgId, cursorStateRef]);
 
   useEffect(() => {
     roomIdRef.current = roomId;
