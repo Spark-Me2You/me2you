@@ -8,16 +8,17 @@
  *   1. Auth user, resolve their org_id from the "user" table
  *   2. Parse + validate request body: token_id, body (1–500 chars trimmed)
  *   3. Atomic UPDATE claim_tokens SET status='claimed' WHERE status='pending'
- *      (aborts if already claimed or expired — prevents double-claim)
- *   4. Validate org match + payload.type === 'message'
+ *      AND org_id = caller's org AND payload.type = 'message'
+ *      (aborts if already claimed, expired, wrong org or wrong type — so only a
+ *      valid claim ever consumes the token)
+ *   4. Defence in depth: re-validate org match + payload.type === 'message'
  *   5. Validate recipient exists in "user" with the same org_id
  *   6. INSERT messages row
  *   7. Return { success: true, token_id, message_id }
  *
- * Compensation: once step 3 succeeds the token is permanently claimed. If a
- * later step fails we return an error and log the token_id for manual
- * reconciliation rather than revert the claim — reverting would reopen a
- * double-claim race.
+ * Compensation: if a step after 3 fails, the token is reverted to 'pending'
+ * (guarded by claimed_by = caller) so the user can retry. A failed revert is
+ * logged with the token_id for manual reconciliation.
  *
  * Environment variables (auto-provided):
  *   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -25,6 +26,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
+import { diagnoseClaimFailure } from '../_shared/claimGuard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,32 +114,58 @@ serve(async (req) => {
     }
 
     // Step 3: ATOMIC reservation. `WHERE status='pending' AND expires_at > now()`
-    // is the entire lock — any concurrent caller either wins this update or gets
-    // zero rows back. We do this BEFORE reading any fields so there is no window
-    // where two callers can both pass validation and race on the insert.
+    // plus the org and payload-type filters is the entire lock — any concurrent
+    // caller either wins this update or gets zero rows back, and a wrong-org or
+    // wrong-type caller can never burn the token.
     const nowIso = new Date().toISOString();
     const { data: claimed, error: updateError } = await admin
       .from('claim_tokens')
       .update({ status: 'claimed', claimed_by: user.id })
       .eq('id', token_id)
       .eq('status', 'pending')
+      .eq('org_id', userRow.org_id)
+      .eq('payload->>type', 'message')
       .gt('expires_at', nowIso)
       .select('id, org_id, payload')
-      .single();
+      .maybeSingle();
 
     if (updateError || !claimed) {
-      console.error('[claim-message] Claim failed (already claimed / expired / not found):', updateError?.message);
-      return json(409, { success: false, error: 'Token is not claimable — already claimed, expired, or not found' });
+      console.error('[claim-message] Claim failed:', updateError?.message);
+      // Nothing was consumed. Read the row (service role) to give the caller
+      // the specific reason.
+      const { data: existing } = await admin
+        .from('claim_tokens')
+        .select('org_id, payload')
+        .eq('id', token_id)
+        .maybeSingle();
+      const failure = diagnoseClaimFailure(existing, {
+        orgId: userRow.org_id,
+        type: 'message',
+        typeError: 'Token is not a message claim',
+      });
+      return json(failure.status, { success: false, error: failure.error });
     }
 
     console.log('[claim-message] Token reserved:', token_id, 'by:', user.id);
 
-    // Step 4: validate the reserved token matches the user's org + is a message.
-    // Any failure here still leaves the token claimed — that's intentional, the
-    // token is now spent and cannot be reused. A malformed token is a
-    // kiosk-side bug, not a user error.
+    // Puts the token back to 'pending' after a failure past the lock so the
+    // user can retry. Guarded so it only undoes our own claim.
+    const revertClaim = async () => {
+      const { error: revertError } = await admin
+        .from('claim_tokens')
+        .update({ status: 'pending', claimed_by: null })
+        .eq('id', token_id)
+        .eq('claimed_by', user.id)
+        .eq('status', 'claimed');
+      if (revertError) {
+        console.error('[claim-message] Revert of claim failed — manual reconciliation needed. token:', token_id, revertError.message);
+      }
+    };
+
+    // Step 4: defence in depth — the update filters already guarantee these.
     if (claimed.org_id !== userRow.org_id) {
       console.error('[claim-message] Org mismatch — token:', claimed.org_id, 'user:', userRow.org_id);
+      await revertClaim();
       return json(403, { success: false, error: 'Token is not from your organization' });
     }
 
@@ -147,18 +175,18 @@ serve(async (req) => {
 
     if (!payload || payload.version !== '1.0' || payload.type !== 'message') {
       console.error('[claim-message] Wrong payload type/version:', payload?.type, payload?.version);
+      await revertClaim();
       return json(400, { success: false, error: 'Token is not a message claim' });
     }
 
     const recipientId = payload.data?.recipient_id;
     if (!recipientId || typeof recipientId !== 'string') {
       console.error('[claim-message] Missing recipient_id in payload');
+      await revertClaim();
       return json(400, { success: false, error: 'Token payload is missing recipient_id' });
     }
 
     // Step 5: verify recipient still exists in the same org.
-    // If they were deleted after the QR was generated the token stays spent —
-    // consistent with the claim-drawing policy of no revert after lock.
     const { data: recipientRow } = await admin
       .from('user')
       .select('id')
@@ -168,6 +196,7 @@ serve(async (req) => {
 
     if (!recipientRow) {
       console.error('[claim-message] Recipient not found or wrong org:', recipientId, 'org:', claimed.org_id);
+      await revertClaim();
       return json(404, { success: false, error: 'Recipient not found' });
     }
 
@@ -185,6 +214,7 @@ serve(async (req) => {
 
     if (insertError || !messageRow) {
       console.error('[claim-message] messages insert failed:', insertError?.message, 'token:', token_id);
+      await revertClaim();
       return json(500, { success: false, error: 'Failed to deliver message (contact support with token id)' });
     }
 

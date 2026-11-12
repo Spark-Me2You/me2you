@@ -9,17 +9,20 @@
  * ORDER (must not change — the DB lock has to come BEFORE any storage work):
  *   1. Auth user, resolve their org_id from the "user" table
  *   2. Atomic UPDATE claim_tokens SET status='claimed' WHERE status='pending'
- *      (aborts if already claimed or expired — prevents double-claim)
- *   3. Validate org match + payload.type === 'drawing'
+ *      AND org_id = caller's org AND payload.type = 'drawing'
+ *      (aborts if already claimed, expired, wrong org or wrong type — so only
+ *      a valid claim ever consumes the token)
+ *   3. Defence in depth: re-validate org match + payload.type === 'drawing'
  *   4. Extract image_path + prompt from payload.data
  *   5. Generate new drawing_id and new_path = `${user.id}/${drawing_id}.png`
  *   6. Download from temp-drawings, upload to drawings
  *   7. Insert drawings row
  *   8. Best-effort remove from temp-drawings (logged, non-fatal)
  *
- * Compensation: once step 2 succeeds the token is permanently claimed. If a
- * later step fails we return 500 and log the token_id for manual reconciliation
- * rather than revert the claim — reverting would reopen a double-claim race.
+ * Compensation: if a step after 2 fails, the token is reverted to 'pending'
+ * (guarded by claimed_by = caller) so the user can retry. A failed revert is
+ * logged with the token_id for manual reconciliation. A permanent file already
+ * uploaded is removed before the revert.
  *
  * Environment variables (auto-provided):
  *   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -27,6 +30,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
+import { diagnoseClaimFailure } from '../_shared/claimGuard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -105,32 +109,58 @@ serve(async (req) => {
     }
 
     // Step 2: ATOMIC reservation. `WHERE status='pending' AND expires_at > now()`
-    // is the entire lock — any concurrent caller either wins this update or gets
-    // zero rows back. We do this BEFORE reading any fields so there is no window
-    // where two callers can both pass validation and race on the storage move.
+    // plus the org and payload-type filters is the entire lock — any concurrent
+    // caller either wins this update or gets zero rows back, and a wrong-org or
+    // wrong-type caller can never burn the token.
     const nowIso = new Date().toISOString();
     const { data: claimed, error: updateError } = await admin
       .from('claim_tokens')
       .update({ status: 'claimed', claimed_by: user.id })
       .eq('id', token_id)
       .eq('status', 'pending')
+      .eq('org_id', userRow.org_id)
+      .eq('payload->>type', 'drawing')
       .gt('expires_at', nowIso)
       .select('id, org_id, payload')
-      .single();
+      .maybeSingle();
 
     if (updateError || !claimed) {
-      console.error('[claim-drawing] Claim failed (already claimed / expired / not found):', updateError?.message);
-      return json(409, { success: false, error: 'Token is not claimable — already claimed, expired, or not found' });
+      console.error('[claim-drawing] Claim failed:', updateError?.message);
+      // Nothing was consumed. Read the row (service role) to give the caller
+      // the specific reason.
+      const { data: existing } = await admin
+        .from('claim_tokens')
+        .select('org_id, payload')
+        .eq('id', token_id)
+        .maybeSingle();
+      const failure = diagnoseClaimFailure(existing, {
+        orgId: userRow.org_id,
+        type: 'drawing',
+        typeError: 'Token is not a drawing claim',
+      });
+      return json(failure.status, { success: false, error: failure.error });
     }
 
     console.log('[claim-drawing] Token reserved:', token_id, 'by:', user.id);
 
-    // Step 3: validate the reserved token matches the user's org + is a drawing.
-    // Any failure here still leaves the token claimed — that's intentional, the
-    // token is now spent and cannot be reused. A malformed token is a
-    // kiosk-side bug, not a user error.
+    // Puts the token back to 'pending' after a failure past the lock so the
+    // user can retry. Guarded so it only undoes our own claim.
+    const revertClaim = async () => {
+      const { error: revertError } = await admin
+        .from('claim_tokens')
+        .update({ status: 'pending', claimed_by: null })
+        .eq('id', token_id)
+        .eq('claimed_by', user.id)
+        .eq('status', 'claimed');
+      if (revertError) {
+        console.error('[claim-drawing] Revert of claim failed — manual reconciliation needed. token:', token_id, revertError.message);
+      }
+    };
+
+    // Step 3: defence in depth — the update filters already guarantee these.
     if (claimed.org_id !== userRow.org_id) {
       console.error('[claim-drawing] Org mismatch — token:', claimed.org_id, 'user:', userRow.org_id);
+      await revertClaim();
       return json(403, { success: false, error: 'Token is not from your organization' });
     }
 
@@ -140,6 +170,7 @@ serve(async (req) => {
 
     if (!payload || payload.type !== 'drawing') {
       console.error('[claim-drawing] Wrong payload type:', payload?.type);
+      await revertClaim();
       return json(400, { success: false, error: 'Token is not a drawing claim' });
     }
 
@@ -148,6 +179,7 @@ serve(async (req) => {
 
     if (!tempPath || typeof tempPath !== 'string') {
       console.error('[claim-drawing] Missing image_path in payload');
+      await revertClaim();
       return json(400, { success: false, error: 'Token payload is missing image_path' });
     }
 
@@ -162,6 +194,7 @@ serve(async (req) => {
 
     if (downloadError || !blob) {
       console.error('[claim-drawing] Download from temp-drawings failed:', downloadError?.message, 'path:', tempPath, 'token:', token_id);
+      await revertClaim();
       return json(500, { success: false, error: 'Failed to read temp drawing (contact support with token id)' });
     }
 
@@ -171,6 +204,7 @@ serve(async (req) => {
 
     if (uploadError) {
       console.error('[claim-drawing] Upload to drawings failed:', uploadError.message, 'path:', newPath, 'token:', token_id);
+      await revertClaim();
       return json(500, { success: false, error: 'Failed to save drawing (contact support with token id)' });
     }
 
@@ -190,6 +224,7 @@ serve(async (req) => {
       if (rollbackError) {
         console.error('[claim-drawing] Rollback of permanent upload failed:', rollbackError.message, 'path:', newPath);
       }
+      await revertClaim();
       return json(500, { success: false, error: 'Failed to record drawing (contact support with token id)' });
     }
 
