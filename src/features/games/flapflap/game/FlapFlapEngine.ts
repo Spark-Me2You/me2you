@@ -34,7 +34,6 @@ export class FlapFlapEngine {
     this.gameContainer = new Container();
     this.app.stage.addChild(this.gameContainer);
 
-    // Create game objects
     this.bird = new Bird();
     this.pipeManager = new PipeManager();
     this.ground = this.createGround();
@@ -106,10 +105,8 @@ export class FlapFlapEngine {
 
     this.gameTime += deltaTime * 1000;
 
-    // Update bird
     this.bird.update(deltaTime);
 
-    // Update pipes and get score
     const scored = this.pipeManager.update(deltaTime, this.gameTime);
     if (scored > 0) {
       this.score += scored;
@@ -117,7 +114,6 @@ export class FlapFlapEngine {
       this.onScoreChange?.(this.score, this.highScore);
     }
 
-    // Check collisions
     const birdBounds = this.bird.getBounds();
 
     // Ground collision

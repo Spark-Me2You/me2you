@@ -150,7 +150,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({ onExit }) => {
   const processFrameRef = useRef(processFrame);
   const poseReadyRef = useRef(poseReady);
 
-  // Update refs when callbacks change
   useEffect(() => {
     processLandmarksRef.current = processLandmarks;
     processFrameRef.current = processFrame;
