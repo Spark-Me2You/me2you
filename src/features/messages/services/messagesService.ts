@@ -24,10 +24,13 @@ export const messagesService = {
     claimService.executeMessageClaim(tokenId, body),
 
   deleteMessage: async (messageId: string): Promise<void> => {
-    const { error } = await supabase
+    // An RLS-filtered delete matches nothing and reports no error, so ask for the deleted rows.
+    const { data, error } = await supabase
       .from('messages')
       .delete()
-      .eq('id', messageId);
+      .eq('id', messageId)
+      .select('id');
     if (error) throw new Error(error.message);
+    if (!data || data.length === 0) throw new Error('could not delete message');
   },
 };

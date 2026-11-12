@@ -24,6 +24,7 @@ export function MessagesView() {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -37,11 +38,13 @@ export function MessagesView() {
   }, [userId]);
 
   const handleDelete = async (messageId: string) => {
+    setDeleteError(null);
     setDeletingIds((prev) => new Set(prev).add(messageId));
     try {
       await messagesService.deleteMessage(messageId);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
-    } catch {
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'could not delete message');
       setDeletingIds((prev) => { const next = new Set(prev); next.delete(messageId); return next; });
     }
   };
@@ -63,6 +66,11 @@ export function MessagesView() {
         <p className="mt-[60px] text-center font-jersey text-[20px] tracking-[1px] text-[#888] lowercase">no messages yet</p>
       ) : (
         <div className="flex flex-col gap-3">
+          {deleteError && (
+            <p role="alert" className="m-0 text-center font-jersey text-[15px] tracking-[0.5px] text-[#d32f2f]">
+              {deleteError}
+            </p>
+          )}
           {messages.map((msg) => (
             <div key={msg.id} className="flex flex-col gap-[6px] rounded-[16px] bg-[rgba(255,255,255,0.9)] px-[18px] py-4 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
               <div className="flex items-center justify-between gap-2">
