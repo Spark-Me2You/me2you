@@ -23,7 +23,6 @@
       "@/core/*": ["src/core/*"],
       "@/features/*": ["src/features/*"],
       "@/shared/*": ["src/shared/*"],
-      "@/store/*": ["src/store/*"]
     },
 
     /* Linting */

@@ -1,15 +1,9 @@
 /// <reference types="vite/client" />
 
-/**
- * Environment variable types
- * TODO: Define types for all VITE_* environment variables
- */
 interface ImportMetaEnv {
-  // Application Settings
-  readonly VITE_SESSION_TIMEOUT_MS: string;
-  readonly VITE_GESTURE_COOLDOWN_MS: string;
-  readonly VITE_IDLE_TIMEOUT_MS: string;
-  readonly VITE_TARGET_FPS: string;
+  // Supabase (required)
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_ANON_KEY: string;
 
   // Gumball Slice (all optional — see gumballSliceConfig.ts for defaults)
   readonly VITE_GUMBALL_ROUND_SECONDS?: string;
@@ -24,10 +18,6 @@ interface ImportMetaEnv {
   readonly VITE_GUMBALL_TRAIL_WIDTH?: string;
   readonly VITE_GUMBALL_TRAIL_SMOOTHING?: string;
   readonly VITE_GUMBALL_SEATED_MODE?: string;
-
-  // Development
-  readonly VITE_ENABLE_LOGGER: string;
-  readonly VITE_ENABLE_PERFORMANCE_MONITOR: string;
 }
 
 interface ImportMeta {

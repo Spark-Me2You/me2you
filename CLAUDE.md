@@ -32,7 +32,7 @@ The client is typed with the generated `Database` type (`src/core/supabase/datab
 
 ### Environment
 
-Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional tuning: `VITE_SESSION_TIMEOUT_MS`, `VITE_GESTURE_COOLDOWN_MS`, `VITE_IDLE_TIMEOUT_MS`, `VITE_TARGET_FPS`, `VITE_ENABLE_LOGGER`, `VITE_ENABLE_PERFORMANCE_MONITOR`, `VITE_DEFAULT_ORG_ID`.
+Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional: the Gumball Slice tunables `VITE_GUMBALL_*` (round length, strikes, slice speed, hitbox, trail, seated mode), listed with defaults in `.env.example` and `src/features/games/gumballslice/config/gumballSliceConfig.ts`.
 
 ---
 
