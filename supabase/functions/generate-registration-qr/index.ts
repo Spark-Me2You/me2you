@@ -24,6 +24,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
 import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts';
+import { resolveAppBaseUrl } from '../_shared/baseUrl.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -141,7 +142,11 @@ serve(async (req) => {
     console.log('[generate-registration-qr] JWT generated');
 
     // 6. Build registration URL
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'http://localhost:5173';
+    const baseUrl = resolveAppBaseUrl(Deno.env.get('APP_BASE_URL'), Deno.env.get('SUPABASE_URL'));
+    if (!baseUrl) {
+      console.error('[generate-registration-qr] APP_BASE_URL not configured');
+      throw new Error('Server configuration error: APP_BASE_URL not set');
+    }
     const registrationUrl = `${baseUrl}/register?token=${token}`;
 
     console.log('[generate-registration-qr] Registration URL created');

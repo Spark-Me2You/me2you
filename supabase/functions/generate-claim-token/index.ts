@@ -16,6 +16,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
+import { resolveAppBaseUrl } from '../_shared/baseUrl.ts';
 import { validateClaimPayload } from '../_shared/claimPayload.ts';
 
 const corsHeaders = {
@@ -121,6 +122,17 @@ serve(async (req) => {
       );
     }
 
+    // Resolve the link base before inserting so a misconfigured deployment does
+    // not leave an unusable token behind.
+    const baseUrl = resolveAppBaseUrl(Deno.env.get('APP_BASE_URL'), Deno.env.get('SUPABASE_URL'));
+    if (!baseUrl) {
+      console.error('[generate-claim-token] APP_BASE_URL not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('[generate-claim-token] Inserting token for org:', org_id, 'type:', payload.type);
 
     // Insert using the kiosk's JWT — the RLS INSERT policy validates org_id matches JWT app_metadata
@@ -138,7 +150,6 @@ serve(async (req) => {
       );
     }
 
-    const baseUrl = Deno.env.get('APP_BASE_URL') || 'http://localhost:5173';
     const claimUrl = `${baseUrl}/claim/${token.id}`;
 
     console.log('[generate-claim-token] Token created:', token.id);
