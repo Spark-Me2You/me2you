@@ -12,7 +12,7 @@ interface SuccessStepProps {
 export const SuccessStep: React.FC<SuccessStepProps> = ({ userName }) => {
   return (
     <div className="mx-auto flex w-full max-w-[400px] flex-col p-4">
-      <div className="flex min-h-screen flex-col items-center px-6 pt-24 pb-8 text-center">
+      <div className="flex min-h-dvh flex-col items-center px-6 pt-24 pb-8 text-center">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#d3e405] text-[2.5rem] text-white">
           ✓
         </div>

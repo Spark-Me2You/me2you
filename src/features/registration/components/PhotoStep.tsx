@@ -234,7 +234,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   const isBusy = isSubmitting || isProcessing;
 
   return (
-    <div className="relative flex min-h-screen flex-col pt-[112px]">
+    <div className="relative flex min-h-dvh flex-col pt-[112px]">
       <div className="mb-3 bg-magenta px-5 py-3 text-center">
         <p className="m-0 font-averia text-[22px] leading-[1.4] font-normal tracking-[3.74px] text-white">choose a pose!</p>
         <p className="m-0 font-averia text-[22px] leading-[1.4] font-normal tracking-[3.74px] text-white">*do not put hands over face*</p>

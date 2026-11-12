@@ -99,7 +99,7 @@ export function ClaimPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
       <div className="flex flex-col items-center gap-4">
         <span className="font-jersey text-[32px] tracking-[2px] text-[#555] lowercase">claiming...</span>
       </div>

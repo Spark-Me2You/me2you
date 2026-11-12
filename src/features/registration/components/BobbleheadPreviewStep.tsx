@@ -36,7 +36,7 @@ export const BobbleheadPreviewStep: React.FC<BobbleheadPreviewStepProps> = ({
   };
 
   return (
-    <div className="flex min-h-screen flex-col pt-[112px]">
+    <div className="flex min-h-dvh flex-col pt-[112px]">
       <div className="relative -mx-[10px] flex flex-col items-center rounded-[46px] bg-glass pt-[30px] pr-[26px] pb-[44px] pl-[30px] shadow-glass-card">
         {error && (
           <div className="mb-[14px] rounded-[10px] border border-solid border-[rgba(255,60,60,0.35)] bg-[rgba(255,60,60,0.12)] px-[14px] py-2 font-averia text-[14px] tracking-[0.5px] text-[#b00]">{error}</div>
