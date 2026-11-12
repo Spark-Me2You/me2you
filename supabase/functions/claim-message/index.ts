@@ -227,8 +227,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[claim-message] Error:', message);
-    return json(500, { success: false, error: message });
+    console.error('[claim-message] Error:', error instanceof Error ? error.message : error);
+    return json(500, { success: false, error: 'Internal server error' });
   }
 });

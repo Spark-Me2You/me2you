@@ -133,7 +133,7 @@ serve(async (req) => {
     if (insertError || !token) {
       console.error('[generate-claim-token] Insert error:', insertError?.message);
       return new Response(
-        JSON.stringify({ success: false, error: insertError?.message || 'Failed to create claim token' }),
+        JSON.stringify({ success: false, error: 'Failed to create claim token' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -156,7 +156,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[generate-claim-token] Error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Internal server error' }),
+      JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
