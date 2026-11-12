@@ -85,4 +85,19 @@ describe('floodFill', () => {
     floodFill(ctx, 0, 0, '#ffffff')
     expect(putCount()).toBe(0)
   })
+
+  it('terminates and fills when the target is within tolerance of the fill colour', () => {
+    const width = 40
+    const height = 40
+    const data = new Uint8ClampedArray(width * height * 4)
+    for (let i = 0; i < data.length; i += 4) data.set([240, 240, 240, 255], i)
+    const ctx = {
+      canvas: { width, height },
+      getImageData: () => ({ data }),
+      putImageData: () => {},
+    } as unknown as CanvasRenderingContext2D
+    floodFill(ctx, 20, 20, '#ffffff', 24)
+    expect([...data.slice(0, 4)]).toEqual(WHITE)
+    expect([...data.slice(data.length - 4)]).toEqual(WHITE)
+  })
 })

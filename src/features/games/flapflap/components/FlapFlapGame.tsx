@@ -33,10 +33,7 @@ import {
 } from "@/features/games/services/gameScoreService";
 import { PinnedRegistrationQR, useKioskActivity } from "@/features/kiosk";
 
-export const FlapFlapGame: React.FC<GameProps> = ({
-  onExit,
-  onScoreChange,
-}) => {
+export const FlapFlapGame: React.FC<GameProps> = ({ onExit }) => {
   const { kioskOrgId, userProfile } = useAuth();
   const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
@@ -107,7 +104,13 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     engineRef.current?.flap();
   }, [markActivity]);
 
+  const leaderboardRequestRef = useRef(0);
+
   const refreshLeaderboard = useCallback(async () => {
+    // Only the newest request may write state; slower, older responses are dropped.
+    const requestId = ++leaderboardRequestRef.current;
+    const isStale = () => requestId !== leaderboardRequestRef.current;
+
     if (!activeOrgId) {
       setLeaderboardEntries([]);
       setLeaderboardError(null);
@@ -123,13 +126,15 @@ export const FlapFlapGame: React.FC<GameProps> = ({
         activeOrgId,
         5,
       );
+      if (isStale()) return;
       setLeaderboardEntries(topPlayers);
     } catch (error) {
+      if (isStale()) return;
       const message =
         error instanceof Error ? error.message : "failed to load leaderboard";
       setLeaderboardError(message);
     } finally {
-      setIsLeaderboardLoading(false);
+      if (!isStale()) setIsLeaderboardLoading(false);
     }
   }, [activeOrgId]);
 
@@ -137,7 +142,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     velocityThreshold: 0.014,
     bufferSize: 3,
     cooldownMs: 230,
-    publishState: false,
     onFlap: handleFlap,
   });
 
@@ -146,7 +150,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   const processFrameRef = useRef(processFrame);
   const poseReadyRef = useRef(poseReady);
 
-  // Update refs when callbacks change
   useEffect(() => {
     processLandmarksRef.current = processLandmarks;
     processFrameRef.current = processFrame;
@@ -158,9 +161,7 @@ export const FlapFlapGame: React.FC<GameProps> = ({
     if (!app || !isReady) return;
 
     const engine = new FlapFlapEngine(app);
-    engine.setCallbacks(handleGameStateChange, (score) =>
-      onScoreChange?.(score),
-    );
+    engine.setCallbacks(handleGameStateChange);
     engineRef.current = engine;
     const FIXED_STEP_SECONDS = 1 / 60;
     const MAX_UPDATE_STEPS = 4;
@@ -207,7 +208,6 @@ export const FlapFlapGame: React.FC<GameProps> = ({
   }, [
     app,
     isReady,
-    onScoreChange,
     landmarksRef,
     frameSequenceRef,
     handleGameStateChange,

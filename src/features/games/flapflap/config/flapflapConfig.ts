@@ -24,8 +24,6 @@ export const FLAPFLAP_CONFIG = {
   MIN_PIPE_HEIGHT: 80,
   MAX_PIPE_RISE: 160, // max upward gapY shift between consecutive pipes (pixels) — tune this
 
-  // Scrolling background
-  BACKGROUND_SPEED: 50, // pixels/second
   GROUND_HEIGHT: 100,
 
   // Game states

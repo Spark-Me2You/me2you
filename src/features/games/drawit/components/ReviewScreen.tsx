@@ -1,8 +1,7 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import { useAuth } from "@/core/auth";
 import { ClaimSection } from "@/features/claim";
-import type { ClaimPayload } from "@/features/claim";
-import { uploadTempDrawing } from "../utils/gallerySupabase";
+import { canContinue, useDrawingUpload } from "../hooks/useDrawingUpload";
 import nextButton from "../../../../assets/next_button.svg";
 import { PinnedRegistrationQR } from "@/features/kiosk/components/PinnedRegistrationQR";
 
@@ -14,12 +13,6 @@ interface Props {
   onContinue: () => void;
 }
 
-type StageState =
-  | { kind: "idle" }
-  | { kind: "uploading" }
-  | { kind: "ready"; payload: ClaimPayload }
-  | { kind: "error"; message: string };
-
 export const ReviewScreen: React.FC<Props> = ({
   imageDataUrl,
   word,
@@ -28,35 +21,7 @@ export const ReviewScreen: React.FC<Props> = ({
   onContinue,
 }) => {
   const { kioskOrgId } = useAuth();
-  const [stage, setStage] = useState<StageState>({ kind: "idle" });
-  const hasUploadedRef = useRef(false);
-
-  const handleClaim = async () => {
-    if (hasUploadedRef.current) return;
-    hasUploadedRef.current = true;
-
-    if (!kioskOrgId) {
-      setStage({ kind: "error", message: "Kiosk session is missing an org — sign in again." });
-      return;
-    }
-
-    setStage({ kind: "uploading" });
-    try {
-      const { tempPath } = await uploadTempDrawing(imageDataUrl, kioskOrgId);
-      const payload: ClaimPayload = {
-        version: "1.0",
-        type: "drawing",
-        display: { title: "Claim your drawing", description: word },
-        data: { image_path: tempPath, prompt: word },
-      };
-      setStage({ kind: "ready", payload });
-    } catch (err) {
-      hasUploadedRef.current = false;
-      const message = err instanceof Error ? err.message : "Failed to upload drawing";
-      console.error("[drawit:review] upload failed:", err);
-      setStage({ kind: "error", message });
-    }
-  };
+  const { stage, start, dismiss } = useDrawingUpload({ imageDataUrl, word, orgId: kioskOrgId });
 
   const showModal = stage.kind !== "idle";
 
@@ -69,7 +34,7 @@ export const ReviewScreen: React.FC<Props> = ({
         <button
           type="button"
           className="cursor-pointer rounded-[12px] border-4 border-solid border-white px-9 py-4 font-jersey text-[30px] tracking-[4px] text-white bg-[#00c000]"
-          onClick={handleClaim}
+          onClick={start}
           disabled={stage.kind === "uploading" || stage.kind === "ready"}
         >
           Claim & Send to Gallery
@@ -100,17 +65,29 @@ export const ReviewScreen: React.FC<Props> = ({
             )}
 
             {stage.kind === "error" && (
-              <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">{stage.message}</p>
+              <>
+                <p className="m-0 max-w-[360px] text-center text-[22px] leading-[1.2] tracking-[2px] text-white">{stage.message}</p>
+                <div className="flex gap-4">
+                  <button type="button" className="cursor-pointer rounded-[12px] border-4 border-solid border-white bg-[#00c000] px-6 py-2 font-jersey text-[26px] tracking-[3px] text-white" onClick={start}>
+                    Retry
+                  </button>
+                  <button type="button" className="cursor-pointer rounded-[12px] border-4 border-solid border-white bg-transparent px-6 py-2 font-jersey text-[26px] tracking-[3px] text-white" onClick={dismiss}>
+                    Cancel
+                  </button>
+                </div>
+              </>
             )}
 
-            <button
-              type="button"
-              className="absolute right-[18px] bottom-[18px] flex size-24 cursor-pointer items-center justify-center border-0 bg-transparent p-0 [transition:transform_120ms_ease] hover:[transform:translateY(-2px)_scale(1.03)] active:[transform:translateY(1px)_scale(0.98)]"
-              aria-label="Continue"
-              onClick={onContinue}
-            >
-              <img src={nextButton} alt="" className="pointer-events-none block size-full" />
-            </button>
+            {canContinue(stage) && (
+              <button
+                type="button"
+                className="absolute right-[18px] bottom-[18px] flex size-24 cursor-pointer items-center justify-center border-0 bg-transparent p-0 [transition:transform_120ms_ease] hover:[transform:translateY(-2px)_scale(1.03)] active:[transform:translateY(1px)_scale(0.98)]"
+                aria-label="Continue"
+                onClick={onContinue}
+              >
+                <img src={nextButton} alt="" className="pointer-events-none block size-full" />
+              </button>
+            )}
           </div>
         </div>
       )}
