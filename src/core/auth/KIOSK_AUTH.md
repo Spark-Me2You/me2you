@@ -93,7 +93,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
 
-  // NEW: Kiosk fields
+  // Kiosk fields
   authMode: 'admin' | 'kiosk' | 'unauthenticated';
   kioskOrgId: string | null;
 
@@ -101,7 +101,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 
-  // NEW: Kiosk methods
+  // Kiosk methods
   mintKioskSession: (orgId: string) => Promise<void>;
   exitKioskMode: () => Promise<void>;
 }

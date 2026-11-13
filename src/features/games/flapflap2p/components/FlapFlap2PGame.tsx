@@ -104,27 +104,28 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
     velocityThreshold: 0.014,
     bufferSize: 3,
     cooldownMs: 230,
-    publishState: false,
   };
-  const { processLandmarks: processP1 } = useArmFlap({
+  const { processLandmarks: processP1, reset: resetP1 } = useArmFlap({
     ...armFlapOptions,
     onFlap: handleFlapP1,
   });
-  const { processLandmarks: processP2 } = useArmFlap({
+  const { processLandmarks: processP2, reset: resetP2 } = useArmFlap({
     ...armFlapOptions,
     onFlap: handleFlapP2,
   });
 
   // Store callbacks in refs to prevent recreation
   const processPlayerRef = useRef({ P1: processP1, P2: processP2 });
+  const resetPlayerRef = useRef({ P1: resetP1, P2: resetP2 });
   const processFrameRef = useRef(processFrame);
   const poseReadyRef = useRef(poseReady);
 
   useEffect(() => {
     processPlayerRef.current = { P1: processP1, P2: processP2 };
+    resetPlayerRef.current = { P1: resetP1, P2: resetP2 };
     processFrameRef.current = processFrame;
     poseReadyRef.current = poseReady;
-  }, [processP1, processP2, processFrame, poseReady]);
+  }, [processP1, processP2, resetP1, resetP2, processFrame, poseReady]);
 
   // Initialize game engine and PixiJS ticker game loop
   useEffect(() => {
@@ -155,10 +156,15 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
       lastProcessedFrameSequence = currentFrameSequence;
 
       const playerPoses = assignPosesToPlayers(allLandmarksRef.current);
+      const wasPresent = presentRef.current;
       presentRef.current = {
         P1: playerPoses.P1 !== null,
         P2: playerPoses.P2 !== null,
       };
+      // A player who left view must not diff their next samples against stale
+      // wrist positions (phantom flap on re-entry).
+      if (wasPresent.P1 && !presentRef.current.P1) resetPlayerRef.current.P1();
+      if (wasPresent.P2 && !presentRef.current.P2) resetPlayerRef.current.P2();
 
       // Skip flap detection while the CV cursor's ready pose is active —
       // moving that hand would otherwise false-trigger a flap.

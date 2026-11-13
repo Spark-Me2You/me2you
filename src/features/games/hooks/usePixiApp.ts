@@ -18,6 +18,8 @@ interface UsePixiAppReturn {
   app: Application | null;
   containerRef: React.RefObject<HTMLDivElement | null>;
   isReady: boolean;
+  /** Set if `app.init()` rejects (e.g. no WebGL); `isReady` then stays false. */
+  error: Error | null;
 }
 
 export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
@@ -31,6 +33,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -45,14 +48,19 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
     let cleanedUp = false;
 
     const init = async () => {
-      await app.init({
-        width,
-        height,
-        backgroundColor,
-        backgroundAlpha,
-        resolution,
-        autoDensity: true,
-      });
+      try {
+        await app.init({
+          width,
+          height,
+          backgroundColor,
+          backgroundAlpha,
+          resolution,
+          autoDensity: true,
+        });
+      } catch (err) {
+        if (!cleanedUp) setError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
 
       if (cleanedUp) {
         // Component unmounted before init resolved — destroy orphaned app so
@@ -66,6 +74,7 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
       app.canvas.style.pointerEvents = "none";
       container.appendChild(app.canvas);
       appRef.current = app;
+      setError(null);
       setIsReady(true);
     };
 
@@ -93,5 +102,5 @@ export const usePixiApp = (options: UsePixiAppOptions): UsePixiAppReturn => {
     };
   }, [width, height, backgroundColor, backgroundAlpha, resolution]);
 
-  return { app: appRef.current, containerRef, isReady };
+  return { app: appRef.current, containerRef, isReady, error };
 };

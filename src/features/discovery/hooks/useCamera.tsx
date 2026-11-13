@@ -1,30 +1,28 @@
-// import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
+import { useSharedCamera } from "@/core/cv/SharedCameraProvider";
 import { useState, useEffect, useRef } from "react";
 
 interface UseCameraOptions {
   videoConstraints?: MediaTrackConstraints;
 }
 
-const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  facingMode: "user",
-};
-
 /**
  * useCamera Hook
- * Consumes the shared camera stream from SharedCameraProvider.
- * Previously called getUserMedia() directly — now shares a single stream
- * with the CV cursor to avoid camera conflicts.
+ * Returns the shared camera stream from SharedCameraProvider, so there is one camera
+ * stream for the whole kiosk. The shared stream is never stopped from here.
+ *
+ * Passing `videoConstraints` opts out and opens a private stream with those constraints
+ * (the games use this for smaller previews); that stream is stopped on unmount.
  */
 export const useCamera = (options: UseCameraOptions = {}) => {
-  const { videoConstraints = DEFAULT_VIDEO_CONSTRAINTS } = options;
+  const shared = useSharedCamera();
+  const { videoConstraints } = options;
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
+    if (!videoConstraints) return;
     let mounted = true;
 
     const initCamera = async () => {
@@ -32,12 +30,6 @@ export const useCamera = (options: UseCameraOptions = {}) => {
         setIsLoading(true);
         setError(null);
 
-        // TODO: Integrate with CameraManager singleton from core/cv
-        // import { CameraManager } from '@/core/cv';
-        // const cameraManager = CameraManager.getInstance();
-        // const mediaStream = await cameraManager.initialize();
-
-        // Direct getUserMedia call for now
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: videoConstraints,
           audio: false,
@@ -76,5 +68,5 @@ export const useCamera = (options: UseCameraOptions = {}) => {
     };
   }, [videoConstraints]);
 
-  return { stream, isLoading, error };
+  return videoConstraints ? { stream, isLoading, error } : shared;
 };

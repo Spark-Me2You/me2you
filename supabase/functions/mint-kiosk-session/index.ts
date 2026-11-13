@@ -32,11 +32,17 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Errors with a deliberate, client-safe message and status. Anything else that
+// reaches the catch block is unexpected and is reported generically.
+class HttpError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -51,23 +57,25 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('[mint-kiosk-session] No Authorization header');
-      throw new Error('Missing authorization header');
+      throw new HttpError(400, 'Missing authorization header');
     }
 
     console.log('[mint-kiosk-session] Authorization header present');
 
     // 2. Parse request body
-    const { org_id } = await req.json();
+    const { org_id } = await req.json().catch(() => {
+      throw new HttpError(400, 'Invalid JSON body');
+    });
     if (!org_id) {
       console.error('[mint-kiosk-session] No org_id in request body');
-      throw new Error('Missing org_id in request body');
+      throw new HttpError(400, 'Missing org_id in request body');
     }
 
     // Validate org_id format (basic UUID check)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(org_id)) {
       console.error('[mint-kiosk-session] Invalid org_id format:', org_id);
-      throw new Error('Invalid organization ID format');
+      throw new HttpError(400, 'Invalid organization ID format');
     }
 
     console.log('[mint-kiosk-session] Requested org_id:', org_id);
@@ -166,7 +174,7 @@ serve(async (req) => {
 
       if (listError) {
         console.error('[mint-kiosk-session] Error listing users:', listError);
-        throw new Error('Failed to list users while looking up kiosk account.');
+        throw new HttpError(500, 'Failed to list users while looking up kiosk account.');
       }
 
       const users = data?.users ?? [];
@@ -184,7 +192,7 @@ serve(async (req) => {
 
     if (!kioskUser) {
       console.error('[mint-kiosk-session] Kiosk user not found:', KIOSK_EMAIL);
-      throw new Error('Kiosk user account not found. Please contact administrator.');
+      throw new HttpError(500, 'Kiosk user account not found. Please contact administrator.');
     }
 
     console.log('[mint-kiosk-session] Kiosk user found:', kioskUser.id);
@@ -206,7 +214,7 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('[mint-kiosk-session] Failed to update user metadata:', updateError);
-      throw new Error('Failed to configure kiosk session');
+      throw new HttpError(500, 'Failed to configure kiosk session');
     }
 
     console.log('[mint-kiosk-session] Kiosk user app_metadata updated');
@@ -222,7 +230,7 @@ serve(async (req) => {
 
     if (linkError || !linkData) {
       console.error('[mint-kiosk-session] Failed to generate magic link:', linkError);
-      throw new Error('Failed to generate kiosk session');
+      throw new HttpError(500, 'Failed to generate kiosk session');
     }
 
     console.log('[mint-kiosk-session] Magic link generated');
@@ -232,7 +240,7 @@ serve(async (req) => {
 
     if (!token) {
       console.error('[mint-kiosk-session] No token in magic link response');
-      throw new Error('Failed to extract session token');
+      throw new HttpError(500, 'Failed to extract session token');
     }
 
     // 9. Verify the OTP to get actual session tokens
@@ -245,7 +253,7 @@ serve(async (req) => {
 
     if (verifyError || !sessionData?.session) {
       console.error('[mint-kiosk-session] Failed to verify token:', verifyError);
-      throw new Error('Failed to create kiosk session');
+      throw new HttpError(500, 'Failed to create kiosk session');
     }
 
     console.log('[mint-kiosk-session] Kiosk session created with org_id:', org_id);
@@ -271,14 +279,15 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('[mint-kiosk-session] Error:', error);
+    const known = error instanceof HttpError;
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: known ? error.message : 'Internal server error',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: known ? error.status : 500,
       }
     );
   }

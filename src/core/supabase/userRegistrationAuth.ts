@@ -79,8 +79,6 @@ export const userRegistrationAuthService = {
     email: string,
     password: string,
   ): Promise<{ user: User; session: Session }> => {
-    console.log("[userRegistrationAuth] Signing up user:", email);
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -103,18 +101,10 @@ export const userRegistrationAuthService = {
     // For MVP, we're not requiring email confirmation
     // If email confirmation is enabled, session will be null
     if (!data.session) {
-      console.log(
-        "[userRegistrationAuth] No session - email confirmation may be required",
-      );
       throw new Error(
         "Email confirmation is required. Please check your email and try again.",
       );
     }
-
-    console.log(
-      "[userRegistrationAuth] Signup successful, user ID:",
-      data.user.id,
-    );
 
     return {
       user: data.user,
@@ -135,11 +125,6 @@ export const userRegistrationAuthService = {
     userId: string,
     orgId: string,
   ): Promise<void> => {
-    console.log(
-      "[userRegistrationAuth] Creating minimal user record for user:",
-      userId,
-    );
-
     const minimalUser = {
       id: userId,
       org_id: orgId,
@@ -158,9 +143,6 @@ export const userRegistrationAuthService = {
       throw new Error(`Failed to create user record: ${error.message}`);
     }
 
-    console.log(
-      "[userRegistrationAuth] Minimal user record created successfully",
-    );
   },
 
   /**
@@ -174,8 +156,6 @@ export const userRegistrationAuthService = {
   createUserProfile: async (
     profileData: CreateUserProfileInput,
   ): Promise<UserProfile> => {
-    console.log("[userRegistrationAuth] Creating user profile...");
-
     // Get current user to use their ID
     const {
       data: { user },
@@ -196,8 +176,6 @@ export const userRegistrationAuthService = {
       visibility: "public",
     };
 
-    console.log("[userRegistrationAuth] Inserting profile:", profileToInsert);
-
     const { data, error } = await supabase
       .from("user")
       .upsert(profileToInsert, { onConflict: "id" })
@@ -208,8 +186,6 @@ export const userRegistrationAuthService = {
       console.error("[userRegistrationAuth] Profile creation error:", error);
       throw new Error(`Failed to create profile: ${error.message}`);
     }
-
-    console.log("[userRegistrationAuth] Profile created successfully");
 
     return data as UserProfile;
   },
@@ -225,8 +201,6 @@ export const userRegistrationAuthService = {
   createImageRecord: async (
     imageData: CreateImageRecordInput,
   ): Promise<{ id: string; storage_path: string }> => {
-    console.log("[userRegistrationAuth] Creating image record...");
-
     const imageToInsert = {
       owner_id: imageData.owner_id,
       org_id: imageData.org_id,
@@ -248,8 +222,6 @@ export const userRegistrationAuthService = {
       );
       throw new Error(`Failed to create image record: ${error.message}`);
     }
-
-    console.log("[userRegistrationAuth] Image record created successfully");
 
     return data;
   },
@@ -280,11 +252,6 @@ export const userRegistrationAuthService = {
     userId: string,
     profileData: Omit<CreateUserProfileInput, "org_id">,
   ): Promise<UserProfile> => {
-    console.log(
-      "[userRegistrationAuth] Updating user profile for user:",
-      userId,
-    );
-
     const updateData = {
       name: profileData.name,
       status: profileData.status || null,
@@ -308,8 +275,6 @@ export const userRegistrationAuthService = {
       console.error("[userRegistrationAuth] Profile update error:", error);
       throw new Error(`Failed to update profile: ${error.message}`);
     }
-
-    console.log("[userRegistrationAuth] Profile updated successfully");
 
     return data as UserProfile;
   },
@@ -356,8 +321,6 @@ export const userRegistrationAuthService = {
     email: string,
     password: string,
   ): Promise<{ user: User; session: Session }> => {
-    console.log("[userRegistrationAuth] Signing in user:", email);
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -371,11 +334,6 @@ export const userRegistrationAuthService = {
     if (!data.user || !data.session) {
       throw new Error("No user or session returned from sign in");
     }
-
-    console.log(
-      "[userRegistrationAuth] Sign in successful, user ID:",
-      data.user.id,
-    );
 
     return {
       user: data.user,
@@ -391,11 +349,6 @@ export const userRegistrationAuthService = {
    * @returns Promise with onboarding_complete status, or null if user not found
    */
   checkOnboardingComplete: async (userId: string): Promise<boolean | null> => {
-    console.log(
-      "[userRegistrationAuth] Checking onboarding status for user:",
-      userId,
-    );
-
     const { data, error } = await supabase
       .from("user")
       .select("onboarding_complete")
@@ -424,8 +377,6 @@ export const userRegistrationAuthService = {
   createGestureImageRecord: async (
     imageData: CreateImageRecordInput,
   ): Promise<{ id: string; storage_path: string }> => {
-    console.log("[userRegistrationAuth] Creating gesture_image record...");
-
     const imageToInsert = {
       owner_id: imageData.owner_id,
       org_id: imageData.org_id,
@@ -450,10 +401,6 @@ export const userRegistrationAuthService = {
       );
     }
 
-    console.log(
-      "[userRegistrationAuth] Gesture image record created successfully",
-    );
-
     return data;
   },
 
@@ -471,8 +418,6 @@ export const userRegistrationAuthService = {
     landmarks: FaceLandmarks;
     is_public: boolean;
   }): Promise<{ id: string; storage_path: string }> => {
-    console.log("[userRegistrationAuth] Creating cropped_image record...");
-
     const imageToInsert = {
       owner_id: data.owner_id,
       org_id: data.org_id,
@@ -504,10 +449,6 @@ export const userRegistrationAuthService = {
         `Failed to create cropped_image record: ${error.message}`,
       );
     }
-
-    console.log(
-      "[userRegistrationAuth] Cropped image record created successfully",
-    );
 
     return insertedData;
   },

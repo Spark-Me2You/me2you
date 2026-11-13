@@ -29,6 +29,8 @@ export interface CvCursorState {
 const SMOOTHING_ALPHA = 0.35;
 // Minimum ms between click events
 const CLICK_COOLDOWN_MS = 300;
+// Minimum ms between logged frame errors, so a persistent failure doesn't flood the console
+const ERROR_LOG_INTERVAL_MS = 10_000;
 
 // The usable range of hand movement in normalized camera space [0,1].
 // Hand typically moves within a subset of the frame — map this range to the full screen.
@@ -53,6 +55,7 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const rafRef = useRef<number>(0);
   const frameCountRef = useRef(0);
+  const lastErrorLogRef = useRef(-Infinity);
 
   const smoothXRef = useRef(0);
   const smoothYRef = useRef(0);
@@ -70,23 +73,19 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     error: null,
   });
 
-  const processFrame = useCallback(() => {
+  // One frame of work. Returns early freely; the caller always reschedules.
+  const runFrame = useCallback(() => {
     const video = videoRef.current;
     const landmarker = handLandmarkerRef.current;
 
-    if (!video || !landmarker || video.readyState < 2) {
-      rafRef.current = requestAnimationFrame(processFrame);
-      return;
-    }
+    if (!video || !landmarker || video.readyState < 2) return;
 
     // Skip every other frame (~30fps)
     frameCountRef.current++;
-    if (frameCountRef.current % 2 !== 0) {
-      rafRef.current = requestAnimationFrame(processFrame);
-      return;
-    }
+    if (frameCountRef.current % 2 !== 0) return;
 
-    const results = landmarker.detectForVideo(video, Date.now());
+    // MediaPipe requires strictly increasing timestamps; the wall clock can step back.
+    const results = landmarker.detectForVideo(video, performance.now());
 
     // Publish the raw sample before any pose gating so games get every hand.
     const sample = handTrackRef.current;
@@ -118,14 +117,12 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
       setState((prev) =>
         prev.visible ? { ...prev, visible: false, clicking: false, isPinched: false } : prev,
       );
-      rafRef.current = requestAnimationFrame(processFrame);
       return;
     }
 
     // Hand dropped out but the pose is being held: leave the cursor where it was.
     if (!detectedLandmarks) {
       setState((prev) => (prev.clicking ? { ...prev, clicking: false } : prev));
-      rafRef.current = requestAnimationFrame(processFrame);
       return;
     }
 
@@ -147,9 +144,21 @@ export function useCvCursor(enabled: boolean = true): CvCursorState & { videoRef
     }
 
     setState({ x, y, visible: true, clicking, isPinched: pose.pinched, isReady: true, error: null });
-
-    rafRef.current = requestAnimationFrame(processFrame);
   }, [handTrackRef]);
+
+  const processFrame = useCallback(() => {
+    try {
+      runFrame();
+    } catch (err) {
+      // A single bad frame must never kill the cursor: log (rate limited) and carry on.
+      const t = performance.now();
+      if (t - lastErrorLogRef.current > ERROR_LOG_INTERVAL_MS) {
+        lastErrorLogRef.current = t;
+        console.error("[useCvCursor] frame processing failed:", err);
+      }
+    }
+    rafRef.current = requestAnimationFrame(processFrame);
+  }, [runFrame]);
 
   // Attach shared stream to our hidden video element
   useEffect(() => {

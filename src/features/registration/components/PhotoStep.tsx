@@ -19,6 +19,8 @@ interface PhotoStepProps {
   isSubmitting: boolean;
   error: string | null;
   onClearError: () => void;
+  /** Offered when the photo is saved but no face was found. */
+  onSkipAvatar?: () => void;
 }
 
 export const PhotoStep: React.FC<PhotoStepProps> = ({
@@ -27,6 +29,7 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
   isSubmitting,
   error,
   onClearError,
+  onSkipAvatar,
 }) => (
   <PoseCapture
     onSubmit={onSubmit}
@@ -34,5 +37,16 @@ export const PhotoStep: React.FC<PhotoStepProps> = ({
     isSubmitting={isSubmitting}
     error={error}
     onClearError={onClearError}
-  />
+  >
+    {onSkipAvatar && (
+      <button
+        type="button"
+        className="mx-auto mt-6 flex cursor-pointer border-0 bg-transparent px-4 py-2 font-jersey text-[20px] tracking-[3px] text-ink lowercase underline disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={onSkipAvatar}
+        disabled={isSubmitting}
+      >
+        continue without avatar
+      </button>
+    )}
+  </PoseCapture>
 );

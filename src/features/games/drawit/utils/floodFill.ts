@@ -46,6 +46,7 @@ export function floodFill(
   ];
   const fill = hexToRgba(fillHex);
 
+  // Exact-equal is the only provable no-op; a near match still needs filling.
   if (
     target[0] === fill[0] &&
     target[1] === fill[1] &&
@@ -55,19 +56,26 @@ export function floodFill(
     return;
   }
 
+  // Filled pixels can still sit within tolerance of the target (e.g. white fill
+  // on light grey), so track them explicitly or they would be re-queued forever.
+  const visited = new Uint8Array(width * height);
+  const matches = (x: number, y: number) =>
+    visited[y * width + x] === 0 && colorsMatch(data, (y * width + x) * 4, target, tolerance);
+
   const stack: Array<[number, number]> = [[sx, sy]];
   while (stack.length) {
     const [x, y] = stack.pop()!;
     let ny = y;
     // climb up to top of matching column
-    while (ny >= 0 && colorsMatch(data, (ny * width + x) * 4, target, tolerance)) {
+    while (ny >= 0 && matches(x, ny)) {
       ny--;
     }
     ny++;
 
     let reachLeft = false;
     let reachRight = false;
-    while (ny < height && colorsMatch(data, (ny * width + x) * 4, target, tolerance)) {
+    while (ny < height && matches(x, ny)) {
+      visited[ny * width + x] = 1;
       const idx = (ny * width + x) * 4;
       data[idx] = fill[0];
       data[idx + 1] = fill[1];
@@ -75,8 +83,7 @@ export function floodFill(
       data[idx + 3] = fill[3];
 
       if (x > 0) {
-        const leftIdx = (ny * width + (x - 1)) * 4;
-        const leftMatch = colorsMatch(data, leftIdx, target, tolerance);
+        const leftMatch = matches(x - 1, ny);
         if (leftMatch && !reachLeft) {
           stack.push([x - 1, ny]);
           reachLeft = true;
@@ -85,8 +92,7 @@ export function floodFill(
         }
       }
       if (x < width - 1) {
-        const rightIdx = (ny * width + (x + 1)) * 4;
-        const rightMatch = colorsMatch(data, rightIdx, target, tolerance);
+        const rightMatch = matches(x + 1, ny);
         if (rightMatch && !reachRight) {
           stack.push([x + 1, ny]);
           reachRight = true;

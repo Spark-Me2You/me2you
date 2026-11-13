@@ -21,19 +21,6 @@ const CLICK_OFFSET_Y = "27%";
 const BRUSH_OFFSET_X = "6%";
 const BRUSH_OFFSET_Y = "92%";
 
-const INTERACTIVE_TAGS = new Set(["button", "a", "input", "select", "textarea"]);
-const INTERACTIVE_ROLES = new Set(["button", "link", "checkbox", "radio", "tab", "menuitem"]);
-
-function isInteractiveElement(el: Element | null, depth = 0): boolean {
-  if (!el || depth > 6) return false;
-  if (INTERACTIVE_TAGS.has(el.tagName.toLowerCase())) return true;
-  const role = el.getAttribute("role");
-  if (role && INTERACTIVE_ROLES.has(role)) return true;
-  if ((el as HTMLElement).onclick) return true;
-  if (getComputedStyle(el).cursor === "pointer") return true;
-  return isInteractiveElement(el.parentElement, depth + 1);
-}
-
 interface CvCursorOverlayProps {
   enabled?: boolean;
 }
@@ -81,8 +68,6 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
 
     const target = document.elementFromPoint(x, y);
     if (!target) return;
-
-    isInteractiveElement(target);
 
     const common = {
       clientX: x,

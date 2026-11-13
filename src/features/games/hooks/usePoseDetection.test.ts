@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { silenceConsole } from '@/test/console'
-import { POSE_PROCESS_INTERVAL_MS, usePoseDetection } from './usePoseDetection'
+import { POSE_PROCESS_INTERVAL_MS, POSE_THROTTLE_MS, usePoseDetection } from './usePoseDetection'
 
 const landmarker = vi.hoisted(() => ({ detectForVideo: vi.fn(), close: vi.fn() }))
 const create = vi.hoisted(() => vi.fn())
@@ -59,15 +59,27 @@ describe('usePoseDetection', () => {
     expect(result.current.allLandmarksRef.current).toEqual([])
   })
 
+  it('advances the frame sequence on empty frames so callers see people leave', async () => {
+    landmarker.detectForVideo.mockReturnValueOnce({ landmarks: [lm(1)] }).mockReturnValueOnce({ landmarks: [] })
+    const { result } = await ready()
+
+    act(() => result.current.processFrame(video, 1000))
+    const afterPresent = result.current.frameSequenceRef.current
+    act(() => result.current.processFrame(video, 2000))
+
+    expect(result.current.frameSequenceRef.current).toBe(afterPresent + 1)
+  })
+
   it('throttles frames closer together than the interval', async () => {
     landmarker.detectForVideo.mockReturnValue({ landmarks: [lm(1)] })
     const { result } = await ready()
 
     act(() => result.current.processFrame(video, 1000))
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS - 1))
+    act(() => result.current.processFrame(video, 1000 + POSE_THROTTLE_MS - 1))
     expect(landmarker.detectForVideo).toHaveBeenCalledTimes(1)
 
-    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS))
+    // A poll that fires a few ms early must still be processed.
+    act(() => result.current.processFrame(video, 1000 + POSE_PROCESS_INTERVAL_MS - 5))
     expect(landmarker.detectForVideo).toHaveBeenCalledTimes(2)
   })
 

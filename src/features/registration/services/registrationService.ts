@@ -8,6 +8,7 @@
  */
 
 import { userRegistrationAuthService, type CreateUserProfileInput } from '@/core/supabase/userRegistrationAuth';
+import { supabase } from '@/core/supabase/client';
 import { storageService } from '@/core/supabase/storage';
 import type { UserProfile } from '@/core/auth/AuthContext';
 import type { User } from '@supabase/supabase-js';
@@ -133,6 +134,23 @@ export const registrationService = {
     });
 
     return gestureImageRecord;
+  },
+
+  /**
+   * Remove a gesture photo that was uploaded during registration (file and row).
+   * Used when the user retakes the photo, so abandoned uploads don't pile up.
+   */
+  deleteGesturePhoto: async (imageId: string, storagePath: string): Promise<void> => {
+    try {
+      await storageService.deletePhoto(storagePath);
+    } catch (e) {
+      console.warn('[registrationService] Failed to delete old photo file:', e);
+    }
+
+    const { error } = await supabase.from('gesture_image').delete().eq('id', imageId);
+    if (error) {
+      throw new Error(`Failed to delete gesture image record: ${error.message}`);
+    }
   },
 
   /**

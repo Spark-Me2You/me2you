@@ -40,6 +40,8 @@ interface PoseCaptureProps {
   /** Error from the caller (e.g. upload failed). */
   error?: string | null;
   onClearError?: () => void;
+  /** Extra content rendered under the camera card (e.g. a way to skip the photo). */
+  children?: React.ReactNode;
 }
 
 export const PoseCapture: React.FC<PoseCaptureProps> = ({
@@ -49,6 +51,7 @@ export const PoseCapture: React.FC<PoseCaptureProps> = ({
   isSubmitting,
   error,
   onClearError,
+  children,
 }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
@@ -216,6 +219,8 @@ export const PoseCapture: React.FC<PoseCaptureProps> = ({
           </div>
         )}
       </div>
+
+      {children}
 
       {/* Go back */}
       <button

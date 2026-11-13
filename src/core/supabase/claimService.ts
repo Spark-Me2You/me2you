@@ -20,7 +20,7 @@ interface ExecuteClaimResponse {
  * functions.invoke reports any 4xx/5xx as a generic "non-2xx status code"
  * error; the function's own `{ error }` message is in the response body.
  */
-async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+export async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
   const response = (error as { context?: unknown })?.context;
   if (response instanceof Response) {
     try {
@@ -30,8 +30,11 @@ async function functionErrorMessage(error: unknown, fallback: string): Promise<s
       // Not JSON; fall through.
     }
   }
-  return error instanceof Error && error.message ? error.message : fallback;
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === 'string' && message ? message : fallback;
 }
+
+export type ClaimPeekPayload = { type?: string; data?: { recipient_name?: string } };
 
 interface ClaimDrawingResponse {
   success: boolean;
@@ -62,6 +65,36 @@ export interface DrawingClaimResult {
 }
 
 export const claimService = {
+  /**
+   * Read a pending token's payload without claiming it. Uses the peek_claim_token RPC;
+   * until that migration is deployed it falls back to selecting the row directly.
+   */
+  peekClaimToken: async (tokenId: string): Promise<ClaimPeekPayload | null> => {
+    // peek_claim_token is not in the generated types yet: remove this cast after `npm run gen:types`.
+    const rpc = supabase.rpc as unknown as (
+      fn: string,
+      args: { p_token_id: string }
+    ) => PromiseLike<{ data: unknown; error: { code?: string; message?: string } | null }>;
+    const { data, error } = await rpc.call(supabase, 'peek_claim_token', { p_token_id: tokenId });
+
+    if (!error) return (data as ClaimPeekPayload | null) ?? null;
+
+    const missing =
+      error.code === 'PGRST202' || error.code === '42883' || /could not find the function/i.test(error.message ?? '');
+    if (!missing) {
+      // Let execute-claim report the real problem.
+      console.warn('[claimService] peek_claim_token failed:', error);
+      return null;
+    }
+
+    const { data: row } = await supabase
+      .from('claim_tokens')
+      .select('payload')
+      .eq('id', tokenId)
+      .single();
+    return (row?.payload as ClaimPeekPayload | null) ?? null;
+  },
+
   generateClaimToken: async (payload: ClaimPayload): Promise<GeneratedClaim> => {
     const { data, error } = await supabase.functions.invoke<GenerateClaimResponse>(
       'generate-claim-token',
@@ -70,7 +103,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] generate-claim-token error:', error);
-      throw new Error(error.message || 'Failed to generate claim token');
+      throw new Error(await functionErrorMessage(error, 'Failed to generate claim token'));
     }
 
     if (!data?.success || !data.token_id || !data.claim_url || !data.expires_at) {
@@ -93,7 +126,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] execute-claim error:', error);
-      throw new Error(error.message || 'Failed to execute claim');
+      throw new Error(await functionErrorMessage(error, 'Failed to execute claim'));
     }
 
     if (!data?.success || !data.token_id || !data.payload) {
@@ -141,7 +174,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] claim-drawing error:', error);
-      throw new Error(error.message || 'Failed to claim drawing');
+      throw new Error(await functionErrorMessage(error, 'Failed to claim drawing'));
     }
 
     if (!data?.success || !data.token_id || !data.drawing_id || !data.image_path) {
@@ -165,7 +198,7 @@ export const claimService = {
 
     if (error) {
       console.error('[claimService] claim-message error:', error);
-      throw new Error(error.message || 'Failed to send message');
+      throw new Error(await functionErrorMessage(error, 'Failed to send message'));
     }
 
     if (!data?.success || !data.token_id || !data.message_id) {

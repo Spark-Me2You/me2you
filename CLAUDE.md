@@ -32,7 +32,7 @@ The client is typed with the generated `Database` type (`src/core/supabase/datab
 
 ### Environment
 
-Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional tuning: `VITE_SESSION_TIMEOUT_MS`, `VITE_GESTURE_COOLDOWN_MS`, `VITE_IDLE_TIMEOUT_MS`, `VITE_TARGET_FPS`, `VITE_ENABLE_LOGGER`, `VITE_ENABLE_PERFORMANCE_MONITOR`, `VITE_DEFAULT_ORG_ID`.
+Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional: the Gumball Slice tunables `VITE_GUMBALL_*` (round length, strikes, slice speed, hitbox, trail, seated mode), listed with defaults in `.env.example` and `src/features/games/gumballslice/config/gumballSliceConfig.ts`.
 
 ---
 
@@ -82,6 +82,7 @@ This is a React + Vite + TypeScript SPA backed by Supabase (PostgreSQL, Auth, St
 | `/user/profile` | user | `UserProfileView` |
 | `/user/gallery` | user | `UserGalleryPage` |
 | `/user/game-scores` | user | `UserGameScoresPage` |
+| `/user/candy` | user | `UserCandyPage` |
 | `/user/customize` | user | `CustomizeAvatarView` |
 | `/user/messages` | user | `MessagesView` |
 | `/register` | public | `RegistrationPage` |
@@ -89,6 +90,9 @@ This is a React + Vite + TypeScript SPA backed by Supabase (PostgreSQL, Auth, St
 | `/select-org` | admin | `OrgSelectorPage` |
 | `/app` | admin or kiosk | `AppContainer` (state machine) |
 | `/claim/:tokenId` | public | `ClaimPage` |
+| `/claim/success` | public | `ClaimSuccessPage` |
+| `/claim/error` | public | `ClaimErrorPage` |
+| `/`, `*` | public | redirect to `/user` |
 
 ### Provider Hierarchy (main.tsx → AppContainer.tsx)
 
@@ -107,11 +111,11 @@ BrowserRouter
 ### Core Layer (`src/core/`)
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
-- **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
+- **`state-machine/`** — Four kiosk states in `appStateMachine.ts`: `IDLE`, `HUB`, `DISCOVERY`, `GAMES`. `useAppState()` / `transitionTo()` drive navigation in the kiosk; any state can move to any other.
 - **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the palm center to screen coords (EMA-smoothed), and detects pinch clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
-- **`monitoring/`** — `ErrorBoundary` component.
+- **`monitoring/`** — `ErrorBoundary` (resettable via `resetKeys` / a `reset` render prop) and `KioskErrorBoundary`, the kiosk crash screen that returns to `IDLE` after 10 s and reloads the page on a repeat crash.
 
 ### Feature Layer (`src/features/`)
 
@@ -130,12 +134,13 @@ BrowserRouter
 
 ### Games (`src/features/games/`)
 
-Games are registered in `config/gamesConfig.ts` via `GAMES_REGISTRY` — add new games there. Style a game's DOM UI (menus, HUD, results) per `docs/BRAND_BOOK.md`; Pixi drawing mirrors brand hex values (brand book §9, "Rules for contributors"). Shared rendering pattern: a PixiJS `Application` managed by `usePixiApp`, a game-loop hook (`useGameLoop`), and a self-contained engine class under `<game>/game/`.
+Games are registered in `config/gamesConfig.ts` via `GAMES_REGISTRY` — add new games there. Style a game's DOM UI (menus, HUD, results) per `docs/BRAND_BOOK.md`; Pixi drawing mirrors brand hex values (brand book §9, "Rules for contributors"). Shared rendering pattern: a PixiJS `Application` managed by `usePixiApp`, and a self-contained engine class under `<game>/game/`.
 
 | Game | Input mechanic | Engine |
 |---|---|---|
 | `flapflap/` (1P) + `flapflap2p/` (2P) | Arm-flap pose detection (`useArmFlap`) via `usePoseDetection`; 2P assigns players per camera half (`assignPlayers.ts`, `SplitCameraPanel`) | `FlapFlapEngine.ts`, `FlapFlap2PEngine.ts` |
 | `drawit/` | Pinch-to-paint on canvas; daily word prompt | `DrawingCanvas.tsx` |
+| `gumballslice/` | Fingertip slicing (from `handTrackRef`); wins issue a candy voucher via `claim-candy-reward` | `GumballSliceEngine.ts` |
 
 The registry entry for FlapFlap is `components/FlapFlapLauncher`, a 1P/2P mode-select that renders either game.
 
@@ -152,7 +157,7 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 
 ### Database (`supabase/migrations/`)
 
-Sequential numbered migrations (001–026). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001–032). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ### CV Gesture System
 

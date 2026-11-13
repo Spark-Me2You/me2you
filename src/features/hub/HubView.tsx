@@ -3,7 +3,7 @@
  * Now displays a Pixi.js animation with walking characters
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useAuth } from '@/core/auth';
 import { useAppState } from '@/core/state-machine';
 import { AppState } from '@/core/state-machine/appStateMachine';
@@ -12,6 +12,8 @@ import { ProfileCardView } from '@/features/discovery/components/ProfileCardView
 import { CameraPreview, PinnedRegistrationQR } from '@/features/kiosk';
 import { hubService } from './services/hubService';
 import { storageService } from '@/core/supabase/storage';
+import { HintToast } from '@/shared/components';
+import { useHints } from '@/shared/hooks/useHints';
 import type { RandomImageData } from '@/features/discovery/types/image';
 import { MAIN_ROOM, type RoomId } from './rooms/rooms';
 
@@ -22,15 +24,26 @@ export const HubView: React.FC = () => {
   // Lives here, not in PixiHub, so returning from a profile lands back in the same room.
   const [roomId, setRoomId] = useState<RoomId>(MAIN_ROOM);
 
+  const { hint, showHint } = useHints();
+  // Ignore clicks while a profile is loading.
+  const loadingRef = useRef(false);
+
+  const showLoadFailed = useCallback(
+    () => showHint({ id: `profile-load-failed-${Date.now()}`, text: "couldn't load that profile, try again!" }),
+    [showHint],
+  );
+
   const handleCharacterClick = useCallback(
     async (data: CharacterClickData) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
       try {
         // Fetch the owner's user profile
-        const users = await hubService.getAllOrgUsers(kioskOrgId || '');
-        const owner = users.find(u => u.user.id === data.owner_id);
+        const owner = await hubService.getUserById(data.owner_id, kioskOrgId || '');
 
         if (!owner) {
           console.error('[HubView] Owner not found:', data.owner_id);
+          showLoadFailed();
           return;
         }
 
@@ -67,9 +80,12 @@ export const HubView: React.FC = () => {
         setSelectedProfile(profileData);
       } catch (error) {
         console.error('[HubView] Failed to load profile:', error);
+        showLoadFailed();
+      } finally {
+        loadingRef.current = false;
       }
     },
-    [kioskOrgId]
+    [kioskOrgId, showLoadFailed]
   );
 
   const handleBack = () => setSelectedProfile(null);
@@ -89,14 +105,18 @@ export const HubView: React.FC = () => {
 
   return (
     <>
-      <PixiHub
-        onCharacterClick={handleCharacterClick}
-        orgId={kioskOrgId || ''}
-        roomId={roomId}
-        onRoomChange={setRoomId}
-      />
+      {/* Wait for the org: the hub loads its characters once, for the org it starts with. */}
+      {kioskOrgId && (
+        <PixiHub
+          onCharacterClick={handleCharacterClick}
+          orgId={kioskOrgId}
+          roomId={roomId}
+          onRoomChange={setRoomId}
+        />
+      )}
       <PinnedRegistrationQR />
       <CameraPreview />
+      <HintToast hint={hint} />
     </>
   );
 };

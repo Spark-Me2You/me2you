@@ -26,10 +26,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
     error: gestureError,
   } = useGestureRecognition();
 
-  // TODO: MediaPipe initialization
-  // import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-  // const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
-
   // Attach shared camera stream to video element.
   // Depends on isInitialized because the <video> element only renders
   // after the gesture recognizer finishes loading.
@@ -45,30 +41,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
     onGestureDetected?.(detectedGesture);
   }, [detectedGesture, onGestureDetected]);
 
-  // TODO: Initialize MediaPipe pose detection
-  useEffect(() => {
-    // const initMediaPipe = async () => {
-    //   const vision = await FilesetResolver.forVisionTasks(
-    //     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm"
-    //   );
-    //   poseLandmarkerRef.current = await PoseLandmarker.createFromOptions(vision, {
-    //     baseOptions: {
-    //       modelAssetPath: "/models/pose_landmarker.task",
-    //       delegate: "GPU"
-    //     },
-    //     runningMode: "VIDEO",
-    //     numPoses: 1
-    //   });
-    // };
-    //
-    // initMediaPipe();
-
-    return () => {
-      // TODO: Cleanup MediaPipe resources
-      // poseLandmarkerRef.current?.close();
-    };
-  }, []);
-
   // Video frame processing loop for gesture detection
   useEffect(() => {
     if (!videoRef.current || !stream || !isInitialized) return;
@@ -80,7 +52,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
       if (!videoRef.current) return;
 
       // Process gesture detection
-      processVideoFrame(videoRef.current, Date.now());
+      processVideoFrame(videoRef.current, performance.now());
 
       animationFrameId = requestAnimationFrame(processFrame);
     };
@@ -89,7 +61,7 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
     if (videoElement.readyState >= 2) {
       processFrame();
     } else {
-      videoElement.addEventListener('loadeddata', processFrame);
+      videoElement.addEventListener('loadeddata', processFrame, { once: true });
     }
 
     return () => {
@@ -100,33 +72,6 @@ export const CameraView: React.FC<CameraViewProps> = ({ onGestureDetected }) => 
       videoElement.removeEventListener('loadeddata', processFrame);
     };
   }, [stream, isInitialized, processVideoFrame]);
-
-  // TODO: Helper function to draw pose landmarks on canvas
-  // const drawLandmarks = (canvas: HTMLCanvasElement | null, results: any) => {
-  //   if (!canvas) return;
-  //   const ctx = canvas.getContext('2d');
-  //   if (!ctx || !results?.landmarks) return;
-  //
-  //   // Match canvas size to video size
-  //   canvas.width = videoRef.current?.videoWidth || 1280;
-  //   canvas.height = videoRef.current?.videoHeight || 720;
-  //
-  //   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  //
-  //   // Draw pose landmarks
-  //   results.landmarks.forEach((landmark: any) => {
-  //     ctx.fillStyle = 'red';
-  //     ctx.beginPath();
-  //     ctx.arc(
-  //       landmark.x * canvas.width,
-  //       landmark.y * canvas.height,
-  //       5,
-  //       0,
-  //       2 * Math.PI
-  //     );
-  //     ctx.fill();
-  //   });
-  // };
 
   // Combine camera and gesture errors
   const combinedError = error || gestureError;

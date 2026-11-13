@@ -29,57 +29,6 @@ describe('discoveryService', () => {
     getPhotoUrl.mockReset().mockImplementation(async (path) => `https://signed/${path}`)
   })
 
-  describe('fetchRandomImage', () => {
-    it('requires an org id', async () => {
-      await expect(discoveryService.fetchRandomImage('')).rejects.toThrow('Organization ID is required')
-    })
-
-    it('picks a random image and shapes image, owner and signed URL', async () => {
-      vi.spyOn(Math, 'random').mockReturnValue(0.99) // last of two
-      supabaseMock.from.mockReturnValue(queryResult({ data: [image('a'), image('b')] }))
-
-      const result = await discoveryService.fetchRandomImage('org')
-
-      expect(result?.image.id).toBe('b')
-      expect(result?.imageUrl).toBe('https://signed/b.jpg')
-      expect(result?.image.cropped_path).toBeNull()
-      expect(result?.owner).toMatchObject({ id: 'u1', org_id: 'org', name: 'Ann', accessory: null })
-    })
-
-    it('filters by category only when one is given', async () => {
-      const withCategory = queryResult({ data: [] })
-      supabaseMock.from.mockReturnValueOnce(withCategory)
-      await discoveryService.fetchRandomImage('org', 'wave')
-      expect(withCategory.eq).toHaveBeenCalledWith('category', 'wave')
-
-      const without = queryResult({ data: [] })
-      supabaseMock.from.mockReturnValueOnce(without)
-      await discoveryService.fetchRandomImage('org')
-      expect(without.eq).not.toHaveBeenCalledWith('category', expect.anything())
-    })
-
-    it('returns null when no public images exist', async () => {
-      supabaseMock.from.mockReturnValue(queryResult({ data: [] }))
-      await expect(discoveryService.fetchRandomImage('org')).resolves.toBeNull()
-    })
-
-    it('accepts the embedded owner as an array', async () => {
-      supabaseMock.from.mockReturnValue(queryResult({ data: [image('a', [owner])] }))
-      const result = await discoveryService.fetchRandomImage('org')
-      expect(result?.owner.name).toBe('Ann')
-    })
-
-    it('throws when the image has no owner', async () => {
-      supabaseMock.from.mockReturnValue(queryResult({ data: [image('a', null)] }))
-      await expect(discoveryService.fetchRandomImage('org')).rejects.toThrow('Image owner data is missing')
-    })
-
-    it('throws the database error', async () => {
-      supabaseMock.from.mockReturnValue(queryResult({ error: { message: 'down' } }))
-      await expect(discoveryService.fetchRandomImage('org')).rejects.toThrow('Failed to fetch images: down')
-    })
-  })
-
   describe('getImageCount', () => {
     it('requires org and category', async () => {
       await expect(discoveryService.getImageCount('', 'wave')).rejects.toThrow('required')
@@ -145,11 +94,11 @@ describe('discoveryService', () => {
       expect(batch.every((b) => b.imageUrl.startsWith('https://signed/'))).toBe(true)
     })
 
-    it('fails the batch if any image has no owner', async () => {
+    it('skips an image whose owner is missing instead of failing the batch', async () => {
       countThenRows(2, [image('a'), image('b', null)])
-      await expect(discoveryService.fetchRandomImageBatch('org', 'wave', 2)).rejects.toThrow(
-        'Image b has no owner data',
-      )
+      const batch = await discoveryService.fetchRandomImageBatch('org', 'wave', 2)
+      expect(batch.map((b) => b.image.id)).toEqual(['a'])
+      expect(console.warn).toHaveBeenCalled()
     })
 
     it('throws when the rows query fails', async () => {

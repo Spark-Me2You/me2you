@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { messagesService } from '../services/messagesService';
 import { MESSAGE_BODY_MAX } from '../types';
 
+const CODE_GONE = /not claimable|expired|already claimed|not found/i;
+const CODE_GONE_MESSAGE =
+  'this code expired or was already used. your message is still here: scan a new code at the kiosk to send it.';
+
 interface MessageComposePageProps {
   tokenId: string;
   recipientName: string;
@@ -40,7 +44,9 @@ export function MessageComposePage({ tokenId, recipientName }: MessageComposePag
         replace: true,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'failed to send message');
+      // Stay on this page with the text intact; only success navigates away.
+      const message = e instanceof Error ? e.message : '';
+      setError(CODE_GONE.test(message) ? CODE_GONE_MESSAGE : message || 'failed to send message');
       setIsSending(false);
     }
   };

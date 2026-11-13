@@ -162,7 +162,10 @@ export const CustomizeAvatarView: React.FC = () => {
   // --- Save ---
 
   const handleSave = async () => {
-    if (!user || !userProfile?.org_id) return;
+    if (!user || !userProfile?.org_id) {
+      setError("your profile isn't loaded yet. please refresh and try again.");
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {

@@ -12,6 +12,7 @@ import {
 import { SharedCameraProvider } from "@/core/cv/SharedCameraProvider";
 import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
+import { KioskErrorBoundary } from "@/core/monitoring/KioskErrorBoundary";
 import { DiscoveryView } from "@/features/discovery";
 import { HubView } from "@/features/hub";
 import { KioskActivityProvider, RegistrationQRProvider, ReturnHome } from "@/features/kiosk";
@@ -23,28 +24,12 @@ import { GamesView } from "@/features/games";
  * Renders different views based on current state machine state
  */
 function AppContainerContent() {
-  const { currentState } = useAppState();
+  const { currentState, transitionTo } = useAppState();
 
   const renderCurrentState = () => {
     switch (currentState) {
       case AppState.IDLE:
         return <IdleScreen />;
-
-      case AppState.AUTH:
-        return (
-          <div>
-            <h1 className="text-[3.2em] leading-[1.1]">Authentication</h1>
-            <p>Please swipe your card</p>
-          </div>
-        );
-
-      case AppState.ONBOARDING:
-        return (
-          <div>
-            <h1 className="text-[3.2em] leading-[1.1]">Welcome!</h1>
-            <p>Let's create your profile</p>
-          </div>
-        );
 
       case AppState.HUB:
         return <HubView />;
@@ -65,10 +50,15 @@ function AppContainerContent() {
   };
 
   return (
-    <ErrorBoundary>
-      <div className="fixed inset-0 h-screen w-screen overflow-hidden">{renderCurrentState()}</div>
-      <ReturnHome />
-    </ErrorBoundary>
+    <>
+      <KioskErrorBoundary onRestart={() => transitionTo(AppState.IDLE)}>
+        <div className="fixed inset-0 h-screen w-screen overflow-hidden">{renderCurrentState()}</div>
+      </KioskErrorBoundary>
+      {/* Outside the kiosk boundary so the inactivity return survives a view crash. */}
+      <ErrorBoundary fallback={null}>
+        <ReturnHome />
+      </ErrorBoundary>
+    </>
   );
 }
 

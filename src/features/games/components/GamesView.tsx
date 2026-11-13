@@ -3,7 +3,7 @@
  * Main view for games state - routes between hub and active game
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { GamesHub } from "./GamesHub";
 import { GAMES_REGISTRY } from "../config/gamesConfig";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
@@ -11,6 +11,11 @@ import { useCvCursorEnabled } from "@/core/cv/cursor";
 export const GamesView: React.FC = () => {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
   const { setEnabled: setCvCursorEnabled } = useCvCursorEnabled();
+
+  // A game disables the cursor while playing; if the whole view unmounts mid-game
+  // (e.g. inactivity sends the kiosk to IDLE) handleExitGame never runs, so
+  // restore it here.
+  useEffect(() => () => setCvCursorEnabled(true), [setCvCursorEnabled]);
 
   const handleSelectGame = (gameId: string) => {
     setActiveGameId(gameId);
