@@ -14,6 +14,10 @@ HubView                     ← owns the active room (survives opening a profile
   interactions/             ← paired animations: types, scheduler, registry
 ```
 
+The main room also shows a few garments from the clothesline on a rope in its top-right corner,
+and walkers wear the top their user has equipped. Both come from `src/features/clothesline/`
+(see `docs/CLOTHESLINE.md`) and are skipped when there is nothing to show.
+
 ## Rooms
 
 The hub is a small house: the main **spark** room with a door on each edge, and one room behind

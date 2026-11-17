@@ -17,6 +17,7 @@ import { HubView } from "@/features/hub";
 import { KioskActivityProvider, RegistrationQRProvider, ReturnHome } from "@/features/kiosk";
 import { IdleScreen } from "@/features/kiosk/components/IdleScreen";
 import { GamesView } from "@/features/games";
+import { ClotheslineView } from "@/features/clothesline";
 
 /**
  * App Container Content
@@ -54,6 +55,9 @@ function AppContainerContent() {
 
       case AppState.GAMES:
         return <GamesView />;
+
+      case AppState.CLOTHESLINE:
+        return <ClotheslineView />;
 
       default:
         return (

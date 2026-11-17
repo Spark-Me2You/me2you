@@ -26,7 +26,10 @@ import {
 } from "@/shared/utils";
 import { ExitButton } from "@/shared/components";
 import type { AccessorySettings } from "@/features/profile-editor/types/profileTypes";
-import { ROOMS, ROOM_IDS, assignRoom, type RoomId } from "@/features/hub/rooms/rooms";
+import { MAIN_ROOM, ROOMS, ROOM_IDS, assignRoom, type RoomId } from "@/features/hub/rooms/rooms";
+import { CLOTHESLINE_CONFIG } from "@/features/clothesline/config/clotheslineConfig";
+import { clotheslineStore } from "@/features/clothesline/services/clotheslineStore";
+import { getTopPlacement, loadGarmentImage } from "@/features/clothesline/utils/topPlacement";
 import {
   bounceAngle,
   findContacts,
@@ -73,6 +76,8 @@ interface WalkerHandle {
   tick: (dt: number) => void;
   replaceAccessory: (options?: AccessoryOptions) => void;
   replaceFace: (storagePath: string) => Promise<void>;
+  /** Dress the body in a clothesline top, or pass null to take it off. */
+  replaceTop: (texture: Texture | null) => void;
   /** Box around body + head at the walker's ground position (ignores jump height). */
   collisionBox: () => CollisionBox;
   /** Shift the ground position, clamped to the walkable floor. */
@@ -171,6 +176,7 @@ export const PixiHub: React.FC<{
 
         // One layer per room; only the active one is visible and ticked.
         const rooms = {} as Record<RoomId, RoomLayer>;
+        const hubLine = new Container();
         for (const id of ROOM_IDS) {
           const root = new Container();
           const bg = new Sprite(bgTextures.get(ROOMS[id].background));
@@ -179,7 +185,10 @@ export const PixiHub: React.FC<{
           bg.height = app.screen.height;
           const floor = new Container();
           floor.sortableChildren = true;
-          root.addChild(bg, floor);
+          root.addChild(bg);
+          // The decorative clothesline hangs behind the walkers (see hangHubLine).
+          if (id === MAIN_ROOM) root.addChild(hubLine);
+          root.addChild(floor);
           root.visible = id === roomIdRef.current;
           app.stage.addChild(root);
           rooms[id] = { root, floor, walkers: [] };
@@ -260,6 +269,31 @@ export const PixiHub: React.FC<{
             faceSprite.scale.set(FACE_SCALE);
             makeGrabbable(faceSprite);
             group.addChild(faceSprite);
+          }
+
+          // A top claimed from the clothesline, drawn over the body and under the face.
+          let topSprite: Sprite | null = null;
+          let topAboveFeet = 0;
+
+          function applyTop(topTexture: Texture | null) {
+            if (topSprite) {
+              group.removeChild(topSprite);
+              topSprite.destroy({ texture: true, textureSource: true });
+              topSprite = null;
+            }
+            if (!topTexture) return;
+            const placement = getTopPlacement(
+              walker.texture.width * BODY_SCALE,
+              walker.texture.height * BODY_SCALE,
+              topTexture.width / topTexture.height,
+            );
+            topSprite = new Sprite(topTexture);
+            topSprite.anchor.set(0.5, 0);
+            topSprite.width = placement.width;
+            topSprite.height = placement.height;
+            topAboveFeet = placement.topAboveFeet;
+            makeGrabbable(topSprite);
+            group.addChildAt(topSprite, 1);
           }
 
           let accessorySprite: Sprite | null = null;
@@ -466,6 +500,7 @@ export const PixiHub: React.FC<{
           function setGrabCursor(cursor: "grab" | "grabbing") {
             walker.cursor = cursor;
             if (faceSprite) faceSprite.cursor = cursor;
+            if (topSprite) topSprite.cursor = cursor;
             if (accessorySprite) accessorySprite.cursor = cursor;
           }
 
@@ -530,6 +565,13 @@ export const PixiHub: React.FC<{
               faceSprite.x = walker.x + HEAD_OFFSET_X;
               faceSprite.y = walker.y + HEAD_OFFSET_Y;
               faceSprite.rotation = bobRotation;
+            }
+
+            if (topSprite) {
+              // The body pivots at its feet, so the shoulder line swings with it.
+              topSprite.x = walker.x + Math.sin(walker.rotation) * topAboveFeet;
+              topSprite.y = walker.y - Math.cos(walker.rotation) * topAboveFeet;
+              topSprite.rotation = walker.rotation;
             }
 
             if (accessorySprite) {
@@ -643,6 +685,7 @@ export const PixiHub: React.FC<{
             tick,
             replaceAccessory: applyAccessoryOptions,
             replaceFace,
+            replaceTop: applyTop,
             collisionBox,
             moveGround,
             bounce,
@@ -894,6 +937,99 @@ export const PixiHub: React.FC<{
 
         const walkersMap = new Map<string, WalkerHandle>();
 
+        /** Garment id each walker is wearing, so repeat accessory updates don't reload it. */
+        const wornTops = new Map<string, string>();
+
+        /** Dress these walkers in the top their user has equipped (Supabase backend only). */
+        async function refreshTops(ownerIds: string[]) {
+          if (!clotheslineStore.canClaim || ownerIds.length === 0) return;
+          try {
+            const equipped = await clotheslineStore.getEquipped(ownerIds);
+            await Promise.all(
+              ownerIds.map(async (ownerId) => {
+                const handle = walkersMap.get(ownerId);
+                if (!handle || !isMounted) return;
+                const garment = equipped[ownerId];
+                if (!garment) {
+                  if (wornTops.delete(ownerId)) handle.replaceTop(null);
+                  return;
+                }
+                if (wornTops.get(ownerId) === garment.id) return;
+                const image = await loadGarmentImage(garment.url);
+                if (!isMounted) return;
+                wornTops.set(ownerId, garment.id);
+                handle.replaceTop(Texture.from(image));
+              }),
+            );
+          } catch (error) {
+            console.warn("[PixiHub] Could not load clothesline tops:", error);
+          }
+        }
+
+        // Mirrors --color-ink-soft and --color-orange (theme.css).
+        const LINE_ROPE_COLOR = 0x1a1a1a;
+        const LINE_PEG_COLOR = 0xe44805;
+        const lineGarments: Sprite[] = [];
+        let lineClock = 0;
+
+        /**
+         * A few recent garments on a rope in the main room's top-right corner, clear of the
+         * room label and the top door. Decoration only: nothing here is interactive.
+         */
+        async function hangHubLine() {
+          try {
+            const garments = await clotheslineStore.listLine(orgId, CLOTHESLINE_CONFIG.hubLimit);
+            if (!isMounted || garments.length === 0) return;
+            const images = (
+              await Promise.all(
+                garments.map((garment) => loadGarmentImage(garment.url).catch(() => null)),
+              )
+            ).filter((image): image is HTMLImageElement => image !== null);
+            if (!isMounted || images.length === 0) return;
+
+            const left = w * 0.6;
+            const span = w * 0.36;
+            const ropeY = h * 0.06;
+            const slot = span / images.length;
+            const maxWidth = slot * 0.8;
+            const maxHeight = h * 0.15;
+
+            const rope = new Sprite(Texture.WHITE);
+            rope.tint = LINE_ROPE_COLOR;
+            rope.x = left;
+            rope.y = ropeY - 2;
+            rope.width = span;
+            rope.height = 4;
+            hubLine.addChild(rope);
+
+            images.forEach((image, index) => {
+              const texture = Texture.from(image);
+              const fit = Math.min(maxWidth / texture.width, maxHeight / texture.height);
+              const garment = new Sprite(texture);
+              garment.anchor.set(0.5, 0);
+              garment.x = left + slot * (index + 0.5);
+              garment.y = ropeY;
+              garment.width = texture.width * fit;
+              garment.height = texture.height * fit;
+
+              const peg = new Sprite(Texture.WHITE);
+              peg.tint = LINE_PEG_COLOR;
+              peg.anchor.set(0.5, 0.5);
+              peg.x = garment.x;
+              peg.y = ropeY + 3;
+              peg.width = 8;
+              peg.height = 20;
+
+              hubLine.addChild(garment, peg);
+              lineGarments.push(garment);
+            });
+          } catch (error) {
+            console.warn("[PixiHub] Could not hang the clothesline:", error);
+          }
+        }
+
+        void hangHubLine();
+
         async function spawnWalker(row: CroppedImageRow) {
           const existing = walkersMap.get(row.owner_id);
           if (existing) {
@@ -968,6 +1104,7 @@ export const PixiHub: React.FC<{
               if (rows.length === 0) break;
 
               await Promise.all(rows.map(spawnWalker));
+              void refreshTops(rows.map((row) => row.owner_id));
 
               if (!pagination.hasMore) break;
               offset = pagination.offset;
@@ -1006,6 +1143,12 @@ export const PixiHub: React.FC<{
           if (press?.isHand) updateHandPress(press);
           else if (press) updatePress(press);
           if (press?.handle.isHeld()) carryThroughEdge(press);
+          if (activeRoom === MAIN_ROOM && lineGarments.length > 0) {
+            lineClock += time.deltaTime;
+            lineGarments.forEach((garment, index) => {
+              garment.rotation = Math.sin(lineClock * 0.03 + index * 1.3) * 0.045;
+            });
+          }
           const walkers = rooms[activeRoom].walkers;
           walkers.forEach((handle) => handle.tick(time.deltaTime));
           // A held walker is in the air, so it doesn't shove anyone on the floor.
@@ -1032,7 +1175,10 @@ export const PixiHub: React.FC<{
         };
 
         // Expose imperative API to realtime subscription effect
-        addWalkerRef.current = spawnWalker;
+        addWalkerRef.current = async (row) => {
+          await spawnWalker(row);
+          void refreshTops([row.owner_id]);
+        };
 
         replaceFaceRef.current = async (ownerId: string, storagePath: string) => {
           const handle = walkersMap.get(ownerId);
@@ -1043,6 +1189,8 @@ export const PixiHub: React.FC<{
         updateAccRef.current = (ownerId: string, settings: AccessorySettings) => {
           const handle = walkersMap.get(ownerId);
           if (!handle) return;
+          // The equipped top lives on the same accessories row, so it may have changed too.
+          void refreshTops([ownerId]);
           const accTex = settings.selected_accessory
             ? accessoryTextures[settings.selected_accessory]
             : undefined;

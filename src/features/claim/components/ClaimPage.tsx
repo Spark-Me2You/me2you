@@ -80,6 +80,13 @@ export function ClaimPage() {
           return;
         }
 
+        if (payloadType === 'garment') {
+          // Clothesline cutouts land in the wardrobe on the customize page.
+          await claimService.executeGarmentClaim(tokenId);
+          navigate('/user/customize', { replace: true });
+          return;
+        }
+
         const result = await claimService.executeClaim(tokenId);
         navigate('/claim/success', { state: { payload: result.payload }, replace: true });
       } catch (err) {
