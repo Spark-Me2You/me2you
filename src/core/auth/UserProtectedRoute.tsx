@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { LoadingText } from '@/shared/components/LoadingText';
 import { useAuth } from './AuthContext';
 
 interface UserProtectedRouteProps {
@@ -23,37 +24,22 @@ interface UserProtectedRouteProps {
  */
 export const UserProtectedRoute: React.FC<UserProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading, authMode } = useAuth();
+  const location = useLocation();
 
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          background: 'linear-gradient(to bottom, #58e7f7 0%, #fefffb 100%)',
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <p
-            style={{
-              fontFamily: '"Jersey 10", sans-serif',
-              fontSize: '32px',
-              color: '#333',
-            }}
-          >
-            loading...
-          </p>
-        </div>
+      <div className="flex h-dvh items-center justify-center bg-page-gradient">
+        <LoadingText className="text-[32px]" />
       </div>
     );
   }
 
   // Redirect to /user landing page if not authenticated as user
   if (!isAuthenticated || authMode !== 'user') {
-    return <Navigate to="/user" replace />;
+    // Come back here after signing in (UserLandingPage reads ?next=).
+    const next = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/user?next=${next}`} replace />;
   }
 
   // Render children if authenticated as user

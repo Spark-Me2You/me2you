@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClaimScanner } from '../hooks/useClaimScanner';
-import type { ClaimPayload } from '../types';
 
 const SCANNER_ELEMENT_ID = 'claim-qr-reader';
 
@@ -12,14 +11,11 @@ interface ClaimScannerProps {
 export function ClaimScanner({ onClose }: ClaimScannerProps) {
   const navigate = useNavigate();
 
-  const { isScanning, isProcessing, error, start, stop } = useClaimScanner({
+  const { isScanning, error, start, stop } = useClaimScanner({
     elementId: SCANNER_ELEMENT_ID,
-    onSuccess: (payload: ClaimPayload) => {
-      navigate('/claim/success', { state: { payload } });
-    },
-    onError: () => {
-      // error state is shown inline
-    },
+    // Same route as opening the QR link, so every claim type (message
+    // compose, drawing, candy) is handled in one place.
+    onScan: (tokenId) => navigate(`/claim/${tokenId}`),
   });
 
   useEffect(() => {
@@ -43,15 +39,11 @@ export function ClaimScanner({ onClose }: ClaimScannerProps) {
 
         <div id={SCANNER_ELEMENT_ID} className="min-h-[250px] w-full overflow-hidden rounded-[12px]" />
 
-        {isProcessing && (
-          <div className="font-jersey text-[24px] text-[#555] lowercase">claiming...</div>
-        )}
-
-        {!isScanning && !isProcessing && error && (
+        {!isScanning && error && (
           <div className="w-full rounded-[8px] bg-[rgba(211,47,47,0.1)] px-3 py-2 text-center font-jersey text-[18px] text-[#d32f2f]">{error}</div>
         )}
 
-        {isScanning && !isProcessing && !error && (
+        {isScanning && !error && (
           <p className="m-0 text-center font-jersey text-[18px] text-[#888] lowercase">point your camera at the kiosk screen</p>
         )}
       </div>

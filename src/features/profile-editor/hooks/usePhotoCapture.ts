@@ -2,19 +2,43 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useGestureRecognition } from "@/features/discovery/hooks/useGestureRecognition";
 import { getCategoryFromGesture } from "@/features/discovery/config/gestureMapping";
 import type { GestureCategory } from "../types/profileTypes";
+import { pickPose, type PoseSample } from "../utils/poseVotes";
 
 const VIDEO_REF_WAIT_TIMEOUT_MS = 3000;
 const CAMERA_READY_TIMEOUT_MS = 8000;
+
+/** How often the live camera is classified (~10 fps). */
+const SAMPLE_INTERVAL_MS = 100;
+/** The live "✓ peace sign" label reflects this much recent video. */
+const LIVE_WINDOW_MS = 800;
+/**
+ * A capture is judged on frames from this long before the shutter until this
+ * long after it. The "checking your pose . . ." step is the time after.
+ */
+const CAPTURE_WINDOW_MS = 700;
+const SAMPLE_HISTORY_MS = 2000;
+
+/**
+ * live: camera preview, pose shown as it's detected
+ * classifying: photo taken, still sampling the video to decide the pose
+ * detected / failed: always where a capture ends, so the screen never hangs
+ */
+export type CapturePhase = "live" | "classifying" | "detected" | "failed";
 
 interface UsePhotoCaptureResult {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   photo: Blob | null;
   previewUrl: string | null;
+  phase: CapturePhase;
+  /** Pose currently seen on the live camera, before capture. */
+  liveCategory: GestureCategory | null;
+  /** Pose of the captured photo; set when phase is "detected". */
   detectedCategory: GestureCategory | null;
-  detectedGestureName: string | null;
   isCameraReady: boolean;
   isGestureReady: boolean;
+  /** Pose detection failed to load (e.g. model download failed). */
+  gestureError: string | null;
   cameraError: string | null;
   capturePhoto: () => void;
   retakePhoto: () => void;
@@ -22,14 +46,16 @@ interface UsePhotoCaptureResult {
   stopCamera: () => void;
 }
 
+const toCategory = (gestureName: string | null | undefined): GestureCategory | null =>
+  (getCategoryFromGesture(gestureName ?? null) as GestureCategory | null) ?? null;
+
 export const usePhotoCapture = (): UsePhotoCaptureResult => {
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [phase, setPhase] = useState<CapturePhase>("live");
+  const [liveCategory, setLiveCategory] = useState<GestureCategory | null>(null);
   const [detectedCategory, setDetectedCategory] =
     useState<GestureCategory | null>(null);
-  const [detectedGestureName, setDetectedGestureName] = useState<string | null>(
-    null,
-  );
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -37,23 +63,47 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const startRequestIdRef = useRef(0);
+  const samplesRef = useRef<PoseSample[]>([]);
+  const decideTimerRef = useRef<number | null>(null);
 
   const {
-    detectedGesture,
     isInitialized: isGestureReady,
-    processVideoFrame,
+    error: gestureLoadError,
+    recognizeFrame,
   } = useGestureRecognition();
 
-  // Update detected category when gesture changes
-  useEffect(() => {
-    if (detectedGesture?.gestureName) {
-      const category = getCategoryFromGesture(detectedGesture.gestureName);
-      if (category) {
-        setDetectedCategory(category as GestureCategory);
-        setDetectedGestureName(detectedGesture.gestureName);
-      }
+  const gestureError = gestureLoadError
+    ? "couldn't load pose detection — check your connection and reload the page"
+    : null;
+
+  const clearDecideTimer = () => {
+    if (decideTimerRef.current !== null) {
+      window.clearTimeout(decideTimerRef.current);
+      decideTimerRef.current = null;
     }
-  }, [detectedGesture]);
+  };
+
+  // Classify the live video while the camera is showing (and while a capture
+  // is being checked). Every frame yields a sample, including "no pose", so
+  // the result never depends on the gesture changing.
+  const isSampling = isCameraReady && isGestureReady && (phase === "live" || phase === "classifying");
+  useEffect(() => {
+    if (!isSampling) return;
+    const id = window.setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return;
+      const now = performance.now();
+      const result = recognizeFrame(video, now);
+      const samples = samplesRef.current;
+      samples.push({ category: toCategory(result?.gestureName), at: now });
+      while (samples.length && samples[0].at < now - SAMPLE_HISTORY_MS) samples.shift();
+      const live = pickPose(samples, now - LIVE_WINDOW_MS, now);
+      setLiveCategory((prev) => (prev === live ? prev : live));
+    }, SAMPLE_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [isSampling, recognizeFrame]);
+
+  useEffect(() => clearDecideTimer, []);
 
   const startCamera = useCallback(async () => {
     const requestId = ++startRequestIdRef.current;
@@ -235,18 +285,31 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
       return null;
     });
     setPhoto(null);
+    clearDecideTimer();
+    samplesRef.current = [];
+    setPhase("live");
+    setLiveCategory(null);
     setDetectedCategory(null);
-    setDetectedGestureName(null);
     setCameraError(null);
     setIsCameraReady(false);
   }, []);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    clearDecideTimer();
+    setDetectedCategory(null);
+    setPhase("classifying");
+    const shutterAt = performance.now();
+
+    const fail = () => {
+      clearDecideTimer();
+      setPhase("failed");
+    };
 
     try {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
@@ -257,36 +320,49 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Process for gesture detection
-      if (isGestureReady) processVideoFrame(video, Date.now());
-
       canvas.toBlob(
         (blob) => {
-          if (blob) {
-            setPhoto(blob);
-            setPreviewUrl((previous) => {
-              if (previous) {
-                URL.revokeObjectURL(previous);
-              }
-
-              return URL.createObjectURL(blob);
-            });
+          if (!blob) {
+            fail();
+            return;
           }
+          setPhoto(blob);
+          setPreviewUrl((previous) => {
+            if (previous) URL.revokeObjectURL(previous);
+            return URL.createObjectURL(blob);
+          });
         },
         "image/jpeg",
         0.9,
       );
+
+      // Keep sampling briefly after the shutter, then decide. This always
+      // settles on "detected" or "failed".
+      decideTimerRef.current = window.setTimeout(() => {
+        decideTimerRef.current = null;
+        const category = pickPose(
+          samplesRef.current,
+          shutterAt - CAPTURE_WINDOW_MS,
+          shutterAt + CAPTURE_WINDOW_MS,
+        );
+        setDetectedCategory(category);
+        setPhase(category ? "detected" : "failed");
+      }, CAPTURE_WINDOW_MS);
     } catch (e) {
       console.error("[usePhotoCapture] Failed to capture photo:", e);
+      fail();
     }
-  }, [isGestureReady, processVideoFrame]);
+  }, []);
 
   const retakePhoto = useCallback(() => {
+    clearDecideTimer();
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPhoto(null);
     setPreviewUrl(null);
+    samplesRef.current = [];
+    setPhase("live");
+    setLiveCategory(null);
     setDetectedCategory(null);
-    setDetectedGestureName(null);
     setCameraError(null);
 
     const hasLiveTrack =
@@ -313,10 +389,12 @@ export const usePhotoCapture = (): UsePhotoCaptureResult => {
     canvasRef,
     photo,
     previewUrl,
+    phase,
+    liveCategory,
     detectedCategory,
-    detectedGestureName,
     isCameraReady,
     isGestureReady,
+    gestureError,
     cameraError,
     capturePhoto,
     retakePhoto,

@@ -205,33 +205,31 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
       if (!app) return;
 
       try {
-        const bodyTexture = await Assets.load(miiBody);
+        // Load every texture before touching the stage. Adding sprites first
+        // and loading the rest after let Pixi draw the body and face at their
+        // full image size during the awaits, so picking an accessory made the
+        // avatar flash huge and then shrink back.
+        const [bodyTexture, faceTexture, accessoryTexture] = await Promise.all([
+          Assets.load(miiBody),
+          bobbleheadUrl ? Assets.load(bobbleheadUrl) : Promise.resolve(null),
+          selectedAccessory && shouldRenderAccessory
+            ? Assets.load(ACCESSORY_TEXTURES[selectedAccessory])
+            : Promise.resolve(null),
+        ]);
         if (cancelled || !appRef.current) return;
 
-        app.stage.removeChildren();
-
+        // Build, size and swap in the new scene synchronously, so no frame is
+        // drawn between adding the sprites and laying them out.
         const bodySprite = new Sprite(bodyTexture);
+        const faceSprite = faceTexture ? new Sprite(faceTexture) : null;
+        const accessorySprite = accessoryTexture ? new Sprite(accessoryTexture) : null;
+
+        app.stage.removeChildren();
         app.stage.addChild(bodySprite);
+        if (faceSprite) app.stage.addChild(faceSprite);
+        if (accessorySprite) app.stage.addChild(accessorySprite);
         bodyRef.current = bodySprite;
-
-        let faceSprite: Sprite | null = null;
-        if (bobbleheadUrl) {
-          const faceTexture = await Assets.load(bobbleheadUrl);
-          if (cancelled || !appRef.current) return;
-          faceSprite = new Sprite(faceTexture);
-          app.stage.addChild(faceSprite);
-        }
         faceRef.current = faceSprite;
-
-        let accessorySprite: Sprite | null = null;
-        if (selectedAccessory && shouldRenderAccessory) {
-          const accessoryTexture = await Assets.load(
-            ACCESSORY_TEXTURES[selectedAccessory],
-          );
-          if (cancelled || !appRef.current) return;
-          accessorySprite = new Sprite(accessoryTexture);
-          app.stage.addChild(accessorySprite);
-        }
         accessoryRef.current = accessorySprite;
 
         applyLayoutRef.current();

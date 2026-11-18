@@ -15,6 +15,6 @@ This document provides a quick summary of the continuous integration and deploym
 
   This ensures that every commit or PR lints cleanly (warnings allowed, errors fail), builds and passes unit tests before being merged.
 
-- **agent.yml**: runs when an issue is labeled `agent:ready`. Claude Code implements the issue on an `agent/<issue>-<slug>` branch; the workflow then opens a draft PR into `dev` and dispatches `ci.yml` on it, since PRs opened with `GITHUB_TOKEN` don't trigger `pull_request` workflows. See `docs/AGENT_WORKFLOW.md`.
+- **agent.yml**, **triage.yml**, **spec.yml**, **agent-retry.yml**, **agent-feedback.yml**: the issue agent and its automation, documented in `docs/AGENT_WORKFLOW.md`. `agent-retry.yml` reacts to this CI workflow by name, so keep the workflow name `CI`.
 
 - **deploy.yml**: a template workflow in `.github/workflows/deploy.yml`. Triggered only on pushes to `main`. It currently contains a `build` job that mirrors the CI build and a placeholder `deploy` job. No actual deployment commands are present until hosting/platform details are added.

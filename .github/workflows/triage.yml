@@ -1,0 +1,55 @@
+# Issue triage: label new issues from the Area field and title prefix, with no
+# model call. See docs/AGENT_WORKFLOW.md.
+name: Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE: ${{ github.event.issue.number }}
+      TITLE: ${{ github.event.issue.title }}
+      BODY: ${{ github.event.issue.body }}
+    steps:
+      - name: Add area and type labels
+        run: |
+          labels=()
+
+          # "### Area" section: one comma-separated line, either the issue form's
+          # options ("cv (camera / hand tracking / pose), hub") or bare names
+          # ("cv, hub", as raise-issue and spec.yml write it). Each item's first
+          # word is the area. Option text must not contain commas.
+          area=$(awk '/^### Area/{f=1; next} /^### /{f=0} f' <<<"$BODY" | tr '\n' ' ')
+          known=" kiosk hub discovery games cv mobile auth db ci "
+          IFS=',' read -ra items <<<"$area"
+          for item in "${items[@]}"; do
+            read -r word _ <<<"$item" || true
+            if [[ -n "$word" && "$known" == *" $word "* ]]; then labels+=("area:$word"); fi
+          done
+
+          # Templates that already set a type:* label (feature, bug) win.
+          existing=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name')
+          if ! grep -q '^type:' <<<"$existing"; then
+            prefix=$(sed -nE 's/^([a-z]+)(\([^)]*\))?!?:.*/\1/p' <<<"$TITLE")
+            case "$prefix" in
+              feat)                                  labels+=("type:feature") ;;
+              fix)                                   labels+=("type:fix") ;;
+              refactor|style|docs|chore|perf|test|db) labels+=("type:$prefix") ;;
+            esac
+          fi
+
+          if [[ ${#labels[@]} -eq 0 ]]; then
+            echo "Nothing to add."
+            exit 0
+          fi
+          printf 'Adding: %s\n' "${labels[@]}"
+          args=()
+          for l in "${labels[@]}"; do args+=(--add-label "$l"); done
+          gh issue edit "$ISSUE" "${args[@]}"

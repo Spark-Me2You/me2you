@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingText } from "@/shared/components/LoadingText";
 import { useAuth } from "@/core/auth";
 import { gameScoreService } from "@/features/games/services/gameScoreService";
 
@@ -79,7 +80,7 @@ export const UserGameScoresPage: React.FC = () => {
       )}
 
       {isLoading ? (
-        <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">Loading...</p>
+        <LoadingText className="mt-10 text-[24px]" />
       ) : (
         <div className="grid grid-cols-[1fr] gap-3">
           {rows.map((row) => (

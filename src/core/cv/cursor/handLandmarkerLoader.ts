@@ -29,8 +29,9 @@ export const createHandLandmarker = async (): Promise<HandLandmarker> => {
     runningMode: "VIDEO",
     numHands: 1,
     minHandDetectionConfidence: 0.5,
-    minHandPresenceConfidence: 0.5,
-    minTrackingConfidence: 0.5,
+    // Lower than detection, so a hand already being tracked isn't lost as its fingers close.
+    minHandPresenceConfidence: 0.3,
+    minTrackingConfidence: 0.3,
   });
 
   return handLandmarkerInstance;

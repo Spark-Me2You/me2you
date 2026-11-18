@@ -3,9 +3,11 @@
  */
 
 import React, { useState } from 'react';
-import nextButtonImg from '../../../assets/next_button.svg';
 import shanwImg from '../../../assets/shanw.png';
 
+// Compact orange "next →" pill, right-aligned,, same orange as the "create account" box.
+const NEXT_PILL =
+  "mt-4 ml-auto flex w-fit cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-orange px-5 py-2 font-jersey text-[26px] leading-none tracking-brand text-white lowercase shadow-[0_4px_0_var(--color-orange-dark)] transition-[transform,box-shadow,background-color] duration-100 hover:enabled:bg-orange-dark active:enabled:translate-y-[3px] active:enabled:shadow-[0_1px_0_var(--color-orange-dark)] disabled:cursor-not-allowed disabled:opacity-60";
 const FIELD_BLOCK = 'mb-[18px] flex flex-col items-start';
 const FIELD_LABEL =
   'mb-2 inline-block self-start rounded-[12px] border-2 border-solid border-current px-[14px] py-[6px] font-jersey text-[20px] font-normal tracking-[1px] lowercase';
@@ -66,19 +68,13 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
   const displayError = localError || error;
 
   return (
-    <div className="flex min-h-screen flex-col items-center px-6 pt-[130px] pb-10">
+    <div className="flex min-h-dvh flex-col items-center px-6 pt-[130px] pb-10">
       <div className="w-full max-w-[350px] rounded-[24px] bg-glass px-[26px] pt-[30px] pb-9 shadow-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105">
-        <div className="mx-auto mb-[18px] block w-fit rounded-[14px] bg-[#e44805] px-8 py-[14px]">
+        <div className="relative mx-auto mb-6 block w-fit rounded-[14px] bg-[#e44805] px-8 py-[14px]">
           <p className="m-0 font-jersey text-[36px] leading-none tracking-[3px] text-white lowercase">create account</p>
-        </div>
-
-        <div className="relative mx-0 mt-0 mb-7">
-          <div className="flex min-h-[120px] items-center justify-center rounded-[12px] border-2 border-solid border-[#58e7f7] bg-[rgba(88,231,247,0.25)] px-[18px] py-[26px]">
-            <p className="m-0 w-full text-center font-jersey text-[25px] leading-[1.35] tracking-[1px] text-[#111]">
-              Create a Me2You account to connect with people around you!
-            </p>
-          </div>
-          <img src={shanwImg} alt="" className="pointer-events-none absolute -right-[120px] -bottom-[90px] z-[5] h-auto w-[400px] rotate-[8deg] select-none" />
+          {/* Shawn's figure sits in the lower right of a mostly transparent image;
+              these offsets stand him in the open space at the box's right end. */}
+          <img src={shanwImg} alt="" className="pointer-events-none absolute -right-[90px] -bottom-[80px] z-[5] h-auto w-[400px] rotate-[8deg] select-none" />
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -144,15 +140,10 @@ export const SignUpStep: React.FC<SignUpStepProps> = ({
             />
           </div>
 
-          <div className="mt-4 flex items-center justify-end">
-            <button
-              type="submit"
-              className="flex cursor-pointer appearance-none flex-col items-center gap-1 border-0 bg-transparent p-0 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={isSubmitting}
-            >
-              <img src={nextButtonImg} alt="next" className="block h-[51px] w-[55px]" />
-            </button>
-          </div>
+          <button type="submit" className={NEXT_PILL} disabled={isSubmitting}>
+            {isSubmitting ? "creating..." : "next"}
+            <span aria-hidden="true" className="text-[28px] leading-none">→</span>
+          </button>
         </form>
       </div>
     </div>

@@ -169,13 +169,13 @@ Reach for a scale step first in new work. Fluid sizes on non-scaled views use
 | **Glass panel** | `bg-glass shadow-glass-card rounded-glass`, optionally rotated a couple of degrees |
 | **Menu pill button** | `rounded-glass shadow-glass-card bg-action-*` + `font-jersey text-display-xl tracking-brand lowercase text-white` title, `font-averia text-body-xl` subtitle |
 | **Sticky note** | `bg-note shadow-note rounded-[6px]`, `font-averia text-ink`, tape on top |
-| **Polaroid** | `bg-polaroid` + `polaroid_frame1.svg` overlay + tape |
+| **Polaroid** | `Polaroid` component: `bg-polaroid` card, tape on top, thicker bottom edge (optional caption) |
 | **Tape** | `absolute bg-tape` (or `bg-tape-alt/68`), ~90×22px, rotated ±3–6°, `shadow-tape` |
 | **Corkboard** | `corkboard.png` behind tutorial and help content |
 | **Label chip** | `bg-orange` + `font-jersey tracking-brand text-ink`, square corners |
 | **Photo well** | `bg-white shadow-well` with a large radius |
 | **QR tab** | `PinnedRegistrationQR`: `bg-magenta/93 shadow-glass-card`, half-rounded on the inner edge |
-| **Ozzy** | `otter_default_rough_draft.png` (full) and `hand.png` (pointing at the QR) |
+| **Ozzy** | `otter_default_rough_draft.png` (full; tilted 83° at its Home size to peek in from the left edge in `ReturnHomeOverlay`) and `hand.png` (pointing at the QR) |
 | **Arrows** | `arrow2.svg` and `pink_back_arrow.svg`, rotated to point at the target |
 
 Rotations are part of the look: keep them small and use them on decorative pieces and panels,
@@ -192,7 +192,10 @@ Reuse these before building a new version:
 | `ExitButton` | `src/shared/components/ExitButton.tsx` | Red, sky border, top-left. `compact` for small screens |
 | `PinnedRegistrationQR` | `src/features/kiosk/components/` | Every kiosk screen shows one |
 | `RegistrationQRDisplay` | `src/features/kiosk/components/` | Bare QR; wrap it in a magenta glass frame |
+| `CameraPreview` | `src/features/kiosk/components/` | Mirrored live feed as a taped polaroid, bottom-left (Idle, Hub). Uses the shared camera stream |
 | `HelpPopup` | `src/features/discovery/components/` | Corkboard + note + gif help pattern |
+| `Polaroid` | `src/features/kiosk/components/Polaroid.tsx` | Taped polaroid frame with optional caption ("that's you!" preview, corkboard tutorial GIF); the caller sets position and tilt |
+| `HintToast` | `src/shared/components/HintToast.tsx` | Taped sticky-note hint that eases in and fades out; drive it with `useHints` (each hint shows once per screen visit) |
 | `GlassCard` | `src/shared/components/GlassCard.tsx` | Large glass container |
 | `BadgeDisplay` | `src/shared/components/BadgeDisplay.tsx` | Badge grid with tooltips |
 
@@ -222,7 +225,12 @@ Defined as `--animate-*` in `theme.css`. Keep motion short and springy:
 | `animate-fade-in`, `animate-fade-in-fast` | Scrims, overlays |
 | `animate-slide-in-right` | Popups entering from the side |
 | `animate-pop-in`, `animate-pop` | Cards and badges appearing |
+| `animate-hint-in` | `HintToast` notes easing up into view (slower, so they're noticed) |
+| `animate-dot-pulse` | "loading . . ." dots; stagger each dot with `[animation-delay:…]` |
 | `animate-info-trace` | Dwell-to-click ring |
+| `animate-inactivity-swipe` | Idle-screen nudge: the faded otter hand swipes up-right three times (`InactivityHint`) |
+| `animate-ozzy-peek` | Ozzy sliding in from the left edge (return-home warning, `ReturnHomeOverlay`) |
+| `animate-return-wipe-in`, `animate-return-wipe-out` | A `bg-page-gradient` panel (the Home background) wiping left → right over the screen, then off it, when the kiosk times out back to Home |
 | `animate-completion-flash` | Discovery hold-timer complete |
 | `animate-timer-pulse`, `animate-timer-flash` | Game countdowns |
 

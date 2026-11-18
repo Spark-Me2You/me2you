@@ -74,7 +74,7 @@ ONBOARDING → HUB
 - `cameraManager.ts` handles device enumeration and stream lifecycle.
 - `face-detector-config.ts` / `mediapipe-config.ts` / `mediapipe-loader.ts` configure and load MediaPipe models.
 - CV cursor logic lives in `src/core/cv/cursor/`:
-  - `useCvCursor` runs `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), detects pinch clicks (thumb-to-index distance < `0.06`, 300 ms cooldown).
+  - `useCvCursor` runs `HandLandmarker`, shows the cursor on the ready pose (thumb and index open, other fingers closed), maps the palm center to screen coords (EMA-smoothed), detects pinch clicks (thumb-tip to index-tip distance relative to palm length, 300 ms cooldown). The geometry and thresholds live in `handGeometry.ts`.
   - `CvCursorOverlay` renders the visible cursor.
 - Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 

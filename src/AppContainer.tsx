@@ -14,7 +14,7 @@ import { AppState } from "@/core/state-machine/appStateMachine";
 import { ErrorBoundary } from "@/core/monitoring";
 import { DiscoveryView } from "@/features/discovery";
 import { HubView } from "@/features/hub";
-import { RegistrationQRProvider } from "@/features/kiosk";
+import { KioskActivityProvider, RegistrationQRProvider, ReturnHome } from "@/features/kiosk";
 import { IdleScreen } from "@/features/kiosk/components/IdleScreen";
 import { GamesView } from "@/features/games";
 
@@ -67,6 +67,7 @@ function AppContainerContent() {
   return (
     <ErrorBoundary>
       <div className="fixed inset-0 h-screen w-screen overflow-hidden">{renderCurrentState()}</div>
+      <ReturnHome />
     </ErrorBoundary>
   );
 }
@@ -86,9 +87,11 @@ function AppContainer() {
     <CvCursorEnabledProvider>
       <SharedCameraProvider>
         <StateProvider>
-          <RegistrationQRProvider>
-            <AppContainerInner />
-          </RegistrationQRProvider>
+          <KioskActivityProvider>
+            <RegistrationQRProvider>
+              <AppContainerInner />
+            </RegistrationQRProvider>
+          </KioskActivityProvider>
         </StateProvider>
       </SharedCameraProvider>
     </CvCursorEnabledProvider>

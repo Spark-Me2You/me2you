@@ -58,9 +58,25 @@ export function ClaimQR({ claim, isGenerating, error, secondsRemaining, onRegene
   const countdown = `${minutes}:${String(seconds).padStart(2, '0')}`;
   const isWarning = secondsRemaining <= 60;
 
+  // Clicking the QR opens the claim page on whatever site the kiosk is running
+  // (localhost, preview, live), so it can be tested without a phone. The QR
+  // itself still encodes claim_url from the edge function.
+  const claimHref = `${window.location.origin}/claim/${claim.token_id}`;
+
   return (
     <div className={CONTAINER}>
-      <div className="rounded-[16px] bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+      <a
+        href={claimHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="open claim page"
+        onClick={(e) => {
+          // The CV hand cursor dispatches synthetic clicks; only a real mouse
+          // or touch click should open the link, never a pinch on the kiosk.
+          if (!e.nativeEvent.isTrusted) e.preventDefault();
+        }}
+        className="block rounded-[16px] bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+      >
         <QRCodeSVG
           value={claim.claim_url}
           size={220}
@@ -68,7 +84,7 @@ export function ClaimQR({ claim, isGenerating, error, secondsRemaining, onRegene
           fgColor="#000000"
           level="M"
         />
-      </div>
+      </a>
       <div className={`font-jersey text-[28px] tracking-[2px] transition-[color] duration-300 ease-[ease] ${isWarning ? 'text-[#e44805]' : 'text-[#555]'}`}>
         {countdown}
       </div>

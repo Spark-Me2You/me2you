@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingText } from "@/shared/components/LoadingText";
 import { useAuth } from "@/core/auth";
 import {
   deleteMyDrawing,
@@ -42,7 +43,7 @@ export const UserGalleryPage: React.FC = () => {
   };
 
   return (
-    <div className="box-border min-h-screen bg-[linear-gradient(180deg,#e6f2ff_0%,#c4dff5_100%)] px-4 pt-6 pb-12 font-jersey-arial">
+    <div className="box-border min-h-dvh bg-[linear-gradient(180deg,#e6f2ff_0%,#c4dff5_100%)] px-4 pt-6 pb-12 font-jersey-arial">
       <div className="mb-5 flex items-center justify-between">
         <h1 className="m-0 text-[36px] tracking-[4px] text-[#003366]">my drawings</h1>
         <button className="cursor-pointer rounded-[8px] border-2 border-solid border-[#A7D1F5] bg-white px-[18px] py-2 font-jersey-arial text-[18px] tracking-[2px] text-[#003366]" onClick={() => navigate("/user/profile")}>
@@ -51,7 +52,7 @@ export const UserGalleryPage: React.FC = () => {
       </div>
 
       {error && <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#aa0000]">{error}</p>}
-      {!error && items === null && <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">Loading...</p>}
+      {!error && items === null && <LoadingText className="mt-10 text-[24px]" />}
       {items && items.length === 0 && (
         <p className="mt-10 text-center text-[18px] tracking-[2px] text-[#003366]">No drawings yet. Scan a kiosk QR to claim one!</p>
       )}

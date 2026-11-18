@@ -1,15 +1,17 @@
 import { act, renderHook } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { silenceConsole } from '@/test/console'
 import { usePhotoCapture } from './usePhotoCapture'
 
+// `seen` is the gesture the fake recogniser reports for every frame.
 const gesture = vi.hoisted(() => ({
-  state: { detectedGesture: null as { gestureName: string } | null, isInitialized: true },
-  processVideoFrame: vi.fn(),
+  state: { isInitialized: true, error: null as string | null },
+  seen: null as string | null,
+  recognizeFrame: vi.fn(),
 }))
 
 vi.mock('@/features/discovery/hooks/useGestureRecognition', () => ({
-  useGestureRecognition: () => ({ ...gesture.state, processVideoFrame: gesture.processVideoFrame }),
+  useGestureRecognition: () => ({ ...gesture.state, recognizeFrame: gesture.recognizeFrame }),
 }))
 
 function fakeStream() {
@@ -30,8 +32,11 @@ describe('usePhotoCapture', () => {
   beforeEach(() => {
     silenceConsole()
     getUserMedia.mockReset()
-    gesture.state = { detectedGesture: null, isInitialized: true }
-    gesture.processVideoFrame.mockReset()
+    gesture.state = { isInitialized: true, error: null }
+    gesture.seen = null
+    gesture.recognizeFrame.mockReset().mockImplementation(() =>
+      gesture.seen ? { gestureName: gesture.seen, confidence: 0.9, handedness: 'Right' } : null,
+    )
     Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia }, configurable: true })
     URL.createObjectURL = vi.fn(() => 'blob:photo')
     URL.revokeObjectURL = vi.fn()
@@ -106,25 +111,16 @@ describe('usePhotoCapture', () => {
     expect(result.current.isCameraReady).toBe(false)
   })
 
-  describe('gesture detection', () => {
-    it('maps a recognised gesture to its category', () => {
-      gesture.state = { detectedGesture: { gestureName: 'Victory' }, isInitialized: true }
-      const { result } = renderHook(() => usePhotoCapture())
-      expect(result.current.detectedGestureName).toBe('Victory')
-      expect(result.current.detectedCategory).toBe('peace_sign')
-    })
+  it('exposes whether the recogniser is ready', () => {
+    gesture.state = { isInitialized: false, error: null }
+    const { result } = renderHook(() => usePhotoCapture())
+    expect(result.current.isGestureReady).toBe(false)
+  })
 
-    it('ignores gestures with no mapping', () => {
-      gesture.state = { detectedGesture: { gestureName: 'Nonsense' }, isInitialized: true }
-      const { result } = renderHook(() => usePhotoCapture())
-      expect(result.current.detectedCategory).toBeNull()
-    })
-
-    it('exposes whether the recogniser is ready', () => {
-      gesture.state = { detectedGesture: null, isInitialized: false }
-      const { result } = renderHook(() => usePhotoCapture())
-      expect(result.current.isGestureReady).toBe(false)
-    })
+  it('reports a recogniser that failed to load instead of waiting forever', () => {
+    gesture.state = { isInitialized: false, error: 'model fetch failed' }
+    const { result } = renderHook(() => usePhotoCapture())
+    expect(result.current.gestureError).toContain("couldn't load pose detection")
   })
 
   describe('capturePhoto', () => {
@@ -155,20 +151,105 @@ describe('usePhotoCapture', () => {
       expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.9)
       expect(hook.result.current.photo).toBe(blob)
       expect(hook.result.current.previewUrl).toBe('blob:photo')
-      expect(gesture.processVideoFrame).toHaveBeenCalled()
+      expect(hook.result.current.phase).toBe('classifying')
     })
 
-    it('keeps no photo when the canvas produces no blob', async () => {
+    it('keeps no photo and fails when the canvas produces no blob', async () => {
       const hook = await started()
       withCanvas(hook, null)
       act(() => hook.result.current.capturePhoto())
       expect(hook.result.current.photo).toBeNull()
+      expect(hook.result.current.phase).toBe('failed')
     })
 
     it('does nothing without a canvas', async () => {
       const hook = await started()
       expect(() => act(() => hook.result.current.capturePhoto())).not.toThrow()
       expect(hook.result.current.photo).toBeNull()
+    })
+  })
+
+  describe('pose classification', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'] })
+    })
+    afterEach(() => vi.useRealTimers())
+
+    function canvasFor(hook: Awaited<ReturnType<typeof started>>) {
+      ;(hook.result.current.canvasRef as { current: unknown }).current = {
+        width: 0,
+        height: 0,
+        getContext: () => ({ translate() {}, scale() {}, drawImage() {} }),
+        toBlob: (cb: (b: Blob) => void) => cb(new Blob(['x'])),
+      }
+    }
+    const run = (ms: number) => act(() => { vi.advanceTimersByTime(ms) })
+
+    it('shows the pose live before the photo is taken', async () => {
+      const hook = await started()
+      gesture.seen = 'Thumb_Up'
+      run(500)
+      expect(hook.result.current.liveCategory).toBe('thumbs_up')
+    })
+
+    it('captures, checks the pose, then settles on detected', async () => {
+      const hook = await started()
+      canvasFor(hook)
+      gesture.seen = 'Victory'
+      run(500)
+
+      act(() => hook.result.current.capturePhoto())
+      expect(hook.result.current.phase).toBe('classifying')
+
+      run(1000)
+      expect(hook.result.current.phase).toBe('detected')
+      expect(hook.result.current.detectedCategory).toBe('peace_sign')
+    })
+
+    it('settles on failed when no pose is seen, rather than hanging', async () => {
+      const hook = await started()
+      canvasFor(hook)
+      run(500)
+
+      act(() => hook.result.current.capturePhoto())
+      run(1000)
+
+      expect(hook.result.current.phase).toBe('failed')
+      expect(hook.result.current.detectedCategory).toBeNull()
+    })
+
+    // Regression: the same pose after a retake used to never register.
+    it('detects the same pose again after a retake', async () => {
+      const hook = await started()
+      canvasFor(hook)
+      gesture.seen = 'Victory'
+      run(500)
+      act(() => hook.result.current.capturePhoto())
+      run(1000)
+      expect(hook.result.current.phase).toBe('detected')
+
+      act(() => hook.result.current.retakePhoto())
+      expect(hook.result.current.phase).toBe('live')
+      run(500)
+      act(() => hook.result.current.capturePhoto())
+      run(1000)
+
+      expect(hook.result.current.phase).toBe('detected')
+      expect(hook.result.current.detectedCategory).toBe('peace_sign')
+    })
+
+    it('ignores a pose seen in only a stray frame', async () => {
+      const hook = await started()
+      canvasFor(hook)
+      run(400)
+      gesture.seen = 'Victory'
+      run(100)
+      gesture.seen = null
+
+      act(() => hook.result.current.capturePhoto())
+      run(1000)
+
+      expect(hook.result.current.phase).toBe('failed')
     })
   })
 

@@ -40,7 +40,7 @@ interface CvCursorOverlayProps {
 
 export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
   const { x, y, visible, clicking, isPinched, videoRef } = useCvCursor(enabled);
-  const { notifyCursorVisible, updateCursorState, cursorVariant } = useCvCursorEnabled();
+  const { updateCursorState, cursorVariant } = useCvCursorEnabled();
   const prevTargetRef = useRef<Element | null>(null);
   const prevClickingRef = useRef(false);
   const [clickAnimKey, setClickAnimKey] = useState(0);
@@ -49,11 +49,6 @@ export function CvCursorOverlay({ enabled = true }: CvCursorOverlayProps) {
   useEffect(() => {
     if (clicking) setClickAnimKey((k) => k + 1);
   }, [clicking]);
-
-  // Keep cursorVisibleRef in sync so arm-flap detection can read it without rerenders
-  useEffect(() => {
-    notifyCursorVisible(visible);
-  }, [visible, notifyCursorVisible]);
 
   // Broadcast the latest cursor state to shared ref so game-level consumers
   // (e.g. DrawIt's drawing controller) can read it without spinning up a

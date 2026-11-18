@@ -10,27 +10,27 @@ interface CreateAccountPromptProps {
 
 export const CreateAccountPrompt: React.FC<CreateAccountPromptProps> = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-[rgba(0,0,0,0.6)] p-5 backdrop-blur-[4px]" onClick={onClose}>
-      <div className="w-full max-w-[400px] rounded-[24px] bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] px-[30px] py-10 shadow-[0px_8px_24px_rgba(0,0,0,0.3)]" onClick={(e) => e.stopPropagation()}>
-        <h2 className="m-0 mb-6 text-center font-jersey text-[42px] tracking-[3px] text-[#e44805] lowercase">create account</h2>
+    <div className="fixed inset-0 z-[1000] flex overflow-y-auto overscroll-contain bg-[rgba(0,0,0,0.6)] p-5 backdrop-blur-[4px]" onClick={onClose}>
+      <div className="m-auto w-full max-w-[400px] rounded-[24px] bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)] px-6 py-7 shadow-[0px_8px_24px_rgba(0,0,0,0.3)]" onClick={(e) => e.stopPropagation()}>
+        <h2 className="m-0 mb-4 text-center font-jersey text-[42px] leading-none tracking-[3px] text-[#e44805] lowercase">create account</h2>
 
-        <div className="mb-6 rounded-[16px] p-6 bg-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105 shadow-glass">
-          <p className="m-0 mb-6 text-center font-jersey text-[22px] leading-[1.5] text-[#333]">
+        <div className="mb-5 rounded-[16px] p-5 bg-glass backdrop-brightness-98 backdrop-hue-rotate-10 backdrop-saturate-105 shadow-glass">
+          <p className="m-0 mb-4 text-center font-jersey text-[22px] leading-[1.35] text-[#333]">
             To create an account, visit a SPARK Space kiosk and scan the QR code displayed on screen.
           </p>
 
-          <div className="mb-6 flex flex-col gap-4">
+          <div className="mb-4 flex flex-col gap-3">
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e44805] font-jersey text-[24px] text-white">1</span>
-              <span className="pt-1 font-jersey text-[20px] leading-[1.8] text-[#333]">Visit a SPARK Space kiosk</span>
+              <span className="pt-[6px] font-jersey text-[20px] leading-[1.3] text-[#333]">Visit a SPARK Space kiosk</span>
             </div>
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e44805] font-jersey text-[24px] text-white">2</span>
-              <span className="pt-1 font-jersey text-[20px] leading-[1.8] text-[#333]">Scan the QR code on the kiosk screen</span>
+              <span className="pt-[6px] font-jersey text-[20px] leading-[1.3] text-[#333]">Scan the QR code on the kiosk screen</span>
             </div>
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e44805] font-jersey text-[24px] text-white">3</span>
-              <span className="pt-1 font-jersey text-[20px] leading-[1.8] text-[#333]">Complete your profile on your phone</span>
+              <span className="pt-[6px] font-jersey text-[20px] leading-[1.3] text-[#333]">Complete your profile on your phone</span>
             </div>
           </div>
 

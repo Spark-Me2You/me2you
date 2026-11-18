@@ -2,12 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../components/FlapFlapLauncher', () => ({ FlapFlapLauncher: () => null }))
 vi.mock('../drawit/components/DrawItGame', () => ({ DrawItGame: () => null }))
+vi.mock('../gumballslice/components/GumballSliceGame', () => ({ GumballSliceGame: () => null }))
 
 import { GAMES_REGISTRY } from './gamesConfig'
 
 describe('GAMES_REGISTRY', () => {
-  it('registers flapflap and drawit', () => {
-    expect(GAMES_REGISTRY.map((g) => g.id)).toEqual(['flapflap', 'drawit'])
+  it('registers flapflap, drawit and gumballslice', () => {
+    expect(GAMES_REGISTRY.map((g) => g.id)).toEqual(['flapflap', 'drawit', 'gumballslice'])
   })
 
   it('has unique ids and complete entries', () => {

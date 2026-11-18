@@ -28,7 +28,8 @@ const BARS = [
   "h-[180px] right-[5%] -top-[50px]",
 ];
 
-const IMG = "pointer-events-none absolute z-[2] size-[80px] rounded-full bg-[rgba(255,215,0,0.8)] object-cover";
+const IMG = "pointer-events-none absolute z-[2] size-[80px] rounded-full object-cover";
+const IMG_GOLD = "bg-[rgba(255,215,0,0.8)]";
 const IMGS = [
   "left-[3%] top-[35%]",
   "left-[18%] top-[60%]",
@@ -46,6 +47,14 @@ const GAME_BUTTON_GLASS =
   "rounded-[46px] border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.13)] px-10 py-8 backdrop-blur-[10px] [box-shadow:0px_4px_4px_0px_rgba(0,0,0,0.25),inset_0px_0px_4px_0px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.2)] hover:bg-[rgba(255,255,255,0.2)] hover:[transform:translateY(-8px)] hover:[box-shadow:0px_12px_40px_rgba(0,0,0,0.3),inset_0px_0px_4px_0px_rgba(0,0,0,0.25),inset_1px_1px_49.9px_14px_rgba(255,255,255,0.25)] active:[transform:translateY(-4px)] max-[900px]:px-7 max-[900px]:py-6";
 const GAME_BUTTON_DRAWIT =
   "rounded-[46px] border-[6px] border-solid border-[#fff] border-r-[#404040] border-b-[#404040] bg-[#c0c0c0] p-8 [box-shadow:6px_6px_0_#000] hover:bg-[#c8c8c8] hover:[transform:translateY(-4px)] hover:[box-shadow:6px_10px_0_#000] active:[transform:translateY(-4px)] before:absolute before:inset-6 before:z-0 before:rounded-[32px] before:border-4 before:border-solid before:border-[#404040] before:border-t-[#fff] before:border-l-[#fff] before:bg-[#fff] before:content-[''] after:pointer-events-none after:absolute after:right-[10%] after:bottom-[18%] after:z-[1] after:h-[45%] after:w-[45%] after:[transform:rotate(-20deg)] after:bg-[image:var(--paintbrush)] after:bg-contain after:bg-center after:bg-no-repeat after:[filter:drop-shadow(3px_3px_0_rgba(0,0,0,0.25))] after:content-['']";
+// Gumball Slice: the glass button in pink, with white-ringed gumballs instead of the green bars.
+const GAME_BUTTON_GUMBALL = GAME_BUTTON_GLASS.replace(
+  "bg-[rgba(255,255,255,0.13)]",
+  "bg-[rgba(228,5,172,0.22)]",
+).replace("hover:bg-[rgba(255,255,255,0.2)]", "hover:bg-[rgba(228,5,172,0.32)]");
+const GUMBALL_IMG = "box-border border-[5px] border-solid border-white";
+const GUMBALL_COLORS = ["bg-[#e405ac]", "bg-[#58e7f7]", "bg-[rgba(228,72,5,0.93)]", "bg-[rgba(113,5,228,0.93)]"];
+
 export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
   const { transitionTo } = useAppState();
 
@@ -58,33 +67,36 @@ export const GamesHub: React.FC<GamesHubProps> = ({ onSelectGame }) => {
       <h1 className="relative z-10 m-0 font-pixelify text-[clamp(80px,12vw,150px)] leading-none font-normal tracking-[9px] text-white [text-shadow:0px_8px_4px_rgba(0,0,0,0.31),0px_4px_0px_rgba(211,228,5,0.68),2px_0px_0px_#e405ac] [transform:translateY(-2vh)_rotate(3.41deg)] max-[900px]:[transform:translateY(-3vh)_rotate(3.41deg)]">games</h1>
 
       {/* Games container - vertical stack */}
-      <div className="relative z-10 mt-[2vh] mb-0 grid w-[min(92vw,1400px)] max-w-[calc(100vw-80px)] flex-[1_1_auto] grid-cols-[1fr_1fr] content-stretch gap-8 max-[900px]:w-[min(92vw,720px)] max-[900px]:max-w-[calc(100vw-40px)] max-[900px]:grid-cols-[1fr] max-[900px]:auto-rows-[1fr] max-[900px]:gap-5">
+      <div className="relative z-10 mt-[2vh] mb-0 grid w-[min(92vw,1400px)] max-w-[calc(100vw-80px)] flex-[1_1_auto] grid-cols-[repeat(auto-fit,minmax(360px,1fr))] content-stretch gap-8 max-[900px]:w-[min(92vw,720px)] max-[900px]:max-w-[calc(100vw-40px)] max-[900px]:grid-cols-[1fr] max-[900px]:auto-rows-[1fr] max-[900px]:gap-5">
         {GAMES_REGISTRY.map((game) => {
           const isDrawIt = game.id === "drawit";
+          const isGumball = game.id === "gumballslice";
           return (
             <button
               key={game.id}
               data-game-id={game.id}
-              className={`${GAME_BUTTON} ${isDrawIt ? GAME_BUTTON_DRAWIT : GAME_BUTTON_GLASS}`}
+              className={`${GAME_BUTTON} ${isDrawIt ? GAME_BUTTON_DRAWIT : isGumball ? GAME_BUTTON_GUMBALL : GAME_BUTTON_GLASS}`}
               style={isDrawIt ? ({ "--paintbrush": `url(${paintbrush})` } as React.CSSProperties) : undefined}
               onClick={() => onSelectGame(game.id)}
             >
               {!isDrawIt && (
                 <>
                   {/* Decorative green bars */}
-                  {BARS.map((pos) => (
-                    <div key={pos} className={`${BAR} ${pos}`} />
-                  ))}
+                  {!isGumball && BARS.map((pos) => <div key={pos} className={`${BAR} ${pos}`} />)}
                   {/* Decorative circular elements */}
-                  {IMGS.map((pos) => (
-                    <div key={pos} className={`${IMG} ${pos}`} aria-hidden="true" />
+                  {IMGS.map((pos, i) => (
+                    <div
+                      key={pos}
+                      className={`${IMG} ${pos} ${isGumball ? `${GUMBALL_IMG} ${GUMBALL_COLORS[i % 4]}` : IMG_GOLD}`}
+                      aria-hidden="true"
+                    />
                   ))}
                 </>
               )}
 
               {/* Game content */}
               <h2
-                className={`relative z-10 m-0 font-jersey text-[clamp(60px,8vw,100px)] leading-none font-normal tracking-[16px] ${
+                className={`relative z-10 m-0 font-jersey text-center text-[clamp(60px,6vw,100px)] leading-none font-normal tracking-[12px] ${
                   isDrawIt ? "text-[#111] [text-shadow:4px_4px_0_rgba(0,0,0,0.15)]" : "text-white [text-shadow:0px_4px_16px_rgba(0,0,0,0.4)]"
                 }`}
               >

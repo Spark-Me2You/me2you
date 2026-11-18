@@ -1,0 +1,79 @@
+# Agent feedback: a comment or review starting with `/agent` re-runs the agent on
+# the issue's branch. The checks here are the gate for those runs, because
+# agent.yml trusts dispatches from the Actions bot. See docs/AGENT_WORKFLOW.md.
+name: Agent feedback
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  feedback:
+    if: >-
+      startsWith(github.event.comment.body, '/agent') ||
+      startsWith(github.event.review.body, '/agent')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      actions: write # dispatch agent.yml
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      BODY: ${{ github.event.comment.body || github.event.review.body }}
+      NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      IS_PR: ${{ (github.event.pull_request || github.event.issue.pull_request) && 'true' || 'false' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ALLOWLIST: ${{ vars.AGENT_ALLOWLIST }} # unset means nobody; see agent.yml
+    steps:
+      - name: Dispatch a feedback run
+        run: |
+          # "/agent" must be the command word, not a prefix of another word.
+          [[ "$BODY" =~ ^/agent([[:space:]]|$) ]] || exit 0
+
+          # Not on the allowlist: ignore silently, it may just be a discussion.
+          [[ ",${ALLOWLIST// /}," == *",$ACTOR,"* ]] || { echo "$ACTOR is not on the allowlist."; exit 0; }
+
+          # Find the agent branch and the issue it belongs to.
+          if [[ "$IS_PR" == "true" ]]; then
+            read -r state branch < <(gh pr view "$NUMBER" --json state,headRefName --jq '"\(.state) \(.headRefName)"')
+            [[ "$state" == "OPEN" && "$branch" =~ ^agent/([0-9]+)-[a-z0-9-]*$ ]] || { echo "Not an open agent PR."; exit 0; }
+            issue="${BASH_REMATCH[1]}"
+          else
+            issue="$NUMBER"
+            branch=$(gh pr list --state open --json headRefName \
+              --jq "[.[].headRefName | select(startswith(\"agent/$issue-\"))][0] // empty")
+          fi
+
+          # Only hand-offs are picked up; a running agent is left alone.
+          labels=$(gh issue view "$issue" --json labels --jq '.labels[].name')
+          if grep -qx 'agent:in-progress' <<<"$labels"; then
+            gh issue comment "$issue" --body "The agent is already running on this issue. Send \`/agent\` again when it finishes. [Run log]($RUN_URL)"
+            exit 0
+          fi
+          if ! grep -qxE 'agent:(review|needs-human)' <<<"$labels"; then
+            gh issue comment "$issue" --body "\`/agent\` only applies once the agent has handed the issue over (\`agent:review\` or \`agent:needs-human\`). To start it, add \`agent:ready\`."
+            exit 0
+          fi
+          if grep -qxE 'type:db|area:db' <<<"$labels"; then
+            gh issue comment "$issue" --body "\`/agent\` can't run here: database work (migrations, RLS, edge functions) is reserved for humans."
+            exit 0
+          fi
+
+          # Claim the issue before dispatching, so a second /agent sent before
+          # agent.yml starts is declined above instead of starting another run.
+          # agent.yml's gate clears this label if it refuses the run.
+          gh issue edit "$issue" --remove-label agent:review --remove-label agent:needs-human --add-label agent:in-progress
+          args=(-f issue="$issue" -f reason=feedback)
+          if [[ -n "$branch" ]]; then args+=(-f branch="$branch"); fi
+          if ! gh workflow run agent.yml "${args[@]}"; then
+            gh issue edit "$issue" --remove-label agent:in-progress --add-label agent:needs-human
+            gh issue comment "$issue" --body "Couldn't start the agent for this feedback. [Run log]($RUN_URL)"
+            exit 1
+          fi
+          gh issue comment "$issue" --body "Picked up feedback from @$ACTOR. The agent is revising${branch:+ \`$branch\`}. [Run log]($RUN_URL)"

@@ -41,6 +41,7 @@ export function ClaimPage() {
     // Drawing claims need a dedicated function because moving the PNG between
     // buckets is a storage op that can't live in a Postgres trigger.
     // Message claims show a compose UI instead of auto-executing.
+    // Candy reward claims go through claim-candy-reward (voucher + daily cap).
     (async () => {
       try {
         const { data: token } = await supabase
@@ -57,6 +58,19 @@ export function ClaimPage() {
             tokenId,
             recipientName: payload?.data?.recipient_name ?? 'someone',
           });
+          return;
+        }
+
+        if (payloadType === 'candy_reward') {
+          const result = await claimService.executeCandyClaim(tokenId);
+          const outcome = result.payload.data as { status?: string; code?: string };
+          // A new voucher goes straight to "My candy"; a capped/paused claim
+          // explains itself on the success page.
+          if (outcome.status === 'issued') {
+            navigate('/user/candy', { state: { justWonCode: outcome.code }, replace: true });
+          } else {
+            navigate('/claim/success', { state: { payload: result.payload }, replace: true });
+          }
           return;
         }
 
@@ -85,7 +99,7 @@ export function ClaimPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[430px] items-center justify-center bg-[linear-gradient(to_bottom,#58e7f7_0%,#fefffb_100%)]">
       <div className="flex flex-col items-center gap-4">
         <span className="font-jersey text-[32px] tracking-[2px] text-[#555] lowercase">claiming...</span>
       </div>

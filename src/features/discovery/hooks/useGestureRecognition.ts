@@ -137,10 +137,38 @@ export const useGestureRecognition = () => {
     [isInitialized],
   );
 
+  /**
+   * Classify one frame and return the result directly, without touching
+   * `detectedGesture`. For callers that need an answer for every frame (photo
+   * capture), where processVideoFrame's "only update on change" state would
+   * report nothing for a repeated gesture or for no hand at all.
+   */
+  const recognizeFrame = useCallback(
+    (source: HTMLVideoElement, timestamp: number): GestureRecognitionResult | null => {
+      if (!gestureRecognizerRef.current || !isInitialized) return null;
+      try {
+        const results = gestureRecognizerRef.current.recognizeForVideo(source, timestamp);
+        const gesture = results.gestures?.[0]?.[0];
+        if (!gesture) return null;
+        const handedness = results.handedness?.[0]?.[0];
+        return {
+          gestureName: gesture.categoryName,
+          confidence: gesture.score,
+          handedness: handedness ? (handedness.categoryName as "Left" | "Right") : null,
+        };
+      } catch (err) {
+        console.error("Error recognizing frame:", err);
+        return null;
+      }
+    },
+    [isInitialized],
+  );
+
   return {
     detectedGesture,
     isInitialized,
     error,
     processVideoFrame,
+    recognizeFrame,
   };
 };

@@ -21,6 +21,7 @@ import type {
   PlayerId,
 } from "../types/flapflap2p";
 import { useCvCursorEnabled } from "@/core/cv/cursor";
+import { useKioskActivity } from "@/features/kiosk";
 import { ExitButton } from "@/shared/components";
 import type { GameProps } from "../../types/game";
 import { SplitCameraPanel } from "./SplitCameraPanel";
@@ -29,8 +30,9 @@ const NOT_READY: Record<PlayerId, boolean> = { P1: false, P2: false };
 const PRESENCE_POLL_MS = 250;
 
 export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
-  const { setEnabled: setCvCursorEnabled, cursorVisibleRef } =
+  const { setEnabled: setCvCursorEnabled, cursorStateRef } =
     useCvCursorEnabled();
+  const { markActivity } = useKioskActivity();
 
   const [gameState, setGameState] = useState<FlapFlap2PState>("WAITING");
   const [result, setResult] = useState<FlapFlap2PResult | null>(null);
@@ -87,8 +89,15 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
     setFinalScore(0);
   }, []);
 
-  const handleFlapP1 = useCallback(() => engineRef.current?.flap("P1"), []);
-  const handleFlapP2 = useCallback(() => engineRef.current?.flap("P2"), []);
+  // Flaps don't move the CV cursor, so tell the return-home timer someone's playing.
+  const handleFlapP1 = useCallback(() => {
+    markActivity();
+    engineRef.current?.flap("P1");
+  }, [markActivity]);
+  const handleFlapP2 = useCallback(() => {
+    markActivity();
+    engineRef.current?.flap("P2");
+  }, [markActivity]);
 
   // One detector per player so each has its own wrist buffers and cooldown.
   const armFlapOptions = {
@@ -151,9 +160,9 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
         P2: playerPoses.P2 !== null,
       };
 
-      // Skip flap detection while the CV cursor's pointing pose is active —
-      // moving the pointing hand would otherwise false-trigger a flap.
-      if (cursorVisibleRef.current) return;
+      // Skip flap detection while the CV cursor's ready pose is active —
+      // moving that hand would otherwise false-trigger a flap.
+      if (cursorStateRef.current.visible) return;
       if (playerPoses.P1) processPlayerRef.current.P1(playerPoses.P1);
       if (playerPoses.P2) processPlayerRef.current.P2(playerPoses.P2);
     };
@@ -172,7 +181,7 @@ export const FlapFlap2PGame: React.FC<GameProps> = ({ onExit }) => {
     frameSequenceRef,
     handleGameStateChange,
     handleReadyChange,
-    cursorVisibleRef,
+    cursorStateRef,
   ]);
 
   // Run CV inference in a separate cadence from render/physics ticker.

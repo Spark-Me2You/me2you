@@ -19,7 +19,7 @@ CI (`.github/workflows/ci.yml`) runs `npm run lint`, `npm run build` (TypeScript
 
 ### Unit tests
 
-Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/BRAND_BOOK.md`, `docs/CONFIG.md`, `.github/workflows/CI-CD.md`, `docs/AGENT_WORKFLOW.md`.
+Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/BRAND_BOOK.md`, `docs/CONFIG.md`, `docs/HUB.md`, `.github/workflows/CI-CD.md`, `docs/AGENT_WORKFLOW.md`.
 
 ### Supabase
 
@@ -40,7 +40,7 @@ Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required
 
 Full rules in `docs/GIT_CONVENTIONS.md`. Summary: branch from `dev` as `<type>/<kebab-name>` (e.g. `feature/hub-realtime`, `fix/hub-style`), commit as `<type>: <imperative summary>` (e.g. `fix: prevent accessory clipping`), and open PRs into `dev` titled the same way. Never commit directly to `main` or `dev`.
 
-Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/workflows/agent.yml`, which has Claude implement it and opens a draft PR from an `agent/<issue>-<slug>` branch. See `docs/AGENT_WORKFLOW.md`.
+Work is tracked in GitHub issues. Labeling an issue `agent:ready` runs `.github/workflows/agent.yml`, which has Claude implement it and opens a draft PR from an `agent/<issue>-<slug>` branch. See `docs/AGENT_WORKFLOW.md`. To file an issue, use the `raise-issue` skill (`.claude/skills/raise-issue/`): it writes the body in the agent-ready format, or applies `spec:request` to have `spec.yml` draft the spec from a rough idea. Don't add `agent:ready` unless asked.
 
 ---
 
@@ -108,7 +108,7 @@ BrowserRouter
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
 - **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
-- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps index-finger tip to screen coords (EMA-smoothed), and detects thumb-curl clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
+- **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the palm center to screen coords (EMA-smoothed), and detects pinch clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
 - **`monitoring/`** — `ErrorBoundary` component.
@@ -118,7 +118,7 @@ BrowserRouter
 | Feature | Description |
 |---|---|
 | `discovery/` | Kiosk mode: gesture-based random profile reveal |
-| `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
+| `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`) across five rooms joined by doors, with walker collision and a paired-interaction scheduler (see `docs/HUB.md`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
 | `games/` | Kiosk mode: mini-games (see Games section below) |
 | `registration/` | Mobile: new user sign-up with QR-code entry; `faceCropService.ts` runs MediaPipe face detection to produce cropped avatar images |
 | `profile-editor/` | Mobile: edit profile, retake photo, manage accessories; `accessoryService.ts`, `profileService.ts` |
@@ -146,16 +146,18 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 - `mint-kiosk-session` — verifies admin auth, scopes kiosk JWT to an org, returns tokens
 - `generate-registration-qr` / `verify-registration-token` — QR-code registration handshake
 - `generate-claim-token` / `execute-claim` / `claim-drawing` / `claim-message` — drawing and message claim flows
+- `claim-candy-reward` — Gumball Slice wins: issues a candy voucher (1 per user per day) via `issue_candy_voucher()`
+- `candy-desk` — the front-desk Google Sheet's endpoint (shared-secret header, no JWT): lists vouchers and redeems/un-redeems them. Sheet script + setup: `scripts/candy-desk-sheet/`
 - `delete-user-account` / `delete-user-images` — account deletion helpers
 
 ### Database (`supabase/migrations/`)
 
-Sequential numbered migrations (001–024). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001–026). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ### CV Gesture System
 
 `useCvCursor` detects two states used throughout the kiosk:
-- **Hover** (pointing pose): index extended, other fingers curled → moves cursor
-- **Click** (pinch): thumb-tip to index-tip normalized distance < `0.06` → fires click with 300 ms cooldown
+- **Hover** (ready pose): thumb and index open, other fingers closed or half-closed → shows cursor, palm center moves it. It stays up until the hand opens flat or makes a fist, and rides out dropouts for 400 ms
+- **Click** (pinch, only while the cursor is up): thumb-tip to index-tip distance under `0.3` × palm length (released above `0.45` ×; see `handGeometry.ts`) → fires click with 300 ms cooldown
 
-Games access the raw `isPinched` field (no cooldown) for continuous paint/drag interactions.
+Games access the raw `isPinched` field (no cooldown) for continuous paint/drag interactions. FlapFlap ignores flaps while the cursor is visible. Gumball Slice steers with the fingertip from `handTrackRef`, not the cursor.

@@ -5,3 +5,4 @@ export * from './useDebounce';
 export * from './useInterval';
 export * from './useKeyboardShortcut';
 export * from './useSessionStorage';
+export * from './useHints';
