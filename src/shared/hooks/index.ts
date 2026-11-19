@@ -6,3 +6,4 @@ export * from './useInterval';
 export * from './useKeyboardShortcut';
 export * from './useSessionStorage';
 export * from './useHints';
+export * from './useStageScale';

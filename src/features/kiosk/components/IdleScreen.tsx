@@ -12,7 +12,6 @@ import { RegistrationQRDisplay } from "./RegistrationQRDisplay";
 import { InfoOverlay } from "./InfoOverlay";
 import { CameraPreview } from "./CameraPreview";
 import { Polaroid } from "./Polaroid";
-import { ClotheslinePreview } from "@/features/clothesline/components/ClotheslinePreview";
 import { InactivityHint } from "../inactivity/InactivityHint";
 import { useInactivityHint } from "../inactivity/useInactivityHint";
 
@@ -162,16 +161,6 @@ export function IdleScreen() {
             <span className={BTN_TITLE}>network</span>
             <span className={BTN_SUBTITLE}>see yourself & others!</span>
           </button>
-
-          {/* Clothesline button, with the newest garments pegged beneath it */}
-          <button
-            onClick={() => transitionTo(AppState.CLOTHESLINE)}
-            className={`${MENU_BUTTON} inset-[66.56%_50.5%_8.82%_14.5%] bg-action-clothesline`}
-          >
-            <span className={BTN_TITLE}>clothesline</span>
-            <span className={BTN_SUBTITLE}>hang up your outfit!</span>
-          </button>
-          <ClotheslinePreview className="absolute top-[89%] left-[17%] z-[3] w-[30%]" />
 
           {/* Welcome speech bubble */}
           <div className="absolute inset-[39.03%_42.08%_37.34%_10.01%] z-[3] flex flex-col items-center justify-center rounded-glass bg-lime text-center font-averia text-body-xl leading-[1.4] tracking-brand text-ink shadow-glass-card">

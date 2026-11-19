@@ -4,7 +4,6 @@
  */
 
 export { ClotheslineView } from "./ClotheslineView";
-export { ClotheslinePreview } from "./components/ClotheslinePreview";
 export { MyClothes } from "./components/MyClothes";
 export { clotheslineStore } from "./services/clotheslineStore";
 export { CLOTHESLINE_BACKEND, CLOTHESLINE_CONFIG, MII_TOP_FIT } from "./config/clotheslineConfig";

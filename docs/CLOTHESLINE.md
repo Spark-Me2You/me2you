@@ -1,34 +1,41 @@
 # Clothesline
 
-The clothesline (kiosk `CLOTHESLINE` state, `src/features/clothesline/`) is a photo booth: a
+The clothesline (`src/features/clothesline/`, opened from the hub's main room) is a photo booth: a
 visitor takes a picture, the kiosk cuts their clothes out of it, and the cutouts hang on a
 community line for everyone in the org to see. A visitor can scan a QR code to claim their
 clothes and wear the top on their mii.
 
 ```
-ClotheslineView                 ← stages: line → booth → review → hung
-  components/ClotheslineWall    ← the ropes of GarmentPegs
+ClotheslineView                 ← stages: line → booth → review → hung; HubView renders it
+  components/ClotheslineWall    ← the ropes of GarmentPegs; garments can be dragged
   components/PhotoBooth         ← live camera, 3-2-1, capture
   components/ReviewGarments     ← keep / toss each piece before anything is saved
   components/HungUp             ← confirmation + claim QR
-  components/ClotheslinePreview ← mini line under the Home button
   components/MyClothes          ← mobile wardrobe on /user/customize
 cv/garmentMask.ts               ← which pixels are a garment (pure, tested)
 cv/garmentCutout.ts             ← mask → transparent PNG
 cv/clothesSegmenter.ts          ← MediaPipe models + the capture pipeline
 services/clotheslineStore.ts    ← the one store the UI talks to
 utils/topPlacement.ts           ← where a top sits on the mii body (pure, tested)
+utils/lineLayout.ts             ← garment spots on the wall's ropes (pure, tested)
 ```
 
 ## Where it shows up
 
 | Place | What |
 |---|---|
-| Home | "clothesline" button (`bg-action-clothesline`) with the newest few garments pegged under it |
-| Clothesline screen | The full line, how-it-works note, "add my outfit" |
-| Hub, main room | A short rope of recent garments in the top-right corner (decoration, not interactive) |
+| Hub, main room | A short rope of recent garments in the top-right corner (decoration, not interactive), with the "clothesline" button (`bg-action-clothesline`) under it |
+| Clothesline screen | The full line, how-it-works note, "add my outfit". "network" goes back to the hub's main room |
 | Hub walkers | Each mii wears the top its user equipped |
 | Phone, customize avatar | "my clothes": wear / take off a top, delete anything you claimed |
+
+## Dragging garments on the line
+
+Garments on the clothesline screen can be picked up and moved along a rope or onto another one,
+by mouse, touch or a CV hand pinch (`ClotheslineWall`). A hand press follows the live pinch
+from `cursorStateRef` and ignores the overlay's synthetic `pointerup`, like walker dragging in
+the hub (it reuses `HAND_RELEASE_GRACE_MS`). Positions are kept only while the screen is open;
+they aren't saved, so the line goes back to newest-first next time.
 
 ## Privacy: what the cutout keeps
 
@@ -112,5 +119,5 @@ user to `/user/customize`.
 - **Profile page.** The worn top shows in the hub and on the customize page, not yet on
   `/user/profile`.
 - **Bottoms on the mii.** The body sprite has no separate legs to dress.
-- **Tuning.** `MII_TOP_FIT`, the hub rope position and the Home button position were set
+- **Tuning.** `MII_TOP_FIT`, the hub rope position and the hub's clothesline button were set
   without a kiosk to look at; check them on the real screen.

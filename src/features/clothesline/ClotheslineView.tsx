@@ -1,13 +1,12 @@
 /**
- * Clothesline — kiosk screen
+ * Clothesline — opened from the hub's main room (HubView)
  * line → photo booth → review → hung up. Designed at 1920×1080 and scaled to
- * fit, like the home screen. See docs/CLOTHESLINE.md.
+ * fit the viewport (useStageScale). See docs/CLOTHESLINE.md.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useAuth } from "@/core/auth";
-import { useAppState } from "@/core/state-machine";
-import { AppState } from "@/core/state-machine/appStateMachine";
+import { useStageScale } from "@/shared/hooks";
 import { ExitButton } from "@/shared/components";
 import { CameraPreview, PinnedRegistrationQR } from "@/features/kiosk";
 import { CLOTHESLINE_CONFIG } from "./config/clotheslineConfig";
@@ -36,11 +35,17 @@ const HOW_IT_WORKS = [
 const revoke = (garments: CapturedGarment[]) =>
   garments.forEach((garment) => URL.revokeObjectURL(garment.previewUrl));
 
-export function ClotheslineView() {
-  const { transitionTo } = useAppState();
+interface ClotheslineViewProps {
+  /** Leave the clothesline (back to the network). */
+  onExit: () => void;
+  exitLabel?: string;
+}
+
+export function ClotheslineView({ onExit, exitLabel = "back" }: ClotheslineViewProps) {
   const { kioskOrgId } = useAuth();
   const { garments, isLoading } = useClotheslineGarments(kioskOrgId, CLOTHESLINE_CONFIG.lineLimit);
   const [stage, setStage] = useState<Stage>({ kind: "line" });
+  const stageScale = useStageScale();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -104,9 +109,12 @@ export function ClotheslineView() {
 
   return (
     <>
-      <div className="relative h-[1080px] w-[1920px] origin-top-left [transform:scale(min(calc(100vw_/_1920),calc(100vh_/_1080)))]">
+      <div
+        className="relative h-[1080px] w-[1920px] origin-top-left [transform:scale(var(--stage-scale))]"
+        style={{ "--stage-scale": stageScale } as CSSProperties}
+      >
         <div className="absolute inset-0 bg-page-gradient" />
-        <ExitButton onClick={() => transitionTo(AppState.IDLE)} label="home" />
+        <ExitButton onClick={onExit} label={exitLabel} />
 
         {stage.kind === "line" && (
           <div className="absolute inset-0 flex flex-col items-center pt-8">

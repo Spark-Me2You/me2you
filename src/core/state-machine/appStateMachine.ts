@@ -10,7 +10,6 @@ export const AppState = {
   HUB: 'HUB',
   DISCOVERY: 'DISCOVERY',
   GAMES: 'GAMES',
-  CLOTHESLINE: 'CLOTHESLINE',
 } as const;
 
 export type AppState = typeof AppState[keyof typeof AppState];
@@ -35,8 +34,6 @@ export const transitions: StateTransition[] = [
   { from: AppState.HUB, to: AppState.IDLE, event: 'EXIT_HUB' },
   { from: AppState.IDLE, to: AppState.GAMES, event: 'OPEN_GAMES' },
   { from: AppState.GAMES, to: AppState.IDLE, event: 'EXIT_GAMES' },
-  { from: AppState.IDLE, to: AppState.CLOTHESLINE, event: 'OPEN_CLOTHESLINE' },
-  { from: AppState.CLOTHESLINE, to: AppState.IDLE, event: 'EXIT_CLOTHESLINE' },
   // TODO: Add more transitions
 ];
 

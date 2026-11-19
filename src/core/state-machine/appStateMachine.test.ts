@@ -20,8 +20,8 @@ describe('appStateMachine transitions', () => {
 
   it('lets every state other than AUTH and ONBOARDING reach IDLE or be reachable from it', () => {
     const fromIdle = transitions.filter((t) => t.from === AppState.IDLE).map((t) => t.to)
-    expect(fromIdle).toEqual(expect.arrayContaining([AppState.AUTH, AppState.DISCOVERY, AppState.HUB, AppState.GAMES, AppState.CLOTHESLINE]))
-    for (const s of [AppState.DISCOVERY, AppState.HUB, AppState.GAMES, AppState.CLOTHESLINE]) {
+    expect(fromIdle).toEqual(expect.arrayContaining([AppState.AUTH, AppState.DISCOVERY, AppState.HUB, AppState.GAMES]))
+    for (const s of [AppState.DISCOVERY, AppState.HUB, AppState.GAMES]) {
       expect(transitions).toContainEqual(expect.objectContaining({ from: s, to: AppState.IDLE }))
     }
   })

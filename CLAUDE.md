@@ -107,7 +107,7 @@ BrowserRouter
 ### Core Layer (`src/core/`)
 
 - **`auth/`** — `AuthProvider` manages three mutually exclusive modes: `admin` (full access), `kiosk` (read-only, org-scoped via JWT `app_metadata`), `user` (mobile). Route guards: `ProtectedRoute`, `AdminOnlyRoute`, `UserProtectedRoute`. See `auth/KIOSK_AUTH.md` for the full kiosk session flow.
-- **`state-machine/`** — Seven kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`, `CLOTHESLINE`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
+- **`state-machine/`** — Six kiosk states: `IDLE`, `AUTH`, `ONBOARDING`, `HUB`, `DISCOVERY`, `GAMES`. Transitions defined in `appStateMachine.ts`. `useAppState()` / `transitionTo()` drive navigation in the kiosk.
 - **`cv/`** — `SharedCameraProvider` owns the camera `MediaStream`. `useCvCursor` (in `cv/cursor/`) runs MediaPipe `HandLandmarker`, maps the palm center to screen coords (EMA-smoothed), and detects pinch clicks. `CvCursorOverlay` renders the visible cursor. Individual features pull `useSharedCamera()` to read the same stream without opening a second device.
 - **`supabase/`** — Supabase client singleton plus typed service wrappers (adminAuth, kioskAuth, etc.).
 - **`badges/`** — `badgeService.ts` for earning/fetching badges.
@@ -120,7 +120,7 @@ BrowserRouter
 | `discovery/` | Kiosk mode: gesture-based random profile reveal |
 | `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`) across five rooms joined by doors, with walker collision and a paired-interaction scheduler (see `docs/HUB.md`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
 | `games/` | Kiosk mode: mini-games (see Games section below) |
-| `clothesline/` | Kiosk mode: photo booth that cuts a visitor's clothes out of a photo (MediaPipe segmentation; face, hair and skin never leave the browser) and hangs them on a community line. Garments can be claimed by QR and worn on a mii; the idle screen and hub show a few. Storage goes through `clotheslineStore` (local IndexedDB by default). See `docs/CLOTHESLINE.md` |
+| `clothesline/` | Kiosk mode, opened from the hub's main room: photo booth that cuts a visitor's clothes out of a photo (MediaPipe segmentation; face, hair and skin never leave the browser) and hangs them on a community line. Garments can be dragged along the line, claimed by QR and worn on a mii; the hub shows a few. Storage goes through `clotheslineStore` (local IndexedDB by default). See `docs/CLOTHESLINE.md` |
 | `registration/` | Mobile: new user sign-up with QR-code entry; `faceCropService.ts` runs MediaPipe face detection to produce cropped avatar images |
 | `profile-editor/` | Mobile: edit profile, retake photo, manage accessories; `accessoryService.ts`, `profileService.ts` |
 | `user/` | Mobile: `UserProfileView`, `UserGalleryPage`, `UserGameScoresPage`, `CustomizeAvatarView` |

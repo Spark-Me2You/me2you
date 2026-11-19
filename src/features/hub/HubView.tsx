@@ -1,6 +1,7 @@
 /**
  * Hub View — "Network" screen
- * Now displays a Pixi.js animation with walking characters
+ * Now displays a Pixi.js animation with walking characters. The main room has a button that
+ * opens the clothesline in place of the hub.
  */
 
 import React, { useCallback, useState } from 'react';
@@ -14,6 +15,7 @@ import { hubService } from './services/hubService';
 import { storageService } from '@/core/supabase/storage';
 import type { RandomImageData } from '@/features/discovery/types/image';
 import { MAIN_ROOM, type RoomId } from './rooms/rooms';
+import { ClotheslineView } from '@/features/clothesline';
 
 export const HubView: React.FC = () => {
   const { transitionTo } = useAppState();
@@ -21,6 +23,7 @@ export const HubView: React.FC = () => {
   const [selectedProfile, setSelectedProfile] = useState<RandomImageData | null>(null);
   // Lives here, not in PixiHub, so returning from a profile lands back in the same room.
   const [roomId, setRoomId] = useState<RoomId>(MAIN_ROOM);
+  const [showClothesline, setShowClothesline] = useState(false);
 
   const handleCharacterClick = useCallback(
     async (data: CharacterClickData) => {
@@ -75,6 +78,10 @@ export const HubView: React.FC = () => {
   const handleBack = () => setSelectedProfile(null);
   const handleHome = () => transitionTo(AppState.IDLE);
 
+  if (showClothesline) {
+    return <ClotheslineView onExit={() => setShowClothesline(false)} exitLabel="network" />;
+  }
+
   // Show profile detail if one is selected
   if (selectedProfile) {
     return (
@@ -95,6 +102,17 @@ export const HubView: React.FC = () => {
         roomId={roomId}
         onRoomChange={setRoomId}
       />
+      {roomId === MAIN_ROOM && (
+        // Sits under the hub's decorative rope of garments (top-right, see hangHubLine).
+        <button
+          type="button"
+          onClick={() => setShowClothesline(true)}
+          className="fixed top-[23%] right-[4%] z-[90] flex cursor-pointer flex-col items-center gap-1 rounded-glass border-0 bg-action-clothesline px-10 py-4 font-jersey text-white lowercase shadow-glass-card transition-transform hover:scale-105"
+        >
+          <span className="text-display-md leading-none tracking-brand">clothesline</span>
+          <span className="font-averia text-body-lg leading-none tracking-[1px]">hang up your outfit!</span>
+        </button>
+      )}
       <PinnedRegistrationQR />
       <CameraPreview />
     </>

@@ -6,7 +6,7 @@
 import type { GarmentWithUrl } from "../types";
 
 // Sway animates `rotate`, so no rotate utility may sit on this element.
-const HANGER = "relative flex origin-top animate-garment-sway flex-col items-center";
+const HANGER = "relative flex origin-top flex-col items-center";
 const PEG = "z-[1] -mb-[10%] h-[18%] max-h-[34px] min-h-[10px] w-[9%] min-w-[5px] max-w-[14px] rounded-[3px] bg-note shadow-tape";
 
 interface GarmentPegProps {
@@ -15,12 +15,14 @@ interface GarmentPegProps {
   index?: number;
   /** Size limits for the garment image. */
   className?: string;
+  /** Being dragged: stops the sway. */
+  held?: boolean;
 }
 
-export function GarmentPeg({ garment, index = 0, className = "" }: GarmentPegProps) {
+export function GarmentPeg({ garment, index = 0, className = "", held = false }: GarmentPegProps) {
   return (
     <div
-      className={HANGER}
+      className={`${HANGER} ${held ? "" : "animate-garment-sway"}`}
       // Runtime value: each garment starts its swing at a different point.
       style={{ animationDelay: `${-(index % 5) * 700}ms` }}
     >

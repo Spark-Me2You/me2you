@@ -67,7 +67,7 @@ write a hex or `rgba()` in a component for a color that has a token.
 | Role | Points at | Use for |
 |---|---|---|
 | `action-discover` / `-games` / `-network` | orange / purple / blue | The three Home destinations and anything that brands them |
-| `action-clothesline` | magenta | The clothesline Home destination and its primary buttons (see `docs/CLOTHESLINE.md`) |
+| `action-clothesline` | magenta | The hub's clothesline button and the clothesline's primary buttons (see `docs/CLOTHESLINE.md`) |
 | `action-help` | lime | `?` help buttons |
 | `action-exit` | red | Exit / back buttons (`ExitButton`) |
 | `tape` / `tape-alt` | magenta / lime | Tape strips on paper pieces |
@@ -209,7 +209,8 @@ them inline.
 ## 7. Layout
 
 - **Kiosk** screens are designed at **1920×1080** and either scaled to fit
-  (`IdleScreen`: `scale(min(100vw/1920, 100vh/1080))`) or laid out in viewport units/percentages
+  (`ClotheslineView`: `useStageScale()` feeding `scale(var(--stage-scale))`; a pure-CSS
+  `scale(calc(100vw / 1920))` is invalid, since that's a length) or laid out in viewport units/percentages
   (Discovery, profile view). Pick one per screen; don't mix.
 - Fixed chrome: exit top-left, help `?` top-right, QR tab on the left or right edge.
 - **Mobile** pages are a single column, `max-w-[430px]`, glass cards around `max-w-[350px]`.

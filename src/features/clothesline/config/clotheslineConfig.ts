@@ -17,8 +17,6 @@ export const CLOTHESLINE_CONFIG = {
   lineLimit: 16,
   /** Garments per rope on the clothesline screen. */
   perRope: 8,
-  /** Garments on the mini line beside the home-screen button. */
-  previewLimit: 4,
   /** Garments on the decorative line in the hub's main room. */
   hubLimit: 7,
   /** Photo booth countdown, in seconds. */
