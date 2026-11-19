@@ -6,5 +6,5 @@
 export { ClotheslineView } from "./ClotheslineView";
 export { MyClothes } from "./components/MyClothes";
 export { clotheslineStore } from "./services/clotheslineStore";
-export { CLOTHESLINE_BACKEND, CLOTHESLINE_CONFIG, MII_TOP_FIT } from "./config/clotheslineConfig";
+export { CLOTHESLINE_CONFIG, MII_TOP_FIT } from "./config/clotheslineConfig";
 export type { Garment, GarmentKind, GarmentWithUrl } from "./types";

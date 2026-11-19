@@ -13,7 +13,6 @@ import type {
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
 import { MyClothes } from "@/features/clothesline/components/MyClothes";
-import { clotheslineStore } from "@/features/clothesline/services/clotheslineStore";
 import type { GarmentWithUrl } from "@/features/clothesline/types";
 import { UserMiiPixiPreview } from "./UserMiiPixiPreview";
 
@@ -282,7 +281,7 @@ export const CustomizeAvatarView: React.FC = () => {
             </button>
           )}
 
-          {clotheslineStore.canClaim && user && userProfile?.org_id && (
+          {user && userProfile?.org_id && (
             <MyClothes userId={user.id} orgId={userProfile.org_id} onWornChange={setWornTop} />
           )}
 

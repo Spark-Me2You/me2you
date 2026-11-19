@@ -2,16 +2,6 @@
  * Clothesline configuration. See docs/CLOTHESLINE.md.
  */
 
-export type ClotheslineBackend = "local" | "supabase";
-
-/**
- * Where garments are stored. `local` keeps them in this browser's IndexedDB
- * (one kiosk, no claiming); `supabase` needs migration 034 and the
- * `claim-garment` edge function deployed. Stays `local` until that happens.
- */
-export const CLOTHESLINE_BACKEND: ClotheslineBackend =
-  import.meta.env.VITE_CLOTHESLINE_BACKEND === "supabase" ? "supabase" : "local";
-
 export const CLOTHESLINE_CONFIG = {
   /** Garments shown on the clothesline screen. */
   lineLimit: 16,

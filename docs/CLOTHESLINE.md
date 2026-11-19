@@ -65,26 +65,13 @@ tells visitors to check and lets them toss either piece or walk away with nothin
 Top and bottom are split at the pose landmarker's hip line. Dresses, coats and jumpsuits come
 out as one "top". Only tops can be worn on a mii; bottoms just hang on the line.
 
-## Storage backends
+## Storage
 
-`clotheslineStore` implements `GarmentStore` (`services/garmentStore.ts`) for the backend named
-by `VITE_CLOTHESLINE_BACKEND`:
-
-| Backend | Where garments live | Claim + wear |
-|---|---|---|
-| `local` (default) | This browser's IndexedDB; 60 garments max, gone after 24 h | No. The kiosk shows a "coming soon" note instead of a QR |
-| `supabase` | `garments` table + private `garments` bucket | Yes |
-
-The local backend exists so the kiosk flow can be tried before the database changes are applied.
-Garments stay on that one device and phones never see them.
-
-### Turning on the Supabase backend
-
-Migration 034 is applied to the remote project and the generated types include it. To switch
-a build over:
-
-1. `supabase functions deploy claim-garment` (once per project)
-2. Set `VITE_CLOTHESLINE_BACKEND=supabase` for that build and rebuild (Vite reads it at build time)
+`clotheslineStore` (`services/clotheslineStore.ts`) is the Supabase implementation of
+`GarmentStore` (`services/garmentStore.ts`): the `garments` table and the private `garments`
+bucket from migration 034, with claiming done by the `claim-garment` edge function. Both are on
+the remote project; after changing either, rerun `supabase db push --linked` or
+`supabase functions deploy claim-garment`.
 
 034 went out ahead of 027–032 (PR #149) and was numbered around 033 (bounties, applied from
 another branch). When #149 lands, push its migrations with `supabase db push --include-all`,

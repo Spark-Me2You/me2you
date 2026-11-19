@@ -1,11 +1,8 @@
 /**
  * Garment store
  * The one interface the clothesline UI, the hub and the mobile wardrobe talk
- * to. Two backends implement it (see clotheslineConfig.CLOTHESLINE_BACKEND):
- *  - local:    this browser's IndexedDB. No accounts, so nothing can be claimed
- *              or worn; it exists so the kiosk flow works before the database
- *              migration is applied.
- *  - supabase: `garments` table + bucket from migration 034.
+ * to, implemented by supabaseGarmentStore (`garments` table + bucket from
+ * migration 034).
  * Reads fail soft (empty results) so a missing table never breaks the hub or
  * the home screen.
  */
@@ -13,8 +10,6 @@
 import type { CapturedGarment, Garment, GarmentWithUrl } from "../types";
 
 export interface GarmentStore {
-  /** True when garments can be claimed by QR and worn by a mii. */
-  readonly canClaim: boolean;
   /** Newest garments on the org's clothesline. */
   listLine(orgId: string, limit: number): Promise<GarmentWithUrl[]>;
   /** Save fresh cutouts to the line. Throws if nothing could be saved. */
@@ -33,7 +28,7 @@ export interface GarmentStore {
 
 const listeners = new Set<() => void>();
 
-/** Change notifications shared by both backends: fired when this browser changes the line. */
+/** Change notifications: fired when this browser changes the line. */
 export const lineChanges = {
   subscribe(listener: () => void): () => void {
     listeners.add(listener);

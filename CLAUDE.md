@@ -32,7 +32,7 @@ The client is typed with the generated `Database` type (`src/core/supabase/datab
 
 ### Environment
 
-Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional tuning: `VITE_SESSION_TIMEOUT_MS`, `VITE_GESTURE_COOLDOWN_MS`, `VITE_IDLE_TIMEOUT_MS`, `VITE_TARGET_FPS`, `VITE_ENABLE_LOGGER`, `VITE_ENABLE_PERFORMANCE_MONITOR`, `VITE_DEFAULT_ORG_ID`, `VITE_CLOTHESLINE_BACKEND` (`local` default | `supabase`; see `docs/CLOTHESLINE.md`).
+Copy `.env.example` to `.env`. Vite only exposes `VITE_`-prefixed vars. Required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Optional tuning: `VITE_SESSION_TIMEOUT_MS`, `VITE_GESTURE_COOLDOWN_MS`, `VITE_IDLE_TIMEOUT_MS`, `VITE_TARGET_FPS`, `VITE_ENABLE_LOGGER`, `VITE_ENABLE_PERFORMANCE_MONITOR`, `VITE_DEFAULT_ORG_ID`.
 
 ---
 
@@ -120,7 +120,7 @@ BrowserRouter
 | `discovery/` | Kiosk mode: gesture-based random profile reveal |
 | `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`) across five rooms joined by doors, with walker collision and a paired-interaction scheduler (see `docs/HUB.md`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
 | `games/` | Kiosk mode: mini-games (see Games section below) |
-| `clothesline/` | Kiosk mode, opened from the hub's main room: photo booth that cuts a visitor's clothes out of a photo (MediaPipe segmentation; face, hair and skin never leave the browser) and hangs them on a community line. Garments can be dragged along the line, claimed by QR and worn on a mii; the hub shows a few. Storage goes through `clotheslineStore` (local IndexedDB by default). See `docs/CLOTHESLINE.md` |
+| `clothesline/` | Kiosk mode, opened from the hub's main room: photo booth that cuts a visitor's clothes out of a photo (MediaPipe segmentation; face, hair and skin never leave the browser) and hangs them on a community line. Garments can be dragged along the line, claimed by QR and worn on a mii; the hub shows a few. Storage goes through `clotheslineStore` (Supabase `garments` table and bucket, migration 034). See `docs/CLOTHESLINE.md` |
 | `registration/` | Mobile: new user sign-up with QR-code entry; `faceCropService.ts` runs MediaPipe face detection to produce cropped avatar images |
 | `profile-editor/` | Mobile: edit profile, retake photo, manage accessories; `accessoryService.ts`, `profileService.ts` |
 | `user/` | Mobile: `UserProfileView`, `UserGalleryPage`, `UserGameScoresPage`, `CustomizeAvatarView` |
@@ -154,7 +154,7 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 
 ### Database (`supabase/migrations/`)
 
-Sequential numbered migrations (001–026 on `dev`; 027–033 are in flight on other branches; 034 adds the clothesline `garments` table and bucket and `accessories.equipped_garment_id`). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001–026 on `dev`; 027–033 are in flight on other branches, with 033 already applied to the remote; 034 adds the clothesline `garments` table and bucket and `accessories.equipped_garment_id`). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ### CV Gesture System
 

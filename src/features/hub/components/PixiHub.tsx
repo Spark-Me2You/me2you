@@ -940,9 +940,9 @@ export const PixiHub: React.FC<{
         /** Garment id each walker is wearing, so repeat accessory updates don't reload it. */
         const wornTops = new Map<string, string>();
 
-        /** Dress these walkers in the top their user has equipped (Supabase backend only). */
+        /** Dress these walkers in the top their user has equipped. */
         async function refreshTops(ownerIds: string[]) {
-          if (!clotheslineStore.canClaim || ownerIds.length === 0) return;
+          if (ownerIds.length === 0) return;
           try {
             const equipped = await clotheslineStore.getEquipped(ownerIds);
             await Promise.all(

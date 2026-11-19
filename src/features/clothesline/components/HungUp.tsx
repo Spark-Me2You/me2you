@@ -6,7 +6,6 @@
 import { useMemo, useState } from "react";
 import { ClaimSection } from "@/features/claim";
 import type { ClaimPayload } from "@/features/claim";
-import { clotheslineStore } from "../services/clotheslineStore";
 import type { CapturedGarment, Garment } from "../types";
 import { GarmentPeg } from "./GarmentPeg";
 import { PILL, SUBTITLE, TITLE } from "./styles";
@@ -53,11 +52,7 @@ export function HungUp({ hung, pieces, onDone }: HungUpProps) {
         </div>
 
         <div className="flex w-[520px] flex-col items-center gap-6 rounded-glass bg-glass px-10 py-9 shadow-glass-card">
-          {!clotheslineStore.canClaim ? (
-            <p className="m-0 text-center font-averia text-body-xl leading-[1.3] tracking-brand text-ink lowercase">
-              soon you'll be able to scan a code here and wear it on your mii!
-            </p>
-          ) : claimed ? (
+          {claimed ? (
             <p className="m-0 animate-pop-in text-center font-averia text-body-xl leading-[1.3] tracking-brand text-ink lowercase">
               claimed! open <span className="font-bold text-magenta">customize avatar</span> on your
               phone to put it on your mii.

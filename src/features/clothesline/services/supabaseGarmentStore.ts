@@ -55,7 +55,6 @@ async function withUrls(rows: GarmentRow[]): Promise<GarmentWithUrl[]> {
 }
 
 export const supabaseGarmentStore: GarmentStore = {
-  canClaim: true,
 
   async listLine(orgId, limit) {
     // Unclaimed garments come down when they expire; claimed ones stay up.
