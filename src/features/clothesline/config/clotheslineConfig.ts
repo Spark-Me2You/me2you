@@ -6,7 +6,7 @@ export type ClotheslineBackend = "local" | "supabase";
 
 /**
  * Where garments are stored. `local` keeps them in this browser's IndexedDB
- * (one kiosk, no claiming); `supabase` needs migration 027 and the
+ * (one kiosk, no claiming); `supabase` needs migration 034 and the
  * `claim-garment` edge function deployed. Stays `local` until that happens.
  */
 export const CLOTHESLINE_BACKEND: ClotheslineBackend =

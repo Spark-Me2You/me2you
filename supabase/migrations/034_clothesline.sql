@@ -1,5 +1,5 @@
 -- ============================================================
--- 027: clothesline — clothing cutouts captured at the kiosk photo
+-- 034: clothesline — clothing cutouts captured at the kiosk photo
 --      booth, hung on an org-wide line, claimable by QR and
 --      wearable on a mii.
 --

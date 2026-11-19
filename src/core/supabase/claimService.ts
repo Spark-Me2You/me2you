@@ -170,7 +170,7 @@ export const claimService = {
     };
   },
 
-  /** Claim clothesline garments (needs migration 027 + the claim-garment function). */
+  /** Claim clothesline garments (needs migration 034 + the claim-garment function). */
   executeGarmentClaim: async (tokenId: string): Promise<GarmentClaimResult> => {
     const { data, error } = await supabase.functions.invoke<ClaimGarmentResponse>(
       'claim-garment',

@@ -4,7 +4,7 @@
  * Called by an authenticated mobile user to claim a garment-type token shown
  * on the kiosk after the clothesline photo booth. Marks the token as claimed,
  * then makes the user the owner of the garments it names so they can wear
- * them on their mii. Needs migration 027.
+ * them on their mii. Needs migration 034.
  *
  * ORDER (the token lock comes first, as in claim-drawing):
  *   1. Auth user, resolve their org_id from the "user" table

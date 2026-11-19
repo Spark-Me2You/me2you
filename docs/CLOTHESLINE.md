@@ -82,16 +82,22 @@ Garments stay on that one device and phones never see them.
 
 Nothing here has been applied to the remote project. To switch over:
 
-1. `supabase db push` (applies `027_clothesline.sql`)
+1. `supabase db push` (applies `034_clothesline.sql`)
 2. `supabase functions deploy claim-garment`
 3. `npm run gen:types`, commit the result, then delete the `db` cast in
    `services/supabaseGarmentStore.ts` (marked `TODO(clothesline)`)
 4. Set `VITE_CLOTHESLINE_BACKEND=supabase`
 
-Note that `supabase db push` applies every pending migration, so 027 goes out with whatever is
+Note that `supabase db push` applies every pending migration, so 034 goes out with whatever is
 pushed next. Hold the file back if the feature isn't ready.
 
-### Schema (migration 027)
+The number 034 leaves room for 027–032 (PR #149) and 033 (in progress) ahead of it. Apply those
+first: if 034 reaches the remote before them, a later `db push` refuses the lower numbers unless
+run with `--include-all`. PR #149 also adds payload validation to `generate-claim-token`
+(`supabase/functions/_shared/claimPayload.ts`) that rejects unknown types, so it needs a
+`garment` case (`data.garment_ids`: non-empty array of uuids) or the hung-up QR stops working.
+
+### Schema (migration 034)
 
 - `garments`: `id, org_id, owner_id (null until claimed), kind ('top'|'bottom'), image_path,
   width, height, created_at, expires_at`. Unclaimed rows expire after 24 h and stop being

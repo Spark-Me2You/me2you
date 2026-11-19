@@ -1,6 +1,6 @@
 /**
  * Local garment store (IndexedDB)
- * Keeps cutouts on this device only. Used until migration 027 is applied.
+ * Keeps cutouts on this device only. Used until migration 034 is applied.
  */
 
 import type { CapturedGarment, Garment, GarmentWithUrl } from "../types";

@@ -1,9 +1,9 @@
 /**
  * Supabase garment store
- * Needs migration 027 (`garments` table, `garments` bucket,
+ * Needs migration 034 (`garments` table, `garments` bucket,
  * `accessories.equipped_garment_id`) and the `claim-garment` edge function.
  *
- * TODO(clothesline): once 027 is applied and `npm run gen:types` has run,
+ * TODO(clothesline): once 034 is applied and `npm run gen:types` has run,
  * delete the `db` cast below and use the typed `supabase` client directly.
  */
 
@@ -27,7 +27,7 @@ interface GarmentRow {
   created_at: string;
 }
 
-// The generated Database type doesn't know these tables until 027 is applied.
+// The generated Database type doesn't know these tables until 034 is applied.
 const db = supabase as unknown as SupabaseClient;
 
 const toGarment = (row: GarmentRow): Garment => ({

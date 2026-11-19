@@ -5,7 +5,7 @@
  *  - local:    this browser's IndexedDB. No accounts, so nothing can be claimed
  *              or worn; it exists so the kiosk flow works before the database
  *              migration is applied.
- *  - supabase: `garments` table + bucket from migration 027.
+ *  - supabase: `garments` table + bucket from migration 034.
  * Reads fail soft (empty results) so a missing table never breaks the hub or
  * the home screen.
  */
