@@ -17,6 +17,7 @@ export type Database = {
       accessories: {
         Row: {
           created_at: string
+          equipped_garment_id: string | null
           org_id: string
           relative_x: number
           relative_y: number
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          equipped_garment_id?: string | null
           org_id: string
           relative_x?: number
           relative_y?: number
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          equipped_garment_id?: string | null
           org_id?: string
           relative_x?: number
           relative_y?: number
@@ -46,6 +49,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "accessories_equipped_garment_id_fkey"
+            columns: ["equipped_garment_id"]
+            isOneToOne: false
+            referencedRelation: "garments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "accessories_org_id_fkey"
             columns: ["org_id"]
@@ -91,6 +101,100 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organization"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      bounty: {
+        Row: {
+          answer: string | null
+          answered_at: string | null
+          caught_at: string | null
+          claim_token_id: string | null
+          created_at: string
+          hunter_id: string
+          hunter_name: string
+          id: string
+          org_id: string
+          question_id: string
+          question_text: string
+          status: Database["public"]["Enums"]["bounty_status"]
+          target_id: string
+          target_name: string
+        }
+        Insert: {
+          answer?: string | null
+          answered_at?: string | null
+          caught_at?: string | null
+          claim_token_id?: string | null
+          created_at?: string
+          hunter_id: string
+          hunter_name: string
+          id?: string
+          org_id: string
+          question_id: string
+          question_text: string
+          status?: Database["public"]["Enums"]["bounty_status"]
+          target_id: string
+          target_name: string
+        }
+        Update: {
+          answer?: string | null
+          answered_at?: string | null
+          caught_at?: string | null
+          claim_token_id?: string | null
+          created_at?: string
+          hunter_id?: string
+          hunter_name?: string
+          id?: string
+          org_id?: string
+          question_id?: string
+          question_text?: string
+          status?: Database["public"]["Enums"]["bounty_status"]
+          target_id?: string
+          target_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bounty_claim_token_id_fkey"
+            columns: ["claim_token_id"]
+            isOneToOne: true
+            referencedRelation: "claim_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_hunter_id_fkey"
+            columns: ["hunter_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_hunter_id_org_id_fkey"
+            columns: ["hunter_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id", "org_id"]
+          },
+          {
+            foreignKeyName: "bounty_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bounty_target_id_org_id_fkey"
+            columns: ["target_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id", "org_id"]
           },
         ]
       }
@@ -373,6 +477,57 @@ export type Database = {
           },
         ]
       }
+      garments: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          height: number
+          id: string
+          image_path: string
+          kind: string
+          org_id: string
+          owner_id: string | null
+          width: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          height: number
+          id?: string
+          image_path: string
+          kind: string
+          org_id: string
+          owner_id?: string | null
+          width: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          height?: number
+          id?: string
+          image_path?: string
+          kind?: string
+          org_id?: string
+          owner_id?: string | null
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organization"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garments_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gesture_image: {
         Row: {
           category: string
@@ -630,6 +785,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_bounty: {
+        Args: { p_hunter_id: string; p_token_id: string }
+        Returns: Json
+      }
       candy_desk_vouchers: {
         Args: { p_org_id: string }
         Returns: {
@@ -642,9 +801,14 @@ export type Database = {
           voucher_id: string
         }[]
       }
+      catch_bounty: { Args: { p_bounty_id: string }; Returns: Json }
       get_user_org_id: { Args: never; Returns: string }
       issue_candy_voucher: {
         Args: { p_token_id: string; p_user_id: string }
+        Returns: Json
+      }
+      record_bounty_answer: {
+        Args: { p_answer: string; p_bounty_id: string }
         Returns: Json
       }
       set_candy_voucher_redeemed: {
@@ -653,6 +817,7 @@ export type Database = {
       }
     }
     Enums: {
+      bounty_status: "open" | "caught"
       candy_voucher_status: "issued" | "redeemed" | "void"
       claim_status: "pending" | "claimed" | "expired"
     }
@@ -782,6 +947,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      bounty_status: ["open", "caught"],
       candy_voucher_status: ["issued", "redeemed", "void"],
       claim_status: ["pending", "claimed", "expired"],
     },

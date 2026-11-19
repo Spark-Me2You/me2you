@@ -41,6 +41,13 @@ interface ClaimDrawingResponse {
   error?: string;
 }
 
+interface ClaimGarmentResponse {
+  success: boolean;
+  token_id?: string;
+  garment_ids?: string[];
+  error?: string;
+}
+
 interface ClaimMessageResponse {
   success: boolean;
   token_id?: string;
@@ -59,6 +66,12 @@ export interface DrawingClaimResult {
   token_id: string;
   drawing_id: string;
   image_path: string;
+}
+
+export interface GarmentClaimResult {
+  success: true;
+  token_id: string;
+  garment_ids: string[];
 }
 
 export const claimService = {
@@ -155,6 +168,26 @@ export const claimService = {
       drawing_id: data.drawing_id,
       image_path: data.image_path,
     };
+  },
+
+  /** Claim clothesline garments (needs migration 034 + the claim-garment function). */
+  executeGarmentClaim: async (tokenId: string): Promise<GarmentClaimResult> => {
+    const { data, error } = await supabase.functions.invoke<ClaimGarmentResponse>(
+      'claim-garment',
+      { body: { token_id: tokenId } }
+    );
+
+    if (error) {
+      console.error('[claimService] claim-garment error:', error);
+      throw new Error(error.message || 'Failed to claim clothes');
+    }
+
+    if (!data?.success || !data.token_id || !data.garment_ids?.length) {
+      console.error('[claimService] claim-garment returned error:', data?.error);
+      throw new Error(data?.error || 'Failed to claim clothes');
+    }
+
+    return { success: true, token_id: data.token_id, garment_ids: data.garment_ids };
   },
 
   executeMessageClaim: async (tokenId: string, body: string): Promise<MessageClaimResult> => {

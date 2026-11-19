@@ -19,7 +19,7 @@ CI (`.github/workflows/ci.yml`) runs `npm run lint`, `npm run build` (TypeScript
 
 ### Unit tests
 
-Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/BRAND_BOOK.md`, `docs/CONFIG.md`, `docs/HUB.md`, `.github/workflows/CI-CD.md`, `docs/AGENT_WORKFLOW.md`.
+Vitest + jsdom + React Testing Library, configured in `vitest.config.ts` (extends `vite.config.ts`, so path aliases work). Tests are colocated with the source as `*.test.ts(x)`; shared setup lives in `src/test/setup.ts`. Import `describe`/`it`/`expect`/`vi` explicitly from `vitest` (globals are off). Prefer testing pure logic and hooks; jsdom has no canvas, WebGL, camera or MediaPipe, so fake the narrow slice a unit needs (see `floodFill.test.ts`) rather than the whole API. Shared helpers live in `src/test/`: `supabaseMock.ts` (chainable query builder `queryResult`, `supabaseMock`, `fakeChannel`, `resetSupabaseMock`; wire it in with `vi.mock('<client path>', () => import('@/test/supabaseMockModule'))` since the real client throws without env vars), `pixiStub.ts` (Container/Graphics/Text stand-ins), and `console.ts` (`silenceConsole`). Additional docs: `docs/architecture.md`, `docs/BRAND_BOOK.md`, `docs/CONFIG.md`, `docs/HUB.md`, `docs/CLOTHESLINE.md`, `.github/workflows/CI-CD.md`, `docs/AGENT_WORKFLOW.md`.
 
 ### Supabase
 
@@ -120,6 +120,7 @@ BrowserRouter
 | `discovery/` | Kiosk mode: gesture-based random profile reveal |
 | `hub/` | Kiosk mode: browsable profile network rendered with PixiJS (`PixiHub.tsx`) across five rooms joined by doors, with walker collision and a paired-interaction scheduler (see `docs/HUB.md`); `hubService.ts`, `croppedImageService.ts`, `hubRealtimeService.ts` |
 | `games/` | Kiosk mode: mini-games (see Games section below) |
+| `clothesline/` | Kiosk mode, opened from the hub's main room: photo booth that cuts a visitor's clothes out of a photo (MediaPipe segmentation; face, hair and skin never leave the browser) and hangs them on a community line. Garments can be dragged along the line, claimed by QR and worn on a mii; the hub shows a few. Storage goes through `clotheslineStore` (Supabase `garments` table and bucket, migration 034). See `docs/CLOTHESLINE.md` |
 | `registration/` | Mobile: new user sign-up with QR-code entry; `faceCropService.ts` runs MediaPipe face detection to produce cropped avatar images |
 | `profile-editor/` | Mobile: edit profile, retake photo, manage accessories; `accessoryService.ts`, `profileService.ts` |
 | `user/` | Mobile: `UserProfileView`, `UserGalleryPage`, `UserGameScoresPage`, `CustomizeAvatarView` |
@@ -146,13 +147,14 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 - `mint-kiosk-session` — verifies admin auth, scopes kiosk JWT to an org, returns tokens
 - `generate-registration-qr` / `verify-registration-token` — QR-code registration handshake
 - `generate-claim-token` / `execute-claim` / `claim-drawing` / `claim-message` — drawing and message claim flows
+- `claim-garment` — clothesline claims: makes the caller the owner of the garments a `garment` token names (goes with migration 034)
 - `claim-candy-reward` — Gumball Slice wins: issues a candy voucher (1 per user per day) via `issue_candy_voucher()`
 - `candy-desk` — the front-desk Google Sheet's endpoint (shared-secret header, no JWT): lists vouchers and redeems/un-redeems them. Sheet script + setup: `scripts/candy-desk-sheet/`
 - `delete-user-account` / `delete-user-images` — account deletion helpers
 
 ### Database (`supabase/migrations/`)
 
-Sequential numbered migrations (001–026). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
+Sequential numbered migrations (001–026 on `dev`; 027–033 are in flight on other branches, with 033 already applied to the remote; 034 adds the clothesline `garments` table and bucket and `accessories.equipped_garment_id`). Current schema includes: `users`, `admin`, `organization`, `image` (profile + gesture photos), `game_score`, `drawings`, claim tokens, `accessories`, `messages`, `candy_voucher` + `reward_config`. RLS policies scope kiosk reads by `auth.jwt() -> 'app_metadata' ->> 'org_id'`.
 
 ### CV Gesture System
 

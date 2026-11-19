@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Application, Assets, Sprite } from "pixi.js";
+import { Application, Assets, Sprite, Texture } from "pixi.js";
 import type { Accessory } from "@/core/auth/AuthContext";
 import type {
   AccessorySettings,
   AvatarLandmarkPoints,
 } from "@/features/profile-editor/types/profileTypes";
 import miiBody from "@/assets/mii_body.png";
+import { getTopPlacement, loadGarmentImage } from "@/features/clothesline/utils/topPlacement";
 import {
   HUB_ACCESSORY_TUNING,
   MII_BODY_SCALE,
@@ -33,6 +34,8 @@ export interface UserMiiPixiPreviewProps {
   bobbleheadUrl: string | null;
   accessorySettings: AccessorySettings;
   landmarks: AvatarLandmarkPoints | null;
+  /** Image of a clothesline top to draw over the body (optional). */
+  topUrl?: string | null;
   className?: string;
   width?: number;
   height?: number;
@@ -42,6 +45,7 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
   bobbleheadUrl,
   accessorySettings,
   landmarks,
+  topUrl = null,
   className,
   width = 220,
   height = 220,
@@ -51,6 +55,7 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
   const bodyRef = useRef<Sprite | null>(null);
   const faceRef = useRef<Sprite | null>(null);
   const accessoryRef = useRef<Sprite | null>(null);
+  const topRef = useRef<Sprite | null>(null);
   const applyLayoutRef = useRef<() => void>(() => {});
   const hasLoadedOnce = useRef(false);
   const [isReady, setIsReady] = useState(false);
@@ -84,6 +89,20 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
     face.scale.set(MII_FACE_SCALE);
     face.x = centerX + MII_HEAD_OFFSET_X;
     face.y = stageBottomY + MII_HEAD_OFFSET_Y;
+
+    const top = topRef.current;
+    if (top && top.texture.width && top.texture.height) {
+      const placement = getTopPlacement(
+        body.width,
+        body.height,
+        top.texture.width / top.texture.height,
+      );
+      top.anchor.set(0.5, 0);
+      top.width = placement.width;
+      top.height = placement.height;
+      top.x = body.x;
+      top.y = body.y - placement.topAboveFeet;
+    }
 
     const accessory = accessoryRef.current;
     if (!accessory || !selectedAccessory || !shouldRenderAccessory) {
@@ -184,6 +203,7 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
       bodyRef.current = null;
       faceRef.current = null;
       accessoryRef.current = null;
+      topRef.current = null;
       if (appRef.current) {
         appRef.current.destroy({ removeView: true });
         appRef.current = null;
@@ -209,11 +229,17 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
         // and loading the rest after let Pixi draw the body and face at their
         // full image size during the awaits, so picking an accessory made the
         // avatar flash huge and then shrink back.
-        const [bodyTexture, faceTexture, accessoryTexture] = await Promise.all([
+        const [bodyTexture, faceTexture, accessoryTexture, topTexture] = await Promise.all([
           Assets.load(miiBody),
           bobbleheadUrl ? Assets.load(bobbleheadUrl) : Promise.resolve(null),
           selectedAccessory && shouldRenderAccessory
             ? Assets.load(ACCESSORY_TEXTURES[selectedAccessory])
+            : Promise.resolve(null),
+          // A top that fails to load shouldn't take the whole preview down.
+          topUrl
+            ? loadGarmentImage(topUrl)
+                .then((image) => Texture.from(image))
+                .catch(() => null)
             : Promise.resolve(null),
         ]);
         if (cancelled || !appRef.current) return;
@@ -226,6 +252,10 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
 
         app.stage.removeChildren();
         app.stage.addChild(bodySprite);
+        const topSprite = topTexture ? new Sprite(topTexture) : null;
+        // Over the body, under the face.
+        if (topSprite) app.stage.addChild(topSprite);
+        topRef.current = topSprite;
         if (faceSprite) app.stage.addChild(faceSprite);
         if (accessorySprite) app.stage.addChild(accessorySprite);
         bodyRef.current = bodySprite;
@@ -253,6 +283,7 @@ export const UserMiiPixiPreview: React.FC<UserMiiPixiPreviewProps> = ({
     isReady,
     selectedAccessory,
     shouldRenderAccessory,
+    topUrl,
   ]);
 
   useEffect(() => {

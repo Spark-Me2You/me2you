@@ -38,6 +38,7 @@
   --color-action-discover: var(--color-orange);
   --color-action-games: var(--color-purple);
   --color-action-network: var(--color-blue);
+  --color-action-clothesline: var(--color-magenta);
   --color-action-help: var(--color-lime);
   --color-action-exit: var(--color-red);
 
@@ -126,7 +127,18 @@
   --animate-ozzy-peek: ozzy-peek 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-return-wipe-in: return-wipe-in 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
   --animate-return-wipe-out: return-wipe-out 700ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  /* Clothesline: garments swing from their peg; the booth flashes white on capture. */
+  --animate-garment-sway: garment-sway 3.4s ease-in-out infinite alternate;
+  --animate-shutter-flash: shutter-flash 450ms ease-out both;
 
+  @keyframes garment-sway {
+    from { rotate: -2.5deg; }
+    to { rotate: 2.5deg; }
+  }
+  @keyframes shutter-flash {
+    from { opacity: 0.95; }
+    to { opacity: 0; }
+  }
   @keyframes fade-in {
     from {
       opacity: 0;

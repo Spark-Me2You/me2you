@@ -12,6 +12,8 @@ import type {
 } from "@/features/profile-editor/types/profileTypes";
 import { DEFAULT_ACCESSORY_SETTINGS } from "@/features/profile-editor/types/profileTypes";
 import logo from "@/assets/me2you.png";
+import { MyClothes } from "@/features/clothesline/components/MyClothes";
+import type { GarmentWithUrl } from "@/features/clothesline/types";
 import { UserMiiPixiPreview } from "./UserMiiPixiPreview";
 
 const ACCESSORY_LABELS: { key: Accessory | null; label: string }[] = [
@@ -49,6 +51,8 @@ export const CustomizeAvatarView: React.FC = () => {
   const [isDataLoading, setIsDataLoading] = useState(!isFullyCached);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The clothesline top the mii is wearing; MyClothes saves changes itself.
+  const [wornTop, setWornTop] = useState<GarmentWithUrl | null>(null);
 
   // Track pointer drag state without causing re-renders mid-drag
   const dragStart = useRef<{ px: number; py: number; rx: number; ry: number } | null>(null);
@@ -216,6 +220,7 @@ export const CustomizeAvatarView: React.FC = () => {
                   bobbleheadUrl={bobbleheadUrl}
                   accessorySettings={settings}
                   landmarks={bobbleheadLandmarks}
+                  topUrl={wornTop?.url ?? null}
                 />
               )}
             </div>
@@ -274,6 +279,10 @@ export const CustomizeAvatarView: React.FC = () => {
             >
               reset position
             </button>
+          )}
+
+          {user && userProfile?.org_id && (
+            <MyClothes userId={user.id} orgId={userProfile.org_id} onWornChange={setWornTop} />
           )}
 
           {error && <p className="m-0 text-center font-jersey text-[15px] text-[#d32f2f]">{error}</p>}

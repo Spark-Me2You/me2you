@@ -85,6 +85,30 @@ describe('claimService edge function calls', () => {
     })
   })
 
+  describe('executeGarmentClaim', () => {
+    it('returns the claimed garment ids', async () => {
+      invoke.mockResolvedValue({
+        data: { success: true, token_id: 't', garment_ids: ['g1', 'g2'] },
+        error: null,
+      })
+
+      await expect(claimService.executeGarmentClaim('t')).resolves.toEqual({
+        success: true,
+        token_id: 't',
+        garment_ids: ['g1', 'g2'],
+      })
+      expect(invoke).toHaveBeenCalledWith('claim-garment', { body: { token_id: 't' } })
+    })
+
+    it('rejects when no garment was claimed', async () => {
+      invoke.mockResolvedValue({
+        data: { success: false, error: 'These clothes are no longer on the line' },
+        error: null,
+      })
+      await expect(claimService.executeGarmentClaim('t')).rejects.toThrow('no longer on the line')
+    })
+  })
+
   describe('executeMessageClaim', () => {
     it('sends the message body with the token', async () => {
       invoke.mockResolvedValue({
