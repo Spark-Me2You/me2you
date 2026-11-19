@@ -80,22 +80,18 @@ Garments stay on that one device and phones never see them.
 
 ### Turning on the Supabase backend
 
-Nothing here has been applied to the remote project. To switch over:
+Migration 034 is applied to the remote project and the generated types include it. To switch
+a build over:
 
-1. `supabase db push` (applies `034_clothesline.sql`)
-2. `supabase functions deploy claim-garment`
-3. `npm run gen:types`, commit the result, then delete the `db` cast in
-   `services/supabaseGarmentStore.ts` (marked `TODO(clothesline)`)
-4. Set `VITE_CLOTHESLINE_BACKEND=supabase`
+1. `supabase functions deploy claim-garment` (once per project)
+2. Set `VITE_CLOTHESLINE_BACKEND=supabase` for that build and rebuild (Vite reads it at build time)
 
-Note that `supabase db push` applies every pending migration, so 034 goes out with whatever is
-pushed next. Hold the file back if the feature isn't ready.
-
-The number 034 leaves room for 027–032 (PR #149) and 033 (in progress) ahead of it. Apply those
-first: if 034 reaches the remote before them, a later `db push` refuses the lower numbers unless
-run with `--include-all`. PR #149 also adds payload validation to `generate-claim-token`
-(`supabase/functions/_shared/claimPayload.ts`) that rejects unknown types, so it needs a
-`garment` case (`data.garment_ids`: non-empty array of uuids) or the hung-up QR stops working.
+034 went out ahead of 027–032 (PR #149) and was numbered around 033 (bounties, applied from
+another branch). When #149 lands, push its migrations with `supabase db push --include-all`,
+since they number below what the remote already has. #149 also adds payload validation to
+`generate-claim-token` (`supabase/functions/_shared/claimPayload.ts`) that rejects unknown
+types, so it needs a `garment` case (`data.garment_ids`: non-empty array of uuids) or the
+hung-up QR stops working.
 
 ### Schema (migration 034)
 

@@ -2,12 +2,8 @@
  * Supabase garment store
  * Needs migration 034 (`garments` table, `garments` bucket,
  * `accessories.equipped_garment_id`) and the `claim-garment` edge function.
- *
- * TODO(clothesline): once 034 is applied and `npm run gen:types` has run,
- * delete the `db` cast below and use the typed `supabase` client directly.
  */
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/core/supabase/client";
 import type { CapturedGarment, Garment, GarmentKind, GarmentWithUrl } from "../types";
 import { lineChanges, type GarmentStore } from "./garmentStore";
@@ -27,9 +23,6 @@ interface GarmentRow {
   created_at: string;
 }
 
-// The generated Database type doesn't know these tables until 034 is applied.
-const db = supabase as unknown as SupabaseClient;
-
 const toGarment = (row: GarmentRow): Garment => ({
   id: row.id,
   orgId: row.org_id,
@@ -44,7 +37,7 @@ const toGarment = (row: GarmentRow): Garment => ({
 /** Attach signed URLs; garments whose file can't be signed are dropped. */
 async function withUrls(rows: GarmentRow[]): Promise<GarmentWithUrl[]> {
   if (!rows.length) return [];
-  const { data, error } = await db.storage
+  const { data, error } = await supabase.storage
     .from(BUCKET)
     .createSignedUrls(rows.map((row) => row.image_path), SIGNED_URL_SECONDS);
   if (error || !data) {
@@ -66,7 +59,7 @@ export const supabaseGarmentStore: GarmentStore = {
 
   async listLine(orgId, limit) {
     // Unclaimed garments come down when they expire; claimed ones stay up.
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("garments")
       .select(COLUMNS)
       .eq("org_id", orgId)
@@ -87,14 +80,14 @@ export const supabaseGarmentStore: GarmentStore = {
     for (const piece of pieces) {
       const id = crypto.randomUUID();
       const path = `${orgId}/${id}.png`;
-      const { error: uploadError } = await db.storage
+      const { error: uploadError } = await supabase.storage
         .from(BUCKET)
         .upload(path, piece.blob, { contentType: "image/png", upsert: false });
       if (uploadError) {
         lastError = uploadError.message;
         continue;
       }
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("garments")
         .insert({
           id,
@@ -121,7 +114,7 @@ export const supabaseGarmentStore: GarmentStore = {
   },
 
   async listMine(userId) {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from("garments")
       .select(COLUMNS)
       .eq("owner_id", userId)
@@ -135,16 +128,16 @@ export const supabaseGarmentStore: GarmentStore = {
 
   async remove(garment) {
     // File first: the storage policy checks ownership through the row.
-    const { error: fileError } = await db.storage.from(BUCKET).remove([garment.imagePath]);
+    const { error: fileError } = await supabase.storage.from(BUCKET).remove([garment.imagePath]);
     if (fileError) throw new Error(`Could not delete the garment image: ${fileError.message}`);
-    const { error } = await db.from("garments").delete().eq("id", garment.id);
+    const { error } = await supabase.from("garments").delete().eq("id", garment.id);
     if (error) throw new Error(`Could not delete the garment: ${error.message}`);
     lineChanges.notify();
   },
 
   async getEquipped(userIds) {
     if (!userIds.length) return {};
-    const { data: equipped, error } = await db
+    const { data: equipped, error } = await supabase
       .from("accessories")
       .select("user_id, equipped_garment_id")
       .in("user_id", userIds)
@@ -156,7 +149,7 @@ export const supabaseGarmentStore: GarmentStore = {
     const rows = (equipped ?? []) as { user_id: string; equipped_garment_id: string }[];
     if (!rows.length) return {};
 
-    const { data: garments, error: garmentError } = await db
+    const { data: garments, error: garmentError } = await supabase
       .from("garments")
       .select(COLUMNS)
       .in("id", rows.map((row) => row.equipped_garment_id));
@@ -178,7 +171,7 @@ export const supabaseGarmentStore: GarmentStore = {
   },
 
   async setEquipped(userId, orgId, garmentId) {
-    const { error } = await db
+    const { error } = await supabase
       .from("accessories")
       .upsert(
         { user_id: userId, org_id: orgId, equipped_garment_id: garmentId },

@@ -147,7 +147,7 @@ Game input hooks read from `cursorStateRef` (the live ref from `useCvCursorEnabl
 - `mint-kiosk-session` — verifies admin auth, scopes kiosk JWT to an org, returns tokens
 - `generate-registration-qr` / `verify-registration-token` — QR-code registration handshake
 - `generate-claim-token` / `execute-claim` / `claim-drawing` / `claim-message` — drawing and message claim flows
-- `claim-garment` — clothesline claims: makes the caller the owner of the garments a `garment` token names (written with migration 034; not deployed until that migration is applied)
+- `claim-garment` — clothesline claims: makes the caller the owner of the garments a `garment` token names (goes with migration 034)
 - `claim-candy-reward` — Gumball Slice wins: issues a candy voucher (1 per user per day) via `issue_candy_voucher()`
 - `candy-desk` — the front-desk Google Sheet's endpoint (shared-secret header, no JWT): lists vouchers and redeems/un-redeems them. Sheet script + setup: `scripts/candy-desk-sheet/`
 - `delete-user-account` / `delete-user-images` — account deletion helpers
